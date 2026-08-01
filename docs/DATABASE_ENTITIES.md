@@ -300,3 +300,38 @@ Create → Activate → Operate → Update → Deactivate
 
 Core
 
+---
+
+# Entity: Role
+
+## Purpose
+
+Represents a collection of permissions assigned to Users to control access to modules and system functions.
+
+## Responsibilities
+
+- Define the responsibilities of a User.
+- Control access to system modules.
+- Control access to business functions.
+- Support role-based access control throughout HHMS.
+
+## Relationships
+
+- One Role may be assigned to many Users.
+- One User shall have one or more Roles.
+
+## Business Rules
+
+- Every Role shall have a unique name.
+- A Role may be assigned to multiple Users.
+- Every User shall have at least one assigned Role.
+- Changes to a Role shall apply only to future access permissions and shall not modify historical records.
+
+## Lifecycle
+
+Create → Assign → Modify → Retire
+
+## Module Ownership
+
+Core
+
