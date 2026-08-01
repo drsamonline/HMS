@@ -444,3 +444,41 @@ Receive → Available → Dispense → Exhausted / Expired
 ## Module Ownership
 
 Pharmacy (Optional)
+
+---
+
+# Entity: Dispensing Record
+
+## Purpose
+
+Represents the dispensing of one or more Medicine Batches against a Prescription. It provides a permanent record of medicines issued to a Patient and supports inventory traceability.
+
+## Responsibilities
+
+- Record medicines dispensed for a Prescription.
+- Link dispensing activities to the corresponding Patient Visit.
+- Record the Medicine Batch used for dispensing.
+- Support pharmacy history and reporting.
+
+## Relationships
+
+- One Dispensing Record belongs to one Prescription.
+- One Dispensing Record may include one or more Medicine Batches.
+- One Medicine Batch may appear in many Dispensing Records.
+- One Dispensing Record is completed by one User.
+
+## Business Rules
+
+- Every Dispensing Record shall be associated with exactly one Prescription.
+- Dispensing shall reference available Medicine Batches.
+- Dispensing shall not modify the original Prescription.
+- Every dispensing activity shall remain permanently recorded.
+- Dispensing history shall remain available even if stock is exhausted.
+
+## Lifecycle
+
+Create → Complete → Historical Record
+
+## Module Ownership
+
+Pharmacy (Optional)
