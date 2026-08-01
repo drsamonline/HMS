@@ -406,3 +406,41 @@ Create → Active → Update → Retire
 
 Pharmacy (Optional)
 
+---
+
+# Entity: Medicine Batch
+
+## Purpose
+
+Represents a specific inventory batch of a Medicine. A Medicine Batch identifies the potency, manufacturer, batch number, expiry, and available stock used for dispensing.
+
+## Responsibilities
+
+- Identify a specific inventory batch.
+- Distinguish medicines by potency and batch.
+- Support stock management.
+- Support expiry tracking.
+- Support dispensing operations.
+
+## Relationships
+
+- One Medicine Batch belongs to one Medicine.
+- One Medicine may have many Medicine Batches.
+- One Medicine Batch may appear in many Dispensing Records.
+
+## Business Rules
+
+- Every Medicine Batch shall belong to exactly one Medicine.
+- Every Medicine Batch shall have one potency.
+- Every Medicine Batch shall have one batch identifier.
+- Stock shall be maintained at the Medicine Batch level.
+- Expired Medicine Batches shall not be available for dispensing.
+- Multiple Medicine Batches of the same Medicine and potency may exist simultaneously.
+
+## Lifecycle
+
+Receive → Available → Dispense → Exhausted / Expired
+
+## Module Ownership
+
+Pharmacy (Optional)
