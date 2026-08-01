@@ -562,7 +562,30 @@ The following non-functional requirements apply to the entire HHMS system.
 
 ## 10. Assumptions and Constraints
 
-This section documents the assumptions made during specification development and the external constraints that influence system design and delivery. It identifies dependencies on third-party systems, regulatory requirements, and environmental factors.
+### Assumptions
+
+The following assumptions apply to Version 1.0 of HHMS:
+
+- The system will be deployed primarily in homoeopathic hospitals, teaching institutions, clinics, and charitable healthcare centres.
+- Users will receive basic training before using the system.
+- Each installation will operate independently unless future integration is implemented.
+- Patient data entered into the system is the responsibility of authorized users.
+- Hospital workflows follow standard clinical and administrative practices.
+
+### Constraints
+
+The following constraints govern the design and implementation of HHMS:
+
+- The system shall follow a documentation-first development methodology.
+- Version 1.0 shall implement only approved features defined in this specification.
+- The system shall be optimized for low-resource hardware.
+- The system shall support offline-first operation.
+- The system shall follow a print-first workflow for all major hospital documents.
+- Optional modules shall remain completely independent and may be enabled or disabled without affecting other modules.
+- Disabling a module shall preserve all historical data.
+- The system shall support NABH AYUSH operational requirements.
+- The system architecture shall allow future ABDM/FHIR-compatible data export without requiring redesign of the core system.
+- All implementation decisions shall comply with the approved project documentation.
 
 ---
 
