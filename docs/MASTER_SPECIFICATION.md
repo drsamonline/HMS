@@ -659,8 +659,26 @@ HHMS Version 1.0 shall be accepted only after all applicable acceptance criteria
 
 ## 13. References
 
-This section lists all external documents, standards, regulations, and resources referenced within this specification. It provides traceability to authoritative sources that inform system requirements and design decisions.
+The following documents form the authoritative documentation set for the HHMS project.
 
+### Internal Project Documents
+
+- HHMS Project Index (INDEX.md)
+- HHMS Master Specification (MASTER_SPECIFICATION.md)
+- HHMS Database Entities (DATABASE_ENTITIES.md)
+- HHMS Database Schema (DATABASE_SCHEMA.md)
+- HHMS UI Guidelines (UI_GUIDELINES.md)
+- HHMS Naming Conventions (NAMING_CONVENTIONS.md)
+
+### External References
+
+- NABH AYUSH Accreditation Standards (Current Applicable Edition)
+- Biomedical Waste Management Rules, 2016 (where applicable)
+- National Commission for Homoeopathy (NCH) regulations (where applicable)
+- Ayushman Bharat Digital Mission (ABDM) specifications
+- HL7 FHIR documentation for future interoperability reference
+
+These references provide regulatory guidance and domain context. Where conflicts arise, the approved HHMS project documentation shall govern implementation unless superseded by mandatory legal or regulatory requirements.
 ---
 
 ## 14. Revision History
