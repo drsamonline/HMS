@@ -96,47 +96,51 @@ No implementation details shall be included in this document.
 
 ---
 
-# Entity: User
+---
+
+# Entity: Patient
 
 ## Purpose
 
-Represents an authenticated individual authorized to access HHMS. A User is responsible for performing administrative, clinical, or operational activities within the system according to assigned roles.
+Represents an individual receiving healthcare services within HHMS. The Patient entity serves as the primary business entity and forms the foundation for all clinical, administrative, and operational records.
 
 ## Responsibilities
 
-- Authenticate into the system.
-- Perform authorized operations.
-- Create and modify business records.
-- Generate printable documents where permitted.
-- Maintain accountability through audit logging.
+- Maintain a unique patient identity.
+- Store patient demographic information.
+- Support patient registration.
+- Maintain continuity of care across multiple visits.
+- Link all patient-related clinical and administrative records.
 
 ## Owned Information
 
-- User identity.
-- Login credentials.
-- Account status.
-- Assigned role(s).
-- Authentication preferences.
+- Patient identification.
+- Demographic information.
+- Contact information.
+- Registration details.
+- Patient status.
 
 ## Relationships
 
-- One User may have one or more Roles.
-- One User may create many Visits.
-- One User may create many Prescriptions.
-- One User may perform many Audit Log entries.
+- One Patient may have many Visits.
+- One Patient may have many Prescriptions.
+- One Patient may have many OPD Tokens.
+- One Patient may have zero or many Admissions.
+- One Patient may have zero or many Laboratory Investigations.
+- One Patient may have zero or many Billing Records.
+- One Patient may have zero or many Medical Documents.
 
 ## Business Rules
 
-- Every User shall have at least one assigned Role.
-- User accounts may be active or inactive.
-- Authentication is mandatory before accessing protected functions.
-- All significant actions performed by a User shall be recorded in the Audit Log.
+- Every Patient shall have one unique patient identifier.
+- A Patient may have multiple visits throughout their lifetime.
+- Patient demographic information may be updated without affecting historical clinical records.
+- A Patient cannot be permanently deleted once clinical records exist.
 
 ## Lifecycle
 
-Create → Activate → Operate → Update → Deactivate
+Register → Active → Update → Archive (if permitted by policy)
 
 ## Module Ownership
 
 Core
-
