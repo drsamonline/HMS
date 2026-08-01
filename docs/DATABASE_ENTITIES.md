@@ -482,3 +482,38 @@ Create → Complete → Historical Record
 ## Module Ownership
 
 Pharmacy (Optional)
+
+---
+
+# Entity: Inventory Item
+
+## Purpose
+
+Represents a non-pharmacy item maintained within the Simple Stock Register. Inventory Items include general hospital supplies and consumables that are managed independently of Pharmacy inventory.
+
+## Responsibilities
+
+- Maintain the identity of a general inventory item.
+- Support stock receipt and issue.
+- Support inventory reporting.
+- Provide the reference entity for stock transactions.
+
+## Relationships
+
+- One Inventory Item may have many Stock Transactions.
+
+## Business Rules
+
+- Every Inventory Item shall represent a single inventory article.
+- Pharmacy medicines shall not be stored as Inventory Items.
+- Current stock shall be derived from Stock Transactions.
+- Inventory Items may be active or inactive.
+
+## Lifecycle
+
+Create → Active → Update → Retire
+
+## Module Ownership
+
+Simple Stock Register (Optional)
+
