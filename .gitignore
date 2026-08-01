@@ -1,0 +1,11 @@
+```
+# AI assistant files
+.ai/*.tmp
+.ai/cache/
+.ai/logs/
+
+# Logs
+*.log
+```
+.aider*
+.env
