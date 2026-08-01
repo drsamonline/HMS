@@ -138,7 +138,118 @@ HHMS supports role-based access control, comprehensive audit logging, and standa
 
 ## 6. Users and Roles
 
-This section identifies all user categories that interact with the HHMS system and defines the permissions, responsibilities, and access levels associated with each role. It establishes the role-based access control framework that governs system functionality.
+HHMS uses Role-Based Access Control (RBAC). Each user is assigned one or more roles that determine the modules, functions, and data they can access.
+
+### 6.1 Administrator
+
+**Responsibilities**
+
+- Configure system settings.
+- Manage users and roles.
+- Enable or disable optional modules.
+- View audit logs.
+- Perform database backup and restore.
+- Access all system modules.
+
+---
+
+### 6.2 Registration Desk
+
+**Responsibilities**
+
+- Register new patients.
+- Search and update patient demographic information.
+- Generate OPD tokens.
+- Print patient registration receipts.
+- Schedule or manage patient visits where applicable.
+
+---
+
+### 6.3 Medical Officer / Consultant
+
+**Responsibilities**
+
+- View patient records.
+- Record clinical findings.
+- Create and modify prescriptions.
+- Request investigations.
+- Access previous consultation history.
+- Print prescriptions and certificates.
+
+---
+
+### 6.4 Pharmacist
+
+*(Available only when the Pharmacy module is enabled.)*
+
+**Responsibilities**
+
+- Dispense prescribed medicines.
+- Manage pharmacy inventory.
+- Record batch numbers and expiry dates.
+- Maintain homoeopathic medicine stock.
+- Generate pharmacy-related reports.
+
+---
+
+### 6.5 Laboratory Staff
+
+*(Available only when the Laboratory module is enabled.)*
+
+**Responsibilities**
+
+- Receive investigation requests.
+- Record laboratory results.
+- Print investigation reports.
+
+---
+
+### 6.6 Billing Staff
+
+*(Available only when the Billing module is enabled.)*
+
+**Responsibilities**
+
+- Generate invoices.
+- Record payments.
+- Print receipts.
+- View billing reports.
+
+---
+
+### 6.7 Medical Records Department (MRD)
+
+*(Available only when the MRD module is enabled.)*
+
+**Responsibilities**
+
+- Maintain medical records.
+- Archive patient documents.
+- Retrieve historical records.
+- Generate statutory reports.
+
+---
+
+### 6.8 Store Keeper
+
+*(Available only when the Simple Stock Register module is enabled.)*
+
+**Responsibilities**
+
+- Record stock receipts.
+- Record stock issues.
+- Monitor stock levels.
+- Generate stock reports.
+
+---
+
+### 6.9 System Principles
+
+- Users may have multiple roles.
+- Permissions shall be granted according to assigned roles.
+- Unauthorized functions shall not be visible.
+- Every significant user action shall be recorded in the audit log.
+- Disabling a module shall automatically remove all related permissions while preserving historical data.
 
 ---
 
