@@ -335,3 +335,38 @@ Create → Assign → Modify → Retire
 
 Core
 
+---
+
+# Entity: Audit Log
+
+## Purpose
+
+Represents a permanent record of significant activities performed within HHMS. The Audit Log supports accountability, traceability, operational monitoring, and compliance requirements.
+
+## Responsibilities
+
+- Record significant system activities.
+- Record the User responsible for each activity.
+- Record the date and time of each activity.
+- Preserve an auditable history of important events.
+
+## Relationships
+
+- One Audit Log entry is associated with one User.
+- One User may generate many Audit Log entries.
+
+## Business Rules
+
+- Audit Log entries shall be created automatically for significant system activities.
+- Existing Audit Log entries shall not be deleted through normal system operation.
+- Audit Log records shall remain available for authorized review.
+- Audit Log records shall preserve historical accountability even if related Users become inactive.
+
+## Lifecycle
+
+Create → Retain → Archive (if permitted by institutional policy)
+
+## Module Ownership
+
+Core
+
