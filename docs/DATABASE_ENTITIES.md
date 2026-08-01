@@ -93,3 +93,50 @@ No implementation details shall be included in this document.
 ---
 
 *End of Current Section*
+
+---
+
+# Entity: User
+
+## Purpose
+
+Represents an authenticated individual authorized to access HHMS. A User is responsible for performing administrative, clinical, or operational activities within the system according to assigned roles.
+
+## Responsibilities
+
+- Authenticate into the system.
+- Perform authorized operations.
+- Create and modify business records.
+- Generate printable documents where permitted.
+- Maintain accountability through audit logging.
+
+## Owned Information
+
+- User identity.
+- Login credentials.
+- Account status.
+- Assigned role(s).
+- Authentication preferences.
+
+## Relationships
+
+- One User may have one or more Roles.
+- One User may create many Visits.
+- One User may create many Prescriptions.
+- One User may perform many Audit Log entries.
+
+## Business Rules
+
+- Every User shall have at least one assigned Role.
+- User accounts may be active or inactive.
+- Authentication is mandatory before accessing protected functions.
+- All significant actions performed by a User shall be recorded in the Audit Log.
+
+## Lifecycle
+
+Create → Activate → Operate → Update → Deactivate
+
+## Module Ownership
+
+Core
+
