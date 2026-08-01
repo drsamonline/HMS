@@ -112,7 +112,27 @@ The Homoeopathic Hospital Management System (HHMS) shall achieve the following o
 
 ## 5. System Overview
 
-This section provides a high-level description of the HHMS system, its primary capabilities, and how it serves homeopathic hospitals and clinics. It presents the system from a user perspective without detailing internal architecture or technical implementation.
+The Homoeopathic Hospital Management System (HHMS) is an offline-first, print-first Hospital Management System designed specifically for homoeopathic hospitals, teaching institutions, clinics, and charitable healthcare centres.
+
+The system is designed to simplify daily hospital operations by providing a modular platform that manages patient registration, outpatient services, prescriptions, pharmacy operations, inventory, billing, laboratory records, medical records, and reporting through independent functional modules.
+
+HHMS follows a feature-flag architecture in which optional modules can be enabled or disabled according to institutional requirements. Disabling a module removes it completely from the user interface and workflow while preserving all historical data associated with that module.
+
+The system is optimized for low-resource hardware and prioritizes reliability, speed, and ease of use over unnecessary complexity. All core operations are designed to function without continuous internet connectivity, making the system suitable for hospitals with limited infrastructure.
+
+HHMS supports role-based access control, comprehensive audit logging, and standardized printable documents to meet operational and NABH AYUSH documentation requirements. The system is also designed to support future ABDM/FHIR-compatible data exchange without requiring major architectural changes.
+
+### Core Characteristics
+
+- Offline-first operation.
+- Print-first workflow.
+- Modular architecture with optional feature-based modules.
+- Low-resource hardware compatibility.
+- Homoeopathy-specific clinical workflow.
+- NABH AYUSH documentation support.
+- Future-ready ABDM/FHIR-compatible data export.
+- Role-based security and audit logging.
+- Scalable through modular expansion without affecting existing workflows.
 
 ---
 
