@@ -221,3 +221,42 @@ Generate → Waiting → In Consultation → Completed / Cancelled
 
 Core
 
+---
+
+# Entity: Prescription
+
+## Purpose
+
+Represents the clinical treatment plan issued during a Patient Visit. A Prescription records the medicines, dosage instructions, and clinical recommendations provided by the consulting medical officer.
+
+## Responsibilities
+
+- Record the prescribed treatment.
+- Associate treatment with a specific Visit.
+- Maintain prescription history.
+- Support printing of prescriptions.
+- Provide the dispensing reference for the Pharmacy module when enabled.
+
+## Relationships
+
+- One Prescription belongs to one Visit.
+- One Visit may have one or more Prescriptions.
+- One Prescription is created by one User.
+- One Prescription may result in zero or more Dispensing Records when the Pharmacy module is enabled.
+
+## Business Rules
+
+- Every Prescription shall belong to exactly one Visit.
+- A Visit may contain multiple Prescriptions when clinically required.
+- Prescriptions shall remain permanently linked to their originating Visit.
+- Printed prescriptions shall accurately represent the recorded prescription.
+- Pharmacy dispensing shall not modify the original Prescription.
+
+## Lifecycle
+
+Create → Print → Dispense (Optional) → Historical Record
+
+## Module Ownership
+
+Core
+
