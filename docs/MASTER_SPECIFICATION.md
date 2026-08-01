@@ -19,19 +19,94 @@ This section contains the document metadata including title, document identifier
 
 ## 2. Purpose
 
-This section defines the purpose of the Master Specification document and its role as the authoritative functional reference for the HHMS project. It establishes how this document relates to other project documentation and how it should be used by stakeholders and development teams.
+This document is the primary functional specification for the Homoeopathic Hospital Management System (HHMS). It defines the functional, operational, and compliance requirements that govern the development of the system.
+
+The purpose of this document is to:
+
+- Define the complete scope of HHMS.
+- Document the expected behaviour of every module.
+- Establish business rules and user workflows.
+- Provide a single reference for development, testing, and validation.
+- Support NABH AYUSH requirements.
+- Support future ABDM/FHIR-compatible data exchange.
+- Ensure consistent implementation throughout the project.
+
+This document specifies **what the system must do**. It does not describe how the system will be implemented.
 
 ---
 
 ## 3. Scope
 
-This section delineates the boundaries of the HHMS system, specifying which functionalities, user groups, and operational environments are included. It also identifies any capabilities or integrations that are explicitly out of scope for the current project phase.
+The Homoeopathic Hospital Management System (HHMS) is designed as a modular, offline-first hospital information system for homoeopathic hospitals, teaching institutions, clinics, and charitable healthcare centres.
+
+### In Scope
+
+- Patient registration and demographic management.
+- OPD management with a high-throughput token queue.
+- Homoeopathic prescription management.
+- Optional Pharmacy module.
+- Optional Simple Stock Register.
+- Optional IPD module.
+- Optional Laboratory module.
+- Optional Billing module.
+- Optional MRD module.
+- User authentication and role-based access control.
+- NABH AYUSH compliant record management.
+- Print-first workflows for prescriptions, receipts, certificates, and reports.
+- Feature-flag based module enabling and disabling without affecting existing data.
+- Local data storage with future support for ABDM/FHIR-compatible data export.
+
+### Out of Scope
+
+The following are intentionally excluded from Version 1.0:
+
+- AI diagnosis or clinical decision support.
+- Built-in repertory or Materia Medica.
+- Online appointment booking.
+- Telemedicine.
+- Cloud-only operation.
+- Multi-hospital management.
+- Accounting and payroll.
+- HR management.
+- Biomedical equipment management.
+- CMS or website management.
+- Third-party ERP integration.
+
+The scope defined in this document is fixed for Version 1.0. New functionality shall only be introduced after formal approval and inclusion in a future project milestone.
 
 ---
 
 ## 4. Project Objectives
 
-This section enumerates the high-level goals that the HHMS system is designed to achieve. Each objective is stated in measurable terms to enable validation during acceptance testing and milestone reviews.
+The Homoeopathic Hospital Management System (HHMS) shall achieve the following objectives:
+
+### Primary Objectives
+
+- Provide a simple, reliable, and efficient Hospital Management System for homoeopathic healthcare institutions.
+- Minimize manual paperwork through structured digital record management.
+- Support fast patient registration and high-volume OPD workflow.
+- Maintain complete and accurate patient medical records.
+- Improve prescription documentation and retrieval.
+- Support NABH AYUSH documentation and operational requirements.
+- Operate efficiently on low-resource computers without requiring continuous internet connectivity.
+- Deliver a print-first workflow for all essential hospital documents.
+
+### Technical Objectives
+
+- Maintain a modular architecture where optional modules can be enabled or disabled independently.
+- Preserve historical data even when modules are disabled.
+- Ensure fast system startup and responsive operation on modest hardware.
+- Provide secure role-based user access.
+- Generate consistent and printable records across all modules.
+- Support future ABDM/FHIR-compatible data export without changing core workflows.
+
+### Project Objectives
+
+- Follow a documentation-first development methodology.
+- Maintain a clean, modular, and maintainable codebase.
+- Prevent feature creep by implementing only approved requirements.
+- Build the system incrementally through small, independently testable milestones.
+- Deliver a stable and practical Version 1.0 suitable for real-world hospital use.
 
 ---
 
