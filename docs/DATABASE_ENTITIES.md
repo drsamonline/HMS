@@ -370,3 +370,39 @@ Create → Retain → Archive (if permitted by institutional policy)
 
 Core
 
+---
+
+# Entity: Medicine
+
+## Purpose
+
+Represents a homoeopathic medicinal substance available for dispensing within the Pharmacy module. A Medicine defines the identity of the medicinal substance independent of potency, batch, or stock quantity.
+
+## Responsibilities
+
+- Maintain the identity of a homoeopathic medicine.
+- Support prescribing and dispensing.
+- Provide the parent record for potency-specific inventory.
+- Support medicine search and reporting.
+
+## Relationships
+
+- One Medicine may have many Medicine Batches.
+- One Medicine may appear in many Prescriptions.
+- One Medicine may appear in many Dispensing Records.
+
+## Business Rules
+
+- Every Medicine shall represent a single homoeopathic medicinal substance.
+- Potency shall not create a separate Medicine.
+- Batch information shall be maintained separately.
+- Stock quantity shall not be maintained within the Medicine entity.
+
+## Lifecycle
+
+Create → Active → Update → Retire
+
+## Module Ownership
+
+Pharmacy (Optional)
+
