@@ -373,7 +373,144 @@ Disabling a module shall:
 
 ## 8. Functional Requirements
 
-This section specifies the detailed functional requirements for each module, describing what the system must do from a user and business perspective. Each requirement is uniquely identified, categorised by priority, and linked to its parent module.
+The following functional requirements define the minimum capabilities required for Version 1.0 of HHMS. These requirements apply only to approved modules within the defined project scope.
+
+### 8.1 General Requirements
+
+- The system shall authenticate users before granting access.
+- The system shall enforce role-based access permissions.
+- The system shall record significant user activities in an immutable audit log.
+- The system shall support bilingual data presentation where configured.
+- The system shall generate printable documents in a consistent format.
+- The system shall preserve historical records during normal operation and module configuration changes.
+
+---
+
+### 8.2 Patient Registration
+
+The system shall:
+
+- Register new patients.
+- Generate a unique patient identifier.
+- Store demographic information.
+- Search existing patients using multiple search criteria.
+- Update patient information while preserving visit history.
+- Display previous visit history.
+
+---
+
+### 8.3 OPD Management
+
+The system shall:
+
+- Generate sequential OPD tokens.
+- Maintain a consultation queue.
+- Register outpatient visits.
+- Record consultation details.
+- Support follow-up visits.
+- Print OPD slips.
+
+---
+
+### 8.4 Prescription Management
+
+The system shall:
+
+- Create homoeopathic prescriptions.
+- Record diagnosis and clinical findings.
+- Record prescribed medicines and potencies.
+- Maintain prescription history.
+- Print prescriptions.
+
+---
+
+### 8.5 Pharmacy Module (Optional)
+
+When enabled, the system shall:
+
+- Dispense medicines.
+- Maintain medicine inventory.
+- Record batch numbers.
+- Record expiry dates.
+- Support Mother Tinctures.
+- Support Decimal (X/D), Centesimal (C), and LM/Q potencies.
+- Generate pharmacy reports.
+
+---
+
+### 8.6 Simple Stock Register (Optional)
+
+When enabled, the system shall:
+
+- Record stock receipt.
+- Record stock issue.
+- Display current stock balance.
+- Generate stock reports.
+
+This module shall remain independent of Pharmacy inventory.
+
+---
+
+### 8.7 IPD Module (Optional)
+
+When enabled, the system shall:
+
+- Register admissions.
+- Allocate beds.
+- Maintain inpatient records.
+- Record discharge details.
+
+---
+
+### 8.8 Laboratory Module (Optional)
+
+When enabled, the system shall:
+
+- Record investigation requests.
+- Record investigation results.
+- Print laboratory reports.
+
+---
+
+### 8.9 Billing Module (Optional)
+
+When enabled, the system shall:
+
+- Generate invoices.
+- Record payments.
+- Print receipts.
+- Generate billing reports.
+
+---
+
+### 8.10 Medical Records Module (Optional)
+
+When enabled, the system shall:
+
+- Archive patient records.
+- Retrieve historical records.
+- Maintain document references.
+
+---
+
+### 8.11 Reporting
+
+The system shall:
+
+- Generate daily operational reports.
+- Generate module-specific reports.
+- Support printing of all reports.
+
+---
+
+### 8.12 Module Behaviour
+
+- Mandatory modules shall always remain available.
+- Optional modules shall be independently enabled or disabled.
+- Disabled modules shall not appear in the user interface.
+- Disabling a module shall not delete historical data.
+- Enabling a module shall restore access to existing data.
+
 
 ---
 
