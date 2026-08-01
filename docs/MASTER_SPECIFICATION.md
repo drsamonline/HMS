@@ -255,7 +255,119 @@ HHMS uses Role-Based Access Control (RBAC). Each user is assigned one or more ro
 
 ## 7. Functional Modules
 
-This section describes each major functional module of the HHMS system at a conceptual level, including the purpose and primary capabilities of each module. It provides the organisational framework for the detailed functional requirements that follow.
+HHMS is built as a modular system consisting of one mandatory core module and multiple optional modules. Optional modules can be enabled or disabled through system settings without affecting the operation of other modules or deleting historical data.
+
+### 7.1 Core Modules
+
+The following modules are mandatory and always available:
+
+#### Patient Registration
+
+- Register new patients.
+- Search and retrieve patient records.
+- Update demographic information.
+- Generate patient identifiers.
+- Maintain patient visit history.
+
+#### OPD Management
+
+- Generate sequential OPD tokens.
+- Maintain consultation queue.
+- Record outpatient consultations.
+- Manage follow-up visits.
+- Print OPD slips and consultation records.
+
+#### Prescription Management
+
+- Create homoeopathic prescriptions.
+- Record diagnosis and clinical notes.
+- Maintain prescription history.
+- Print prescriptions.
+
+#### User & Security Management
+
+- User authentication.
+- Role-based access control.
+- Password management.
+- Audit logging.
+- Session management.
+
+#### Reporting
+
+- Daily OPD reports.
+- Patient statistics.
+- Module-specific reports.
+- Printable summaries.
+
+---
+
+### 7.2 Optional Modules
+
+The following modules may be enabled or disabled independently.
+
+#### Pharmacy
+
+- Medicine dispensing.
+- Batch management.
+- Mother tincture management.
+- Potency management (X, C, LM/Q).
+- Expiry tracking.
+- Pharmacy reports.
+
+#### Simple Stock Register
+
+- General stock register.
+- Stock receipt.
+- Stock issue.
+- Stock balance.
+- Stock reports.
+
+This module is independent of Pharmacy inventory.
+
+#### IPD
+
+- Admission.
+- Bed allocation.
+- Daily case records.
+- Discharge summary.
+
+#### Laboratory
+
+- Investigation requests.
+- Investigation results.
+- Report printing.
+
+#### Billing
+
+- Invoice generation.
+- Payment recording.
+- Receipt printing.
+- Billing reports.
+
+#### Medical Records (MRD)
+
+- Medical record management.
+- Document archive.
+- Record retrieval.
+
+---
+
+### 7.3 Module Independence
+
+Each module shall:
+
+- Operate independently.
+- Communicate through defined interfaces.
+- Store only its own data.
+- Continue functioning regardless of the status of optional modules.
+
+Disabling a module shall:
+
+- Remove all related menus.
+- Remove related workflows.
+- Remove related permissions.
+- Preserve all historical records.
+- Not affect any other module.
 
 ---
 
