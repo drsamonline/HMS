@@ -184,3 +184,40 @@ Create → Consultation → Complete → Historical Record
 
 Core
 
+---
+
+# Entity: OPD Token
+
+## Purpose
+
+Represents the sequential queue token assigned to a Patient for a specific outpatient Visit. It supports efficient patient flow and consultation order within the Out-Patient Department.
+
+## Responsibilities
+
+- Assign a sequential consultation token.
+- Maintain the consultation queue.
+- Link the queue position to a specific Visit.
+- Record the consultation status.
+
+## Relationships
+
+- One OPD Token belongs to one Visit.
+- One Visit may have one OPD Token.
+- One OPD Token is issued by one User.
+
+## Business Rules
+
+- Every OPD Token shall be associated with exactly one Visit.
+- Token numbers shall be generated sequentially.
+- Token numbers may restart according to the hospital's configured operational period.
+- Completed and cancelled tokens shall remain available for historical reference.
+- A Visit shall not have more than one active OPD Token.
+
+## Lifecycle
+
+Generate → Waiting → In Consultation → Completed / Cancelled
+
+## Module Ownership
+
+Core
+
