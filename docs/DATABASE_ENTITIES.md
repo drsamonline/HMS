@@ -260,3 +260,43 @@ Create → Print → Dispense (Optional) → Historical Record
 
 Core
 
+---
+
+# Entity: User
+
+## Purpose
+
+Represents an authenticated individual authorized to access HHMS for performing administrative, clinical, or operational activities according to assigned permissions.
+
+## Responsibilities
+
+- Access the system through authenticated login.
+- Perform authorized clinical or administrative operations.
+- Create, modify, and view records according to assigned permissions.
+- Maintain accountability through recorded user activities.
+
+## Relationships
+
+- One User shall have one or more Roles.
+- One User may register many Patients.
+- One User may record many Visits.
+- One User may create many Prescriptions.
+- One User may issue many OPD Tokens.
+- One User may generate many Audit Log entries.
+
+## Business Rules
+
+- Every User shall have at least one assigned Role.
+- User accounts may be active or inactive.
+- Only authenticated Users may access protected functions.
+- All significant User activities shall be recorded in the Audit Log.
+- Deactivating a User shall not affect historical records created by that User.
+
+## Lifecycle
+
+Create → Activate → Operate → Update → Deactivate
+
+## Module Ownership
+
+Core
+
