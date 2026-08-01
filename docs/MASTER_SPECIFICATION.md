@@ -591,14 +591,70 @@ The following constraints govern the design and implementation of HHMS:
 
 ## 11. Acceptance Criteria
 
-This section defines the conditions that must be met for the HHMS system to be considered complete and acceptable for deployment. It establishes the validation framework against which all functional and non-functional requirements are verified.
+HHMS Version 1.0 shall be considered complete when all of the following acceptance criteria are satisfied.
+
+### Functional Acceptance
+
+- All mandatory modules are fully operational.
+- Each optional module can be independently enabled or disabled.
+- Disabled modules remain completely hidden from the user interface.
+- Historical data remains available after a module is re-enabled.
+- Patient registration functions correctly.
+- OPD token generation functions correctly.
+- Prescription management functions correctly.
+- All approved reports can be generated and printed.
+
+### Operational Acceptance
+
+- The system operates correctly without continuous internet connectivity.
+- User authentication and role-based permissions function correctly.
+- Audit logging records significant user activities.
+- Backup and restoration procedures complete successfully.
+
+### Compliance Acceptance
+
+- Required NABH AYUSH documentation can be generated.
+- Homoeopathic pharmacy workflows support Mother Tinctures, Decimal (X/D), Centesimal (C), and LM/Q potencies where the Pharmacy module is enabled.
+- Bilingual printing functions correctly where configured.
+
+### Quality Acceptance
+
+- All approved functional requirements have been implemented.
+- All approved non-functional requirements have been satisfied.
+- No unapproved features have been introduced.
+- The application is stable under normal operational use.
+- All project documentation is complete and approved.
+
+HHMS Version 1.0 shall be accepted only after all applicable acceptance criteria have been successfully verified.
 
 ---
 
 ## 12. Glossary
 
-This section provides definitions for all domain-specific terms, abbreviations, and acronyms used throughout the HHMS documentation suite. It ensures consistent terminology and understanding across all project stakeholders.
-
+| Term | Definition |
+|------|------------|
+| **ABDM** | Ayushman Bharat Digital Mission. |
+| **Audit Log** | A chronological record of significant user activities performed within the system. |
+| **Batch** | A group of medicines manufactured or procured together and identified by a common batch number. |
+| **Bilingual Output** | Display or printing of information in English and one configurable local language. |
+| **Consultation** | A clinical encounter between a patient and a medical officer. |
+| **Feature Flag** | A configuration setting used to enable or disable an optional module without affecting other modules or historical data. |
+| **FHIR** | Fast Healthcare Interoperability Resources, a standard for exchanging healthcare information electronically. |
+| **HHMS** | Homoeopathic Hospital Management System. |
+| **IPD** | In-Patient Department. |
+| **LM/Q Potency** | Fifty Millesimal homoeopathic potency scale. |
+| **Medical Record** | The complete clinical and administrative record maintained for a patient. |
+| **Mother Tincture** | A homoeopathic medicine prepared directly from the original source material before potentisation. |
+| **MRD** | Medical Records Department. |
+| **NABH AYUSH** | National Accreditation Board for Hospitals and Healthcare Providers standards applicable to AYUSH healthcare organizations. |
+| **OPD** | Out-Patient Department. |
+| **Patient Identifier** | A unique identifier assigned to each registered patient. |
+| **Potency** | The strength of a homoeopathic medicine, including Decimal (X/D), Centesimal (C), and LM/Q scales. |
+| **Prescription** | A documented treatment plan issued by a registered medical practitioner. |
+| **Role-Based Access Control (RBAC)** | A security model in which user permissions are assigned according to predefined roles. |
+| **Simple Stock Register** | An optional inventory module used to record general stock independent of pharmacy inventory. |
+| **Token** | A sequential number assigned to a patient for OPD consultation queue management. |
+| **Visit** | A single patient encounter recorded within the system. |
 ---
 
 ## 13. References
