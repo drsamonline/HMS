@@ -379,7 +379,7 @@ The following functional requirements define the minimum capabilities required f
 
 - The system shall authenticate users before granting access.
 - The system shall enforce role-based access permissions.
-- The system shall record significant user activities in an immutable audit log.
+- The system shall record significant user activities in an audit log.
 - The system shall support bilingual data presentation where configured.
 - The system shall generate printable documents in a consistent format.
 - The system shall preserve historical records during normal operation and module configuration changes.
@@ -516,8 +516,48 @@ The system shall:
 
 ## 9. Non-Functional Requirements
 
-This section defines the quality attributes and operational constraints that the system must satisfy, including performance, reliability, security, usability, and compatibility requirements. These requirements apply across all functional modules.
+The following non-functional requirements apply to the entire HHMS system.
 
+### Performance
+
+- The system shall provide responsive operation during normal hospital workflows.
+- Patient registration and OPD token generation shall complete without unnecessary delay.
+- The system shall remain usable on low-resource hardware.
+
+### Availability
+
+- The system shall operate without continuous internet connectivity.
+- All core functionality shall remain available during offline operation.
+
+### Reliability
+
+- The system shall preserve data integrity during normal operation.
+- Historical records shall not be lost when optional modules are disabled.
+- The system shall support regular database backup and restoration.
+
+### Security
+
+- Access shall be controlled through authenticated user accounts.
+- Permissions shall be enforced using role-based access control.
+- User activities shall be recorded in the audit log.
+
+### Usability
+
+- The interface shall remain simple and consistent across all modules.
+- Frequently used operations shall require the minimum practical number of steps.
+- All major documents shall be printable.
+
+### Compatibility
+
+- The system shall support bilingual output where configured.
+- The system shall support future ABDM/FHIR-compatible data export.
+- The system shall function consistently regardless of which optional modules are enabled.
+
+### Maintainability
+
+- Modules shall remain independently maintainable.
+- Changes to one module shall not require modification of unrelated modules.
+- New approved modules shall integrate without affecting existing workflows.
 ---
 
 ## 10. Assumptions and Constraints
