@@ -144,3 +144,43 @@ Register → Active → Update → Archive (if permitted by policy)
 ## Module Ownership
 
 Core
+
+---
+
+# Entity: Visit
+
+## Purpose
+
+Represents a single clinical encounter between a registered Patient and the hospital. Every consultation, examination, treatment, or follow-up is recorded as an individual Visit.
+
+## Responsibilities
+
+- Record each patient encounter.
+- Maintain chronological clinical history.
+- Link consultations, prescriptions, investigations, and other clinical activities performed during the encounter.
+- Distinguish multiple visits for the same patient.
+
+## Relationships
+
+- One Visit belongs to one Patient.
+- One Visit may have one OPD Token.
+- One Visit may have one or more Prescriptions.
+- One Visit may have zero or more Laboratory Investigations.
+- One Visit may have zero or one Billing Record.
+- One Visit is recorded by one User.
+
+## Business Rules
+
+- Every Visit shall belong to exactly one Patient.
+- A Patient may have multiple Visits.
+- Clinical information shall be associated with the Visit in which it was recorded.
+- Historical Visits shall remain available for future reference.
+
+## Lifecycle
+
+Create → Consultation → Complete → Historical Record
+
+## Module Ownership
+
+Core
+
