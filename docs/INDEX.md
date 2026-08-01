@@ -1,140 +1,162 @@
 # HHMS Documentation Index
 
-This document provides a comprehensive navigation guide for all HHMS documentation.
+---
 
-## Table of Contents
+## 1. Document Information
 
-1. [Project Documentation](#project-documentation)
-2. [Software Requirements Specification](#software-requirements-specification)
-3. [Architecture Documentation](#architecture-documentation)
-4. [Database Documentation](#database-documentation)
-5. [API Documentation](#api-documentation)
-6. [UI Documentation](#ui-documentation)
-7. [Workflows](#workflows)
-8. [Testing Documentation](#testing-documentation)
-9. [Deployment Documentation](#deployment-documentation)
-10. [Release Notes](#release-notes)
+| Field | Value |
+|-------|-------|
+| **Title** | HHMS Documentation Index |
+| **Document ID** | HHMS-DOC-001 |
+| **Version** | 1.0.0 |
+| **Status** | Frozen |
+| **Author** | Dr. Sohil Momin |
+| **Date** | 31 July 2026 |
 
 ---
 
-## Project Documentation
+## 2. Purpose
 
-| Document | Description |
-|----------|-------------|
-| [01_Project/](01_Project/) | Project overview, vision, and scope documents |
-| [GLOSSARY.md](GLOSSARY.md) | Comprehensive glossary of HHMS terms |
-| [NAMING_CONVENTIONS.md](NAMING_CONVENTIONS.md) | Naming standards for code and database |
-| [UI_GUIDELINES.md](UI_GUIDELINES.md) | User interface design guidelines |
-| [PRINT_STANDARDS.md](PRINT_STANDARDS.md) | Standards for printable reports |
-| [VALIDATION_RULES.md](VALIDATION_RULES.md) | Data validation rules and standards |
+This document serves as the **master index** for all Homeopathic Hospital Management System (HHMS) documentation. It provides a centralised reference point for navigating project specifications, database design, coding standards, and development workflow guidelines.
+
+All contributors, reviewers, and stakeholders should begin their engagement with the HHMS project by consulting this index to locate the appropriate documentation for their role and current task.
 
 ---
 
-## Software Requirements Specification
+## 3. Project Overview
 
-| Document | Description |
-|----------|-------------|
-| [02_SRS/](02_SRS/) | Detailed software requirements specifications |
+HHMS is a comprehensive management system purpose-built for homeopathic hospitals and clinics. The system provides integrated tools for:
 
----
+- **Patient Management** — registration, records, and history tracking
+- **Consultation Recording** — structured clinical notes and case documentation
+- **Prescription Generation** — homeopathic remedy selection with dosage and potency management
+- **Administrative Operations** — scheduling, billing, inventory, and reporting
 
-## Architecture Documentation
+The system is designed with the following core objectives:
 
-| Document | Description |
-|----------|-------------|
-| [03_Architecture/](03_Architecture/) | System architecture diagrams and decisions |
-
----
-
-## Database Documentation
-
-| Document | Description |
-|----------|-------------|
-| [04_Database/](04_Database/) | Database schema, ERD, and data dictionary |
+- **Offline-first architecture** for environments with limited or intermittent connectivity
+- **Modular design** enabling independent development, testing, and deployment of features
+- **Data portability and security** ensuring patient information remains protected and transferable
+- **Print-ready output** for prescriptions, reports, and administrative documents
 
 ---
 
-## API Documentation
+## 4. Documentation Principles
 
-| Document | Description |
-|----------|-------------|
-| [05_API/](05_API/) | REST API endpoints, request/response formats |
+All HHMS documentation adheres to the following principles:
 
----
+1. **Single Source of Truth** — Each concept, entity, or rule is defined in exactly one document. Other documents reference it rather than duplicate it.
 
-## UI Documentation
+2. **Specification Before Implementation** — All features, schemas, and behaviours are fully documented before any code is written. Documentation drives development, not the reverse.
 
-| Document | Description |
-|----------|-------------|
-| [06_UI/](06_UI/) | User interface mockups, wireframes, and components |
+3. **Precision and Completeness** — Documents must be unambiguous, self-contained, and sufficient for a developer to implement against without requiring verbal clarification.
 
----
+4. **Living Documents** — Documentation is versioned and maintained alongside the codebase. Changes to specifications must be reflected in the relevant document before implementation proceeds.
 
-## Workflows
+5. **Consistent Structure** — All documents follow a uniform format with document metadata, clear section headings, and standardised terminology.
 
-| Document | Description |
-|----------|-------------|
-| [07_Workflows/](07_Workflows/) | Business process workflows and user journeys |
+6. **No Assumptions** — Documents explicitly state all requirements, constraints, and edge cases. Implicit knowledge is avoided.
 
 ---
 
-## Testing Documentation
+## 5. Documentation Reading Order
 
-| Document | Description |
-|----------|-------------|
-| [08_Testing/](08_Testing/) | Test plans, test cases, and quality assurance |
+The following reading order is recommended for new contributors and reviewers:
 
----
+| Order | Document | Audience |
+|-------|----------|----------|
+| 1 | INDEX.md | All |
+| 2 | MASTER_SPECIFICATION.md | All |
+| 3 | DATABASE_ENTITIES.md | Backend, Database |
+| 4 | DATABASE_SCHEMA.md | Backend, Database |
+| 5 | CODING_STANDARDS.md | Developers |
+| 6 | DEVELOPMENT_ROADMAP.md | All |
 
-## Deployment Documentation
-
-| Document | Description |
-|----------|-------------|
-| [09_Deployment/](09_Deployment/) | Installation guides, deployment procedures |
-
----
-
-## Release Notes
-
-| Document | Description |
-|----------|-------------|
-| [10_Release_Notes/](10_Release_Notes/) | Version release notes and changelog details |
+- **Stakeholders and product owners** should focus on the Master Specification and Development Roadmap.
+- **Backend developers** should read all documents, with particular attention to Database Entities and Schema.
+- **Frontend developers** should prioritise the Master Specification and Coding Standards.
+- **Reviewers** must be familiar with all documents to evaluate compliance during code review.
 
 ---
 
-## AI Documentation
+## 6. Documentation Catalogue
 
-Located in `.ai/` directory:
+The HHMS documentation suite consists of the following documents:
 
-| File | Description |
-|------|-------------|
-| [PROJECT_CONSTITUTION.md](../.ai/PROJECT_CONSTITUTION.md) | Locked project principles and rules |
-| [PROJECT_STATE.md](../.ai/PROJECT_STATE.md) | Current project status and next tasks |
-| [AI_CONTEXT.md](../.ai/AI_CONTEXT.md) | AI session context and background |
-| [CODING_RULES.md](../.ai/CODING_RULES.md) | Coding standards and best practices |
-| [PROGRESS.md](../.ai/PROGRESS.md) | Overall progress tracking |
-| [TODO.md](../.ai/TODO.md) | Task checklists and milestones |
-| [SESSION_LOG.md](../.ai/SESSION_LOG.md) | Session-by-session development log |
-| [DECISIONS.md](../.ai/DECISIONS.md) | Architectural and design decisions |
-| [PROMPTS.md](../.ai/PROMPTS.md) | Template for recording AI prompts |
-| [QWEN_RULES.md](../.ai/QWEN_RULES.md) | Instructions for AI assistant sessions |
-| [REVIEW_CHECKLIST.md](../.ai/REVIEW_CHECKLIST.md) | Task verification checklist |
-| [PROJECT_INDEX.md](../.ai/PROJECT_INDEX.md) | Repository navigation guide |
-| [MODULE_STATUS.md](../.ai/MODULE_STATUS.md) | Module progress dashboard |
+| Document ID | Document Name | Description |
+|-------------|---------------|-------------|
+| HHMS-DOC-001 | INDEX.md | Master index and documentation navigation guide |
+| HHMS-DOC-002 | MASTER_SPECIFICATION.md | Complete system specification covering all features, modules, user roles, and business rules |
+| HHMS-DOC-003 | DATABASE_ENTITIES.md | Definition of all database entities, their attributes, relationships, and business constraints |
+| HHMS-DOC-004 | DATABASE_SCHEMA.md | Physical database schema including tables, columns, data types, indexes, and migrations |
+| HHMS-DOC-005 | CODING_STANDARDS.md | Coding conventions, naming rules, file structure standards, and code quality expectations |
+| HHMS-DOC-006 | DEVELOPMENT_ROADMAP.md | Project milestones, delivery timeline, and phased feature rollout plan |
+
+This catalogue defines the documentation approved for the current project phase. Future documentation may be added through the project's document revision process.
 
 ---
 
-## Root Documentation
+## 7. Development Workflow
 
-| File | Description |
-|------|-------------|
-| [README.md](../README.md) | Project overview and quick start |
-| [CHANGELOG.md](../CHANGELOG.md) | Version history and changes |
-| [ROADMAP.md](../ROADMAP.md) | Project milestones and timeline |
-| [CONTRIBUTING.md](../CONTRIBUTING.md) | Contribution guidelines |
-| [SECURITY.md](../SECURITY.md) | Security policies and procedures |
-| [LICENSE](../LICENSE) | MIT License |
+All HHMS development follows a strict sequential workflow. No step may be skipped or performed out of order.
+
+```
+Specification
+    ↓
+Review
+    ↓
+Implementation
+    ↓
+Code Review
+    ↓
+Testing
+    ↓
+Git Commit
+    ↓
+Next Milestone
+```
+
+### Workflow Stage Descriptions
+
+**Specification**
+The relevant documentation is written or updated to fully describe the feature, entity, or change. All requirements, constraints, and acceptance criteria are explicitly documented.
+
+**Review**
+The specification is reviewed by the team for completeness, accuracy, and feasibility. Any gaps or ambiguities are resolved before proceeding. Documentation must be approved before implementation begins.
+
+**Implementation**
+Code is written strictly according to the approved specification. Developers must follow the Coding Standards document at all times. No features beyond the specification may be introduced.
+
+**Code Review**
+All implementation is reviewed by at least one other team member. The review verifies compliance with the specification, coding standards, and architectural patterns. Issues must be resolved before proceeding.
+
+**Testing**
+The implementation is tested against the acceptance criteria defined in the specification. This includes unit tests, integration tests, and manual verification where appropriate. All tests must pass.
+
+**Git Commit**
+Approved and tested code is committed to the repository following the established commit conventions. The commit message must reference the relevant specification document and milestone.
+
+**Next Milestone**
+The completed work is incorporated into the project milestone. The Development Roadmap is updated to reflect progress, and the next milestone's specification phase begins.
 
 ---
 
-*Last Updated: Session 002 - Repository Standardization*
+## 8. Document Status Definitions
+
+Every HHMS document carries a status indicator. The following statuses are used across all documentation:
+
+| Status | Definition |
+|--------|------------|
+| **Draft** | Document is under initial creation. Content is incomplete and subject to significant change. Must not be used as a basis for implementation. |
+| **Under Review** | Document is complete and awaiting team review. Content may change based on feedback. Must not be used as a basis for implementation until approved. |
+| **Approved** | Document has passed review and is accepted as the current specification. Implementation may proceed based on this document. |
+| **Active** | Document is the current, authoritative source. All implementation and decisions must align with this document. |
+| **Deprecated** | Document has been superseded by a newer version or is no longer relevant. Must not be used for new work. Retained for historical reference only. |
+| **Archived** | Document is preserved for audit and historical purposes. No longer applicable to the current project state. |
+
+---
+
+Document State: FROZEN
+Approved For: Phase 1 Development
+
+*End of Document — HHMS-DOC-001*
