@@ -1111,3 +1111,73 @@ Stores the discharge details for an inpatient Admission. Each Discharge records 
 
 ---
 
+---
+
+### Table: Investigation
+
+**Purpose**
+
+Stores laboratory investigation requests generated during a Patient Visit or Admission. Each Investigation represents a single requested laboratory test and tracks its status until completion.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| patient_id | Integer | No | FK | References Patient |
+| visit_id | Integer | Yes | FK | References Visit |
+| admission_id | Integer | Yes | FK | References Admission |
+| investigation_number | String(20) | No | Unique | Human-readable investigation identifier |
+| investigation_name | String(150) | No | | Requested investigation |
+| requested_by | Integer | No | FK | References User |
+| requested_datetime | DateTime | No | | Date and time of request |
+| investigation_status | String(20) | No | | Pending, In Progress, Completed, Cancelled |
+| remarks | Text | Yes | | Additional notes |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- investigation_number
+
+---
+
+#### Foreign Keys
+
+- patient_id → Patient.id
+- visit_id → Visit.id
+- admission_id → Admission.id
+- requested_by → User.id
+
+---
+
+#### Indexes
+
+- patient_id
+- visit_id
+- admission_id
+- investigation_number
+- investigation_status
+
+---
+
+#### Relationships
+
+- Many Investigations → One Patient
+- Many Investigations → One Visit (optional)
+- Many Investigations → One Admission (optional)
+- Many Investigations → One User
+- One Investigation → Zero or One InvestigationResult
+
+---
+
