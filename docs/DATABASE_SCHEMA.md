@@ -1720,3 +1720,68 @@ Unused or redundant indexes should not be introduced.
 
 ---
 
+## 9. Audit and Data Retention Strategy
+
+The HHMS database shall preserve historical information to ensure accountability, traceability, regulatory compliance, and continuity of patient care.
+
+### Audit Logging
+
+Significant system activities shall be recorded in the `AuditLog` table.
+
+Examples include:
+
+- User authentication
+- Patient registration
+- Visit creation
+- Prescription generation
+- Pharmacy dispensing
+- Inventory transactions
+- Billing operations
+- Administrative changes
+
+---
+
+### Historical Record Retention
+
+Clinical, financial, and administrative records shall remain permanently available unless removed in accordance with institutional policies or applicable legal requirements.
+
+Historical records shall not be removed during normal system operation.
+
+---
+
+### Record Modification
+
+Business records may be updated when corrections are required.
+
+The application shall record significant modifications through the audit mechanism to preserve accountability.
+
+---
+
+### Data Deletion
+
+Physical deletion of records should be restricted to exceptional administrative or legal circumstances.
+
+Where related records exist, referential integrity shall prevent accidental deletion.
+
+---
+
+### Archiving
+
+Long-term archival of historical records may be implemented as an operational process without altering the logical database schema.
+
+Archived records shall remain recoverable when required.
+
+---
+
+### Compliance
+
+The audit and data retention strategy shall support:
+
+- Accountability
+- Traceability
+- Clinical continuity
+- Financial auditability
+- Regulatory compliance
+
+---
+
