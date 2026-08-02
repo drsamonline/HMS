@@ -163,3 +163,78 @@ The following tables constitute the HHMS Version 1.0 database schema.
 
 ---
 
+## 5. Core Tables
+
+---
+
+### Table: Patient
+
+**Purpose**
+
+Stores the permanent demographic and registration information of every patient receiving healthcare services within HHMS.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| patient_number | String(20) | No | Unique | Human-readable patient identifier |
+| first_name | String(100) | No | | First name |
+| middle_name | String(100) | Yes | | Middle name |
+| last_name | String(100) | No | | Last name |
+| gender | String(20) | No | | Gender |
+| date_of_birth | Date | Yes | | Date of birth |
+| age | Integer | Yes | | Age at registration if DOB unavailable |
+| blood_group | String(5) | Yes | | Blood group |
+| mobile_number | String(20) | Yes | | Primary contact number |
+| email | String(150) | Yes | | Email address |
+| address | Text | Yes | | Residential address |
+| city | String(100) | Yes | | City |
+| state | String(100) | Yes | | State |
+| postal_code | String(20) | Yes | | Postal code |
+| occupation | String(100) | Yes | | Occupation |
+| marital_status | String(30) | Yes | | Marital status |
+| registration_date | DateTime | No | | Registration date and time |
+| is_active | Boolean | No | | Active patient flag |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- patient_number
+
+---
+
+#### Foreign Keys
+
+None
+
+---
+
+#### Indexes
+
+- patient_number
+- first_name
+- last_name
+- mobile_number
+
+---
+
+#### Relationships
+
+- One Patient → Many Visits
+- One Patient → Many Admissions
+- One Patient → Many Medical Documents
+
+---
+
