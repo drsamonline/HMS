@@ -500,3 +500,57 @@ None
 
 ---
 
+---
+
+### Table: Role
+
+**Purpose**
+
+Stores the roles assigned to system users for role-based access control (RBAC). Roles define the functional responsibilities of users within HHMS.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| role_name | String(50) | No | Unique | Name of the role |
+| description | Text | Yes | | Role description |
+| is_active | Boolean | No | | Active status |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- role_name
+
+---
+
+#### Foreign Keys
+
+None
+
+---
+
+#### Indexes
+
+- role_name
+- is_active
+
+---
+
+#### Relationships
+
+- One Role → Many Users
+
+---
+
