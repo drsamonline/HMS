@@ -1785,3 +1785,14 @@ The audit and data retention strategy shall support:
 
 ---
 
+## 10. Revision History
+
+This section records significant revisions made to the HHMS Database Schema document throughout the project lifecycle.
+
+| Version | Date | Author | Description |
+|---------|------|--------|-------------|
+| 1.0.0 | 02 August 2026 | Dr. Sohil Momin | Initial database schema completed, including design principles, table definitions, schema-wide constraints, indexing strategy, and audit & data retention strategy. |
+
+---
+
+**End of Document — HHMS Database Schema**
