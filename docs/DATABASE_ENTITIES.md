@@ -164,7 +164,7 @@ Represents a single clinical encounter between a registered Patient and the hosp
 
 - One Visit belongs to one Patient.
 - One Visit may have one OPD Token.
-- One Visit may have one or more Prescriptions.
+- One Visit may have one Prescription.
 - One Visit may have zero or more Laboratory Investigations.
 - One Visit may have zero or one Billing Record.
 - One Visit is recorded by one User.
@@ -240,7 +240,7 @@ Represents the clinical treatment plan issued during a Patient Visit. A Prescrip
 ## Relationships
 
 - One Prescription belongs to one Visit.
-- One Visit may have one or more Prescriptions.
+- One Visit may have one Prescription.
 - One Prescription is created by one User.
 - One Prescription may result in zero or more Dispensing Records when the Pharmacy module is enabled.
 
