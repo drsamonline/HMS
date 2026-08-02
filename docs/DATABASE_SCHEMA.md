@@ -430,3 +430,73 @@ Stores the clinical prescription issued during a Patient Visit. Each Prescriptio
 
 ---
 
+---
+
+### Table: User
+
+**Purpose**
+
+Stores authenticated system users authorized to access HHMS. The table maintains user identity, authentication information, account status, and operational metadata.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| username | String(50) | No | Unique | Unique login username |
+| password_hash | String(255) | No | | Secure password hash |
+| full_name | String(150) | No | | User's full name |
+| email | String(150) | Yes | Unique | Email address |
+| mobile_number | String(20) | Yes | | Contact number |
+| designation | String(100) | Yes | | Professional designation |
+| is_active | Boolean | No | | Account status |
+| last_login | DateTime | Yes | | Last successful login |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- username
+- email
+
+---
+
+#### Foreign Keys
+
+None
+
+---
+
+#### Indexes
+
+- username
+- email
+- is_active
+
+---
+
+#### Relationships
+
+- One User → One or More Roles
+- One User → Many Visits
+- One User → Many Prescriptions
+- One User → Many OPDTokens
+- One User → Many AuditLog Entries
+- One User → Many Admissions
+- One User → Many Discharges
+- One User → Many Investigation Results
+- One User → Many Invoices
+- One User → Many Payments
+
+---
+
