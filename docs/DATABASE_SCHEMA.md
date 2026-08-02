@@ -554,3 +554,60 @@ None
 
 ---
 
+---
+
+### Table: AuditLog
+
+**Purpose**
+
+Stores a permanent record of significant system activities performed by authenticated users. The AuditLog table supports accountability, traceability, operational monitoring, and compliance requirements.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| user_id | Integer | No | FK | References User |
+| activity | String(100) | No | | Activity performed |
+| entity_name | String(100) | No | | Business entity affected |
+| entity_id | Integer | Yes | | Identifier of the affected record |
+| action_timestamp | DateTime | No | | Date and time of the activity |
+| ip_address | String(45) | Yes | | Client IP address |
+| remarks | Text | Yes | | Additional audit information |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+None
+
+---
+
+#### Foreign Keys
+
+- user_id → User.id
+
+---
+
+#### Indexes
+
+- user_id
+- action_timestamp
+- entity_name
+
+---
+
+#### Relationships
+
+- Many AuditLog Entries → One User
+
+---
+
