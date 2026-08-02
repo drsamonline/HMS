@@ -1314,3 +1314,67 @@ Stores billing records generated for healthcare services provided during a Patie
 
 ---
 
+---
+
+### Table: Payment
+
+**Purpose**
+
+Stores payments received against Invoices. Each Payment represents a single financial transaction and maintains the financial settlement history for billing and audit purposes.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| invoice_id | Integer | No | FK | References Invoice |
+| receipt_number | String(20) | No | Unique | Human-readable receipt number |
+| payment_datetime | DateTime | No | | Date and time of payment |
+| payment_method | String(30) | No | | Cash, Card, UPI, Bank Transfer, etc. |
+| amount_paid | Decimal(10,2) | No | | Amount received |
+| received_by | Integer | No | FK | References User |
+| transaction_reference | String(100) | Yes | | External payment reference |
+| remarks | Text | Yes | | Additional payment remarks |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- receipt_number
+
+---
+
+#### Foreign Keys
+
+- invoice_id → Invoice.id
+- received_by → User.id
+
+---
+
+#### Indexes
+
+- invoice_id
+- receipt_number
+- payment_datetime
+- payment_method
+- received_by
+
+---
+
+#### Relationships
+
+- Many Payments → One Invoice
+- Many Payments → One User
+
+---
+
