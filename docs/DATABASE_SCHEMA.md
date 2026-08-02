@@ -860,3 +860,65 @@ None
 
 ---
 
+---
+
+### Table: StockTransaction
+
+**Purpose**
+
+Stores every movement of an InventoryItem within the Simple Stock Register. Each transaction records the receipt, issue, adjustment, or return of inventory and forms the basis for stock calculations and inventory history.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| inventory_item_id | Integer | No | FK | References InventoryItem |
+| transaction_type | String(20) | No | | Receipt, Issue, Adjustment, Return |
+| quantity | Decimal(10,2) | No | | Quantity moved |
+| transaction_datetime | DateTime | No | | Date and time of transaction |
+| reference_number | String(50) | Yes | | External reference document |
+| recorded_by | Integer | No | FK | References User |
+| remarks | Text | Yes | | Transaction remarks |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+None
+
+---
+
+#### Foreign Keys
+
+- inventory_item_id → InventoryItem.id
+- recorded_by → User.id
+
+---
+
+#### Indexes
+
+- inventory_item_id
+- transaction_type
+- transaction_datetime
+- recorded_by
+
+---
+
+#### Relationships
+
+- Many StockTransactions → One InventoryItem
+- Many StockTransactions → One User
+
+---
+
