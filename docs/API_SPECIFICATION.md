@@ -137,3 +137,197 @@ DELETE /prescriptions/{id}
 
 ---
 
+# 7. Pharmacy Module Endpoints
+
+## Medicine
+
+GET /medicines
+
+GET /medicines/{id}
+
+POST /medicines
+
+PUT /medicines/{id}
+
+DELETE /medicines/{id}
+
+---
+
+## Medicine Batch
+
+GET /medicine-batches
+
+GET /medicine-batches/{id}
+
+POST /medicine-batches
+
+PUT /medicine-batches/{id}
+
+DELETE /medicine-batches/{id}
+
+---
+
+## Dispensing Record
+
+GET /dispensing-records
+
+GET /dispensing-records/{id}
+
+POST /dispensing-records
+
+PUT /dispensing-records/{id}
+
+DELETE /dispensing-records/{id}
+
+---
+
+# 8. Inventory Module Endpoints
+
+## Inventory Item
+
+GET /inventory-items
+
+GET /inventory-items/{id}
+
+POST /inventory-items
+
+PUT /inventory-items/{id}
+
+DELETE /inventory-items/{id}
+
+---
+
+## Stock Transaction
+
+GET /stock-transactions
+
+GET /stock-transactions/{id}
+
+POST /stock-transactions
+
+PUT /stock-transactions/{id}
+
+DELETE /stock-transactions/{id}
+
+---
+
+# 9. IPD Module Endpoints
+
+## Admission
+
+GET /admissions
+
+GET /admissions/{id}
+
+POST /admissions
+
+PUT /admissions/{id}
+
+DELETE /admissions/{id}
+
+---
+
+## Bed
+
+GET /beds
+
+GET /beds/{id}
+
+POST /beds
+
+PUT /beds/{id}
+
+DELETE /beds/{id}
+
+---
+
+## Discharge
+
+GET /discharges
+
+GET /discharges/{id}
+
+POST /discharges
+
+PUT /discharges/{id}
+
+DELETE /discharges/{id}
+
+---
+
+# 10. Laboratory Module Endpoints
+
+## Investigation
+
+GET /investigations
+
+GET /investigations/{id}
+
+POST /investigations
+
+PUT /investigations/{id}
+
+DELETE /investigations/{id}
+
+---
+
+## Investigation Result
+
+GET /investigation-results
+
+GET /investigation-results/{id}
+
+POST /investigation-results
+
+PUT /investigation-results/{id}
+
+DELETE /investigation-results/{id}
+
+---
+
+# 11. Billing Module Endpoints
+
+## Invoice
+
+GET /invoices
+
+GET /invoices/{id}
+
+POST /invoices
+
+PUT /invoices/{id}
+
+DELETE /invoices/{id}
+
+---
+
+## Payment
+
+GET /payments
+
+GET /payments/{id}
+
+POST /payments
+
+PUT /payments/{id}
+
+DELETE /payments/{id}
+
+---
+
+# 12. Medical Records Module Endpoints
+
+## Medical Document
+
+GET /medical-documents
+
+GET /medical-documents/{id}
+
+POST /medical-documents
+
+PUT /medical-documents/{id}
+
+DELETE /medical-documents/{id}
+
+---
+
