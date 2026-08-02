@@ -1378,3 +1378,75 @@ Stores payments received against Invoices. Each Payment represents a single fina
 
 ---
 
+---
+
+### Table: MedicalDocument
+
+**Purpose**
+
+Stores clinical and administrative documents associated with a Patient's medical record. Each MedicalDocument provides long-term storage and retrieval of patient-related documents generated within or attached to HHMS.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| patient_id | Integer | No | FK | References Patient |
+| visit_id | Integer | Yes | FK | References Visit |
+| admission_id | Integer | Yes | FK | References Admission |
+| document_number | String(20) | No | Unique | Human-readable document identifier |
+| document_type | String(50) | No | | Consent Form, Referral Letter, Certificate, Scan, etc. |
+| document_title | String(200) | No | | Document title |
+| file_name | String(255) | Yes | | Stored file name |
+| file_path | String(500) | Yes | | Relative storage path or URI |
+| document_date | DateTime | No | | Document creation date |
+| uploaded_by | Integer | No | FK | References User |
+| remarks | Text | Yes | | Additional notes |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- document_number
+
+---
+
+#### Foreign Keys
+
+- patient_id → Patient.id
+- visit_id → Visit.id
+- admission_id → Admission.id
+- uploaded_by → User.id
+
+---
+
+#### Indexes
+
+- patient_id
+- visit_id
+- admission_id
+- document_number
+- document_type
+- uploaded_by
+
+---
+
+#### Relationships
+
+- Many MedicalDocuments → One Patient
+- Many MedicalDocuments → One Visit (optional)
+- Many MedicalDocuments → One Admission (optional)
+- Many MedicalDocuments → One User
+
+---
+
