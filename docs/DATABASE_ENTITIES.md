@@ -517,3 +517,40 @@ Create → Active → Update → Retire
 
 Simple Stock Register (Optional)
 
+---
+
+# Entity: Stock Transaction
+
+## Purpose
+
+Represents a single movement of an Inventory Item within the Simple Stock Register. It records every receipt, issue, adjustment, or return affecting inventory.
+
+## Responsibilities
+
+- Record inventory movements.
+- Maintain stock movement history.
+- Support current stock calculation.
+- Support inventory reporting.
+- Preserve complete transaction history.
+
+## Relationships
+
+- One Stock Transaction belongs to one Inventory Item.
+- One Inventory Item may have many Stock Transactions.
+- One Stock Transaction is recorded by one User.
+
+## Business Rules
+
+- Every Stock Transaction shall reference exactly one Inventory Item.
+- Stock balance shall be derived from Stock Transactions.
+- Stock Transactions shall remain permanently recorded.
+- Historical Stock Transactions shall not be deleted through normal system operation.
+
+## Lifecycle
+
+Create → Record → Historical Record
+
+## Module Ownership
+
+Simple Stock Register (Optional)
+
