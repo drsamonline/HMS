@@ -99,3 +99,171 @@ The backend shall use the following technology stack.
 
 ---
 
+# 4. Layered Architecture
+
+HHMS shall implement a Layered Clean Architecture.
+
+The backend shall be organized into the following layers.
+
+```
+Presentation Layer
+        │
+        ▼
+REST API Layer
+        │
+        ▼
+Business Service Layer
+        │
+        ▼
+Repository Layer
+        │
+        ▼
+Database Layer
+```
+
+Each layer shall have a single responsibility and communicate only with the layer immediately below it.
+
+---
+
+# 5. Dependency Rules
+
+Backend dependencies shall follow a strict downward flow.
+
+Allowed dependencies:
+
+```
+API
+ ↓
+Services
+ ↓
+Repositories
+ ↓
+Database
+```
+
+The following dependencies are prohibited.
+
+- Repository → API
+- Repository → Service
+- Database → API
+- Database → Service
+- Models → API
+- Models → Services
+
+Business logic shall never be implemented within:
+
+- API routes
+- Database models
+- Repository classes
+
+Business logic shall reside exclusively within the Service Layer.
+
+---
+
+# 6. Request Processing Flow
+
+Every request shall follow the same processing sequence.
+
+```
+Client
+
+↓
+
+FastAPI Router
+
+↓
+
+Request Validation
+
+↓
+
+Business Service
+
+↓
+
+Repository
+
+↓
+
+SQLAlchemy ORM
+
+↓
+
+Database
+
+↓
+
+Repository
+
+↓
+
+Service
+
+↓
+
+Response Model
+
+↓
+
+Client
+```
+
+Each layer shall perform only its designated responsibility.
+
+---
+
+# 7. Backend Standards
+
+The backend shall follow these implementation standards.
+
+## API Layer
+
+Responsible for:
+
+- Request routing
+- Request validation
+- Dependency injection
+- Response generation
+
+The API layer shall not contain business logic.
+
+---
+
+## Service Layer
+
+Responsible for:
+
+- Business rules
+- Transactions
+- Validation beyond schema validation
+- Workflow orchestration
+
+The Service Layer shall contain all business logic.
+
+---
+
+## Repository Layer
+
+Responsible for:
+
+- Database queries
+- CRUD operations
+- ORM interaction
+
+Repositories shall not contain business rules.
+
+---
+
+## Database Layer
+
+Responsible for:
+
+- Persistence
+- Relationships
+- Constraints
+- Migrations
+
+Database models shall remain persistence objects only.
+
+---
+
