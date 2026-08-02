@@ -120,3 +120,114 @@ Business rules shall not be implemented inside reusable UI components.
 
 ---
 
+# 7. Navigation
+
+Application navigation shall be organized by functional modules.
+
+Primary navigation shall include:
+
+- Dashboard
+- Patients
+- OPD
+- Pharmacy
+- Inventory
+- IPD
+- Laboratory
+- Billing
+- Medical Records
+- Administration
+
+Routing shall be managed through React Router.
+
+Protected routes shall require authenticated users.
+
+---
+
+# 8. State Management
+
+State shall be divided into:
+
+## Server State
+
+Managed using TanStack Query.
+
+Examples:
+
+- Patient lists
+- Visit records
+- Medicines
+- Reports
+
+---
+
+## Client State
+
+Managed using React Context.
+
+Examples:
+
+- Authentication
+- Theme
+- Sidebar
+- User preferences
+
+Local component state shall be used whenever global state is unnecessary.
+
+---
+
+# 9. API Communication
+
+All HTTP communication shall pass through a centralized API client.
+
+The API client shall provide:
+
+- Authentication token handling
+- Request configuration
+- Response interception
+- Error handling
+- Automatic retry where appropriate
+
+Feature modules shall not perform direct HTTP requests.
+
+---
+
+# 10. Error Handling
+
+Frontend error handling shall remain consistent.
+
+The application shall provide:
+
+- Validation messages
+- API error messages
+- Network error handling
+- Unexpected error handling
+- User-friendly notifications
+
+Internal implementation details shall never be exposed to users.
+
+---
+
+# 11. Frontend Standards
+
+Frontend development shall follow these principles.
+
+- Feature-first organization.
+- Reusable components.
+- Responsive layouts.
+- Accessibility considerations.
+- Type-safe development.
+- Consistent naming conventions.
+- Minimal business logic inside UI components.
+- Separation of presentation and application logic.
+
+---
+
+# 12. Revision History
+
+| Version | Date | Author | Description |
+|---------|------|--------|-------------|
+| 1.0.0 | 02 August 2026 | Dr. Sohil Momin | Initial frontend architecture completed. |
+
+---
+
+**End of Document — HHMS Frontend Architecture**
