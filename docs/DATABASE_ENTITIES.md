@@ -705,3 +705,40 @@ Request → Pending → In Progress → Completed / Cancelled
 
 Laboratory (Optional)
 
+---
+
+# Entity: Investigation Result
+
+## Purpose
+
+Represents the recorded outcome of a Laboratory Investigation. It documents the findings produced for an Investigation and forms part of the Patient's permanent clinical record.
+
+## Responsibilities
+
+- Record the outcome of an Investigation.
+- Associate results with the corresponding Investigation.
+- Support review and printing of laboratory reports.
+- Preserve the clinical history of laboratory findings.
+
+## Relationships
+
+- One Investigation Result belongs to one Investigation.
+- One Investigation has one Investigation Result.
+- One Investigation Result is recorded by one User.
+
+## Business Rules
+
+- Every Investigation Result shall belong to exactly one Investigation.
+- An Investigation shall have only one final Investigation Result.
+- Investigation Results shall remain permanently linked to their originating Investigation.
+- Investigation Results shall remain available for historical reference.
+- Completed Investigation Results shall support report generation and printing.
+
+## Lifecycle
+
+Create → Verify → Complete → Historical Record
+
+## Module Ownership
+
+Laboratory (Optional)
+
