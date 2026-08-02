@@ -594,3 +594,38 @@ Create → Admit → Active → Discharged → Historical Record
 
 IPD (Optional)
 
+---
+
+# Entity: Bed
+
+## Purpose
+
+Represents a physical inpatient bed available for patient admission within the IPD module. A Bed is a hospital resource that may be allocated to different Admissions over time.
+
+## Responsibilities
+
+- Identify an inpatient bed.
+- Support bed allocation.
+- Record bed availability.
+- Support inpatient occupancy management.
+
+## Relationships
+
+- One Bed may be assigned to many Admissions over time.
+- One Admission shall be assigned one Bed.
+
+## Business Rules
+
+- Every Bed shall have a unique identity.
+- A Bed may be occupied by only one active Admission at a time.
+- A Bed may remain unoccupied.
+- Bed allocation history shall be preserved.
+
+## Lifecycle
+
+Create → Available → Occupied → Available → Retired
+
+## Module Ownership
+
+IPD (Optional)
+
