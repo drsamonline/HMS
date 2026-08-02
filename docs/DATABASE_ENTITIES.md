@@ -667,3 +667,41 @@ Create → Complete → Historical Record
 
 IPD (Optional)
 
+---
+
+# Entity: Investigation
+
+## Purpose
+
+Represents a laboratory investigation requested for a Patient during a Visit or Admission. It records the investigation request and tracks its progress until completion.
+
+## Responsibilities
+
+- Record investigation requests.
+- Associate investigations with the relevant Patient encounter.
+- Track investigation status.
+- Support laboratory workflow.
+
+## Relationships
+
+- One Investigation belongs to one Patient.
+- One Investigation belongs to one Visit or one Admission.
+- One Investigation has one Investigation Result.
+- One Investigation is requested by one User.
+
+## Business Rules
+
+- Every Investigation shall belong to exactly one Patient.
+- Every Investigation shall be associated with one clinical encounter.
+- An Investigation may exist before a result is available.
+- An Investigation shall have only one final Investigation Result.
+- Cancelled Investigations shall remain in the historical record.
+
+## Lifecycle
+
+Request → Pending → In Progress → Completed / Cancelled
+
+## Module Ownership
+
+Laboratory (Optional)
+
