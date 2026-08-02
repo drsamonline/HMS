@@ -365,3 +365,68 @@ Stores the outpatient consultation queue for Patient Visits. Each OPD Token repr
 
 ---
 
+---
+
+### Table: Prescription
+
+**Purpose**
+
+Stores the clinical prescription issued during a Patient Visit. Each Prescription records the diagnosis, clinical observations, treatment plan, and prescribing medical officer. Dispensed medicines are recorded separately in the Pharmacy module.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| visit_id | Integer | No | FK | References Visit |
+| prescription_number | String(20) | No | Unique | Human-readable prescription identifier |
+| diagnosis | Text | Yes | | Clinical diagnosis |
+| clinical_notes | Text | Yes | | Examination findings and observations |
+| treatment_plan | Text | Yes | | General treatment instructions |
+| prescribed_by | Integer | No | FK | References User |
+| prescription_datetime | DateTime | No | | Date and time of prescription |
+| printed_at | DateTime | Yes | | First print timestamp |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- prescription_number
+
+---
+
+#### Foreign Keys
+
+- visit_id → Visit.id
+- prescribed_by → User.id
+
+---
+
+#### Indexes
+
+- visit_id
+- prescription_number
+- prescribed_by
+- prescription_datetime
+
+---
+
+#### Relationships
+
+- One Prescription → One Visit
+- One Visit → One Prescription
+- One Prescription → Zero or More Dispensing Records
+- Many Prescriptions → One User
+
+---
+
