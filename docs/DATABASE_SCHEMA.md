@@ -671,3 +671,69 @@ None
 
 ---
 
+---
+
+### Table: MedicineBatch
+
+**Purpose**
+
+Stores inventory batches for each Medicine. Every batch represents a specific potency, manufacturer, batch number, expiry date, and available stock used for dispensing.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| medicine_id | Integer | No | FK | References Medicine |
+| batch_number | String(50) | No | | Manufacturer batch number |
+| potency | String(20) | No | | Q, X, C, LM etc. |
+| manufacturer | String(150) | Yes | | Manufacturer name |
+| manufacture_date | Date | Yes | | Manufacturing date |
+| expiry_date | Date | Yes | | Expiry date |
+| purchase_price | Decimal(10,2) | Yes | | Purchase price |
+| selling_price | Decimal(10,2) | Yes | | Selling price |
+| quantity_in_stock | Decimal(10,2) | No | | Current stock quantity |
+| minimum_stock | Decimal(10,2) | Yes | | Minimum stock level |
+| storage_location | String(100) | Yes | | Shelf or storage location |
+| is_active | Boolean | No | | Active status |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- medicine_id + batch_number
+
+---
+
+#### Foreign Keys
+
+- medicine_id → Medicine.id
+
+---
+
+#### Indexes
+
+- medicine_id
+- batch_number
+- potency
+- expiry_date
+
+---
+
+#### Relationships
+
+- Many MedicineBatches → One Medicine
+- One MedicineBatch → Many DispensingRecords
+
+---
+
