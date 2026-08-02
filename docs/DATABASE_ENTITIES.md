@@ -629,3 +629,41 @@ Create → Available → Occupied → Available → Retired
 
 IPD (Optional)
 
+---
+
+# Entity: Discharge
+
+## Purpose
+
+Represents the formal completion of an inpatient Admission. A Discharge records the conclusion of an inpatient episode and the release of the Patient from hospital care.
+
+## Responsibilities
+
+- Record completion of an Admission.
+- Document discharge information.
+- Release the allocated Bed.
+- Complete the inpatient episode.
+- Support discharge reporting.
+
+## Relationships
+
+- One Discharge belongs to one Admission.
+- One Admission has one Discharge.
+- One Discharge is completed by one User.
+
+## Business Rules
+
+- Every Discharge shall belong to exactly one Admission.
+- An Admission shall have only one Discharge.
+- A Patient cannot be discharged without an active Admission.
+- Completing a Discharge shall release the associated Bed.
+- Discharge records shall remain permanently available for historical reference.
+
+## Lifecycle
+
+Create → Complete → Historical Record
+
+## Module Ownership
+
+IPD (Optional)
+
