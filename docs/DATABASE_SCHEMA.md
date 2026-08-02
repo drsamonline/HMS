@@ -304,3 +304,64 @@ Stores every clinical encounter between a Patient and the hospital. Each Visit r
 
 ---
 
+---
+
+### Table: OPDToken
+
+**Purpose**
+
+Stores the outpatient consultation queue for Patient Visits. Each OPD Token represents a sequential queue number assigned to a Visit and tracks the patient's consultation status.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| visit_id | Integer | No | FK | References Visit |
+| token_number | Integer | No | | Sequential token number |
+| queue_date | Date | No | | Date of queue generation |
+| queue_status | String(20) | No | | Waiting, Called, In Consultation, Completed, Cancelled |
+| generated_at | DateTime | No | | Token generation timestamp |
+| called_at | DateTime | Yes | | Time patient was called |
+| completed_at | DateTime | Yes | | Consultation completion time |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- queue_date + token_number
+
+---
+
+#### Foreign Keys
+
+- visit_id → Visit.id
+
+---
+
+#### Indexes
+
+- visit_id
+- queue_date
+- token_number
+- queue_status
+
+---
+
+#### Relationships
+
+- One OPDToken → One Visit
+- One Visit → One OPDToken
+
+---
+
