@@ -781,3 +781,41 @@ Create → Issue → Paid / Cancelled → Historical Record
 
 Billing (Optional)
 
+---
+
+# Entity: Payment
+
+## Purpose
+
+Represents a financial transaction received against an Invoice. A Payment records the settlement of all or part of an Invoice and provides a permanent financial record.
+
+## Responsibilities
+
+- Record payments received.
+- Associate payments with an Invoice.
+- Support payment receipt generation.
+- Maintain payment history.
+- Support financial reporting.
+
+## Relationships
+
+- One Payment belongs to one Invoice.
+- One Invoice may have one or more Payments.
+- One Payment is recorded by one User.
+
+## Business Rules
+
+- Every Payment shall belong to exactly one Invoice.
+- Multiple Payments may be recorded against a single Invoice.
+- The total recorded Payments shall not exceed the Invoice amount.
+- Payment records shall not modify the original Invoice.
+- Payment records shall remain permanently available for financial and audit purposes.
+
+## Lifecycle
+
+Record → Confirm → Historical Record
+
+## Module Ownership
+
+Billing (Optional)
+
