@@ -922,3 +922,70 @@ None
 
 ---
 
+---
+
+### Table: Admission
+
+**Purpose**
+
+Stores inpatient admissions for Patients. Each Admission represents a single inpatient episode, including admission details, assigned bed, admitting user, and current admission status.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| patient_id | Integer | No | FK | References Patient |
+| admission_number | String(20) | No | Unique | Human-readable admission identifier |
+| admission_datetime | DateTime | No | | Date and time of admission |
+| bed_id | Integer | No | FK | References Bed |
+| admitted_by | Integer | No | FK | References User |
+| admission_reason | Text | Yes | | Reason for admission |
+| admission_status | String(20) | No | | Active, Discharged, Cancelled |
+| remarks | Text | Yes | | Additional notes |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- admission_number
+
+---
+
+#### Foreign Keys
+
+- patient_id → Patient.id
+- bed_id → Bed.id
+- admitted_by → User.id
+
+---
+
+#### Indexes
+
+- patient_id
+- admission_number
+- admission_datetime
+- admission_status
+- bed_id
+
+---
+
+#### Relationships
+
+- Many Admissions → One Patient
+- Many Admissions → One Bed
+- Many Admissions → One User
+- One Admission → One Discharge
+
+---
+
