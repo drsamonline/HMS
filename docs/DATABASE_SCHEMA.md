@@ -1181,3 +1181,66 @@ Stores laboratory investigation requests generated during a Patient Visit or Adm
 
 ---
 
+---
+
+### Table: InvestigationResult
+
+**Purpose**
+
+Stores the final results of laboratory investigations. Each InvestigationResult records the outcome of a single Investigation and becomes part of the Patient's permanent medical record.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| investigation_id | Integer | No | FK | References Investigation |
+| result_text | Text | Yes | | Laboratory findings |
+| interpretation | Text | Yes | | Clinical interpretation |
+| result_datetime | DateTime | No | | Date and time result was recorded |
+| verified_by | Integer | Yes | FK | References User |
+| verification_datetime | DateTime | Yes | | Date and time of verification |
+| report_status | String(20) | No | | Draft, Verified, Released |
+| remarks | Text | Yes | | Additional comments |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- investigation_id
+
+---
+
+#### Foreign Keys
+
+- investigation_id → Investigation.id
+- verified_by → User.id
+
+---
+
+#### Indexes
+
+- investigation_id
+- result_datetime
+- report_status
+- verified_by
+
+---
+
+#### Relationships
+
+- One InvestigationResult → One Investigation
+- Many InvestigationResults → One User (Verifier)
+
+---
+
