@@ -1244,3 +1244,73 @@ Stores the final results of laboratory investigations. Each InvestigationResult 
 
 ---
 
+---
+
+### Table: Invoice
+
+**Purpose**
+
+Stores billing records generated for healthcare services provided during a Patient Visit or Admission. Each Invoice represents a financial document used for payment collection and financial reporting.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| patient_id | Integer | No | FK | References Patient |
+| visit_id | Integer | Yes | FK | References Visit |
+| admission_id | Integer | Yes | FK | References Admission |
+| invoice_number | String(20) | No | Unique | Human-readable invoice number |
+| invoice_date | DateTime | No | | Date and time of invoice generation |
+| total_amount | Decimal(10,2) | No | | Total invoice amount |
+| payment_status | String(20) | No | | Pending, Partial, Paid, Cancelled |
+| generated_by | Integer | No | FK | References User |
+| remarks | Text | Yes | | Additional billing remarks |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- invoice_number
+
+---
+
+#### Foreign Keys
+
+- patient_id → Patient.id
+- visit_id → Visit.id
+- admission_id → Admission.id
+- generated_by → User.id
+
+---
+
+#### Indexes
+
+- patient_id
+- invoice_number
+- invoice_date
+- payment_status
+- generated_by
+
+---
+
+#### Relationships
+
+- Many Invoices → One Patient
+- Many Invoices → One Visit (optional)
+- Many Invoices → One Admission (optional)
+- Many Invoices → One User
+- One Invoice → One or More Payments
+
+---
+
