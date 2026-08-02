@@ -611,3 +611,63 @@ None
 
 ---
 
+---
+
+### Table: Medicine
+
+**Purpose**
+
+Stores the master records of homoeopathic medicines available within the Pharmacy module. This table defines the identity of each medicine independent of potency, manufacturer, batch, or stock.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| medicine_code | String(30) | No | Unique | Unique medicine code |
+| medicine_name | String(150) | No | | Medicine name |
+| scientific_name | String(200) | Yes | | Scientific or botanical name |
+| medicine_type | String(30) | No | | Mother Tincture, Dilution, Biochemic, etc. |
+| description | Text | Yes | | Additional notes |
+| is_active | Boolean | No | | Active status |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- medicine_code
+- medicine_name
+
+---
+
+#### Foreign Keys
+
+None
+
+---
+
+#### Indexes
+
+- medicine_code
+- medicine_name
+- medicine_type
+
+---
+
+#### Relationships
+
+- One Medicine → Many MedicineBatches
+- One Medicine → Many DispensingRecords
+
+---
+
