@@ -1632,3 +1632,91 @@ Examples:
 
 ---
 
+## 8. Indexing Strategy
+
+The HHMS database shall use indexes to optimize query performance while minimizing storage overhead and write latency.
+
+### Primary Key Indexes
+
+Every primary key shall be indexed automatically by the database.
+
+---
+
+### Foreign Key Indexes
+
+All foreign key columns shall be indexed to improve relationship lookups and join performance.
+
+Examples include:
+
+- patient_id
+- visit_id
+- admission_id
+- invoice_id
+- medicine_id
+
+---
+
+### Business Identifier Indexes
+
+All business identifiers shall be indexed.
+
+Examples include:
+
+- patient_number
+- visit_number
+- prescription_number
+- admission_number
+- investigation_number
+- invoice_number
+- receipt_number
+- document_number
+
+---
+
+### Search Indexes
+
+Frequently searched business columns shall be indexed.
+
+Typical examples include:
+
+- patient_name
+- mobile_number
+- medicine_name
+- batch_number
+- bed_number
+- queue_date
+- investigation_status
+- payment_status
+
+---
+
+### Date and Time Indexes
+
+Frequently queried date and time fields shall be indexed to improve reporting and chronological searches.
+
+Examples include:
+
+- visit_datetime
+- admission_datetime
+- discharge_datetime
+- payment_datetime
+- investigation_datetime
+
+---
+
+### Composite Indexes
+
+Composite indexes shall only be created when supported by demonstrated query patterns.
+
+Unnecessary composite indexes should be avoided to reduce storage usage and maintenance overhead.
+
+---
+
+### Index Maintenance
+
+Indexes shall support the most common operational workflows while remaining minimal.
+
+Unused or redundant indexes should not be introduced.
+
+---
+
