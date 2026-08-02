@@ -800,3 +800,63 @@ None
 
 ---
 
+---
+
+### Table: InventoryItem
+
+**Purpose**
+
+Stores the master records of non-pharmacy inventory items maintained by the Simple Stock Register module. This table defines the identity of general inventory items independent of stock movements.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| item_code | String(30) | No | Unique | Unique inventory item code |
+| item_name | String(150) | No | | Inventory item name |
+| category | String(100) | Yes | | Item category |
+| unit | String(30) | No | | Unit of measurement |
+| description | Text | Yes | | Additional description |
+| minimum_stock | Decimal(10,2) | Yes | | Minimum stock level |
+| is_active | Boolean | No | | Active status |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- item_code
+- item_name
+
+---
+
+#### Foreign Keys
+
+None
+
+---
+
+#### Indexes
+
+- item_code
+- item_name
+- category
+
+---
+
+#### Relationships
+
+- One InventoryItem → Many StockTransactions
+
+---
+
