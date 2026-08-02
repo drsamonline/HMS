@@ -737,3 +737,66 @@ Stores inventory batches for each Medicine. Every batch represents a specific po
 
 ---
 
+---
+
+### Table: DispensingRecord
+
+**Purpose**
+
+Stores the dispensing of a specific MedicineBatch against a Prescription. Each record represents one medicine item dispensed by the pharmacy and provides complete inventory traceability.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| prescription_id | Integer | No | FK | References Prescription |
+| medicine_batch_id | Integer | No | FK | References MedicineBatch |
+| quantity_dispensed | Decimal(10,2) | No | | Quantity dispensed |
+| dispensing_datetime | DateTime | No | | Date and time of dispensing |
+| dispensed_by | Integer | No | FK | References User |
+| remarks | Text | Yes | | Dispensing remarks |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+None
+
+---
+
+#### Foreign Keys
+
+- prescription_id → Prescription.id
+- medicine_batch_id → MedicineBatch.id
+- dispensed_by → User.id
+
+---
+
+#### Indexes
+
+- prescription_id
+- medicine_batch_id
+- dispensing_datetime
+- dispensed_by
+
+---
+
+#### Relationships
+
+- Many DispensingRecords → One Prescription
+- Many DispensingRecords → One MedicineBatch
+- Many DispensingRecords → One User
+
+---
+
