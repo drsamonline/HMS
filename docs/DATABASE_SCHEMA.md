@@ -1546,3 +1546,89 @@ The schema is approved to proceed to the definition of schema-wide constraints, 
 
 ---
 
+## 7. Schema-wide Constraints
+
+The following constraints apply across the HHMS database schema.
+
+### Primary Key Constraints
+
+- Every table shall have exactly one primary key.
+- Primary keys shall use the column name `id`.
+- Primary keys shall be immutable.
+- Primary keys shall be database-generated.
+
+---
+
+### Foreign Key Constraints
+
+- Every foreign key shall reference the primary key (`id`) of its parent table.
+- Foreign key relationships shall preserve referential integrity.
+- Foreign keys shall use the naming convention:
+
+```
+<parent_table>_id
+```
+
+Example:
+
+- patient_id
+- visit_id
+- invoice_id
+
+---
+
+### Unique Constraints
+
+Business identifiers shall remain unique within their respective tables.
+
+Examples include:
+
+- patient_number
+- visit_number
+- prescription_number
+- invoice_number
+- receipt_number
+- document_number
+
+---
+
+### Nullability Constraints
+
+Columns shall be declared NOT NULL whenever the information is mandatory for business operation.
+
+Nullable columns shall only be used where information is genuinely optional.
+
+---
+
+### Referential Integrity
+
+Parent records shall not be physically deleted while dependent records exist.
+
+Application logic or database rules shall preserve referential integrity at all times.
+
+---
+
+### Data Integrity
+
+Business rules that cannot be enforced solely through relational constraints shall be implemented within the application layer.
+
+Examples include:
+
+- Preventing duplicate active admissions.
+- Preventing stock from becoming negative.
+- Preventing payments exceeding the invoice amount.
+
+---
+
+### Constraint Naming Convention
+
+Constraints shall use descriptive prefixes.
+
+Examples:
+
+- pk_patient
+- fk_visit_patient
+- uq_patient_number
+
+---
+
