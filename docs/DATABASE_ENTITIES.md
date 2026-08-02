@@ -554,3 +554,43 @@ Create → Record → Historical Record
 
 Simple Stock Register (Optional)
 
+---
+
+# Entity: Admission
+
+## Purpose
+
+Represents the admission of a Patient for inpatient care. An Admission records the beginning of an inpatient episode and serves as the parent record for all IPD activities during that stay.
+
+## Responsibilities
+
+- Record patient admission.
+- Link the admission to the Patient.
+- Associate the admission with a Bed.
+- Maintain the inpatient episode.
+- Support discharge processing.
+
+## Relationships
+
+- One Admission belongs to one Patient.
+- One Patient may have many Admissions.
+- One Admission is assigned one Bed.
+- One Admission has one Discharge.
+- One Admission is recorded by one User.
+
+## Business Rules
+
+- Every Admission shall belong to exactly one Patient.
+- A Patient may have multiple Admissions over time.
+- An active Admission shall have one assigned Bed.
+- An Admission shall remain permanently recorded after discharge.
+- A Patient shall not have more than one active Admission at the same time.
+
+## Lifecycle
+
+Create → Admit → Active → Discharged → Historical Record
+
+## Module Ownership
+
+IPD (Optional)
+
