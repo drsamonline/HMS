@@ -267,3 +267,112 @@ Database models shall remain persistence objects only.
 
 ---
 
+# 8. Project Structure
+
+The backend shall follow the following project structure.
+
+```
+backend/
+
+├── app/
+│   ├── api/
+│   ├── core/
+│   ├── db/
+│   ├── models/
+│   ├── repositories/
+│   ├── schemas/
+│   ├── services/
+│   ├── middleware/
+│   ├── dependencies/
+│   ├── utils/
+│   └── main.py
+│
+├── alembic/
+├── tests/
+├── uploads/
+├── logs/
+├── pyproject.toml
+└── README.md
+```
+
+Each directory shall have a single responsibility.
+
+---
+
+# 9. Configuration Strategy
+
+Application configuration shall be centralized.
+
+Configuration shall be loaded through `pydantic-settings`.
+
+Examples include:
+
+- Database connection
+- JWT secret
+- Token expiration
+- Logging level
+- Upload directory
+- Application environment
+
+Configuration values shall not be hardcoded.
+
+---
+
+# 10. Logging Strategy
+
+HHMS shall use centralized application logging.
+
+Logging shall support:
+
+- Startup events
+- Authentication
+- Database errors
+- API exceptions
+- Inventory operations
+- Billing operations
+- Audit events
+
+Python's built-in `logging` module shall be used.
+
+---
+
+# 11. Background Processing
+
+Long-running operations shall execute outside the request-response cycle.
+
+Examples include:
+
+- Report generation
+- Backup operations
+- Email notifications
+- File processing
+
+Background processing shall not block API requests.
+
+---
+
+# 12. File Management
+
+Uploaded files shall remain outside the application source code.
+
+Supported file categories include:
+
+- Medical documents
+- Investigation reports
+- Hospital documents
+
+File metadata shall be stored in the database.
+
+The application shall reference files using relative paths.
+
+---
+
+# 13. Revision History
+
+| Version | Date | Author | Description |
+|---------|------|--------|-------------|
+| 1.0.0 | 02 August 2026 | Dr. Sohil Momin | Initial backend architecture completed. |
+
+---
+
+**End of Document — HHMS Backend Architecture**
