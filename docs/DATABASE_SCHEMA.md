@@ -102,3 +102,64 @@ idx_patient_number
 
 ---
 
+## 4. Table Overview
+
+The following tables constitute the HHMS Version 1.0 database schema.
+
+### Core Tables
+
+| Table | Module | Purpose |
+|--------|--------|---------|
+| Patient | Core | Patient master records |
+| Visit | Core | Patient encounters |
+| OPDToken | Core | OPD queue management |
+| Prescription | Core | Clinical prescriptions |
+| User | Core | System users |
+| Role | Core | User roles |
+| AuditLog | Core | Audit trail |
+
+### Pharmacy Module (Optional)
+
+| Table | Purpose |
+|--------|---------|
+| Medicine | Medicine master |
+| MedicineBatch | Medicine inventory batches |
+| DispensingRecord | Dispensing history |
+
+### Simple Stock Register (Optional)
+
+| Table | Purpose |
+|--------|---------|
+| InventoryItem | General inventory items |
+| StockTransaction | Inventory movement history |
+
+### IPD Module (Optional)
+
+| Table | Purpose |
+|--------|---------|
+| Admission | Patient admissions |
+| Bed | Bed master |
+| Discharge | Patient discharge records |
+
+### Laboratory Module (Optional)
+
+| Table | Purpose |
+|--------|---------|
+| Investigation | Investigation requests |
+| InvestigationResult | Investigation outcomes |
+
+### Billing Module (Optional)
+
+| Table | Purpose |
+|--------|---------|
+| Invoice | Billing records |
+| Payment | Payment transactions |
+
+### Medical Records Module (Optional)
+
+| Table | Purpose |
+|--------|---------|
+| MedicalDocument | Patient-associated documents |
+
+---
+
