@@ -819,3 +819,41 @@ Record → Confirm → Historical Record
 
 Billing (Optional)
 
+---
+
+# Entity: Medical Document
+
+## Purpose
+
+Represents a clinical or administrative document permanently associated with a Patient's medical record. Medical Documents provide long-term storage and retrieval of patient-related documents generated within or attached to HHMS.
+
+## Responsibilities
+
+- Maintain patient-associated documents.
+- Support document retrieval.
+- Preserve historical clinical documentation.
+- Support document printing where applicable.
+
+## Relationships
+
+- One Medical Document belongs to one Patient.
+- One Patient may have many Medical Documents.
+- One Medical Document may be associated with one Visit or one Admission.
+- One Medical Document is created or recorded by one User.
+
+## Business Rules
+
+- Every Medical Document shall belong to exactly one Patient.
+- Medical Documents shall remain permanently linked to the Patient record.
+- Medical Documents shall support historical retrieval.
+- Deleting a Patient shall not be permitted while Medical Documents exist.
+- Medical Documents shall remain available according to institutional record-retention policies.
+
+## Lifecycle
+
+Create → Store → Retrieve → Archive (if permitted by institutional policy)
+
+## Module Ownership
+
+Medical Records (Optional)
+
