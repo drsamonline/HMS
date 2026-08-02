@@ -1048,3 +1048,66 @@ None
 
 ---
 
+---
+
+### Table: Discharge
+
+**Purpose**
+
+Stores the discharge details for an inpatient Admission. Each Discharge records the completion of an inpatient episode and preserves the discharge information for clinical, administrative, and reporting purposes.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| admission_id | Integer | No | FK | References Admission |
+| discharge_number | String(20) | No | Unique | Human-readable discharge identifier |
+| discharge_datetime | DateTime | No | | Date and time of discharge |
+| discharge_summary | Text | Yes | | Clinical discharge summary |
+| discharge_status | String(20) | No | | Normal, Referred, LAMA, Death, Transfer |
+| discharged_by | Integer | No | FK | References User |
+| remarks | Text | Yes | | Additional notes |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- discharge_number
+- admission_id
+
+---
+
+#### Foreign Keys
+
+- admission_id → Admission.id
+- discharged_by → User.id
+
+---
+
+#### Indexes
+
+- admission_id
+- discharge_number
+- discharge_datetime
+- discharged_by
+
+---
+
+#### Relationships
+
+- One Discharge → One Admission
+- Many Discharges → One User
+
+---
+
