@@ -96,3 +96,113 @@ The backend shall not maintain server-side user sessions.
 
 ---
 
+# 7. API Security
+
+All protected endpoints shall require authentication before business logic is executed.
+
+API security shall provide:
+
+- Authentication enforcement
+- Authorization verification
+- Request validation
+- Secure exception handling
+- Input validation
+- Rate limiting (future implementation)
+
+Public endpoints shall be explicitly identified.
+
+---
+
+# 8. Security Headers
+
+The application shall implement appropriate HTTP security headers.
+
+Security headers shall include protection against:
+
+- Clickjacking
+- MIME type sniffing
+- Content injection
+- Information disclosure
+
+Security headers shall be implemented through middleware.
+
+---
+
+# 9. Audit Integration
+
+Security-sensitive activities shall be recorded through the AuditLog subsystem.
+
+Examples include:
+
+- Login
+- Logout
+- Password change
+- Failed authentication
+- User creation
+- Role modification
+- Permission changes
+- Administrative actions
+
+Audit logging shall remain independent of business services.
+
+---
+
+# 10. Security Error Handling
+
+Security-related errors shall not disclose sensitive implementation details.
+
+Authentication and authorization failures shall return standardized API responses.
+
+Internal system information shall never be exposed to clients.
+
+---
+
+# 11. Security Standards
+
+Backend development shall follow these security principles.
+
+## Least Privilege
+
+Users shall receive only the permissions necessary to perform their duties.
+
+---
+
+## Defense in Depth
+
+Security controls shall exist at multiple architectural layers.
+
+---
+
+## Secure Defaults
+
+Security shall remain enabled by default.
+
+---
+
+## Input Validation
+
+All external input shall be validated before business processing.
+
+---
+
+## Output Protection
+
+Sensitive information shall never be returned unless explicitly authorized.
+
+---
+
+## Auditability
+
+Security-sensitive operations shall be traceable through audit logging.
+
+---
+
+# 12. Revision History
+
+| Version | Date | Author | Description |
+|---------|------|--------|-------------|
+| 1.0.0 | 02 August 2026 | Dr. Sohil Momin | Initial security architecture completed. |
+
+---
+
+**End of Document — HHMS Security Architecture**
