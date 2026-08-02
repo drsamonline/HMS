@@ -238,3 +238,69 @@ None
 
 ---
 
+---
+
+### Table: Visit
+
+**Purpose**
+
+Stores every clinical encounter between a Patient and the hospital. Each Visit represents a unique outpatient consultation or other clinical encounter and serves as the parent record for clinical activities performed during that encounter.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| patient_id | Integer | No | FK | References Patient |
+| visit_number | String(20) | No | Unique | Human-readable visit identifier |
+| visit_type | String(20) | No | | OPD, Follow-up, Emergency, etc. |
+| visit_datetime | DateTime | No | | Date and time of visit |
+| chief_complaint | Text | Yes | | Primary complaint |
+| consultation_status | String(20) | No | | Waiting, In Progress, Completed, Cancelled |
+| consulting_doctor_id | Integer | No | FK | References User |
+| remarks | Text | Yes | | Administrative or clinical remarks |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- visit_number
+
+---
+
+#### Foreign Keys
+
+- patient_id → Patient.id
+- consulting_doctor_id → User.id
+
+---
+
+#### Indexes
+
+- patient_id
+- visit_number
+- visit_datetime
+- consulting_doctor_id
+
+---
+
+#### Relationships
+
+- Many Visits → One Patient
+- One Visit → One OPDToken
+- One Visit → One Prescription
+- One Visit → Zero or One Invoice
+- One Visit → Zero or More Investigations
+
+---
+
