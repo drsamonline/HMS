@@ -989,3 +989,62 @@ Stores inpatient admissions for Patients. Each Admission represents a single inp
 
 ---
 
+---
+
+### Table: Bed
+
+**Purpose**
+
+Stores the master records of inpatient beds available within the hospital. The table defines each bed as a physical hospital resource that can be allocated to Admissions over time.
+
+---
+
+#### Columns
+
+| Column | Data Type | Null | Key | Description |
+|---------|-----------|------|-----|-------------|
+| id | Integer | No | PK | Internal primary key |
+| bed_number | String(20) | No | Unique | Unique bed identifier |
+| ward | String(100) | Yes | | Ward or department |
+| room_number | String(50) | Yes | | Room number |
+| bed_type | String(50) | Yes | | General, Private, ICU, etc. |
+| occupancy_status | String(20) | No | | Available, Occupied, Maintenance |
+| is_active | Boolean | No | | Active status |
+| created_at | DateTime | No | | Record creation timestamp |
+| updated_at | DateTime | No | | Last modification timestamp |
+
+---
+
+#### Primary Key
+
+- id
+
+---
+
+#### Unique Constraints
+
+- bed_number
+
+---
+
+#### Foreign Keys
+
+None
+
+---
+
+#### Indexes
+
+- bed_number
+- ward
+- room_number
+- occupancy_status
+
+---
+
+#### Relationships
+
+- One Bed → Many Admissions
+
+---
+
