@@ -331,3 +331,96 @@ DELETE /medical-documents/{id}
 
 ---
 
+# 13. Search
+
+Collection endpoints may support search functionality where appropriate.
+
+Search parameters shall be provided using query parameters.
+
+Example:
+
+GET /patients?search=John
+
+Search implementation shall remain consistent across all modules.
+
+---
+
+# 14. Pagination
+
+Collection endpoints shall support pagination.
+
+Standard query parameters:
+
+- page
+- page_size
+
+Example:
+
+GET /patients?page=1&page_size=20
+
+Default pagination values shall be defined within the application configuration.
+
+---
+
+# 15. Filtering
+
+Endpoints may support filtering through query parameters.
+
+Examples:
+
+GET /patients?gender=Male
+
+GET /visits?date=2026-08-02
+
+GET /payments?status=Paid
+
+Filtering syntax shall remain consistent across all API modules.
+
+---
+
+# 16. Error Handling
+
+The API shall use standard HTTP status codes.
+
+Examples include:
+
+| Code | Meaning |
+|------|----------|
+| 200 | Success |
+| 201 | Created |
+| 400 | Bad Request |
+| 401 | Unauthorized |
+| 403 | Forbidden |
+| 404 | Not Found |
+| 409 | Conflict |
+| 422 | Validation Error |
+| 500 | Internal Server Error |
+
+Error responses shall follow the standard response format defined in this document.
+
+---
+
+# 17. API Standards
+
+All API endpoints shall follow these standards.
+
+- RESTful resource naming.
+- Stateless communication.
+- JSON request and response bodies.
+- Consistent endpoint structure.
+- Automatic OpenAPI documentation.
+- Standard HTTP status codes.
+- Versioned endpoints.
+- JWT authentication for protected resources.
+
+---
+
+# 18. Revision History
+
+| Version | Date | Author | Description |
+|---------|------|--------|-------------|
+| 1.0.0 | 02 August 2026 | Dr. Sohil Momin | Initial API specification completed. |
+
+---
+
+**End of Document — HHMS API Specification**
