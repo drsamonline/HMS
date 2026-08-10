@@ -1,26 +1,32 @@
-"""Middleware package for HHMS backend application.
+"""
+HHMS Middleware Package
+=======================
 
-This package provides framework-level middleware components that:
-- Handle cross-cutting concerns
-- Implement observability patterns
-- Manage request/response lifecycle
-- Enforce security policies
+Centralized exports for HTTP middleware and exception-handler
+registration.
 
-All middleware components are designed to be:
-- Framework-agnostic where possible
-- Independently testable
-- Configurable through dependency injection
-- Compliant with clean architecture principles
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
-from .exception_handler import ExceptionHandlerMiddleware
+from .exception_handler import (
+    handle_hhms_exception,
+    handle_http_exception,
+    handle_unexpected_exception,
+    handle_validation_error,
+    register_exception_handlers,
+)
 from .logging import RequestLoggingMiddleware
-from .request_id import RequestIDMiddleware
 from .process_time import ProcessTimeMiddleware
+from .request_id import RequestIDMiddleware
 
 __all__ = [
-    "ExceptionHandlerMiddleware",
-    "RequestLoggingMiddleware",
     "RequestIDMiddleware",
     "ProcessTimeMiddleware",
+    "RequestLoggingMiddleware",
+    "register_exception_handlers",
+    "handle_hhms_exception",
+    "handle_http_exception",
+    "handle_unexpected_exception",
+    "handle_validation_error",
 ]

@@ -1,35 +1,63 @@
-"""Request processing time middleware for FastAPI."""
+"""
+HHMS Process-Time Middleware
 
-import time
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+Measures the processing time of each HTTP request and exposes
+the duration through the X-Process-Time response header.
 
-class ProcessTimeMiddleware(BaseHTTPMiddleware):
-    """Middleware that measures and reports request processing time.
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
+"""
 
-    The processing time is:
-    - Measured in seconds with high precision
-    - Added to response headers as X-Process-Time
-    - Available for logging and monitoring
+from __future__ import annotations
+
+from time import perf_counter
+
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+
+PROCESS_TIME_HEADER = "X-Process-Time"
+
+
+class ProcessTimeMiddleware:
+    """
+    ASGI middleware that measures HTTP request processing time.
+
+    The measured duration is expressed in seconds with six
+    decimal places and returned in the response header.
     """
 
-    async def dispatch(
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(
         self,
-        request: Request,
-        call_next: RequestResponseEndpoint,
-    ) -> Response:
-        """Measure request processing time and add to response headers.
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-        Args:
-            request: The incoming FastAPI request
-            call_next: The next middleware or route handler
+        start_time = perf_counter()
 
-        Returns:
-            Response: The response with X-Process-Time header added
-        """
-        start_time = time.perf_counter()
-        response = await call_next(request)
-        process_time = time.perf_counter() - start_time
-        request.state.process_time = process_time
-        response.headers["X-Process-Time"] = f"{process_time:.6f}"
-        return response
+        async def send_with_process_time(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                elapsed = perf_counter() - start_time
+
+                headers = list(message.get("headers", []))
+                headers.append(
+                    (
+                        PROCESS_TIME_HEADER.lower().encode("latin-1"),
+                        f"{elapsed:.6f}".encode("latin-1"),
+                    )
+                )
+                message["headers"] = headers
+
+            await send(message)
+
+        await self.app(
+            scope,
+            receive,
+            send_with_process_time,
+        )

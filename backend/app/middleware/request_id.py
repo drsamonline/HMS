@@ -1,36 +1,95 @@
-"""Request ID middleware for FastAPI using UUID4."""
+"""
+HHMS Request ID Middleware
 
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from app.core.utils import generate_uuid
+Provides a unique request identifier for every HTTP request.
+The identifier is returned to the client and made available
+through the request state for logging and tracing.
 
-class RequestIDMiddleware(BaseHTTPMiddleware):
-    """Middleware that injects a unique request ID into each request.
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
+"""
 
-    The request ID is:
-    - Generated using UUID4
-    - Added to request.state
-    - Included in response headers
-    - Available for logging and tracing
+from __future__ import annotations
+
+from uuid import UUID, uuid4
+
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+
+REQUEST_ID_HEADER = "X-Request-ID"
+REQUEST_ID_STATE_KEY = "request_id"
+
+
+class RequestIDMiddleware:
+    """
+    ASGI middleware that assigns a unique identifier to each request.
+
+    A client-supplied request ID is accepted when present and valid;
+    otherwise, a new UUID4 identifier is generated.
     """
 
-    async def dispatch(
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(
         self,
-        request: Request,
-        call_next: RequestResponseEndpoint,
-    ) -> Response:
-        """Add request ID to the request state and response headers.
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-        Args:
-            request: The incoming FastAPI request
-            call_next: The next middleware or route handler
+        request_id = self._get_request_id(scope)
 
-        Returns:
-            Response: The response with X-Request-ID header added
+        scope.setdefault("state", {})
+        scope["state"][REQUEST_ID_STATE_KEY] = request_id
+
+        async def send_with_request_id(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers.append(
+                    (
+                        REQUEST_ID_HEADER.lower().encode("latin-1"),
+                        request_id.encode("latin-1"),
+                    )
+                )
+                message["headers"] = headers
+
+            await send(message)
+
+        await self.app(
+            scope,
+            receive,
+            send_with_request_id,
+        )
+
+    @staticmethod
+    def _get_request_id(scope: Scope) -> str:
         """
-        request_id = str(generate_uuid())
-        request.state.request_id = request_id
+        Extract a valid client request ID or generate a new UUID4.
 
-        response = await call_next(request)
-        response.headers["X-Request-ID"] = request_id
-        return response
+        Parameters
+        ----------
+        scope : Scope
+            ASGI request scope.
+
+        Returns
+        -------
+        str
+            Request identifier.
+        """
+
+        for key, value in scope.get("headers", []):
+            if key.lower() == REQUEST_ID_HEADER.lower().encode("latin-1"):
+                candidate = value.decode("latin-1").strip()
+
+                try:
+                    UUID(candidate)
+                except (ValueError, AttributeError):
+                    break
+
+                return candidate
+
+        return str(uuid4())
