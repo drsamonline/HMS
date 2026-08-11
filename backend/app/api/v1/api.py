@@ -35,6 +35,10 @@ from app.api.v1.endpoints.medicine_batches import (
     router as medicine_batches_router,
 )
 
+from app.api.v1.endpoints.stock_transactions import (
+    router as stock_transactions_router,
+)
+
 api_router = APIRouter()
 
 api_router.include_router(
@@ -67,6 +71,10 @@ api_router.include_router(
 
 api_router.include_router(
     medicine_batches_router,
+)
+
+api_router.include_router(
+    stock_transactions_router,
 )
 
 __all__ = [
