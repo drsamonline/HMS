@@ -1,10 +1,13 @@
 """
-HHMS Security Utilities
+HHMS Core Security Compatibility Layer
+=======================================
 
-Provides password hashing and verification utilities.
+Compatibility interface for password security utilities.
 
-Authentication, JWT handling, and authorization will be
-implemented in the Authentication package.
+The authoritative password hashing implementation is maintained
+in ``app.auth.password``. This module preserves the historical
+``app.core.security`` import path without maintaining a second
+password hashing implementation.
 
 Project : Hospital Homoeopathic Management System (HHMS)
 Author  : Dr. Sohil Momin
@@ -12,85 +15,31 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from passlib.context import CryptContext
-
-from app.core.exceptions import AuthenticationException
-
-
-_pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
+from app.auth.password import (
+    hash_password,
+    password_needs_rehash,
+    verify_password,
 )
 
 
-def hash_password(password: str) -> str:
-    """
-    Hash a plain-text password.
-
-    Parameters
-    ----------
-    password : str
-        Plain-text password.
-
-    Returns
-    -------
-    str
-        Secure password hash.
-    """
-    return _pwd_context.hash(password)
-
-
-def verify_password(
-    plain_password: str,
+def needs_rehash(
     hashed_password: str,
 ) -> bool:
     """
-    Verify a password against its hash.
+    Determine whether an existing password hash should be rehashed.
 
-    Parameters
-    ----------
-    plain_password : str
-        User supplied password.
-
-    hashed_password : str
-        Stored password hash.
-
-    Returns
-    -------
-    bool
-        True if password is valid.
-
-    Raises
-    ------
-    AuthenticationException
-        If password verification fails because of an
-        invalid hash.
+    This function preserves the legacy ``needs_rehash`` API while
+    delegating the actual policy decision to the authoritative
+    password security module.
     """
 
-    try:
-        return _pwd_context.verify(
-            plain_password,
-            hashed_password,
-        )
-
-    except (ValueError, TypeError) as exc:
-        raise AuthenticationException(
-            "Invalid password hash."
-        ) from exc
+    return password_needs_rehash(
+        hashed_password,
+    )
 
 
-def needs_rehash(hashed_password: str) -> bool:
-    """
-    Determine whether an existing password hash should
-    be regenerated using the current hashing policy.
-
-    Parameters
-    ----------
-    hashed_password : str
-
-    Returns
-    -------
-    bool
-    """
-
-    return _pwd_context.needs_update(hashed_password)
+__all__ = [
+    "hash_password",
+    "verify_password",
+    "needs_rehash",
+]

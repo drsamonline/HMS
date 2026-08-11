@@ -1,7 +1,12 @@
 """
-Base Pydantic schema definitions for HHMS.
+HHMS Base Pydantic Schemas
+==========================
 
-All application schemas should inherit from BaseSchema.
+Provides the common Pydantic schema configuration used by all
+HHMS API data-transfer objects.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
@@ -11,10 +16,10 @@ from pydantic import BaseModel, ConfigDict
 
 class BaseSchema(BaseModel):
     """
-    Base schema for all HHMS DTOs.
+    Base schema for all HHMS Pydantic models.
 
-    Provides common Pydantic configuration across the
-    entire application.
+    Provides consistent validation and ORM serialization behavior
+    throughout the application.
     """
 
     model_config = ConfigDict(
@@ -24,3 +29,8 @@ class BaseSchema(BaseModel):
         populate_by_name=True,
         str_strip_whitespace=True,
     )
+
+
+__all__ = [
+    "BaseSchema",
+]

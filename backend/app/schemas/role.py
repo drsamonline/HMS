@@ -1,74 +1,171 @@
 """
-Role ORM model for HHMS.
+HHMS Role Schemas
+=================
 
-Represents a collection of permissions within the RBAC system.
-Permissions are linked through the RolePermission association
-table in a later package.
+Pydantic request and response schemas for the Role entity.
+
+The SQLAlchemy ORM model is defined separately in
+``app.models.role``.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
 
-from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+from uuid import UUID
 
-from app.models.base import Base
-from app.models.mixins import AuditMixin, UUIDPrimaryKeyMixin
+from pydantic import Field, field_validator
+
+from app.schemas.base import BaseSchema
 
 
-class Role(
-    Base,
-    UUIDPrimaryKeyMixin,
-    AuditMixin,
-):
+class RoleBase(BaseSchema):
     """
-    Role entity.
-
-    Examples:
-        Administrator
-        Receptionist
-        Doctor
-        Pharmacist
-        Laboratory Technician
+    Common role fields shared by create and read schemas.
     """
 
-    __tablename__ = "roles"
-
-    name: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-        unique=True,
-        index=True,
+    name: str = Field(
+        ...,
+        min_length=2,
+        max_length=100,
+        description="Human-readable role name.",
+        examples=["Administrator"],
     )
 
-    code: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-        unique=True,
-        index=True,
+    code: str = Field(
+        ...,
+        min_length=2,
+        max_length=100,
+        description="Unique role code.",
+        examples=["administrator"],
     )
 
-    description: Mapped[str | None] = mapped_column(
-        String(500),
-        nullable=True,
+    description: str | None = Field(
+        default=None,
+        max_length=500,
+        description="Optional role description.",
     )
 
-    is_system: Mapped[bool] = mapped_column(
-        nullable=False,
-        default=False,
-        server_default="false",
-    )
-
-    def __repr__(self) -> str:
+    @field_validator("name", "code")
+    @classmethod
+    def validate_required_text(
+        cls,
+        value: str,
+    ) -> str:
         """
-        Return a developer-friendly representation.
+        Normalize required role text fields.
         """
-        return (
-            f"Role("
-            f"id={self.id!s}, "
-            f"code={self.code!r})"
-        )
+
+        normalized = value.strip()
+
+        if not normalized:
+            raise ValueError(
+                "Value must not be empty."
+            )
+
+        return normalized
+
+    @field_validator("description")
+    @classmethod
+    def normalize_description(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        """
+        Normalize an optional role description.
+        """
+
+        if value is None:
+            return None
+
+        normalized = value.strip()
+
+        return normalized or None
+
+
+class RoleCreate(RoleBase):
+    """
+    Schema used to create a role.
+    """
+
+
+class RoleUpdate(BaseSchema):
+    """
+    Schema used to update a role.
+
+    The role code is intentionally immutable because it is the
+    stable identifier used by RBAC logic and permission mappings.
+    """
+
+    name: str | None = Field(
+        default=None,
+        min_length=2,
+        max_length=100,
+        description="Human-readable role name.",
+    )
+
+    description: str | None = Field(
+        default=None,
+        max_length=500,
+        description="Optional role description.",
+    )
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        """
+        Normalize an optional role name.
+        """
+
+        if value is None:
+            return None
+
+        normalized = value.strip()
+
+        if not normalized:
+            raise ValueError(
+                "Role name must not be empty."
+            )
+
+        return normalized
+
+    @field_validator("description")
+    @classmethod
+    def normalize_description(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        """
+        Normalize an optional role description.
+        """
+
+        if value is None:
+            return None
+
+        normalized = value.strip()
+
+        return normalized or None
+
+
+class RoleRead(RoleBase):
+    """
+    Schema returned by the API for a role.
+    """
+
+    id: UUID
+
+    is_active: bool
+
+    is_system: bool
 
 
 __all__ = [
-    "Role",
+    "RoleBase",
+    "RoleCreate",
+    "RoleUpdate",
+    "RoleRead",
 ]

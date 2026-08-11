@@ -1,63 +1,42 @@
 """
-User-specific CRUD operations for HHMS.
+HHMS User CRUD Compatibility Layer
+===================================
 
-Extends the generic CRUDBase with user-specific queries.
+Backward-compatible aliases for the legacy User CRUD interface.
+
+The active HHMS architecture uses:
+
+    API
+      ↓
+    Service
+      ↓
+    Repository
+      ↓
+    Database
+
+User-specific persistence is now implemented by
+``app.repositories.user.UserRepository``.
+
+This module is retained temporarily so existing imports of
+``UserCRUD`` and ``user_crud`` do not break while the application
+transitions completely to the Repository/Service architecture.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.crud.base import CRUDBase
-from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate
+from app.repositories.user import (
+    UserRepository,
+    user_repository,
+)
 
 
-class UserCRUD(
-    CRUDBase[
-        User,
-        UserCreate,
-        UserUpdate,
-    ]
-):
-    """
-    CRUD operations for User entities.
-    """
+UserCRUD = UserRepository
 
-    def __init__(self) -> None:
-        super().__init__(User)
+user_crud = user_repository
 
-    async def get_by_username(
-        self,
-        db: AsyncSession,
-        *,
-        username: str,
-    ) -> User | None:
-        """
-        Retrieve a user by username.
-        """
-        result = await db.execute(
-            select(User).where(User.username == username)
-        )
-        return result.scalar_one_or_none()
-
-    async def get_by_email(
-        self,
-        db: AsyncSession,
-        *,
-        email: str,
-    ) -> User | None:
-        """
-        Retrieve a user by email.
-        """
-        result = await db.execute(
-            select(User).where(User.email == email)
-        )
-        return result.scalar_one_or_none()
-
-
-user_crud = UserCRUD()
 
 __all__ = [
     "UserCRUD",

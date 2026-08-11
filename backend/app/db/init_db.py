@@ -1,11 +1,13 @@
 """
 HHMS Database Initialization
+============================
 
-Provides helper functions for creating and dropping the database
-schema during development and testing.
+Provides asynchronous helpers for creating and dropping the
+registered SQLAlchemy database schema during development and
+testing.
 
-Production environments must use Alembic migrations instead of
-these helper functions.
+Production schema changes must be managed through Alembic
+migrations rather than these helper functions.
 
 Project : Hospital Homoeopathic Management System (HHMS)
 Author  : Dr. Sohil Momin
@@ -20,39 +22,77 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.db.base import Base
 from app.db.session import get_engine
 
-logger = logging.getLogger(__name__)
+
+logger = logging.getLogger("HHMS")
 
 
-def create_database() -> None:
+async def create_database() -> None:
     """
     Create all registered database tables.
 
-    Intended for development and testing only.
+    This helper is intended for development and testing.
+    Production deployments should use Alembic migrations.
+
+    Raises
+    ------
+    SQLAlchemyError
+        If schema creation fails.
     """
 
+    engine = get_engine()
+
     try:
-        Base.metadata.create_all(bind=get_engine())
-        logger.info("Database schema created successfully.")
+        async with engine.begin() as connection:
+            await connection.run_sync(
+                Base.metadata.create_all,
+            )
+
+        logger.info(
+            "Database schema created successfully."
+        )
 
     except SQLAlchemyError:
-        logger.exception("Failed to create database schema.")
+        logger.exception(
+            "Failed to create database schema."
+        )
         raise
 
 
-def drop_database() -> None:
+async def drop_database() -> None:
     """
     Drop all registered database tables.
 
     Warning
     -------
-    This permanently removes all application data.
-    Never execute in a production environment.
+    This permanently removes all application data and must
+    never be executed against a production database.
+
+    Raises
+    ------
+    SQLAlchemyError
+        If schema removal fails.
     """
 
+    engine = get_engine()
+
     try:
-        Base.metadata.drop_all(bind=get_engine())
-        logger.warning("Database schema dropped successfully.")
+        async with engine.begin() as connection:
+            await connection.run_sync(
+                Base.metadata.drop_all,
+            )
+
+        logger.warning(
+            "Database schema dropped successfully."
+        )
 
     except SQLAlchemyError:
-        logger.exception("Failed to drop database schema.")
+        logger.exception(
+            "Failed to drop database schema."
+        )
         raise
+
+
+__all__ = [
+    "create_database",
+    "drop_database",
+]

@@ -1,18 +1,21 @@
 """
-Health endpoints for HHMS.
+HHMS Health Endpoints
+=====================
 
-Provides liveness, readiness and health endpoints used by
-deployment platforms, load balancers and monitoring systems.
+Provides liveness, readiness and general health endpoints used
+by deployment platforms, load balancers and monitoring systems.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
 
-from typing import Literal
-
 from fastapi import APIRouter
-from pydantic import BaseModel
 
-from app.config.settings import Settings
+from app.config.settings import get_settings
+from app.schemas.health import HealthResponse
+
 
 router = APIRouter(
     prefix="/health",
@@ -20,18 +23,17 @@ router = APIRouter(
 )
 
 
-class HealthResponse(BaseModel):
-    """Standard response returned by all health endpoints."""
-
-    status: Literal["healthy"]
-    service: str
-    version: str
-
-
 def _response() -> HealthResponse:
-    """Create a standard health response."""
+    """
+    Create the standard health response.
 
-    settings = Settings.get_settings()
+    Returns
+    -------
+    HealthResponse
+        Current application health information.
+    """
+
+    settings = get_settings()
 
     return HealthResponse(
         status="healthy",
@@ -49,8 +51,13 @@ async def liveness() -> HealthResponse:
     """
     Return application liveness.
 
-    Returns:
-        HealthResponse: Indicates the process is running.
+    A successful response indicates that the application
+    process is running and able to handle requests.
+
+    Returns
+    -------
+    HealthResponse
+        Current application liveness information.
     """
 
     return _response()
@@ -65,9 +72,15 @@ async def readiness() -> HealthResponse:
     """
     Return application readiness.
 
-    Returns:
-        HealthResponse: Indicates the application is ready
-        to receive requests.
+    The current readiness contract verifies that the application
+    endpoint itself is operational. External dependency checks
+    are intentionally not introduced until a formal readiness
+    contract is defined.
+
+    Returns
+    -------
+    HealthResponse
+        Current application readiness information.
     """
 
     return _response()
@@ -80,10 +93,17 @@ async def readiness() -> HealthResponse:
 )
 async def health() -> HealthResponse:
     """
-    Return application health.
+    Return general application health.
 
-    Returns:
-        HealthResponse: General application health.
+    Returns
+    -------
+    HealthResponse
+        Current application health information.
     """
 
     return _response()
+
+
+__all__ = [
+    "router",
+]

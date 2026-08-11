@@ -1,8 +1,12 @@
 """
-JWT utility functions for HHMS.
+Provides secure creation and validation of JSON Web Tokens.
 
-This module provides secure creation and validation of JSON Web Tokens.
-It contains no authentication or user lookup logic.
+This module is deliberately limited to JWT operations. User lookup,
+authentication workflows, authorization, and database access belong
+to their respective application layers.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
@@ -13,7 +17,16 @@ from typing import Any
 import jwt
 from jwt import InvalidTokenError
 
-from app.config.settings import Settings
+from app.config.settings import get_settings
+
+
+_RESERVED_CLAIMS = frozenset(
+    {
+        "sub",
+        "iat",
+        "exp",
+    }
+)
 
 
 def create_access_token(
@@ -24,29 +37,71 @@ def create_access_token(
     """
     Create a signed JWT access token.
 
-    Args:
-        subject:
-            Unique subject identifier.
-        expires_delta:
-            Optional custom expiry duration.
-        additional_claims:
-            Additional JWT claims.
+    Parameters
+    ----------
+    subject : str
+        Unique identifier for the token subject.
 
-    Returns:
-        Encoded JWT string.
+    expires_delta : timedelta | None
+        Optional custom token lifetime. When omitted, the
+        configured ACCESS_TOKEN_EXPIRE_MINUTES value is used.
+
+    additional_claims : dict[str, Any] | None
+        Optional additional non-reserved JWT claims.
+
+    Returns
+    -------
+    str
+        Encoded and signed JWT.
+
+    Raises
+    ------
+    ValueError
+        If the subject is empty or additional claims attempt to
+        override reserved JWT claims.
     """
 
-    settings = Settings.get_settings()
+    normalized_subject = subject.strip()
 
-    expire = datetime.now(UTC) + (
-        expires_delta
-        or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    if not normalized_subject:
+        raise ValueError(
+            "JWT subject must not be empty."
+        )
+
+    if expires_delta is not None and expires_delta <= timedelta(0):
+        raise ValueError(
+            "JWT expiration duration must be positive."
+        )
+
+    if additional_claims:
+        reserved_claims = _RESERVED_CLAIMS.intersection(
+            additional_claims
+        )
+
+        if reserved_claims:
+            reserved = ", ".join(
+                sorted(reserved_claims)
+            )
+
+            raise ValueError(
+                f"Additional claims cannot override reserved "
+                f"JWT claims: {reserved}."
+            )
+
+    settings = get_settings()
+
+    issued_at = datetime.now(UTC)
+
+    lifetime = expires_delta or timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
+    expires_at = issued_at + lifetime
+
     payload: dict[str, Any] = {
-        "sub": subject,
-        "iat": datetime.now(UTC),
-        "exp": expire,
+        "sub": normalized_subject,
+        "iat": issued_at,
+        "exp": expires_at,
     }
 
     if additional_claims:
@@ -63,34 +118,51 @@ def decode_access_token(
     token: str,
 ) -> dict[str, Any]:
     """
-    Decode and validate a JWT.
+    Decode and validate a JWT access token.
 
-    Args:
-        token:
-            Encoded JWT.
+    Parameters
+    ----------
+    token : str
+        Encoded JWT access token.
 
-    Returns:
-        Decoded JWT payload.
+    Returns
+    -------
+    dict[str, Any]
+        Validated JWT payload.
 
-    Raises:
-        InvalidTokenError:
-            If the token is invalid or expired.
+    Raises
+    ------
+    InvalidTokenError
+        If the token is malformed, expired, incorrectly signed,
+        uses an invalid algorithm, or lacks a subject claim.
     """
 
-    settings = Settings.get_settings()
-
-    try:
-        payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.JWT_ALGORITHM],
+    if not token or not token.strip():
+        raise InvalidTokenError(
+            "JWT token must not be empty."
         )
 
-    except InvalidTokenError:
-        raise
+    settings = get_settings()
 
-    if "sub" not in payload:
-        raise InvalidTokenError("JWT subject claim is missing.")
+    payload = jwt.decode(
+        token,
+        settings.SECRET_KEY,
+        algorithms=[settings.JWT_ALGORITHM],
+        options={
+            "require": [
+                "sub",
+                "iat",
+                "exp",
+            ],
+        },
+    )
+
+    subject = payload.get("sub")
+
+    if not isinstance(subject, str) or not subject.strip():
+        raise InvalidTokenError(
+            "JWT subject claim is missing or invalid."
+        )
 
     return payload
 

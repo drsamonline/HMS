@@ -2,7 +2,7 @@
 HHMS Application Bootstrap
 ==========================
 
-Creates and configures the FastAPI application.
+Creates and configures the single FastAPI application instance.
 
 Application bootstrap is responsible only for assembling the
 application components. Business logic belongs to services,
@@ -18,6 +18,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1.api import api_router
 from app.config.logging import configure_logging
 from app.config.settings import get_settings
 from app.middleware import (
@@ -70,6 +71,11 @@ def create_application() -> FastAPI:
     )
 
     register_exception_handlers(application)
+
+    application.include_router(
+        api_router,
+        prefix=settings.API_V1_PREFIX,
+    )
 
     return application
 

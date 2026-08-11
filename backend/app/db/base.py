@@ -1,12 +1,15 @@
 """
 HHMS Database Base
+==================
 
-Imports all SQLAlchemy ORM models so that they are registered
-with SQLAlchemy metadata and Alembic autogeneration.
+Central database metadata interface for HHMS.
 
-During the initial project phase this module only exposes the
-declarative base. Model imports will be added as modules are
-implemented.
+The application's authoritative SQLAlchemy declarative base is
+defined in ``app.models.base``. This module re-exports that base
+and metadata for database initialization and migration tooling.
+
+Importing ``app.models`` also registers all currently implemented
+ORM entities with the shared metadata.
 
 Project : Hospital Homoeopathic Management System (HHMS)
 Author  : Dr. Sohil Momin
@@ -14,27 +17,14 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from app.db.base_class import Base, BaseModel
+from app.models import (
+    NAMING_CONVENTION,
+    Base,
+    metadata,
+)
 
 __all__ = [
     "Base",
-    "BaseModel",
+    "metadata",
+    "NAMING_CONVENTION",
 ]
-
-# ---------------------------------------------------------------------
-# Future Model Imports
-# ---------------------------------------------------------------------
-#
-# Import every ORM model below as they are implemented.
-#
-# Example:
-#
-# from app.models.patient import Patient
-# from app.models.doctor import Doctor
-# from app.models.visit import Visit
-#
-# These imports intentionally remain absent until the corresponding
-# packages are created to avoid circular dependencies and unnecessary
-# import errors.
-#
-# ---------------------------------------------------------------------

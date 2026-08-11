@@ -8,15 +8,16 @@ Project : Hospital Homoeopathic Management System (HHMS)
 Author  : Dr. Sohil Momin
 """
 
-from .auth import (
-    CurrentUser,
+from __future__ import annotations
+
+from app.dependencies.auth import (
     CurrentUserDependency,
     get_current_user,
 )
-from .database import DatabaseSession
+from app.dependencies.database import DatabaseSession
+
 
 __all__ = [
-    "CurrentUser",
     "CurrentUserDependency",
     "DatabaseSession",
     "get_current_user",
