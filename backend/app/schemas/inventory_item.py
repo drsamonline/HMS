@@ -1,11 +1,13 @@
 """
 HHMS Inventory Item Schemas.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
 
 from datetime import datetime
-from decimal import Decimal
 
 from pydantic import Field
 
@@ -13,42 +15,50 @@ from app.schemas.base import BaseSchema
 
 
 class InventoryItemCreate(BaseSchema):
-    medicine_id: int = Field(gt=0)
-    current_quantity: Decimal = Field(ge=0)
-    minimum_quantity: Decimal = Field(ge=0)
-    maximum_quantity: Decimal | None = Field(
-        default=None,
-        ge=0,
+    item_code: str = Field(
+        min_length=1,
+        max_length=30,
     )
-    storage_location: str | None = Field(
+    item_name: str = Field(
+        min_length=1,
+        max_length=150,
+    )
+    category: str | None = Field(
         default=None,
         max_length=100,
     )
+    unit: str | None = Field(
+        default=None,
+        max_length=30,
+    )
+    description: str | None = None
 
 
 class InventoryItemUpdate(BaseSchema):
-    minimum_quantity: Decimal | None = Field(
+    item_name: str | None = Field(
         default=None,
-        ge=0,
+        min_length=1,
+        max_length=150,
     )
-    maximum_quantity: Decimal | None = Field(
-        default=None,
-        ge=0,
-    )
-    storage_location: str | None = Field(
+    category: str | None = Field(
         default=None,
         max_length=100,
     )
+    unit: str | None = Field(
+        default=None,
+        max_length=30,
+    )
+    description: str | None = None
     is_active: bool | None = None
 
 
 class InventoryItemRead(BaseSchema):
     id: int
-    medicine_id: int
-    current_quantity: Decimal
-    minimum_quantity: Decimal
-    maximum_quantity: Decimal | None
-    storage_location: str | None
+    item_code: str
+    item_name: str
+    category: str | None
+    unit: str | None
+    description: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime

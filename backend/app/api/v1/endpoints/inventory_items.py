@@ -1,5 +1,8 @@
 """
 HHMS Inventory Item API Endpoints.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
@@ -31,8 +34,17 @@ router = APIRouter(
 async def list_inventory_items(
     db: DatabaseSession,
     _: CurrentUserDependency,
-    active_only: bool = Query(default=True),
-    skip: int = Query(default=0, ge=0),
+    search: str | None = Query(
+        default=None,
+        max_length=100,
+    ),
+    active_only: bool = Query(
+        default=True,
+    ),
+    skip: int = Query(
+        default=0,
+        ge=0,
+    ),
     limit: int = Query(
         default=100,
         ge=1,
@@ -41,6 +53,7 @@ async def list_inventory_items(
 ) -> list[InventoryItemRead]:
     return await inventory_item_service.list(
         db,
+        search=search,
         active_only=active_only,
         skip=skip,
         limit=limit,
@@ -95,4 +108,6 @@ async def update_inventory_item(
     )
 
 
-__all__ = ["router"]
+__all__ = [
+    "router",
+]

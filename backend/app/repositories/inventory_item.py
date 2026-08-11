@@ -1,5 +1,8 @@
 """
 HHMS Inventory Item Repository.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
@@ -17,7 +20,9 @@ class InventoryItemRepository(
     """Persistence operations for inventory items."""
 
     def __init__(self) -> None:
-        super().__init__(InventoryItem)
+        super().__init__(
+            InventoryItem,
+        )
 
     async def get_by_id(
         self,
@@ -29,14 +34,14 @@ class InventoryItemRepository(
             item_id,
         )
 
-    async def get_by_medicine(
+    async def get_by_code(
         self,
         db: AsyncSession,
-        medicine_id: int,
+        item_code: str,
     ) -> InventoryItem | None:
         result = await db.execute(
             select(InventoryItem).where(
-                InventoryItem.medicine_id == medicine_id,
+                InventoryItem.item_code == item_code,
             )
         )
 
@@ -46,11 +51,33 @@ class InventoryItemRepository(
         self,
         db: AsyncSession,
         *,
+        search: str | None = None,
         active_only: bool = True,
         skip: int = 0,
         limit: int = 100,
     ) -> list[InventoryItem]:
-        statement = select(InventoryItem)
+        statement = select(
+            InventoryItem,
+        )
+
+        if search:
+            pattern = f"%{search}%"
+
+            statement = statement.where(
+                (
+                    InventoryItem.item_code.ilike(
+                        pattern
+                    )
+                    |
+                    InventoryItem.item_name.ilike(
+                        pattern
+                    )
+                    |
+                    InventoryItem.category.ilike(
+                        pattern
+                    )
+                )
+            )
 
         if active_only:
             statement = statement.where(
@@ -59,15 +86,22 @@ class InventoryItemRepository(
 
         result = await db.execute(
             statement
-            .order_by(InventoryItem.id.asc())
+            .order_by(
+                InventoryItem.item_name.asc(),
+                InventoryItem.id.asc(),
+            )
             .offset(skip)
             .limit(limit)
         )
 
-        return list(result.scalars().all())
+        return list(
+            result.scalars().all()
+        )
 
 
-inventory_item_repository = InventoryItemRepository()
+inventory_item_repository = (
+    InventoryItemRepository()
+)
 
 
 __all__ = [

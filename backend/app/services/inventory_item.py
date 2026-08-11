@@ -1,16 +1,21 @@
 """
 HHMS Inventory Item Service.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import (
+    IntegrityError,
+    SQLAlchemyError,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
-    BusinessRuleException,
     DatabaseException,
     DuplicateResourceException,
     ResourceNotFoundException,
@@ -27,14 +32,15 @@ from app.schemas.inventory_item import (
 
 
 class InventoryItemService:
-    """Business operations for pharmacy inventory items."""
+    """Business operations for general inventory items."""
 
     def __init__(
         self,
         repository: InventoryItemRepository | None = None,
     ) -> None:
         self.repository = (
-            repository or inventory_item_repository
+            repository
+            or inventory_item_repository
         )
 
     async def get(
@@ -58,12 +64,14 @@ class InventoryItemService:
         self,
         db: AsyncSession,
         *,
+        search: str | None = None,
         active_only: bool = True,
         skip: int = 0,
         limit: int = 100,
     ) -> list[InventoryItem]:
         return await self.repository.list_items(
             db,
+            search=search,
             active_only=active_only,
             skip=skip,
             limit=limit,
@@ -75,26 +83,15 @@ class InventoryItemService:
         data: InventoryItemCreate,
     ) -> InventoryItem:
         existing = (
-            await self.repository.get_by_medicine(
+            await self.repository.get_by_code(
                 db,
-                data.medicine_id,
+                data.item_code,
             )
         )
 
         if existing is not None:
             raise DuplicateResourceException(
-                "An inventory item already exists "
-                "for this medicine."
-            )
-
-        if (
-            data.maximum_quantity is not None
-            and data.maximum_quantity
-            < data.minimum_quantity
-        ):
-            raise BusinessRuleException(
-                "Maximum quantity cannot be less "
-                "than minimum quantity."
+                "Inventory item code already exists."
             )
 
         now = datetime.now(timezone.utc)
@@ -120,7 +117,7 @@ class InventoryItemService:
             await db.rollback()
 
             raise DuplicateResourceException(
-                "Unable to create inventory item."
+                "Inventory item code already exists."
             ) from exc
 
         except SQLAlchemyError as exc:
@@ -145,25 +142,6 @@ class InventoryItemService:
         values = data.model_dump(
             exclude_unset=True,
         )
-
-        minimum = values.get(
-            "minimum_quantity",
-            item.minimum_quantity,
-        )
-
-        maximum = values.get(
-            "maximum_quantity",
-            item.maximum_quantity,
-        )
-
-        if (
-            maximum is not None
-            and maximum < minimum
-        ):
-            raise BusinessRuleException(
-                "Maximum quantity cannot be less "
-                "than minimum quantity."
-            )
 
         for field, value in values.items():
             setattr(
@@ -194,7 +172,9 @@ class InventoryItemService:
             ) from exc
 
 
-inventory_item_service = InventoryItemService()
+inventory_item_service = (
+    InventoryItemService()
+)
 
 
 __all__ = [
