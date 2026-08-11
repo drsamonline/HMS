@@ -1,81 +1,96 @@
 """
-Role schemas for HHMS.
+CRUD operations for the Role model.
+
+Extends the generic CRUDBase with role-specific queries.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
 
-from uuid import UUID
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from pydantic import Field
+from app.crud.base import CRUDBase
+from app.models.role import Role
+from app.schemas.role import (
+    RoleCreate,
+    RoleUpdate,
+)
 
-from app.schemas.base import BaseSchema
 
-
-class RoleBase(BaseSchema):
+class RoleCRUD(
+    CRUDBase[
+        Role,
+        RoleCreate,
+        RoleUpdate,
+    ]
+):
     """
-    Base schema shared by role DTOs.
-    """
-
-    name: str = Field(
-        ...,
-        min_length=2,
-        max_length=100,
-        description="Human-readable role name.",
-    )
-
-    code: str = Field(
-        ...,
-        min_length=2,
-        max_length=100,
-        description="Unique immutable role code.",
-        examples=["administrator"],
-    )
-
-    description: str | None = Field(
-        default=None,
-        max_length=500,
-        description="Optional role description.",
-    )
-
-
-class RoleCreate(RoleBase):
-    """
-    Schema used to create a role.
+    CRUD operations for Role entities.
     """
 
+    def __init__(self) -> None:
+        super().__init__(Role)
 
-class RoleUpdate(BaseSchema):
-    """
-    Schema used to update a role.
-    """
+    async def get_by_code(
+        self,
+        db: AsyncSession,
+        *,
+        code: str,
+    ) -> Role | None:
+        """
+        Retrieve a role by its unique code.
+        """
 
-    name: str | None = Field(
-        default=None,
-        min_length=2,
-        max_length=100,
-    )
+        result = await db.execute(
+            select(Role).where(
+                Role.code == code,
+            )
+        )
 
-    description: str | None = Field(
-        default=None,
-        max_length=500,
-    )
+        return result.scalar_one_or_none()
+
+    async def get_by_name(
+        self,
+        db: AsyncSession,
+        *,
+        name: str,
+    ) -> Role | None:
+        """
+        Retrieve a role by its unique name.
+        """
+
+        result = await db.execute(
+            select(Role).where(
+                Role.name == name,
+            )
+        )
+
+        return result.scalar_one_or_none()
+
+    async def get_active(
+        self,
+        db: AsyncSession,
+    ) -> list[Role]:
+        """
+        Retrieve all active roles ordered by name.
+        """
+
+        result = await db.execute(
+            select(Role)
+            .where(Role.is_active.is_(True))
+            .order_by(Role.name)
+        )
+
+        return list(result.scalars().all())
 
 
-class RoleRead(RoleBase):
-    """
-    Schema returned by the API.
-    """
-
-    id: UUID
-
-    is_active: bool
-
-    is_system: bool
+role_crud = RoleCRUD()
 
 
 __all__ = [
-    "RoleBase",
-    "RoleCreate",
-    "RoleUpdate",
-    "RoleRead",
+    "RoleCRUD",
+    "role_crud",
 ]

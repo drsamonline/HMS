@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import logging
 from logging.handlers import RotatingFileHandler
-from pathlib import Path
 
 from app.config.settings import get_settings
 
@@ -29,8 +28,8 @@ def configure_logging() -> logging.Logger:
     """
     Configure and return the application logger.
 
-    This function is idempotent. Calling it multiple
-    times will not create duplicate handlers.
+    This function is idempotent. Calling it multiple times will
+    not create duplicate handlers.
 
     Returns
     -------
@@ -45,16 +44,22 @@ def configure_logging() -> logging.Logger:
     if logger.handlers:
         return logger
 
-    logger.setLevel(
-        getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
+    log_level = getattr(
+        logging,
+        settings.LOG_LEVEL.upper(),
+        logging.INFO,
     )
 
+    logger.setLevel(log_level)
     logger.propagate = False
 
-    log_directory = Path(settings.LOG_DIRECTORY)
-    log_directory.mkdir(parents=True, exist_ok=True)
+    log_directory = settings.log_path.parent
+    log_directory.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
-    log_file = log_directory / settings.LOG_FILE_NAME
+    log_file = settings.log_path
 
     formatter = logging.Formatter(
         fmt=(
@@ -69,9 +74,7 @@ def configure_logging() -> logging.Logger:
     )
 
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(
-        getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
-    )
+    console_handler.setLevel(log_level)
     console_handler.setFormatter(formatter)
 
     file_handler = RotatingFileHandler(
@@ -80,9 +83,7 @@ def configure_logging() -> logging.Logger:
         backupCount=10,
         encoding="utf-8",
     )
-    file_handler.setLevel(
-        getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
-    )
+    file_handler.setLevel(log_level)
     file_handler.setFormatter(formatter)
 
     logger.addHandler(console_handler)
