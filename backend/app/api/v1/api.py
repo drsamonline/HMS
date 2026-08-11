@@ -20,7 +20,9 @@ from app.api.v1.endpoints.auth import router as auth_router
 from app.api.v1.endpoints.health import router as health_router
 from app.api.v1.endpoints.patients import router as patients_router
 from app.api.v1.endpoints.visits import router as visits_router
-
+from app.api.v1.endpoints.opd_tokens import (
+    router as opd_tokens_router,
+)
 
 api_router = APIRouter()
 
@@ -40,6 +42,9 @@ api_router.include_router(
     visits_router,
 )
 
+api_router.include_router(
+    opd_tokens_router,
+)
 __all__ = [
     "api_router",
 ]
