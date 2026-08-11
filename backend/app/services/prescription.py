@@ -30,7 +30,7 @@ from app.schemas.prescription import (
 
 
 class PrescriptionService:
-    """Business workflows for prescriptions."""
+    """Business operations for clinical prescriptions."""
 
     def __init__(
         self,
@@ -40,10 +40,9 @@ class PrescriptionService:
             repository or prescription_repository
         )
 
-    async def get_by_id(
+    async def get(
         self,
         db: AsyncSession,
-        *,
         prescription_id: int,
     ) -> Prescription:
         prescription = await self.repository.get_by_id(
@@ -61,55 +60,54 @@ class PrescriptionService:
     async def get_items(
         self,
         db: AsyncSession,
-        *,
         prescription_id: int,
     ) -> list[PrescriptionItem]:
-        await self.get_by_id(
+        await self.get(
             db,
-            prescription_id=prescription_id,
+            prescription_id,
         )
 
         return await self.repository.get_items(
             db,
-            prescription_id=prescription_id,
+            prescription_id,
         )
 
     async def create(
         self,
         db: AsyncSession,
-        *,
-        prescription_in: PrescriptionCreate,
+        data: PrescriptionCreate,
     ) -> Prescription:
         now = datetime.now(timezone.utc)
 
         prescription = Prescription(
-            visit_id=prescription_in.visit_id,
-            prescribed_by=prescription_in.prescribed_by,
-            prescription_datetime=(
-                prescription_in.prescription_datetime
-            ),
-            diagnosis=prescription_in.diagnosis,
-            clinical_notes=prescription_in.clinical_notes,
-            treatment_plan=prescription_in.treatment_plan,
+            visit_id=data.visit_id,
             prescription_number="PENDING",
+            diagnosis=data.diagnosis,
+            clinical_notes=data.clinical_notes,
+            treatment_plan=data.treatment_plan,
+            prescribed_by=data.prescribed_by,
+            prescription_datetime=data.prescription_datetime,
             created_at=now,
             updated_at=now,
         )
 
         try:
-            prescription = await self.repository.add(
-                db,
-                prescription,
-            )
+            db.add(prescription)
+            await db.flush()
 
             prescription.prescription_number = (
                 f"RX-{prescription.id:06d}"
             )
 
-            for item_data in prescription_in.items:
+            for item_data in data.items:
                 item = PrescriptionItem(
                     prescription_id=prescription.id,
-                    **item_data.model_dump(),
+                    medicine_id=item_data.medicine_id,
+                    dosage=item_data.dosage,
+                    frequency=item_data.frequency,
+                    duration_days=item_data.duration_days,
+                    instructions=item_data.instructions,
+                    quantity=item_data.quantity,
                     created_at=now,
                     updated_at=now,
                 )
@@ -126,54 +124,47 @@ class PrescriptionService:
             await db.rollback()
 
             raise DuplicateResourceException(
-                "Unable to create prescription because "
-                "a related record is invalid or duplicated."
+                "Prescription could not be created because "
+                "a referenced record is invalid or duplicated."
             ) from exc
 
         except SQLAlchemyError as exc:
             await db.rollback()
 
             raise DatabaseException(
-                "Unable to create prescription."
+                "Prescription creation failed."
             ) from exc
 
     async def update(
         self,
         db: AsyncSession,
-        *,
         prescription_id: int,
-        prescription_in: PrescriptionUpdate,
+        data: PrescriptionUpdate,
     ) -> Prescription:
-        prescription = await self.get_by_id(
+        prescription = await self.get(
             db,
-            prescription_id=prescription_id,
+            prescription_id,
         )
 
-        update_data = prescription_in.model_dump(
-            exclude_unset=True,
+        values = data.model_dump(
+            exclude_unset=True
         )
 
-        if not update_data:
-            return prescription
-
-        for field, value in update_data.items():
+        for field, value in values.items():
             setattr(
                 prescription,
                 field,
                 value,
             )
 
-        prescription.updated_at = datetime.now(
-            timezone.utc,
+        prescription.updated_at = (
+            datetime.now(timezone.utc)
         )
 
         try:
-            prescription = await self.repository.update(
-                db,
-                prescription,
-            )
-
+            await db.flush()
             await db.commit()
+            await db.refresh(prescription)
 
             return prescription
 
@@ -181,7 +172,7 @@ class PrescriptionService:
             await db.rollback()
 
             raise DatabaseException(
-                "Unable to update prescription."
+                "Prescription update failed."
             ) from exc
 
 

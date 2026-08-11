@@ -29,6 +29,9 @@ from .role import Role
 from .role_permission import RolePermission
 from .user import User
 from .user_role import UserRole
+from .medicine import Medicine
+from .prescription import Prescription
+from .prescription_item import PrescriptionItem
 
 __all__ = [
     # SQLAlchemy foundation
@@ -53,4 +56,7 @@ __all__ = [
     # Hospital master entities
     "Department",
     "Designation",
-]
+]    # Clinical prescription and pharmacy
+    "Prescription",
+    "PrescriptionItem",
+    "Medicine",

@@ -1,5 +1,5 @@
 """
-HHMS PrescriptionItem ORM Model.
+HHMS Prescription Item ORM Model.
 
 Project : Hospital Homoeopathic Management System (HHMS)
 Author  : Dr. Sohil Momin
@@ -17,7 +17,7 @@ from app.models.base import Base
 
 
 class PrescriptionItem(Base):
-    """Individual medicine line within a prescription."""
+    """Individual medicine prescribed within a prescription."""
 
     __tablename__ = "PrescriptionItem"
 
@@ -81,6 +81,4 @@ class PrescriptionItem(Base):
     )
 
 
-__all__ = [
-    "PrescriptionItem",
-]
+__all__ = ["PrescriptionItem"]

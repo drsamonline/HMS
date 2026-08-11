@@ -16,7 +16,7 @@ from app.schemas.base import BaseSchema
 
 
 class PrescriptionItemCreate(BaseSchema):
-    """Medicine prescribed within a prescription."""
+    """Medicine line submitted with a prescription."""
 
     medicine_id: int = Field(gt=0)
     dosage: str = Field(min_length=1, max_length=100)
@@ -30,7 +30,7 @@ class PrescriptionItemCreate(BaseSchema):
 
 
 class PrescriptionItemRead(PrescriptionItemCreate):
-    """Prescription medicine line response."""
+    """Prescription medicine line returned by the API."""
 
     id: int
     prescription_id: int
@@ -39,7 +39,7 @@ class PrescriptionItemRead(PrescriptionItemCreate):
 
 
 class PrescriptionCreate(BaseSchema):
-    """Create a prescription with its medicine lines."""
+    """Create a complete prescription."""
 
     visit_id: int = Field(gt=0)
     prescribed_by: int = Field(gt=0)
@@ -53,7 +53,7 @@ class PrescriptionCreate(BaseSchema):
 
 
 class PrescriptionUpdate(BaseSchema):
-    """Update prescription header information."""
+    """Update prescription clinical information."""
 
     diagnosis: str | None = None
     clinical_notes: str | None = None
@@ -62,7 +62,7 @@ class PrescriptionUpdate(BaseSchema):
 
 
 class PrescriptionRead(BaseSchema):
-    """Complete prescription response."""
+    """Complete prescription returned by the API."""
 
     id: int
     visit_id: int
