@@ -24,6 +24,13 @@ from app.api.v1.endpoints.opd_tokens import (
     router as opd_tokens_router,
 )
 
+from app.api.v1.endpoints.prescriptions import (
+    router as prescriptions_router,
+)
+from app.api.v1.endpoints.medicines import (
+    router as medicines_router,
+)
+
 api_router = APIRouter()
 
 api_router.include_router(
@@ -45,6 +52,15 @@ api_router.include_router(
 api_router.include_router(
     opd_tokens_router,
 )
+
+api_router.include_router(
+    prescriptions_router,
+)
+
+api_router.include_router(
+    medicines_router,
+)
+
 __all__ = [
     "api_router",
 ]
