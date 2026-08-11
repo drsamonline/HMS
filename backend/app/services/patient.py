@@ -20,10 +20,7 @@ from app.repositories.patient import (
     PatientRepository,
     patient_repository,
 )
-from app.schemas.patient import (
-    PatientCreate,
-    PatientUpdate,
-)
+from app.schemas.patient import PatientCreate, PatientUpdate
 
 
 class PatientService:
@@ -31,9 +28,9 @@ class PatientService:
 
     def __init__(
         self,
-        repository: PatientRepository,
+        repository: PatientRepository | None = None,
     ) -> None:
-        self.repository = repository
+        self.repository = repository or patient_repository
 
     async def get_by_id(
         self,
@@ -85,9 +82,7 @@ class PatientService:
                 patient,
             )
 
-            patient.patient_number = (
-                f"PAT-{patient.id:06d}"
-            )
+            patient.patient_number = f"PAT-{patient.id:06d}"
 
             await self.repository.update(
                 db,
@@ -95,20 +90,16 @@ class PatientService:
             )
 
             await db.commit()
-
             return patient
 
         except IntegrityError as exc:
             await db.rollback()
-
             raise DuplicateResourceException(
-                "Unable to create patient because a unique "
-                "patient record already exists."
+                "Unable to create patient because a duplicate record exists."
             ) from exc
 
         except SQLAlchemyError as exc:
             await db.rollback()
-
             raise DatabaseException(
                 "Unable to create patient."
             ) from exc
@@ -134,11 +125,7 @@ class PatientService:
 
         try:
             for field, value in update_data.items():
-                setattr(
-                    patient,
-                    field,
-                    value,
-                )
+                setattr(patient, field, value)
 
             patient = await self.repository.update(
                 db,
@@ -146,12 +133,10 @@ class PatientService:
             )
 
             await db.commit()
-
             return patient
 
         except SQLAlchemyError as exc:
             await db.rollback()
-
             raise DatabaseException(
                 "Unable to update patient."
             ) from exc
@@ -176,21 +161,16 @@ class PatientService:
             )
 
             await db.commit()
-
             return patient
 
         except SQLAlchemyError as exc:
             await db.rollback()
-
             raise DatabaseException(
                 "Unable to deactivate patient."
             ) from exc
 
 
-patient_service = PatientService(
-    patient_repository,
-)
-
+patient_service = PatientService()
 
 __all__ = [
     "PatientService",

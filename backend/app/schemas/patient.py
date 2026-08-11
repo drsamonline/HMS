@@ -62,31 +62,16 @@ class PatientBase(BaseSchema):
 
 
 class PatientCreate(PatientBase):
-    """Schema for patient registration."""
+    """Create a patient."""
 
 
 class PatientUpdate(BaseSchema):
-    """Schema for partial patient updates."""
+    """Partially update a patient."""
 
-    first_name: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=100,
-    )
-    middle_name: str | None = Field(
-        default=None,
-        max_length=100,
-    )
-    last_name: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=100,
-    )
-    gender: str | None = Field(
-        default=None,
-        min_length=1,
-        max_length=20,
-    )
+    first_name: str | None = Field(default=None, min_length=1, max_length=100)
+    middle_name: str | None = Field(default=None, max_length=100)
+    last_name: str | None = Field(default=None, min_length=1, max_length=100)
+    gender: str | None = Field(default=None, min_length=1, max_length=20)
     date_of_birth: date | None = None
     age: int | None = Field(default=None, ge=0, le=150)
     blood_group: str | None = Field(default=None, max_length=5)
@@ -102,7 +87,7 @@ class PatientUpdate(BaseSchema):
 
 
 class PatientRead(PatientBase):
-    """Patient returned by the API."""
+    """Patient response."""
 
     id: int
     patient_number: str

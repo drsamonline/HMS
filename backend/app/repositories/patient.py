@@ -25,10 +25,7 @@ class PatientRepository(RepositoryBase[Patient]):
         db: AsyncSession,
         patient_id: int,
     ) -> Patient | None:
-        return await db.get(
-            Patient,
-            patient_id,
-        )
+        return await db.get(Patient, patient_id)
 
     async def get_by_patient_number(
         self,
@@ -38,10 +35,9 @@ class PatientRepository(RepositoryBase[Patient]):
     ) -> Patient | None:
         result = await db.execute(
             select(Patient).where(
-                Patient.patient_number == patient_number
+                Patient.patient_number == patient_number,
             )
         )
-
         return result.scalar_one_or_none()
 
     async def search(
@@ -56,7 +52,6 @@ class PatientRepository(RepositoryBase[Patient]):
 
         if search:
             term = f"%{search.strip()}%"
-
             statement = statement.where(
                 (Patient.patient_number.ilike(term))
                 | (Patient.first_name.ilike(term))
@@ -64,14 +59,12 @@ class PatientRepository(RepositoryBase[Patient]):
                 | (Patient.mobile_number.ilike(term))
             )
 
-        statement = (
+        result = await db.execute(
             statement
             .order_by(Patient.id.desc())
             .offset(skip)
             .limit(limit)
         )
-
-        result = await db.execute(statement)
 
         return list(result.scalars().all())
 
@@ -82,12 +75,10 @@ class PatientRepository(RepositoryBase[Patient]):
         result = await db.execute(
             select(func.count(Patient.id))
         )
-
         return int(result.scalar_one())
 
 
 patient_repository = PatientRepository()
-
 
 __all__ = [
     "PatientRepository",

@@ -36,15 +36,8 @@ async def list_patients(
         default=None,
         max_length=100,
     ),
-    skip: int = Query(
-        default=0,
-        ge=0,
-    ),
-    limit: int = Query(
-        default=50,
-        ge=1,
-        le=100,
-    ),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=100),
 ) -> list[PatientRead]:
     return await patient_service.list(
         db,
