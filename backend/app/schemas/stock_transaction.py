@@ -1,36 +1,55 @@
 """
 HHMS Stock Transaction Schemas.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
 
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import Field
 
 from app.schemas.base import BaseSchema
 
 
+StockTransactionType = Literal[
+    "Receipt",
+    "Issue",
+    "Adjustment",
+    "Return",
+]
+
+
 class StockTransactionCreate(BaseSchema):
     inventory_item_id: int = Field(gt=0)
-    transaction_type: str = Field(
-        min_length=1,
-        max_length=30,
+
+    transaction_type: StockTransactionType
+
+    quantity: Decimal = Field(
+        description=(
+            "Positive quantity for Receipt, Issue and Return. "
+            "Adjustment may be positive or negative."
+        )
     )
-    quantity: Decimal = Field(gt=0)
+
     reference_number: str | None = Field(
         default=None,
         max_length=50,
     )
-    performed_by: int = Field(gt=0)
+
+    transaction_datetime: datetime | None = None
+
     remarks: str | None = None
 
 
 class StockTransactionRead(BaseSchema):
     id: int
     inventory_item_id: int
-    transaction_type: str
+    transaction_type: StockTransactionType
     quantity: Decimal
     reference_number: str | None
     transaction_datetime: datetime
@@ -41,6 +60,7 @@ class StockTransactionRead(BaseSchema):
 
 
 __all__ = [
+    "StockTransactionType",
     "StockTransactionCreate",
     "StockTransactionRead",
 ]

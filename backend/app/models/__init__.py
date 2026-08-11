@@ -32,6 +32,8 @@ from .user_role import UserRole
 from .medicine import Medicine
 from .prescription import Prescription
 from .prescription_item import PrescriptionItem
+from .inventory_item import InventoryItem
+from .stock_transaction import StockTransaction
 
 __all__ = [
     # SQLAlchemy foundation
@@ -56,7 +58,12 @@ __all__ = [
     # Hospital master entities
     "Department",
     "Designation",
+
 ]    # Clinical prescription and pharmacy
     "Prescription",
     "PrescriptionItem",
     "Medicine",
+
+    # Simple Stock Register
+    "InventoryItem",
+    "StockTransaction",

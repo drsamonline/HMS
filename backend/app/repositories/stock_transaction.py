@@ -1,5 +1,8 @@
 """
 HHMS Stock Transaction Repository.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
@@ -17,7 +20,9 @@ class StockTransactionRepository(
     """Persistence operations for stock transactions."""
 
     def __init__(self) -> None:
-        super().__init__(StockTransaction)
+        super().__init__(
+            StockTransaction,
+        )
 
     async def get_by_id(
         self,
@@ -29,11 +34,11 @@ class StockTransactionRepository(
             transaction_id,
         )
 
-    async def list_by_inventory_item(
+    async def list_by_item(
         self,
         db: AsyncSession,
-        *,
         inventory_item_id: int,
+        *,
         skip: int = 0,
         limit: int = 100,
     ) -> list[StockTransaction]:
@@ -51,7 +56,9 @@ class StockTransactionRepository(
             .limit(limit)
         )
 
-        return list(result.scalars().all())
+        return list(
+            result.scalars().all()
+        )
 
 
 stock_transaction_repository = (

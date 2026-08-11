@@ -47,6 +47,10 @@ from app.api.v1.endpoints.inventory_items import (
     router as inventory_items_router,
 )
 
+    # Simple Stock Register
+    "InventoryItem",
+    "StockTransaction",
+
 api_router = APIRouter()
 
 api_router.include_router(
@@ -91,6 +95,10 @@ api_router.include_router(
 
 api_router.include_router(
     inventory_items_router,
+)
+
+api_router.include_router(
+    stock_transactions_router,
 )
 
 __all__ = [
