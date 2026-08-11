@@ -4,6 +4,10 @@ HHMS Role Repository
 
 Database-access operations specific to the Role entity.
 
+Repositories contain persistence queries only. Business rules,
+authorization, validation workflows, and orchestration belong
+to the Service Layer.
+
 Project : Hospital Homoeopathic Management System (HHMS)
 Author  : Dr. Sohil Momin
 """
@@ -25,6 +29,10 @@ class RoleRepository(
     """
 
     def __init__(self) -> None:
+        """
+        Initialize the Role repository.
+        """
+
         super().__init__(Role)
 
     async def get_by_code(
@@ -35,6 +43,9 @@ class RoleRepository(
     ) -> Role | None:
         """
         Retrieve a role by its unique code.
+
+        Role code normalization and validation are intentionally
+        handled outside the repository.
         """
 
         result = await db.execute(
@@ -53,6 +64,9 @@ class RoleRepository(
     ) -> Role | None:
         """
         Retrieve a role by its unique name.
+
+        Role name normalization and validation are intentionally
+        handled outside the repository.
         """
 
         result = await db.execute(
@@ -68,7 +82,7 @@ class RoleRepository(
         db: AsyncSession,
     ) -> list[Role]:
         """
-        Retrieve all active roles.
+        Retrieve all active roles ordered by name.
         """
 
         result = await db.execute(
@@ -77,7 +91,9 @@ class RoleRepository(
             .order_by(Role.name)
         )
 
-        return list(result.scalars().all())
+        return list(
+            result.scalars().all()
+        )
 
 
 role_repository = RoleRepository()
