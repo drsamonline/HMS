@@ -1,74 +1,93 @@
 """
-User ORM model for HHMS.
+HHMS User ORM Model.
 
-Defines the application's internal user entity.
+Implements the User table defined in DATABASE_SCHEMA.md.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
 
-from sqlalchemy import Boolean, String
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
-from app.models.mixins import AuditMixin, UUIDPrimaryKeyMixin
 
 
-class User(
-    Base,
-    UUIDPrimaryKeyMixin,
-    AuditMixin,
-):
+class User(Base):
     """
-    Application user.
-
-    Stores authentication identity and basic profile
-    information.
-
-    Relationships will be added in later packages.
+    Authenticated HHMS system user.
     """
 
-    __tablename__ = "users"
+    __tablename__ = "User"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        autoincrement=True,
+    )
 
     username: Mapped[str] = mapped_column(
         String(50),
+        nullable=False,
         unique=True,
         index=True,
-        nullable=False,
     )
 
-    email: Mapped[str] = mapped_column(
+    password_hash: Mapped[str] = mapped_column(
         String(255),
-        unique=True,
-        index=True,
         nullable=False,
     )
 
     full_name: Mapped[str] = mapped_column(
-        String(255),
+        String(150),
         nullable=False,
     )
 
-    hashed_password: Mapped[str] = mapped_column(
-        String(255),
-        nullable=False,
+    email: Mapped[str | None] = mapped_column(
+        String(150),
+        nullable=True,
+        unique=True,
+        index=True,
     )
 
-    is_superuser: Mapped[bool] = mapped_column(
+    mobile_number: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+    )
+
+    designation: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+
+    is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
-        default=False,
-        server_default="false",
+        default=True,
+        server_default="true",
+        index=True,
     )
 
-    def __repr__(self) -> str:
-        """
-        Return a developer-friendly representation.
-        """
-        return (
-            f"User("
-            f"id={self.id!s}, "
-            f"username={self.username!r})"
-        )
+    last_login: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default="CURRENT_TIMESTAMP",
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default="CURRENT_TIMESTAMP",
+        onupdate=datetime.utcnow,
+    )
 
 
 __all__ = [

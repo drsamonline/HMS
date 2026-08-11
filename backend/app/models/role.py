@@ -1,72 +1,66 @@
 """
-Role ORM model for HHMS.
+HHMS Role ORM Model.
 
-Represents a collection of permissions within the RBAC system.
-Permissions are linked through the RolePermission association
-table in a later package.
+Implements the Role table defined in DATABASE_SCHEMA.md.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
 
-from sqlalchemy import String
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
-from app.models.mixins import AuditMixin, UUIDPrimaryKeyMixin
 
 
-class Role(
-    Base,
-    UUIDPrimaryKeyMixin,
-    AuditMixin,
-):
+class Role(Base):
     """
-    Role entity.
-
-    Examples:
-        Administrator
-        Receptionist
-        Doctor
-        Pharmacist
-        Laboratory Technician
+    System role used for role-based access control.
     """
 
-    __tablename__ = "roles"
+    __tablename__ = "Role"
 
-    name: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-        unique=True,
-        index=True,
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+        autoincrement=True,
     )
 
-    code: Mapped[str] = mapped_column(
-        String(100),
+    role_name: Mapped[str] = mapped_column(
+        String(50),
         nullable=False,
         unique=True,
         index=True,
     )
 
     description: Mapped[str | None] = mapped_column(
-        String(500),
+        Text,
         nullable=True,
     )
 
-    is_system: Mapped[bool] = mapped_column(
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
         nullable=False,
-        default=False,
-        server_default="false",
+        default=True,
+        server_default="true",
+        index=True,
     )
 
-    def __repr__(self) -> str:
-        """
-        Return a developer-friendly representation.
-        """
-        return (
-            f"Role("
-            f"id={self.id!s}, "
-            f"code={self.code!r})"
-        )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default="CURRENT_TIMESTAMP",
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default="CURRENT_TIMESTAMP",
+        onupdate=datetime.utcnow,
+    )
 
 
 __all__ = [
