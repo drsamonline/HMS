@@ -31,6 +31,10 @@ from app.api.v1.endpoints.medicines import (
     router as medicines_router,
 )
 
+from app.api.v1.endpoints.medicine_batches import (
+    router as medicine_batches_router,
+)
+
 api_router = APIRouter()
 
 api_router.include_router(
@@ -59,6 +63,10 @@ api_router.include_router(
 
 api_router.include_router(
     medicines_router,
+)
+
+api_router.include_router(
+    medicine_batches_router,
 )
 
 __all__ = [
