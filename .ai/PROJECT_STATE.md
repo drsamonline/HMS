@@ -10,10 +10,10 @@
 - Clinical Activity Integration
 
 ## Current Task
-- Build deduplicated hospital and departmental statistics
+- Extend statistics with deduplicated department/service demographics and daily reporting
 
 ## Next Task
-- Reporting and printing backend
+- Reporting/printing backend
 - Then LAN packaging and frontend
 
 ## Blockers
@@ -52,8 +52,18 @@
 - Optional/empty clinical sections must never prevent saving or retrieval.
 
 ## Last Updated
-- 2026-08-12 - Hospital Statistics Engine batch prepared.
+- 2026-08-12 - Statistics Reporting & Deduplication batch prepared.
 
 
 ## Current Backend Milestone
 - Hospital Statistics Engine implemented on the integrated clinical activity sources.
+
+
+## Statistics Reporting Rules
+- Hospital unique-patient totals use distinct patient IDs.
+- Department/service demographic counts also use distinct patient IDs.
+- Department/service new-old and fulfillment-mode totals represent activity rows.
+- Canonical Visit/Admission/Investigation rows are the primary activity sources.
+- ServiceActivity projections of canonical records are excluded from aggregate counts.
+- Reporting end dates are inclusive.
+- Daily breakdown is available in the hospital statistics response.

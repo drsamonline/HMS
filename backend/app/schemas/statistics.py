@@ -1,4 +1,4 @@
-"""Schemas for hospital statistics and deduplicated activity reporting."""
+"""Schemas for deduplicated hospital statistics reporting."""
 from __future__ import annotations
 
 from datetime import date
@@ -8,26 +8,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class StatisticsFilters(BaseModel):
-    """Inclusive reporting period and optional master filters."""
-
     model_config = ConfigDict(extra="forbid")
-
     start_date: date
     end_date: date
     department_id: UUID | None = None
     service_id: UUID | None = None
 
 
-class StatisticsCount(BaseModel):
-    """Named count used by the statistics response."""
-
-    name: str
-    count: int = Field(ge=0)
-
-
 class DepartmentStatistics(BaseModel):
-    """Department-level activity summary."""
-
     department_id: UUID
     department_name: str
     activity_count: int = Field(ge=0)
@@ -36,22 +24,20 @@ class DepartmentStatistics(BaseModel):
     ipd_count: int = Field(ge=0)
     investigation_count: int = Field(ge=0)
     service_count: int = Field(ge=0)
-    male_count: int = Field(ge=0)
-    female_count: int = Field(ge=0)
+    male_count: int = Field(ge=0, description="Distinct male patients with activity in this department.")
+    female_count: int = Field(ge=0, description="Distinct female patients with activity in this department.")
     other_gender_count: int = Field(ge=0)
-    child_count: int = Field(ge=0)
-    adult_count: int = Field(ge=0)
+    child_count: int = Field(ge=0, description="Distinct patients under 18.")
+    adult_count: int = Field(ge=0, description="Distinct patients 18 or older.")
     unspecified_age_count: int = Field(ge=0)
-    new_case_count: int = Field(ge=0)
-    old_case_count: int = Field(ge=0)
+    new_case_count: int = Field(ge=0, description="Activity rows classified as new.")
+    old_case_count: int = Field(ge=0, description="Activity rows classified as old.")
     unspecified_case_count: int = Field(ge=0)
     inhouse_count: int = Field(ge=0)
     outsourced_count: int = Field(ge=0)
 
 
 class ServiceStatistics(BaseModel):
-    """Service/subsection activity summary."""
-
     service_id: UUID
     service_name: str
     department_id: UUID
@@ -71,9 +57,17 @@ class ServiceStatistics(BaseModel):
     outsourced_count: int = Field(ge=0)
 
 
-class HospitalStatistics(BaseModel):
-    """Deduplicated hospital statistics for a reporting period."""
+class DailyStatistics(BaseModel):
+    date: date
+    unique_patient_count: int = Field(ge=0)
+    activity_count: int = Field(ge=0)
+    opd_count: int = Field(ge=0)
+    ipd_count: int = Field(ge=0)
+    investigation_count: int = Field(ge=0)
+    service_count: int = Field(ge=0)
 
+
+class HospitalStatistics(BaseModel):
     start_date: date
     end_date: date
     unique_hospital_patient_count: int = Field(ge=0)
@@ -95,12 +89,13 @@ class HospitalStatistics(BaseModel):
     outsourced_investigation_count: int = Field(ge=0)
     departments: list[DepartmentStatistics]
     services: list[ServiceStatistics]
+    daily: list[DailyStatistics]
 
 
 __all__ = [
     "StatisticsFilters",
-    "StatisticsCount",
     "DepartmentStatistics",
     "ServiceStatistics",
+    "DailyStatistics",
     "HospitalStatistics",
 ]

@@ -1,15 +1,43 @@
-"""Regression tests for the statistics contracts and counting rules."""
+"""Regression tests for statistics reporting contracts and deduplication semantics."""
 from __future__ import annotations
 
 from datetime import date
 
-from app.schemas.statistics import HospitalStatistics
+import pytest
+
+from app.schemas.statistics import DailyStatistics, HospitalStatistics
+from app.services.statistics import _period_bounds
 
 
-def test_statistics_schema_accepts_empty_breakdown() -> None:
+def test_period_bounds_are_inclusive_of_end_date() -> None:
+    start, end = _period_bounds(date(2026, 8, 1), date(2026, 8, 31))
+    assert start.isoformat() == "2026-08-01T00:00:00"
+    assert end.isoformat() == "2026-09-01T00:00:00"
+
+
+def test_invalid_reporting_period_is_rejected() -> None:
+    with pytest.raises(ValueError):
+        _period_bounds(date(2026, 9, 1), date(2026, 8, 31))
+
+
+def test_daily_statistics_contract() -> None:
+    row = DailyStatistics(
+        date=date(2026, 8, 12),
+        unique_patient_count=10,
+        activity_count=15,
+        opd_count=10,
+        ipd_count=2,
+        investigation_count=2,
+        service_count=1,
+    )
+    assert row.unique_patient_count == 10
+    assert row.activity_count == 15
+
+
+def test_hospital_statistics_allows_empty_period() -> None:
     result = HospitalStatistics(
-        start_date=date(2026, 1, 1),
-        end_date=date(2026, 1, 31),
+        start_date=date(2026, 8, 1),
+        end_date=date(2026, 8, 1),
         unique_hospital_patient_count=0,
         total_activity_count=0,
         opd_count=0,
@@ -29,19 +57,20 @@ def test_statistics_schema_accepts_empty_breakdown() -> None:
         outsourced_investigation_count=0,
         departments=[],
         services=[],
+        daily=[],
     )
     assert result.unique_hospital_patient_count == 0
 
 
-def test_reporting_period_is_inclusive_in_schema() -> None:
+def test_statistics_schema_keeps_unique_patient_and_activity_counts_separate() -> None:
     result = HospitalStatistics(
         start_date=date(2026, 8, 1),
-        end_date=date(2026, 8, 31),
+        end_date=date(2026, 8, 1),
         unique_hospital_patient_count=1,
-        total_activity_count=1,
+        total_activity_count=3,
         opd_count=1,
         ipd_count=0,
-        investigation_count=0,
+        investigation_count=2,
         generic_service_count=0,
         male_patient_count=1,
         female_patient_count=0,
@@ -49,12 +78,14 @@ def test_reporting_period_is_inclusive_in_schema() -> None:
         child_patient_count=0,
         adult_patient_count=1,
         unspecified_age_patient_count=0,
-        new_case_activity_count=1,
+        new_case_activity_count=3,
         old_case_activity_count=0,
         unspecified_case_activity_count=0,
-        inhouse_investigation_count=0,
-        outsourced_investigation_count=0,
+        inhouse_investigation_count=1,
+        outsourced_investigation_count=1,
         departments=[],
         services=[],
+        daily=[],
     )
-    assert result.start_date <= result.end_date
+    assert result.unique_hospital_patient_count == 1
+    assert result.total_activity_count == 3
