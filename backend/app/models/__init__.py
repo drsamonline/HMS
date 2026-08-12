@@ -17,6 +17,7 @@ from .base import (
 )
 from .bed import Bed
 from .department import Department
+from .department_service import DepartmentService
 from .diagnosis import Diagnosis
 from .designation import Designation
 from .dispense_record import DispenseRecord
@@ -45,6 +46,7 @@ from .mixins import (
 )
 from .opd_token import OPDToken
 from .patient import Patient
+from .service_activity import ServiceActivity
 from .payment import Payment
 from .permission import Permission
 from .prescription import Prescription
@@ -76,9 +78,11 @@ __all__ = [
     "RolePermission",
 
     "Department",
+    "DepartmentService",
     "Designation",
 
     "Patient",
+    "ServiceActivity",
     "CaseRecord",
     "Diagnosis",
     "FollowUp",

@@ -84,8 +84,11 @@ from app.api.v1.endpoints.patient_files import (
 from app.api.v1.endpoints.archive_records import (
     router as archive_records_router,
 )
-from app.api.v1.endpoints.departments import (
-    router as departments_router,
+from app.api.v1.endpoints.department_services import (
+    router as department_services_router,
+)
+from app.api.v1.endpoints.service_activities import (
+    router as service_activities_router,
 )
 
 
@@ -182,6 +185,15 @@ api_router.include_router(
 
 api_router.include_router(
     icd11_router,
+)
+
+
+api_router.include_router(
+    department_services_router,
+)
+
+api_router.include_router(
+    service_activities_router,
 )
 
 
