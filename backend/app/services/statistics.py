@@ -276,6 +276,8 @@ class StatisticsService:
             select(
                 Department.id.label("department_id"),
                 Department.name.label("department_name"),
+                Department.department_type.label("department_type"),
+                DepartmentService.service_type.label("service_type"),
                 func.count().label("activity_count"),
                 func.count(func.distinct(activity_scope.c.patient_id)).label("unique_patients"),
                 func.sum(case((activity_scope.c.activity_type == "opd", 1), else_=0)).label("opd"),
@@ -288,6 +290,10 @@ class StatisticsService:
                 child.label("child"),
                 adult.label("adult"),
                 unknown_age.label("unknown_age"),
+                func.sum(case((activity_scope.c.activity_type == "opd", 1), else_=0)).label("opd"),
+                func.sum(case((activity_scope.c.activity_type == "ipd", 1), else_=0)).label("ipd"),
+                func.sum(case((activity_scope.c.activity_type == "investigation", 1), else_=0)).label("investigation"),
+                func.sum(case((activity_scope.c.activity_type == "service", 1), else_=0)).label("service"),
                 func.sum(case((activity_scope.c.case_type == "new", 1), else_=0)).label("new_case"),
                 func.sum(case((activity_scope.c.case_type == "old", 1), else_=0)).label("old_case"),
                 func.sum(
@@ -319,7 +325,7 @@ class StatisticsService:
             )
             .join(Department, Department.id == activity_scope.c.department_id)
             .join(Patient, Patient.id == activity_scope.c.patient_id)
-            .group_by(Department.id, Department.name)
+            .group_by(Department.id, Department.name, Department.department_type)
             .order_by(Department.name)
         )
         result = await db.execute(stmt)
@@ -332,6 +338,7 @@ class StatisticsService:
                 DepartmentStatistics(
                     department_id=r.department_id,
                     department_name=r.department_name,
+                    department_type=str(r.department_type or ""),
                     activity_count=total,
                     unique_patient_count=int(r.unique_patients or 0),
                     opd_count=int(r.opd or 0),
@@ -363,6 +370,8 @@ class StatisticsService:
                 DepartmentService.name.label("service_name"),
                 Department.id.label("department_id"),
                 Department.name.label("department_name"),
+                Department.department_type.label("department_type"),
+                DepartmentService.service_type.label("service_type"),
                 func.count().label("activity_count"),
                 func.count(func.distinct(activity_scope.c.patient_id)).label("unique_patients"),
                 male.label("male"),
@@ -371,6 +380,10 @@ class StatisticsService:
                 child.label("child"),
                 adult.label("adult"),
                 unknown_age.label("unknown_age"),
+                func.sum(case((activity_scope.c.activity_type == "opd", 1), else_=0)).label("opd"),
+                func.sum(case((activity_scope.c.activity_type == "ipd", 1), else_=0)).label("ipd"),
+                func.sum(case((activity_scope.c.activity_type == "investigation", 1), else_=0)).label("investigation"),
+                func.sum(case((activity_scope.c.activity_type == "service", 1), else_=0)).label("service"),
                 func.sum(case((activity_scope.c.case_type == "new", 1), else_=0)).label("new_case"),
                 func.sum(case((activity_scope.c.case_type == "old", 1), else_=0)).label("old_case"),
                 func.sum(
@@ -397,8 +410,10 @@ class StatisticsService:
             .group_by(
                 DepartmentService.id,
                 DepartmentService.name,
+                DepartmentService.service_type,
                 Department.id,
                 Department.name,
+                Department.department_type,
             )
             .order_by(Department.name, DepartmentService.name)
         )
@@ -414,6 +429,7 @@ class StatisticsService:
                     service_name=r.service_name,
                     department_id=r.department_id,
                     department_name=r.department_name,
+                    department_type=str(r.department_type or ""),
                     activity_count=total,
                     unique_patient_count=int(r.unique_patients or 0),
                     male_count=int(r.male or 0),
@@ -427,6 +443,11 @@ class StatisticsService:
                     unspecified_case_count=max(total - new_count - old_count, 0),
                     inhouse_count=int(r.inhouse or 0),
                     outsourced_count=int(r.outsourced or 0),
+                    service_type=str(r.service_type or ""),
+                    opd_count=int(r.opd or 0),
+                    ipd_count=int(r.ipd or 0),
+                    investigation_count=int(r.investigation or 0),
+                    generic_service_count=int(r.service or 0),
                 )
             )
         return rows

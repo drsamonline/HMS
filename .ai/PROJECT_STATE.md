@@ -10,7 +10,7 @@
 - Clinical Activity Integration
 
 ## Current Task
-- Extend statistics with deduplicated department/service demographics and daily reporting
+- Extend statistics with department/service classification and activity-type reporting
 
 ## Next Task
 - Reporting/printing backend
@@ -52,7 +52,8 @@
 - Optional/empty clinical sections must never prevent saving or retrieval.
 
 ## Last Updated
-- 2026-08-12 - Statistics Reporting & Deduplication batch prepared.
+- 2026-08-12 - Statistics Reporting & Deduplication batch completed.
+- 2026-08-12 - Department/service classification and activity-type reporting batch prepared.
 
 
 ## Current Backend Milestone

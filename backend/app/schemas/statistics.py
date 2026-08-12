@@ -18,6 +18,7 @@ class StatisticsFilters(BaseModel):
 class DepartmentStatistics(BaseModel):
     department_id: UUID
     department_name: str
+    department_type: str = Field(default="", description="Configurable department classification.")
     activity_count: int = Field(ge=0)
     unique_patient_count: int = Field(ge=0)
     opd_count: int = Field(ge=0)
@@ -42,6 +43,7 @@ class ServiceStatistics(BaseModel):
     service_name: str
     department_id: UUID
     department_name: str
+    department_type: str = Field(default="", description="Configurable department classification.")
     activity_count: int = Field(ge=0)
     unique_patient_count: int = Field(ge=0)
     male_count: int = Field(ge=0)
@@ -55,6 +57,11 @@ class ServiceStatistics(BaseModel):
     unspecified_case_count: int = Field(ge=0)
     inhouse_count: int = Field(ge=0)
     outsourced_count: int = Field(ge=0)
+    service_type: str = Field(default="", description="Configurable service/subsection classification.")
+    opd_count: int = Field(ge=0)
+    ipd_count: int = Field(ge=0)
+    investigation_count: int = Field(ge=0)
+    generic_service_count: int = Field(ge=0)
 
 
 class DailyStatistics(BaseModel):

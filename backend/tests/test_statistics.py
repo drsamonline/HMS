@@ -89,3 +89,58 @@ def test_statistics_schema_keeps_unique_patient_and_activity_counts_separate() -
     )
     assert result.unique_hospital_patient_count == 1
     assert result.total_activity_count == 3
+
+
+def test_department_and_service_breakdown_contracts() -> None:
+    from app.schemas.statistics import DepartmentStatistics, ServiceStatistics
+    from uuid import uuid4
+
+    department = DepartmentStatistics(
+        department_id=uuid4(),
+        department_name="Laboratory",
+        department_type="diagnostic",
+        activity_count=10,
+        unique_patient_count=8,
+        opd_count=2,
+        ipd_count=1,
+        investigation_count=7,
+        service_count=0,
+        male_count=4,
+        female_count=4,
+        other_gender_count=0,
+        child_count=1,
+        adult_count=7,
+        unspecified_age_count=0,
+        new_case_count=6,
+        old_case_count=4,
+        unspecified_case_count=0,
+        inhouse_count=5,
+        outsourced_count=2,
+    )
+    service = ServiceStatistics(
+        service_id=uuid4(),
+        service_name="Hematology",
+        service_type="hematology",
+        department_id=department.department_id,
+        department_name="Laboratory",
+        activity_count=7,
+        unique_patient_count=6,
+        male_count=3,
+        female_count=3,
+        other_gender_count=0,
+        child_count=1,
+        adult_count=5,
+        unspecified_age_count=0,
+        new_case_count=4,
+        old_case_count=3,
+        unspecified_case_count=0,
+        inhouse_count=4,
+        outsourced_count=3,
+        opd_count=0,
+        ipd_count=0,
+        investigation_count=7,
+        generic_service_count=0,
+    )
+    assert department.department_type == "diagnostic"
+    assert service.service_type == "hematology"
+    assert service.investigation_count == 7
