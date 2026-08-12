@@ -8,10 +8,15 @@ Author  : Dr. Sohil Momin
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
+from typing import Literal
 
 from pydantic import Field
 
 from app.schemas.base import BaseSchema
+
+
+VisitCaseType = Literal["new", "old"]
 
 
 class VisitBase(BaseSchema):
@@ -25,6 +30,9 @@ class VisitBase(BaseSchema):
         max_length=20,
     )
     consulting_doctor_id: int = Field(gt=0)
+    department_id: UUID | None = None
+    service_id: UUID | None = None
+    case_type: VisitCaseType | None = None
     remarks: str | None = None
 
 
@@ -47,6 +55,9 @@ class VisitUpdate(BaseSchema):
         min_length=1,
         max_length=20,
     )
+    department_id: UUID | None = None
+    service_id: UUID | None = None
+    case_type: VisitCaseType | None = None
     consulting_doctor_id: int | None = Field(
         default=None,
         gt=0,

@@ -31,6 +31,7 @@ from app.schemas.admission import (
     AdmissionCreate,
     AdmissionUpdate,
 )
+from app.services.activity_context import resolve_activity_context
 
 
 class AdmissionService:
@@ -111,6 +112,12 @@ class AdmissionService:
 
         now = datetime.now(timezone.utc)
 
+        department_id, service_id = await resolve_activity_context(
+            db,
+            department_id=admission_in.department_id,
+            service_id=admission_in.service_id,
+        )
+
         admission = Admission(
             patient_id=admission_in.patient_id,
             admission_number="PENDING",
@@ -119,6 +126,9 @@ class AdmissionService:
             ),
             bed_id=admission_in.bed_id,
             admitted_by=admission_in.admitted_by,
+            department_id=department_id,
+            service_id=service_id,
+            case_type=admission_in.case_type,
             admission_reason=(
                 admission_in.admission_reason
             ),

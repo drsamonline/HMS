@@ -1,20 +1,20 @@
 # HHMS Project State
 
 ## Current Phase
-- Backend Medical Records
+- Backend Clinical Activity and Statistics Foundation
 
 ## Current Milestone
-- MRD: PatientFile and ArchiveRecord
+- Clinical Activity Integration
 
 ## Last Completed Milestone
-- Billing
+- Department/Service + ServiceActivity foundation
 
 ## Current Task
-- Implement compact MRD patient-file and archive records
+- Integrate Visit, Admission and Investigation with Department/Service classification
 
 ## Next Task
-- Validate, document, commit Clinical Core
-- Then implement frontend clinical workflows
+- Build deduplicated hospital and departmental statistics
+- Then proceed to reporting, LAN packaging and frontend
 
 ## Blockers
 - None for local clinical record implementation.
@@ -35,7 +35,7 @@
 | Billing | Complete |
 | Clinical Core | Complete |
 | IPD Clinical Documentation | Complete |
-| MRD | In Progress |
+| MRD | Complete |
 | Frontend | Pending |
 | Printing | Pending |
 | Reports | Pending |
@@ -52,7 +52,7 @@
 - Optional/empty clinical sections must never prevent saving or retrieval.
 
 ## Last Updated
-- 2026-08-12 - MRD implementation started.
+- 2026-08-12 - Clinical Activity Integration batch prepared.
 
 
 ## Current Backend Milestone

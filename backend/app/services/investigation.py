@@ -33,6 +33,7 @@ from app.schemas.investigation import (
     InvestigationCreate,
     InvestigationUpdate,
 )
+from app.services.activity_context import resolve_activity_context
 
 
 class InvestigationService:
@@ -162,12 +163,22 @@ class InvestigationService:
             data,
         )
 
+        department_id, service_id = await resolve_activity_context(
+            db,
+            department_id=data.department_id,
+            service_id=data.service_id,
+        )
+
         now = datetime.now(timezone.utc)
 
         investigation = Investigation(
             patient_id=data.patient_id,
             visit_id=data.visit_id,
             admission_id=data.admission_id,
+            department_id=department_id,
+            service_id=service_id,
+            case_type=data.case_type,
+            fulfillment_mode=data.fulfillment_mode,
             investigation_number="PENDING",
             investigation_name=(
                 data.investigation_name
@@ -242,6 +253,23 @@ class InvestigationService:
 
         if not values:
             return investigation
+
+        if "service_id" in values:
+            department_id, service_id = await resolve_activity_context(
+                db,
+                department_id=values.get("department_id", investigation.department_id),
+                service_id=values.get("service_id"),
+            )
+            values["department_id"] = department_id
+            values["service_id"] = service_id
+        elif "department_id" in values:
+            department_id, service_id = await resolve_activity_context(
+                db,
+                department_id=values.get("department_id"),
+                service_id=None,
+            )
+            values["department_id"] = department_id
+            values["service_id"] = service_id
 
         if (
             values.get("investigation_status")

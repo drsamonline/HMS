@@ -21,6 +21,7 @@ from app.repositories.visit import (
     visit_repository,
 )
 from app.schemas.visit import VisitCreate, VisitUpdate
+from app.services.activity_context import resolve_activity_context
 
 
 class VisitService:
@@ -78,8 +79,17 @@ class VisitService:
         *,
         visit_in: VisitCreate,
     ) -> Visit:
+        data = visit_in.model_dump()
+        department_id, service_id = await resolve_activity_context(
+            db,
+            department_id=data.get("department_id"),
+            service_id=data.get("service_id"),
+        )
+        data["department_id"] = department_id
+        data["service_id"] = service_id
+
         visit = Visit(
-            **visit_in.model_dump(),
+            **data,
             visit_number="PENDING",
         )
 
@@ -135,6 +145,23 @@ class VisitService:
 
         if not update_data:
             return visit
+
+        if "service_id" in update_data:
+            department_id, service_id = await resolve_activity_context(
+                db,
+                department_id=update_data.get("department_id", visit.department_id),
+                service_id=update_data.get("service_id"),
+            )
+            update_data["department_id"] = department_id
+            update_data["service_id"] = service_id
+        elif "department_id" in update_data:
+            department_id, service_id = await resolve_activity_context(
+                db,
+                department_id=update_data.get("department_id"),
+                service_id=None,
+            )
+            update_data["department_id"] = department_id
+            update_data["service_id"] = service_id
 
         try:
             for field, value in update_data.items():

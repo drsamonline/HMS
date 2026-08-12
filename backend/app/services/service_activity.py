@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from app.core.exceptions import DatabaseException, ResourceNotFoundException
+from app.core.exceptions import BusinessRuleException, DatabaseException, ResourceNotFoundException
 from app.models.patient import Patient
 from app.models.department import Department
 from app.models.department_service import DepartmentService
@@ -26,7 +26,7 @@ class ServiceActivityManager:
         if service is None:
             raise ResourceNotFoundException("Department service not found.")
         if service.department_id != data.department_id:
-            raise ValueError("Service belongs to another department.")
+            raise BusinessRuleException("Service belongs to another department.")
         record = ServiceActivity(**data.model_dump())
         now = datetime.now(timezone.utc)
         record.created_at = now

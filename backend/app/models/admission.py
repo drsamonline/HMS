@@ -8,8 +8,10 @@ Author  : Dr. Sohil Momin
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
 
 from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -55,6 +57,26 @@ class Admission(Base):
             name="fk_admission_bed",
         ),
         nullable=False,
+        index=True,
+    )
+
+    department_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("departments.id", name="fk_admission_department"),
+        nullable=True,
+        index=True,
+    )
+
+    service_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("department_services.id", name="fk_admission_service"),
+        nullable=True,
+        index=True,
+    )
+
+    case_type: Mapped[str | None] = mapped_column(
+        String(10),
+        nullable=True,
         index=True,
     )
 

@@ -8,11 +8,16 @@ Author  : Dr. Sohil Momin
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
 from typing import Literal
 
 from pydantic import Field
 
 from app.schemas.base import BaseSchema
+
+
+InvestigationCaseType = Literal["new", "old"]
+InvestigationFulfillmentMode = Literal["in_house", "outsourced"]
 
 
 InvestigationStatus = Literal[
@@ -36,6 +41,11 @@ class InvestigationCreate(BaseSchema):
         gt=0,
     )
 
+    department_id: UUID | None = None
+    service_id: UUID | None = None
+    case_type: InvestigationCaseType | None = None
+    fulfillment_mode: InvestigationFulfillmentMode | None = None
+
     investigation_name: str = Field(
         min_length=1,
         max_length=150,
@@ -53,6 +63,10 @@ class InvestigationCreate(BaseSchema):
 
 
 class InvestigationUpdate(BaseSchema):
+    department_id: UUID | None = None
+    service_id: UUID | None = None
+    case_type: InvestigationCaseType | None = None
+    fulfillment_mode: InvestigationFulfillmentMode | None = None
     investigation_name: str | None = Field(
         default=None,
         min_length=1,
@@ -70,6 +84,10 @@ class InvestigationRead(BaseSchema):
     visit_id: int | None
     admission_id: int | None
     investigation_number: str
+    department_id: UUID | None
+    service_id: UUID | None
+    case_type: InvestigationCaseType | None
+    fulfillment_mode: InvestigationFulfillmentMode | None
     investigation_name: str
     requested_by: int
     requested_datetime: datetime
@@ -80,6 +98,8 @@ class InvestigationRead(BaseSchema):
 
 
 __all__ = [
+    "InvestigationCaseType",
+    "InvestigationFulfillmentMode",
     "InvestigationStatus",
     "InvestigationCreate",
     "InvestigationUpdate",

@@ -8,10 +8,15 @@ Author  : Dr. Sohil Momin
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import UUID
+from typing import Literal
 
 from pydantic import Field
 
 from app.schemas.base import BaseSchema
+
+
+AdmissionCaseType = Literal["new", "old"]
 
 
 class AdmissionCreate(BaseSchema):
@@ -19,6 +24,9 @@ class AdmissionCreate(BaseSchema):
     admission_datetime: datetime
     bed_id: int = Field(gt=0)
     admitted_by: int = Field(gt=0)
+    department_id: UUID | None = None
+    service_id: UUID | None = None
+    case_type: AdmissionCaseType | None = None
     admission_reason: str | None = None
     admission_status: str = Field(
         default="admitted",
@@ -29,6 +37,9 @@ class AdmissionCreate(BaseSchema):
 
 
 class AdmissionUpdate(BaseSchema):
+    department_id: UUID | None = None
+    service_id: UUID | None = None
+    case_type: AdmissionCaseType | None = None
     admission_reason: str | None = None
     admission_status: str | None = Field(
         default=None,
@@ -45,6 +56,9 @@ class AdmissionRead(BaseSchema):
     admission_datetime: datetime
     bed_id: int
     admitted_by: int
+    department_id: UUID | None
+    service_id: UUID | None
+    case_type: AdmissionCaseType | None
     admission_reason: str | None
     admission_status: str
     remarks: str | None
