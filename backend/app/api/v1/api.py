@@ -5,6 +5,8 @@ Project : Hospital Homoeopathic Management System (HHMS)
 Author  : Dr. Sohil Momin
 """
 
+from __future__ import annotations
+
 from fastapi import APIRouter
 
 from app.api.v1.endpoints.admissions import (
@@ -15,6 +17,9 @@ from app.api.v1.endpoints.auth import (
 )
 from app.api.v1.endpoints.beds import (
     router as beds_router,
+)
+from app.api.v1.endpoints.discharges import (
+    router as discharges_router,
 )
 from app.api.v1.endpoints.health import (
     router as health_router,
@@ -94,6 +99,10 @@ api_router.include_router(
 
 api_router.include_router(
     beds_router,
+)
+
+api_router.include_router(
+    discharges_router,
 )
 
 
