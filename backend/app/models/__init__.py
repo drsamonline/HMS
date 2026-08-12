@@ -32,6 +32,8 @@ from .progress_note import ProgressNote
 from .followup import FollowUp
 from .invoice import Invoice
 from .medical_document import MedicalDocument
+from .patient_file import PatientFile
+from .archive_record import ArchiveRecord
 from .medicine import Medicine
 from .medicine_batch import MedicineBatch
 from .mixins import (
@@ -110,5 +112,7 @@ __all__ = [
     "Payment",
 
     "MedicalDocument",
+    "PatientFile",
+    "ArchiveRecord",
     "AuditLog",
 ]

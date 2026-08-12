@@ -1,20 +1,20 @@
 # HHMS Project State
 
 ## Current Phase
-- Backend Clinical Core
+- Backend Medical Records
 
 ## Current Milestone
-- Clinical Core: Case Record, Diagnosis, Follow-up, ICD-11 lookup
+- MRD: PatientFile and ArchiveRecord
 
 ## Last Completed Milestone
 - Billing
 
 ## Current Task
-- Implement compact clinical documentation core
+- Implement compact MRD patient-file and archive records
 
 ## Next Task
 - Validate, document, commit Clinical Core
-- Then implement IPD clinical documentation
+- Then implement frontend clinical workflows
 
 ## Blockers
 - None for local clinical record implementation.
@@ -33,9 +33,9 @@
 | IPD Admission / Bed / Discharge | Complete |
 | Laboratory | Complete |
 | Billing | Complete |
-| Clinical Core | In Progress |
-| IPD Clinical Documentation | Pending |
-| MRD | Pending |
+| Clinical Core | Complete |
+| IPD Clinical Documentation | Complete |
+| MRD | In Progress |
 | Frontend | Pending |
 | Printing | Pending |
 | Reports | Pending |
@@ -52,4 +52,4 @@
 - Optional/empty clinical sections must never prevent saving or retrieval.
 
 ## Last Updated
-- 2026-08-12 - Clinical Core implementation started.
+- 2026-08-12 - MRD implementation started.

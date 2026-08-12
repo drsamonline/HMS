@@ -78,6 +78,12 @@ from app.api.v1.endpoints.progress_notes import (
 from app.api.v1.endpoints.billing import (
     router as billing_router,
 )
+from app.api.v1.endpoints.patient_files import (
+    router as patient_files_router,
+)
+from app.api.v1.endpoints.archive_records import (
+    router as archive_records_router,
+)
 
 
 api_router = APIRouter()
