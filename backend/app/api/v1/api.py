@@ -15,17 +15,17 @@ from app.api.v1.endpoints.admissions import (
 from app.api.v1.endpoints.auth import (
     router as auth_router,
 )
-from app.api.v1.endpoints.beds import (
-    router as beds_router,
-)
-from app.api.v1.endpoints.discharges import (
-    router as discharges_router,
-)
 from app.api.v1.endpoints.health import (
     router as health_router,
 )
 from app.api.v1.endpoints.inventory_items import (
     router as inventory_items_router,
+)
+from app.api.v1.endpoints.investigation_results import (
+    router as investigation_results_router,
+)
+from app.api.v1.endpoints.investigations import (
+    router as investigations_router,
 )
 from app.api.v1.endpoints.medicine_batches import (
     router as medicine_batches_router,
@@ -86,11 +86,11 @@ api_router.include_router(
 )
 
 api_router.include_router(
-    inventory_items_router,
+    stock_transactions_router,
 )
 
 api_router.include_router(
-    stock_transactions_router,
+    inventory_items_router,
 )
 
 api_router.include_router(
@@ -98,11 +98,11 @@ api_router.include_router(
 )
 
 api_router.include_router(
-    beds_router,
+    investigations_router,
 )
 
 api_router.include_router(
-    discharges_router,
+    investigation_results_router,
 )
 
 

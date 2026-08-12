@@ -17,7 +17,6 @@ from .base import (
 from .bed import Bed
 from .department import Department
 from .designation import Designation
-from .discharge import Discharge
 from .dispense_record import DispenseRecord
 from .dispensing_record import DispensingRecord
 from .investigation import Investigation
@@ -57,8 +56,8 @@ __all__ = [
     "UUIDPrimaryKeyMixin",
     "TimestampMixin",
     "ActiveMixin",
-    "AuditMixin",
     "SoftDeleteMixin",
+    "AuditMixin",
 
     "User",
     "Role",
@@ -87,7 +86,6 @@ __all__ = [
 
     "Admission",
     "Bed",
-    "Discharge",
 
     "Investigation",
     "InvestigationResult",
