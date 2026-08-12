@@ -1,105 +1,55 @@
-Current Phase
-- Documentation
+# HHMS Project State
 
-Current Milestone
-- Foundation
+## Current Phase
+- Backend Clinical Core
 
-Current Document
-- MASTER_SPECIFICATION.md
+## Current Milestone
+- Clinical Core: Case Record, Diagnosis, Follow-up, ICD-11 lookup
 
-Current Section
-- System Overview
+## Last Completed Milestone
+- Billing
 
-Last Completed Task
-- INDEX.md approved and frozen
+## Current Task
+- Implement compact clinical documentation core
 
-Next Task
-- Complete MASTER_SPECIFICATION.md section-by-section
+## Next Task
+- Validate, document, commit Clinical Core
+- Then implement IPD clinical documentation
 
-Blockers
-- None
+## Blockers
+- None for local clinical record implementation.
+- WHO ICD-11 lookup requires optional WHO API credentials.
 
-Module Status
+## Module Status
 | Module | Status |
 |--------|--------|
-| Foundation | ✅ Complete |
-| Specification | ⏳ In Progress |
-| Database | ⬜ Pending |
-| Backend | ⬜ Pending |
-| Frontend | ⬜ Pending |
-| Testing | ⬜ Pending |
-| Release | ⬜ Pending |
+| Foundation | Complete |
+| Database | Complete |
+| Authentication | Complete |
+| Patient | Complete |
+| OPD / Visits | Complete |
+| Prescription | Complete |
+| Pharmacy / Inventory | Complete |
+| IPD Admission / Bed / Discharge | Complete |
+| Laboratory | Complete |
+| Billing | Complete |
+| Clinical Core | In Progress |
+| IPD Clinical Documentation | Pending |
+| MRD | Pending |
+| Frontend | Pending |
+| Printing | Pending |
+| Reports | Pending |
+| Testing / Final Audit | Pending |
 
-Current Module
-- Specification
+## Locked Clinical Design
+- One compact CaseRecord for homoeopathic case-taking.
+- Narrative sections remain free text.
+- Quick-generals and modalities use compact structured data.
+- Every modality supports Agg/Amel plus additional text.
+- Diagnosis is separate from homoeopathic assessment.
+- ICD-11 is optional and searched on demand through the HHMS backend.
+- Follow-ups are longitudinal records and do not overwrite the original case.
+- Optional/empty clinical sections must never prevent saving or retrieval.
 
-Current Task
-- SPEC-001 – Master Specification
-
-Next Task
-- DB-001 – Database Entity Design
-
-TODO (Milestones & Tasks)
-- Milestone 0 – Foundation (COMPLETE)
-
-	Repository Setup
-	- Create directory structure (COMPLETE)
-	- Initialize Git repository (COMPLETE)
-	- Create LICENSE (COMPLETE)
-	- Create README.md (COMPLETE)
-	- Create .gitignore (COMPLETE)
-	- Create .editorconfig (COMPLETE)
-
-	Documentation Foundation
-	- PROJECT_CONSTITUTION.md (COMPLETE)
-	- PROJECT_STATE.md (COMPLETE)
-	- CODING_RULES.md (COMPLETE)
-	- REVIEW_CHECKLIST.md (COMPLETE)
-	- DECISIONS.md (COMPLETE)
-	- MODULE_STATUS.md (COMPLETE)
-	- PROJECT_INDEX.md (COMPLETE)
-
-	Specification
-	- SPEC-001: Master Specification (COMPLETE)
-	- Scope freeze for Version 1.0 (COMPLETE)
-
-Milestone 1 – Database (PENDING)
-- DB-101: SQL schema generation
-- DB-102: Migration scripts
-- DB-103: Seed data creation
-- DB-104: Database testing
-
-Milestone 2 – Backend (PENDING)
-- BE-201: API design
-- BE-202: Authentication system
-- BE-203: Core module implementation
-- BE-204: Business logic layer
-
-Milestone 3 – Frontend (PENDING)
-- FE-301: UI framework setup
-- FE-302: Component library
-- FE-303: Screen implementation
-- FE-304: State management
-
-Milestone 4 – Printing (PENDING)
-- PR-401: Print template engine
-- PR-402: Report templates
-- PR-403: Document generation
-
-Milestone 5 – Reports (PENDING)
-- RP-501: Report builder
-- RP-502: Standard reports
-- RP-503: Export functionality
-
-Milestone 6 – Testing (PENDING)
-- TS-601: Unit tests
-- TS-602: Integration tests
-- TS-603: End-to-end tests
-
-Milestone 7 – Release (PENDING)
-- RL-701: Deployment scripts
-- RL-702: User documentation
-- RL-703: Version 1.0 release
-
-Last Updated
-- 2025-01-30 - Session 004
+## Last Updated
+- 2026-08-12 - Clinical Core implementation started.

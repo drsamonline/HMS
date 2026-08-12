@@ -48,6 +48,18 @@ from app.api.v1.endpoints.stock_transactions import (
 from app.api.v1.endpoints.visits import (
     router as visits_router,
 )
+from app.api.v1.endpoints.case_records import (
+    router as case_records_router,
+)
+from app.api.v1.endpoints.diagnoses import (
+    router as diagnoses_router,
+)
+from app.api.v1.endpoints.followups import (
+    router as followups_router,
+)
+from app.api.v1.endpoints.icd11 import (
+    router as icd11_router,
+)
 from app.api.v1.endpoints.billing import (
     router as billing_router,
 )
@@ -110,6 +122,22 @@ api_router.include_router(
 
 api_router.include_router(
     billing_router,
+)
+
+api_router.include_router(
+    case_records_router,
+)
+
+api_router.include_router(
+    diagnoses_router,
+)
+
+api_router.include_router(
+    followups_router,
+)
+
+api_router.include_router(
+    icd11_router,
 )
 
 

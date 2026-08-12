@@ -8,6 +8,7 @@ Author  : Dr. Sohil Momin
 from __future__ import annotations
 
 from .admission import Admission
+from .case_record import CaseRecord
 from .audit_log import AuditLog
 from .base import (
     Base,
@@ -16,12 +17,14 @@ from .base import (
 )
 from .bed import Bed
 from .department import Department
+from .diagnosis import Diagnosis
 from .designation import Designation
 from .dispense_record import DispenseRecord
 from .dispensing_record import DispensingRecord
 from .investigation import Investigation
 from .investigation_result import InvestigationResult
 from .inventory_item import InventoryItem
+from .followup import FollowUp
 from .invoice import Invoice
 from .medical_document import MedicalDocument
 from .medicine import Medicine
@@ -69,6 +72,9 @@ __all__ = [
     "Designation",
 
     "Patient",
+    "CaseRecord",
+    "Diagnosis",
+    "FollowUp",
     "Visit",
     "OPDToken",
 

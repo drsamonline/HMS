@@ -98,6 +98,18 @@ class Settings(BaseSettings):
     )
 
     # ==========================================================
+    # WHO ICD-11
+    # ==========================================================
+
+    WHO_ICD11_CLIENT_ID: str | None = Field(default=None)
+    WHO_ICD11_CLIENT_SECRET: str | None = Field(default=None)
+    WHO_ICD11_API_BASE_URL: str = Field(default="https://id.who.int")
+    WHO_ICD11_TOKEN_URL: str = Field(
+        default="https://icdaccessmanagement.who.int/connect/token"
+    )
+    WHO_ICD11_RELEASE: str = Field(default="2026-01")
+
+    # ==========================================================
     # Logging
     # ==========================================================
 
