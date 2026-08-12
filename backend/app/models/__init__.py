@@ -24,6 +24,11 @@ from .dispensing_record import DispensingRecord
 from .investigation import Investigation
 from .investigation_result import InvestigationResult
 from .inventory_item import InventoryItem
+from .ipd_assessment import IPDAssessment
+from .pain_assessment import PainAssessment
+from .nutritional_assessment import NutritionalAssessment
+from .diet_chart import DietChart
+from .progress_note import ProgressNote
 from .followup import FollowUp
 from .invoice import Invoice
 from .medical_document import MedicalDocument
@@ -91,6 +96,11 @@ __all__ = [
     "StockTransaction",
 
     "Admission",
+    "IPDAssessment",
+    "PainAssessment",
+    "NutritionalAssessment",
+    "DietChart",
+    "ProgressNote",
     "Bed",
 
     "Investigation",

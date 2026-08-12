@@ -60,6 +60,21 @@ from app.api.v1.endpoints.followups import (
 from app.api.v1.endpoints.icd11 import (
     router as icd11_router,
 )
+from app.api.v1.endpoints.ipd_assessments import (
+    router as ipd_assessment_router,
+)
+from app.api.v1.endpoints.pain_assessments import (
+    router as pain_assessment_router,
+)
+from app.api.v1.endpoints.nutritional_assessments import (
+    router as nutritional_assessment_router,
+)
+from app.api.v1.endpoints.diet_charts import (
+    router as diet_chart_router,
+)
+from app.api.v1.endpoints.progress_notes import (
+    router as progress_note_router,
+)
 from app.api.v1.endpoints.billing import (
     router as billing_router,
 )
@@ -122,6 +137,26 @@ api_router.include_router(
 
 api_router.include_router(
     billing_router,
+)
+
+api_router.include_router(
+    ipd_assessment_router,
+)
+
+api_router.include_router(
+    pain_assessment_router,
+)
+
+api_router.include_router(
+    nutritional_assessment_router,
+)
+
+api_router.include_router(
+    diet_chart_router,
+)
+
+api_router.include_router(
+    progress_note_router,
 )
 
 api_router.include_router(
