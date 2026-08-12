@@ -4,17 +4,17 @@
 - Backend Clinical Activity and Statistics Foundation
 
 ## Current Milestone
-- Clinical Activity Integration
+- Hospital Statistics Engine
 
 ## Last Completed Milestone
-- Department/Service + ServiceActivity foundation
+- Clinical Activity Integration
 
 ## Current Task
-- Integrate Visit, Admission and Investigation with Department/Service classification
+- Build deduplicated hospital and departmental statistics
 
 ## Next Task
-- Build deduplicated hospital and departmental statistics
-- Then proceed to reporting, LAN packaging and frontend
+- Reporting and printing backend
+- Then LAN packaging and frontend
 
 ## Blockers
 - None for local clinical record implementation.
@@ -52,9 +52,8 @@
 - Optional/empty clinical sections must never prevent saving or retrieval.
 
 ## Last Updated
-- 2026-08-12 - Clinical Activity Integration batch prepared.
+- 2026-08-12 - Hospital Statistics Engine batch prepared.
 
 
 ## Current Backend Milestone
-- Department/Service + ServiceActivity foundation in progress.
-- Statistics engine is intentionally deferred until Visit, Admission, Investigation and service activity relationships are integrated.
+- Hospital Statistics Engine implemented on the integrated clinical activity sources.
