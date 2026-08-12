@@ -48,6 +48,9 @@ from app.api.v1.endpoints.stock_transactions import (
 from app.api.v1.endpoints.visits import (
     router as visits_router,
 )
+from app.api.v1.endpoints.billing import (
+    router as billing_router,
+)
 
 
 api_router = APIRouter()
@@ -103,6 +106,10 @@ api_router.include_router(
 
 api_router.include_router(
     investigation_results_router,
+)
+
+api_router.include_router(
+    billing_router,
 )
 
 

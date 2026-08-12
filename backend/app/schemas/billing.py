@@ -1,0 +1,133 @@
+"""
+HHMS Billing Schemas.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from decimal import Decimal
+from typing import Literal
+
+from pydantic import Field
+
+from app.schemas.base import BaseSchema
+
+
+PaymentStatus = Literal[
+    "unpaid",
+    "partial",
+    "paid",
+    "cancelled",
+]
+
+
+PaymentMethod = Literal[
+    "cash",
+    "card",
+    "upi",
+    "bank_transfer",
+    "cheque",
+    "other",
+]
+
+
+class InvoiceCreate(BaseSchema):
+    patient_id: int = Field(gt=0)
+
+    visit_id: int | None = Field(
+        default=None,
+        gt=0,
+    )
+
+    admission_id: int | None = Field(
+        default=None,
+        gt=0,
+    )
+
+    invoice_date: datetime
+
+    total_amount: Decimal = Field(
+        ge=0,
+    )
+
+    remarks: str | None = None
+
+
+class InvoiceUpdate(BaseSchema):
+    total_amount: Decimal | None = Field(
+        default=None,
+        ge=0,
+    )
+
+    remarks: str | None = None
+
+    payment_status: PaymentStatus | None = None
+
+
+class InvoiceRead(BaseSchema):
+    id: int
+    patient_id: int
+    visit_id: int | None
+    admission_id: int | None
+    invoice_number: str
+    invoice_date: datetime
+    total_amount: Decimal
+    payment_status: str
+    generated_by: int
+    remarks: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class PaymentCreate(BaseSchema):
+    invoice_id: int = Field(gt=0)
+
+    payment_datetime: datetime
+
+    payment_method: PaymentMethod
+
+    amount_paid: Decimal = Field(
+        gt=0,
+    )
+
+    transaction_reference: str | None = Field(
+        default=None,
+        max_length=100,
+    )
+
+    remarks: str | None = None
+
+
+class PaymentRead(BaseSchema):
+    id: int
+    invoice_id: int
+    receipt_number: str
+    payment_datetime: datetime
+    payment_method: str
+    amount_paid: Decimal
+    received_by: int
+    transaction_reference: str | None
+    remarks: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class InvoiceSummary(BaseSchema):
+    invoice: InvoiceRead
+    total_paid: Decimal
+    balance_amount: Decimal
+
+
+__all__ = [
+    "PaymentStatus",
+    "PaymentMethod",
+    "InvoiceCreate",
+    "InvoiceUpdate",
+    "InvoiceRead",
+    "PaymentCreate",
+    "PaymentRead",
+    "InvoiceSummary",
+]
