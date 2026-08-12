@@ -84,6 +84,9 @@ from app.api.v1.endpoints.patient_files import (
 from app.api.v1.endpoints.archive_records import (
     router as archive_records_router,
 )
+from app.api.v1.endpoints.departments import (
+    router as departments_router,
+)
 
 
 api_router = APIRouter()

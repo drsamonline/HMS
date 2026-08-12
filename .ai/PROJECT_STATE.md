@@ -1,20 +1,20 @@
 # HHMS Project State
 
 ## Current Phase
-- Backend Medical Records
+- Backend Master Data and Statistics Foundation
 
 ## Current Milestone
-- MRD: PatientFile and ArchiveRecord
+- Department master audit and backend foundation correction
 
 ## Last Completed Milestone
-- Billing
+- MRD
 
 ## Current Task
-- Implement compact MRD patient-file and archive records
+- Correct existing backend foundations before adding department/service statistics
 
 ## Next Task
-- Validate, document, commit Clinical Core
-- Then implement frontend clinical workflows
+- Implement department/service master and statistics foundation
+- Then implement LAN desktop/client architecture before frontend UI
 
 ## Blockers
 - None for local clinical record implementation.
@@ -35,8 +35,8 @@
 | Billing | Complete |
 | Clinical Core | Complete |
 | IPD Clinical Documentation | Complete |
-| MRD | In Progress |
-| Frontend | Pending |
+| MRD | Complete |
+| Frontend | Deferred until backend/statistics foundation |
 | Printing | Pending |
 | Reports | Pending |
 | Testing / Final Audit | Pending |
@@ -52,4 +52,6 @@
 - Optional/empty clinical sections must never prevent saving or retrieval.
 
 ## Last Updated
-- 2026-08-12 - MRD implementation started.
+- 2026-08-12 - MRD completed.
+- 2026-08-12 - Full backend audit identified missing Department migration/API and an incorrect OPDToken model; correction started.
+- 2026-08-12 - Statistics architecture locked around distinct patients, encounters, and departmental service activity.

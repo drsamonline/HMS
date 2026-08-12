@@ -1,101 +1,39 @@
-"""
-HHMS Visit ORM Model.
-
-Implements the Visit table defined in DATABASE_SCHEMA.md.
-
-Project : Hospital Homoeopathic Management System (HHMS)
-Author  : Dr. Sohil Momin
-"""
-
+"""HHMS OPD token ORM model."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
 
 
-class Visit(Base):
-    """
-    Clinical encounter between a Patient and the hospital.
-    """
+class OPDToken(Base):
+    """Queue token assigned to a patient's outpatient visit."""
 
-    __tablename__ = "Visit"
+    __tablename__ = "OPDToken"
 
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-        autoincrement=True,
-    )
-
-    patient_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey(
-            "Patient.id",
-            name="fk_visit_patient",
-        ),
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    visit_id: Mapped[int] = mapped_column(
+        ForeignKey("Visit.id", name="fk_opd_token_visit"),
         nullable=False,
         index=True,
     )
-
-    visit_number: Mapped[str] = mapped_column(
-        String(20),
-        nullable=False,
-        unique=True,
-        index=True,
-    )
-
-    visit_type: Mapped[str] = mapped_column(
-        String(20),
-        nullable=False,
-    )
-
-    visit_datetime: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        index=True,
-    )
-
-    chief_complaint: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-    )
-
-    consultation_status: Mapped[str] = mapped_column(
-        String(20),
-        nullable=False,
-    )
-
-    consulting_doctor_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey(
-            "User.id",
-            name="fk_visit_consulting_doctor",
-        ),
-        nullable=False,
-        index=True,
-    )
-
-    remarks: Mapped[str | None] = mapped_column(
-        Text,
-        nullable=True,
-    )
-
+    token_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    queue_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    queue_status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    called_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default="CURRENT_TIMESTAMP",
+        DateTime(timezone=True), nullable=False, server_default="CURRENT_TIMESTAMP"
     )
-
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default="CURRENT_TIMESTAMP",
+        DateTime(timezone=True), nullable=False, server_default="CURRENT_TIMESTAMP",
         onupdate=datetime.utcnow,
     )
 
 
-__all__ = [
-    "Visit",
-]
+__all__ = ["OPDToken"]
+

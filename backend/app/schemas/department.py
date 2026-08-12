@@ -39,6 +39,8 @@ class DepartmentUpdate(BaseSchema):
 
     department_type: DepartmentType | None = None
 
+    is_active: bool | None = None
+
 
 class DepartmentRead(BaseSchema):
     """
@@ -54,6 +56,8 @@ class DepartmentRead(BaseSchema):
     description: str | None
 
     department_type: DepartmentType
+
+    is_active: bool
 
 
 __all__ = [
