@@ -41,3 +41,14 @@ service.
 
 For example, one patient can contribute one hospital unique patient while
 contributing separately to OPD, laboratory and X-ray activity.
+
+
+## Reporting dimensions
+
+The hospital response also exposes report-level breakdowns for:
+- activity type: OPD, IPD, investigation, configurable service;
+- case type: new, old, unspecified;
+- investigation fulfillment: in-house, outsourced, unspecified;
+- configurable service type/category with both activity and unique-patient counts.
+
+These breakdowns remain separate from the deduplicated hospital patient total.

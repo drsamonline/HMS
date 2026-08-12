@@ -53,7 +53,7 @@
 
 ## Last Updated
 - 2026-08-12 - Statistics Reporting & Deduplication batch completed.
-- 2026-08-12 - Department/service classification and activity-type reporting batch prepared.
+- 2026-08-12 - Statistics reporting dimensions and configurable service-type breakdown batch prepared.
 
 
 ## Current Backend Milestone

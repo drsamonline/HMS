@@ -144,3 +144,19 @@ def test_department_and_service_breakdown_contracts() -> None:
     assert department.department_type == "diagnostic"
     assert service.service_type == "hematology"
     assert service.investigation_count == 7
+
+
+def test_breakdown_contracts() -> None:
+    from app.schemas.statistics import ActivityBreakdown, ServiceTypeStatistics
+
+    activity = ActivityBreakdown(name="investigation", count=7)
+    fulfillment = ActivityBreakdown(name="inhouse", count=5)
+    service_type = ServiceTypeStatistics(
+        service_type="hematology",
+        activity_count=7,
+        unique_patient_count=6,
+    )
+
+    assert activity.count == 7
+    assert fulfillment.name == "inhouse"
+    assert service_type.service_type == "hematology"

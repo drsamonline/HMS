@@ -15,6 +15,19 @@ class StatisticsFilters(BaseModel):
     service_id: UUID | None = None
 
 
+class ActivityBreakdown(BaseModel):
+    """Named activity count for report-level breakdowns."""
+    name: str
+    count: int = Field(ge=0)
+
+
+class ServiceTypeStatistics(BaseModel):
+    """Activity grouped by configurable service type/category."""
+    service_type: str
+    activity_count: int = Field(ge=0)
+    unique_patient_count: int = Field(ge=0)
+
+
 class DepartmentStatistics(BaseModel):
     department_id: UUID
     department_name: str
@@ -94,6 +107,10 @@ class HospitalStatistics(BaseModel):
     unspecified_case_activity_count: int = Field(ge=0)
     inhouse_investigation_count: int = Field(ge=0)
     outsourced_investigation_count: int = Field(ge=0)
+    activity_type_breakdown: list[ActivityBreakdown]
+    case_type_breakdown: list[ActivityBreakdown]
+    fulfillment_breakdown: list[ActivityBreakdown]
+    service_type_breakdown: list[ServiceTypeStatistics]
     departments: list[DepartmentStatistics]
     services: list[ServiceStatistics]
     daily: list[DailyStatistics]
@@ -101,6 +118,8 @@ class HospitalStatistics(BaseModel):
 
 __all__ = [
     "StatisticsFilters",
+    "ActivityBreakdown",
+    "ServiceTypeStatistics",
     "DepartmentStatistics",
     "ServiceStatistics",
     "DailyStatistics",

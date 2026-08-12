@@ -22,10 +22,12 @@ from app.models.patient import Patient
 from app.models.service_activity import ServiceActivity
 from app.models.visit import Visit
 from app.schemas.statistics import (
+    ActivityBreakdown,
     DailyStatistics,
     DepartmentStatistics,
     HospitalStatistics,
     ServiceStatistics,
+    ServiceTypeStatistics,
 )
 
 _CANONICAL_SOURCE_TYPES = ("visit", "admission", "investigation")
@@ -237,6 +239,9 @@ class StatisticsService:
 
         departments = await self._department_stats(db, activity_scope)
         services = await self._service_stats(db, activity_scope)
+        activity_breakdown, case_breakdown, fulfillment_breakdown, service_type_breakdown = (
+            await self._activity_breakdowns(db, activity_scope)
+        )
         daily = await self._daily_stats(db, activity_scope)
 
         total = int(total_row.total or 0)
@@ -263,10 +268,86 @@ class StatisticsService:
             unspecified_case_activity_count=max(total - new_count - old_count, 0),
             inhouse_investigation_count=int(total_row.inhouse or 0),
             outsourced_investigation_count=int(total_row.outsourced or 0),
+            activity_type_breakdown=activity_breakdown,
+            case_type_breakdown=case_breakdown,
+            fulfillment_breakdown=fulfillment_breakdown,
+            service_type_breakdown=service_type_breakdown,
             departments=departments,
             services=services,
             daily=daily,
         )
+
+    async def _activity_breakdowns(self, db: AsyncSession, activity_scope):
+        """Return activity, case-type and fulfillment-mode breakdowns."""
+        activity_result = await db.execute(
+            select(
+                activity_scope.c.activity_type,
+                func.count().label("count"),
+            )
+            .group_by(activity_scope.c.activity_type)
+            .order_by(activity_scope.c.activity_type)
+        )
+        activity = [
+            ActivityBreakdown(name=str(r.activity_type), count=int(r.count or 0))
+            for r in activity_result
+        ]
+
+        case_result = await db.execute(
+            select(
+                func.coalesce(activity_scope.c.case_type, "unspecified").label("case_type"),
+                func.count().label("count"),
+            )
+            .group_by(activity_scope.c.case_type)
+            .order_by(activity_scope.c.case_type)
+        )
+        case_types = [
+            ActivityBreakdown(name=str(r.case_type), count=int(r.count or 0))
+            for r in case_result
+        ]
+
+        fulfillment_result = await db.execute(
+            select(
+                func.coalesce(
+                    func.nullif(func.lower(activity_scope.c.fulfillment_mode), ""),
+                    "unspecified",
+                ).label("fulfillment_mode"),
+                func.count().label("count"),
+            )
+            .where(activity_scope.c.activity_type == "investigation")
+            .group_by(activity_scope.c.fulfillment_mode)
+            .order_by(activity_scope.c.fulfillment_mode)
+        )
+        fulfillment = [
+            ActivityBreakdown(name=str(r.fulfillment_mode), count=int(r.count or 0))
+            for r in fulfillment_result
+        ]
+
+        service_type_result = await db.execute(
+            select(
+                func.coalesce(
+                    func.nullif(DepartmentService.service_type, ""),
+                    "unspecified",
+                ).label("service_type"),
+                func.count().label("activity_count"),
+                func.count(func.distinct(activity_scope.c.patient_id)).label("unique_patients"),
+            )
+            .select_from(activity_scope)
+            .outerjoin(
+                DepartmentService,
+                DepartmentService.id == activity_scope.c.service_id,
+            )
+            .group_by(DepartmentService.service_type)
+            .order_by(DepartmentService.service_type)
+        )
+        service_types = [
+            ServiceTypeStatistics(
+                service_type=str(r.service_type),
+                activity_count=int(r.activity_count or 0),
+                unique_patient_count=int(r.unique_patients or 0),
+            )
+            for r in service_type_result
+        ]
+        return activity, case_types, fulfillment, service_types
 
     async def _department_stats(self, db: AsyncSession, activity_scope):
         male, female, other = _gender_counts(activity_scope.c.patient_id, Patient.gender)
@@ -290,10 +371,6 @@ class StatisticsService:
                 child.label("child"),
                 adult.label("adult"),
                 unknown_age.label("unknown_age"),
-                func.sum(case((activity_scope.c.activity_type == "opd", 1), else_=0)).label("opd"),
-                func.sum(case((activity_scope.c.activity_type == "ipd", 1), else_=0)).label("ipd"),
-                func.sum(case((activity_scope.c.activity_type == "investigation", 1), else_=0)).label("investigation"),
-                func.sum(case((activity_scope.c.activity_type == "service", 1), else_=0)).label("service"),
                 func.sum(case((activity_scope.c.case_type == "new", 1), else_=0)).label("new_case"),
                 func.sum(case((activity_scope.c.case_type == "old", 1), else_=0)).label("old_case"),
                 func.sum(
