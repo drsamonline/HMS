@@ -350,55 +350,28 @@ class StatisticsService:
         return activity, case_types, fulfillment, service_types
 
     async def _department_stats(self, db: AsyncSession, activity_scope):
-        male, female, other = _gender_counts(activity_scope.c.patient_id, Patient.gender)
-        child, adult, unknown_age = _age_counts(activity_scope.c.patient_id, Patient.age)
-
+        """Aggregate department activity with department-local distinct demographics."""
+        male = func.count(func.distinct(case((func.lower(Patient.gender) == "male", activity_scope.c.patient_id), else_=None)))
+        female = func.count(func.distinct(case((func.lower(Patient.gender) == "female", activity_scope.c.patient_id), else_=None)))
+        other = func.count(func.distinct(case((~func.lower(Patient.gender).in_(("male", "female")), activity_scope.c.patient_id), else_=None)))
+        child = func.count(func.distinct(case((and_(Patient.age.is_not(None), Patient.age < 18), activity_scope.c.patient_id), else_=None)))
+        adult = func.count(func.distinct(case((and_(Patient.age.is_not(None), Patient.age >= 18), activity_scope.c.patient_id), else_=None)))
+        unknown_age = func.count(func.distinct(case((Patient.age.is_(None), activity_scope.c.patient_id), else_=None)))
         stmt = (
             select(
-                Department.id.label("department_id"),
-                Department.name.label("department_name"),
-                Department.department_type.label("department_type"),
-                DepartmentService.service_type.label("service_type"),
-                func.count().label("activity_count"),
+                Department.id.label("department_id"), Department.name.label("department_name"),
+                Department.department_type.label("department_type"), func.count().label("activity_count"),
                 func.count(func.distinct(activity_scope.c.patient_id)).label("unique_patients"),
                 func.sum(case((activity_scope.c.activity_type == "opd", 1), else_=0)).label("opd"),
                 func.sum(case((activity_scope.c.activity_type == "ipd", 1), else_=0)).label("ipd"),
                 func.sum(case((activity_scope.c.activity_type == "investigation", 1), else_=0)).label("investigation"),
                 func.sum(case((activity_scope.c.activity_type == "service", 1), else_=0)).label("service"),
-                male.label("male"),
-                female.label("female"),
-                other.label("other_gender"),
-                child.label("child"),
-                adult.label("adult"),
-                unknown_age.label("unknown_age"),
+                male.label("male"), female.label("female"), other.label("other_gender"),
+                child.label("child"), adult.label("adult"), unknown_age.label("unknown_age"),
                 func.sum(case((activity_scope.c.case_type == "new", 1), else_=0)).label("new_case"),
                 func.sum(case((activity_scope.c.case_type == "old", 1), else_=0)).label("old_case"),
-                func.sum(
-                    case(
-                        (
-                            and_(
-                                activity_scope.c.activity_type == "investigation",
-                                func.lower(func.coalesce(activity_scope.c.fulfillment_mode, "")).in_(
-                                    ("inhouse", "in-house", "in_house")
-                                ),
-                            ),
-                            1,
-                        ),
-                        else_=0,
-                    )
-                ).label("inhouse"),
-                func.sum(
-                    case(
-                        (
-                            and_(
-                                activity_scope.c.activity_type == "investigation",
-                                func.lower(func.coalesce(activity_scope.c.fulfillment_mode, "")) == "outsourced",
-                            ),
-                            1,
-                        ),
-                        else_=0,
-                    )
-                ).label("outsourced"),
+                func.sum(case((and_(activity_scope.c.activity_type == "investigation", func.lower(func.coalesce(activity_scope.c.fulfillment_mode, "")).in_(("inhouse", "in-house", "in_house"))), 1), else_=0)).label("inhouse"),
+                func.sum(case((and_(activity_scope.c.activity_type == "investigation", func.lower(func.coalesce(activity_scope.c.fulfillment_mode, "")) == "outsourced"), 1), else_=0)).label("outsourced"),
             )
             .join(Department, Department.id == activity_scope.c.department_id)
             .join(Patient, Patient.id == activity_scope.c.patient_id)
@@ -406,41 +379,20 @@ class StatisticsService:
             .order_by(Department.name)
         )
         result = await db.execute(stmt)
-        rows = []
+        rows=[]
         for r in result:
-            total = int(r.activity_count or 0)
-            new_count = int(r.new_case or 0)
-            old_count = int(r.old_case or 0)
-            rows.append(
-                DepartmentStatistics(
-                    department_id=r.department_id,
-                    department_name=r.department_name,
-                    department_type=str(r.department_type or ""),
-                    activity_count=total,
-                    unique_patient_count=int(r.unique_patients or 0),
-                    opd_count=int(r.opd or 0),
-                    ipd_count=int(r.ipd or 0),
-                    investigation_count=int(r.investigation or 0),
-                    service_count=int(r.service or 0),
-                    male_count=int(r.male or 0),
-                    female_count=int(r.female or 0),
-                    other_gender_count=int(r.other_gender or 0),
-                    child_count=int(r.child or 0),
-                    adult_count=int(r.adult or 0),
-                    unspecified_age_count=int(r.unknown_age or 0),
-                    new_case_count=new_count,
-                    old_case_count=old_count,
-                    unspecified_case_count=max(total - new_count - old_count, 0),
-                    inhouse_count=int(r.inhouse or 0),
-                    outsourced_count=int(r.outsourced or 0),
-                )
-            )
+            total=int(r.activity_count or 0); new_count=int(r.new_case or 0); old_count=int(r.old_case or 0)
+            rows.append(DepartmentStatistics(department_id=r.department_id, department_name=r.department_name, department_type=str(r.department_type or ""), activity_count=total, unique_patient_count=int(r.unique_patients or 0), opd_count=int(r.opd or 0), ipd_count=int(r.ipd or 0), investigation_count=int(r.investigation or 0), service_count=int(r.service or 0), male_count=int(r.male or 0), female_count=int(r.female or 0), other_gender_count=int(r.other_gender or 0), child_count=int(r.child or 0), adult_count=int(r.adult or 0), unspecified_age_count=int(r.unknown_age or 0), new_case_count=new_count, old_case_count=old_count, unspecified_case_count=max(total-new_count-old_count,0), inhouse_count=int(r.inhouse or 0), outsourced_count=int(r.outsourced or 0)))
         return rows
 
     async def _service_stats(self, db: AsyncSession, activity_scope):
-        male, female, other = _gender_counts(activity_scope.c.patient_id, Patient.gender)
-        child, adult, unknown_age = _age_counts(activity_scope.c.patient_id, Patient.age)
-
+        """Aggregate service activity with service-local distinct demographics."""
+        male = func.count(func.distinct(case((func.lower(Patient.gender) == "male", activity_scope.c.patient_id), else_=None)))
+        female = func.count(func.distinct(case((func.lower(Patient.gender) == "female", activity_scope.c.patient_id), else_=None)))
+        other = func.count(func.distinct(case((~func.lower(Patient.gender).in_(("male", "female")), activity_scope.c.patient_id), else_=None)))
+        child = func.count(func.distinct(case((and_(Patient.age.is_not(None), Patient.age < 18), activity_scope.c.patient_id), else_=None)))
+        adult = func.count(func.distinct(case((and_(Patient.age.is_not(None), Patient.age >= 18), activity_scope.c.patient_id), else_=None)))
+        unknown_age = func.count(func.distinct(case((Patient.age.is_(None), activity_scope.c.patient_id), else_=None)))
         stmt = (
             select(
                 DepartmentService.id.label("service_id"),

@@ -52,3 +52,8 @@ The hospital response also exposes report-level breakdowns for:
 - configurable service type/category with both activity and unique-patient counts.
 
 These breakdowns remain separate from the deduplicated hospital patient total.
+
+
+## Batch 05 correctness hardening
+
+Department and service demographic counts are computed within each grouped department/service scope. The previous full-scope aggregate pattern could repeat hospital-wide demographic counts for every department/service. Department aggregation also no longer selects an ungrouped service-type column.
