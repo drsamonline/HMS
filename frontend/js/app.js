@@ -27,6 +27,28 @@ function enterSignedOutState(message="Please sign in again."){
  status($("#login-status"),message,"error");
 }
 
+
+// Lightweight unsaved-change guard for clinical forms.
+let hhmsDirty = false;
+window.hhms = window.hhms || {};
+window.hhms.formState = {
+  isDirty: () => hhmsDirty,
+  markDirty: () => { hhmsDirty = true; document.body.classList.add("has-unsaved-changes"); },
+  markClean: () => { hhmsDirty = false; document.body.classList.remove("has-unsaved-changes"); }
+};
+window.addEventListener("beforeunload", (event) => {
+  if (!hhmsDirty) return;
+  event.preventDefault();
+  event.returnValue = "";
+});
+document.addEventListener("input", (event) => {
+  if (event.target?.closest?.("form")) window.hhms.formState.markDirty();
+});
+document.addEventListener("change", (event) => {
+  if (event.target?.closest?.("form")) window.hhms.formState.markDirty();
+});
+const originalToggle = toggle;
+
 let currentUserProfile=null;
 async function loadUserProfile(){
  try{

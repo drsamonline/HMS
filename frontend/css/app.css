@@ -29,3 +29,5 @@
 #runtime-status{position:sticky;top:0;z-index:20;margin:0 auto 12px;max-width:980px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
 .status-box[role="status"]{font-weight:600}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #2b6b91;outline-offset:2px}
+
+body.has-unsaved-changes::after{content:"Unsaved changes";position:fixed;right:14px;bottom:14px;z-index:1000;padding:6px 10px;border-radius:6px;background:#8a3b12;color:#fff;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
