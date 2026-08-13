@@ -40,11 +40,22 @@ def get_engine() -> AsyncEngine:
 
     settings = get_settings()
 
-    return create_async_engine(
-        settings.DATABASE_URL,
-        echo=settings.DATABASE_ECHO,
-        pool_pre_ping=True,
-    )
+    connect_args: dict[str, object] = {}
+    engine_kwargs: dict[str, object] = {
+        "echo": settings.DATABASE_ECHO,
+        "pool_pre_ping": True,
+    }
+
+    if settings.DATABASE_URL.startswith("sqlite+aiosqlite://"):
+        connect_args["check_same_thread"] = False
+        engine_kwargs["connect_args"] = connect_args
+        # SQLite is file-based and does not benefit from a server-style pool.
+        from sqlalchemy.pool import StaticPool
+        engine_kwargs["poolclass"] = StaticPool
+    else:
+        engine_kwargs["connect_args"] = connect_args
+
+    return create_async_engine(settings.DATABASE_URL, **engine_kwargs)
 
 
 @lru_cache(maxsize=1)

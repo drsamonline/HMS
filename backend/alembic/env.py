@@ -11,6 +11,7 @@ from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+from pathlib import Path
 
 from app.config.settings import get_settings
 from app.db.base import metadata
@@ -39,6 +40,11 @@ def get_database_url() -> str:
             "postgresql+psycopg://",
             1,
         )
+
+    if url.startswith("sqlite+aiosqlite:///"):
+        sqlite_path = Path(url.removeprefix("sqlite+aiosqlite:///"))
+        sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+        return f"sqlite:///{sqlite_path.as_posix()}"
 
     return url
 

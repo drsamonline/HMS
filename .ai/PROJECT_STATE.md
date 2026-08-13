@@ -1,20 +1,20 @@
 # HHMS Project State
 
 ## Current Phase
-- Backend Clinical Activity and Statistics Foundation
+- LAN Server/Client Packaging Foundation
 
 ## Current Milestone
-- Statistics Engine completed; next: Reporting / Printing backend
+- Reporting/printing backend completed; next: LAN server packaging foundation
 
 ## Last Completed Milestone
-- Statistics Reporting & Deduplication Batch 05
+- Reporting/Print Manifest Batch 05
 
 ## Current Task
-- Reporting/printing backend: print manifest and section/page-group metadata
+- Server packaging foundation: portable SQLite runtime, writable data paths, and PyInstaller entry point
 
 ## Next Task
-- Reporting/printing backend
-- Then LAN server/client packaging
+- LAN client packaging / discovery
+- Then frontend implementation
 - Then frontend implementation
 - Then integration and final audit
 
@@ -75,7 +75,8 @@
 - Printing must support entire cases, selected sections/documents, page/document-specific output, date-wise and date-range output, and batch printing where applicable.
 
 ## Last Updated
-- 2026-08-13 - Reporting/print manifest batch 05 prepared.
+- 2026-08-13 - Reporting/print manifest batch 05 completed.
+- 2026-08-13 - LAN server packaging foundation started.
 - 2026-08-13 - Fresh HMS(3).zip audited as the new baseline.
 - 2026-08-12 - Statistics Reporting & Deduplication Batch 05 completed.
 - 2026-08-12 - Statistics reporting dimensions and configurable service-type breakdown completed.

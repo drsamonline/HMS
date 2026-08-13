@@ -18,8 +18,10 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.config.runtime_paths import application_root, database_path, logs_directory
 
-ROOT_DIR = Path(__file__).resolve().parents[3]
+
+ROOT_DIR = application_root()
 
 
 class Settings(BaseSettings):
@@ -31,7 +33,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(application_root() / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -66,6 +68,9 @@ class Settings(BaseSettings):
         default=False,
     )
 
+    SERVER_HOST: str = Field(default="0.0.0.0")
+    SERVER_PORT: int = Field(default=8000, ge=1, le=65535)
+
     # ==========================================================
     # Security
     # ==========================================================
@@ -89,8 +94,8 @@ class Settings(BaseSettings):
     # ==========================================================
 
     DATABASE_URL: str = Field(
-        ...,
-        description="Database connection URL.",
+        default_factory=lambda: f"sqlite+aiosqlite:///{database_path().as_posix()}",
+        description="Database connection URL. Defaults to portable SQLite; may be overridden for PostgreSQL deployments.",
     )
 
     DATABASE_ECHO: bool = Field(
@@ -118,7 +123,7 @@ class Settings(BaseSettings):
     )
 
     LOG_DIRECTORY: str = Field(
-        default="logs",
+        default_factory=lambda: str(logs_directory()),
     )
 
     LOG_FILE_NAME: str = Field(
