@@ -10,8 +10,18 @@ async function request(path,options={}){
  headers.set("Accept","application/json");
  if(accessToken)headers.set("Authorization",`Bearer ${accessToken}`);
  if(options.body&&!headers.has("Content-Type"))headers.set("Content-Type","application/json");
+ const controller=new AbortController();
+ const callerSignal=options.signal;
+ const timeoutMs=Number(options.timeoutMs)||15000;
+ const timeoutId=setTimeout(()=>controller.abort(),timeoutMs);
+ if(callerSignal){
+  if(callerSignal.aborted)controller.abort();
+  else callerSignal.addEventListener("abort",()=>controller.abort(),{once:true});
+ }
  try{
-  const r=await fetch(`${serverBaseUrl}${path}`,{...options,headers,cache:"no-store"});
+  const fetchOptions={...options,headers,cache:"no-store",signal:controller.signal};
+  delete fetchOptions.timeoutMs;
+  const r=await fetch(`${serverBaseUrl}${path}`,fetchOptions);
   if(r.status===401){
    clearAccessToken();
    window.dispatchEvent(new CustomEvent("hhms:auth-expired"));
@@ -25,11 +35,18 @@ async function request(path,options={}){
   window.dispatchEvent(new CustomEvent("hhms:server-state",{detail:{online:true}}));
   return r.status===204?null:r.json();
  }catch(error){
+  if(error?.name==="AbortError"){
+   window.dispatchEvent(new CustomEvent("hhms:request-timeout",{detail:{path,timeoutMs}}));
+   window.dispatchEvent(new CustomEvent("hhms:server-state",{detail:{online:false}}));
+   throw new Error(`HHMS server did not respond within ${Math.round(timeoutMs/1000)} seconds. Check the LAN connection or server status.`);
+  }
   if(error instanceof TypeError||/Failed to fetch|NetworkError|fetch/i.test(String(error?.message||""))){
    window.dispatchEvent(new CustomEvent("hhms:server-state",{detail:{online:false}}));
    throw new Error("HHMS server is unreachable. Check the LAN connection or server address and try again.");
   }
   throw error;
+ }finally{
+  clearTimeout(timeoutId);
  }
 }
 export async function checkServer(baseUrl=serverBaseUrl){if(baseUrl)serverBaseUrl=normalizeBaseUrl(baseUrl);const c=loadClientConfig();return request(c.healthPath)}

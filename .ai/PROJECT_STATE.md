@@ -50,3 +50,5 @@
 - Client unsaved-change protection: ephemeral dirty-state indicator, navigation confirmation, and before-unload protection added.
 
 - Client Startup / Session Restore Batch 24: saved-server-first startup, authenticated-session reconnect, and LAN discovery fallback implemented.
+
+- Client Network Timeout Batch 25: bounded LAN API requests with graceful timeout reporting; no automatic session loss or data discard.
