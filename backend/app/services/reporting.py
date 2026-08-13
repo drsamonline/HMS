@@ -1,12 +1,7 @@
-"""HHMS report-data selection service.
-
-This service prepares structured clinical data for preview/printing.
-It deliberately does not render PDF or HTML; rendering belongs to the
-client print layer.
-"""
+"""HHMS reporting and print-data selection service."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import Select, select
@@ -27,8 +22,32 @@ from app.models.patient import Patient
 from app.models.prescription import Prescription
 from app.models.progress_note import ProgressNote
 from app.models.visit import Visit
-from app.schemas.reporting import ALL_REPORT_SECTIONS, ClinicalReportRequest
+from app.schemas.reporting import (
+    ALL_REPORT_SECTIONS,
+    ClinicalReportBatchItem,
+    ClinicalReportBatchRead,
+    ClinicalReportBatchRequest,
+    ClinicalReportRead,
+    ClinicalReportRequest,
+    ReportCatalogItem,
+    ReportCatalogRead,
+)
 
+_REPORT_CATALOG = [
+    ReportCatalogItem(key="patient", label="Patient", description="Patient demographics and registration information.", available_for=["clinical", "case", "ipd"]),
+    ReportCatalogItem(key="case_record", label="Homoeopathic Case Record", description="Complete homoeopathic case history and assessment fields.", available_for=["clinical", "case"]),
+    ReportCatalogItem(key="admission", label="Admission", description="IPD admission episode details.", available_for=["clinical", "ipd"]),
+    ReportCatalogItem(key="diagnosis", label="Diagnosis / ICD-11", description="Diagnoses linked to the selected case record.", available_for=["clinical", "case"]),
+    ReportCatalogItem(key="followups", label="Follow-ups", description="Follow-up records within the requested time range.", available_for=["clinical", "case"]),
+    ReportCatalogItem(key="prescriptions", label="Prescriptions", description="Prescriptions linked to the selected visit.", available_for=["clinical", "case"]),
+    ReportCatalogItem(key="investigations", label="Investigations", description="Investigation requests associated with the patient/context.", available_for=["clinical", "case", "ipd"]),
+    ReportCatalogItem(key="ipd_assessment", label="IPD Assessment", description="IPD admission assessments.", available_for=["clinical", "ipd"]),
+    ReportCatalogItem(key="pain_assessments", label="Pain Assessments", description="IPD pain assessment records.", available_for=["clinical", "ipd"]),
+    ReportCatalogItem(key="nutritional_assessment", label="Nutritional Assessment", description="IPD nutritional assessment records.", available_for=["clinical", "ipd"]),
+    ReportCatalogItem(key="diet_charts", label="Diet Charts", description="IPD diet chart records.", available_for=["clinical", "ipd"]),
+    ReportCatalogItem(key="progress_notes", label="Progress Notes", description="IPD progress notes.", available_for=["clinical", "ipd"]),
+    ReportCatalogItem(key="discharge", label="Discharge Summary", description="IPD discharge summary.", available_for=["clinical", "ipd"]),
+]
 
 def _dump_row(obj: Any) -> dict[str, Any]:
     if obj is None:
@@ -42,7 +61,6 @@ def _dump_row(obj: Any) -> dict[str, Any]:
         result[column.key] = value
     return result
 
-
 def _apply_time_range(stmt: Select[Any], column: Any, request: ClinicalReportRequest) -> Select[Any]:
     if request.start_datetime is not None:
         stmt = stmt.where(column >= request.start_datetime)
@@ -50,25 +68,21 @@ def _apply_time_range(stmt: Select[Any], column: Any, request: ClinicalReportReq
         stmt = stmt.where(column <= request.end_datetime)
     return stmt
 
-
 class ReportingService:
     """Prepare structured report data from existing clinical records."""
 
-    async def build_clinical_report(
-        self,
-        db: AsyncSession,
-        request: ClinicalReportRequest,
-    ) -> dict[str, Any]:
+    def catalog(self) -> ReportCatalogRead:
+        return ReportCatalogRead(sections=_REPORT_CATALOG)
+
+    async def build_clinical_report(self, db: AsyncSession, request: ClinicalReportRequest) -> ClinicalReportRead:
         patient = await self._resolve_patient(db, request)
         case_record = await self._resolve_case(db, request, patient.id)
         admission = await self._resolve_admission(db, request, patient.id)
 
         sections = list(dict.fromkeys(request.sections)) or list(ALL_REPORT_SECTIONS)
         data: dict[str, Any] = {}
-
         if "patient" in sections:
             data["patient"] = _dump_row(patient)
-
         if "case_record" in sections and case_record is not None:
             data["case_record"] = _dump_row(case_record)
 
@@ -76,114 +90,105 @@ class ReportingService:
         visit_id = case_record.visit_id if case_record is not None else None
         admission_id = admission.id if admission is not None else None
 
-        if "diagnosis" in sections and case_id is not None:
-            rows = await db.execute(
-                select(Diagnosis).where(Diagnosis.case_record_id == case_id).order_by(Diagnosis.id)
-            )
-            data["diagnosis"] = [_dump_row(row) for row in rows.scalars().all()]
+        if "admission" in sections and admission is not None:
+            data["admission"] = _dump_row(admission)
 
+        if "diagnosis" in sections and case_id is not None:
+            rows = await db.execute(select(Diagnosis).where(Diagnosis.case_record_id == case_id).order_by(Diagnosis.id))
+            data["diagnosis"] = [_dump_row(row) for row in rows.scalars().all()]
         if "followups" in sections and case_id is not None:
-            stmt = select(FollowUp).where(FollowUp.case_record_id == case_id).order_by(
-                FollowUp.followup_datetime
-            )
-            stmt = _apply_time_range(stmt, FollowUp.followup_datetime, request)
+            stmt = _apply_time_range(select(FollowUp).where(FollowUp.case_record_id == case_id).order_by(FollowUp.followup_datetime), FollowUp.followup_datetime, request)
             rows = await db.execute(stmt)
             data["followups"] = [_dump_row(row) for row in rows.scalars().all()]
-
         if "prescriptions" in sections and visit_id is not None:
-            stmt = select(Prescription).where(Prescription.visit_id == visit_id).order_by(
-                Prescription.prescription_datetime
-            )
-            stmt = _apply_time_range(stmt, Prescription.prescription_datetime, request)
+            stmt = _apply_time_range(select(Prescription).where(Prescription.visit_id == visit_id).order_by(Prescription.prescription_datetime), Prescription.prescription_datetime, request)
             rows = await db.execute(stmt)
             data["prescriptions"] = [_dump_row(row) for row in rows.scalars().all()]
-
         if "investigations" in sections:
-            stmt = select(Investigation).where(Investigation.patient_id == patient.id).order_by(
-                Investigation.investigation_datetime
-            )
+            stmt = select(Investigation).where(Investigation.patient_id == patient.id).order_by(Investigation.investigation_datetime)
             if visit_id is not None:
-                stmt = stmt.where(
-                    (Investigation.visit_id == visit_id)
-                    | (Investigation.visit_id.is_(None))
-                )
+                stmt = stmt.where((Investigation.visit_id == visit_id) | (Investigation.visit_id.is_(None)))
             if admission_id is not None:
-                stmt = stmt.where(
-                    (Investigation.admission_id == admission_id)
-                    | (Investigation.admission_id.is_(None))
-                )
+                stmt = stmt.where((Investigation.admission_id == admission_id) | (Investigation.admission_id.is_(None)))
             stmt = _apply_time_range(stmt, Investigation.investigation_datetime, request)
             rows = await db.execute(stmt)
             data["investigations"] = [_dump_row(row) for row in rows.scalars().all()]
 
         if admission_id is not None:
             if "ipd_assessment" in sections:
-                rows = await db.execute(
-                    select(IPDAssessment)
-                    .where(IPDAssessment.admission_id == admission_id)
-                    .order_by(IPDAssessment.assessment_datetime)
-                )
+                rows = await db.execute(select(IPDAssessment).where(IPDAssessment.admission_id == admission_id).order_by(IPDAssessment.assessment_datetime))
                 data["ipd_assessment"] = [_dump_row(row) for row in rows.scalars().all()]
-
             if "pain_assessments" in sections:
-                stmt = select(PainAssessment).where(
-                    PainAssessment.admission_id == admission_id
-                ).order_by(PainAssessment.assessment_datetime)
-                stmt = _apply_time_range(stmt, PainAssessment.assessment_datetime, request)
+                stmt = _apply_time_range(select(PainAssessment).where(PainAssessment.admission_id == admission_id).order_by(PainAssessment.assessment_datetime), PainAssessment.assessment_datetime, request)
                 rows = await db.execute(stmt)
                 data["pain_assessments"] = [_dump_row(row) for row in rows.scalars().all()]
-
             if "nutritional_assessment" in sections:
-                rows = await db.execute(
-                    select(NutritionalAssessment)
-                    .where(NutritionalAssessment.admission_id == admission_id)
-                    .order_by(NutritionalAssessment.assessment_datetime)
-                )
-                data["nutritional_assessment"] = [
-                    _dump_row(row) for row in rows.scalars().all()
-                ]
-
+                rows = await db.execute(select(NutritionalAssessment).where(NutritionalAssessment.admission_id == admission_id).order_by(NutritionalAssessment.assessment_datetime))
+                data["nutritional_assessment"] = [_dump_row(row) for row in rows.scalars().all()]
             if "diet_charts" in sections:
-                stmt = select(DietChart).where(
-                    DietChart.admission_id == admission_id
-                ).order_by(DietChart.chart_date)
-                stmt = _apply_time_range(stmt, DietChart.chart_date, request)
+                stmt = _apply_time_range(select(DietChart).where(DietChart.admission_id == admission_id).order_by(DietChart.chart_date), DietChart.chart_date, request)
                 rows = await db.execute(stmt)
                 data["diet_charts"] = [_dump_row(row) for row in rows.scalars().all()]
-
             if "progress_notes" in sections:
-                stmt = select(ProgressNote).where(
-                    ProgressNote.admission_id == admission_id
-                ).order_by(ProgressNote.note_datetime)
-                stmt = _apply_time_range(stmt, ProgressNote.note_datetime, request)
+                stmt = _apply_time_range(select(ProgressNote).where(ProgressNote.admission_id == admission_id).order_by(ProgressNote.note_datetime), ProgressNote.note_datetime, request)
                 rows = await db.execute(stmt)
                 data["progress_notes"] = [_dump_row(row) for row in rows.scalars().all()]
-
             if "discharge" in sections:
-                rows = await db.execute(
-                    select(Discharge).where(Discharge.admission_id == admission_id)
-                )
+                rows = await db.execute(select(Discharge).where(Discharge.admission_id == admission_id))
                 discharge = rows.scalar_one_or_none()
                 if discharge is not None:
                     data["discharge"] = _dump_row(discharge)
 
-            if admission is not None:
-                data["admission"] = _dump_row(admission)
+        return ClinicalReportRead(
+            report_type="clinical",
+            patient_id=patient.id,
+            case_record_id=case_id,
+            admission_id=admission_id,
+            sections=list(data.keys()),
+            data=data,
+        )
 
-        return {
-            "report_type": "clinical",
-            "patient_id": patient.id,
-            "case_record_id": case_id,
-            "admission_id": admission_id,
-            "sections": list(data.keys()),
-            "data": data,
-        }
+    async def build_case_batch(self, db: AsyncSession, request: ClinicalReportBatchRequest) -> ClinicalReportBatchRead:
+        stmt = select(CaseRecord).where(
+            CaseRecord.created_at >= request.start_datetime,
+            CaseRecord.created_at <= request.end_datetime,
+        ).order_by(CaseRecord.created_at, CaseRecord.id).limit(request.limit + 1)
+        if request.patient_id is not None:
+            stmt = stmt.where(CaseRecord.patient_id == request.patient_id)
+        if request.case_status is not None:
+            stmt = stmt.where(CaseRecord.case_status == request.case_status)
+        rows = (await db.execute(stmt)).scalars().all()
+        truncated = len(rows) > request.limit
+        rows = rows[:request.limit]
+        reports: list[ClinicalReportBatchItem] = []
+        for case in rows:
+            report = await self.build_clinical_report(
+                db,
+                ClinicalReportRequest(
+                    case_record_id=case.id,
+                    sections=request.sections,
+                    start_datetime=request.start_datetime,
+                    end_datetime=request.end_datetime,
+                ),
+            )
+            reports.append(
+                ClinicalReportBatchItem(
+                    case_record_id=case.id,
+                    patient_id=case.patient_id,
+                    case_number=case.case_number,
+                    case_status=case.case_status,
+                    report=report,
+                )
+            )
+        return ClinicalReportBatchRead(
+            start_datetime=request.start_datetime,
+            end_datetime=request.end_datetime,
+            count=len(reports),
+            truncated=truncated,
+            reports=reports,
+        )
 
-    async def _resolve_patient(
-        self,
-        db: AsyncSession,
-        request: ClinicalReportRequest,
-    ) -> Patient:
+    async def _resolve_patient(self, db: AsyncSession, request: ClinicalReportRequest) -> Patient:
         if request.patient_id is not None:
             patient = await db.get(Patient, request.patient_id)
         elif request.case_record_id is not None:
@@ -196,35 +201,20 @@ class ReportingService:
             raise ResourceNotFoundException("Patient or requested clinical record not found.")
         return patient
 
-    async def _resolve_case(
-        self,
-        db: AsyncSession,
-        request: ClinicalReportRequest,
-        patient_id: int,
-    ) -> CaseRecord | None:
+    async def _resolve_case(self, db: AsyncSession, request: ClinicalReportRequest, patient_id: int) -> CaseRecord | None:
         if request.case_record_id is not None:
             case = await db.get(CaseRecord, request.case_record_id)
             if case is None or case.patient_id != patient_id:
                 raise ResourceNotFoundException("Requested case record not found for patient.")
             return case
         if request.admission_id is not None:
-            stmt = select(CaseRecord).where(
-                CaseRecord.patient_id == patient_id,
-                CaseRecord.admission_id == request.admission_id,
-            ).order_by(CaseRecord.id.desc())
+            stmt = select(CaseRecord).where(CaseRecord.patient_id == patient_id, CaseRecord.admission_id == request.admission_id).order_by(CaseRecord.id.desc())
         else:
-            stmt = select(CaseRecord).where(
-                CaseRecord.patient_id == patient_id,
-            ).order_by(CaseRecord.id.desc())
+            stmt = select(CaseRecord).where(CaseRecord.patient_id == patient_id).order_by(CaseRecord.id.desc())
         result = await db.execute(stmt.limit(1))
         return result.scalar_one_or_none()
 
-    async def _resolve_admission(
-        self,
-        db: AsyncSession,
-        request: ClinicalReportRequest,
-        patient_id: int,
-    ) -> Admission | None:
+    async def _resolve_admission(self, db: AsyncSession, request: ClinicalReportRequest, patient_id: int) -> Admission | None:
         if request.admission_id is not None:
             admission = await db.get(Admission, request.admission_id)
             if admission is None or admission.patient_id != patient_id:
@@ -236,7 +226,5 @@ class ReportingService:
                 return await db.get(Admission, case.admission_id)
         return None
 
-
 reporting_service = ReportingService()
-
 __all__ = ["ReportingService", "reporting_service"]

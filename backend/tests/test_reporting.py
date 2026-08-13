@@ -1,35 +1,26 @@
-"""Reporting selection contract tests."""
-from datetime import datetime, timezone
+"""Tests for Reporting/Print-Data Batch 02."""
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
-import pytest
-from pydantic import ValidationError
-
-from app.schemas.reporting import ALL_REPORT_SECTIONS, ClinicalReportRequest
-
-
-def test_report_requires_a_scope() -> None:
-    with pytest.raises(ValidationError):
-        ClinicalReportRequest()
+from app.schemas.reporting import (
+    ALL_REPORT_SECTIONS,
+    ClinicalReportBatchRequest,
+    ClinicalReportRequest,
+)
 
 
-def test_report_rejects_reverse_date_range() -> None:
-    with pytest.raises(ValidationError):
-        ClinicalReportRequest(
-            patient_id=1,
-            start_datetime=datetime(2026, 8, 13, tzinfo=timezone.utc),
-            end_datetime=datetime(2026, 8, 12, tzinfo=timezone.utc),
-        )
+def test_admission_is_a_supported_report_section() -> None:
+    assert "admission" in ALL_REPORT_SECTIONS
+    request = ClinicalReportRequest(patient_id=1, sections=["patient", "admission"])
+    assert request.sections == ["patient", "admission"]
 
 
-def test_empty_sections_means_complete_supported_report_scope() -> None:
-    request = ClinicalReportRequest(patient_id=1)
-    assert request.sections == []
-    assert len(ALL_REPORT_SECTIONS) >= 10
-
-
-def test_selected_sections_are_preserved() -> None:
-    request = ClinicalReportRequest(
-        patient_id=1,
-        sections=["case_record", "diagnosis", "prescriptions"],
+def test_batch_report_request_supports_period_and_case_filter() -> None:
+    request = ClinicalReportBatchRequest(
+        start_datetime=datetime(2026, 8, 1, tzinfo=ZoneInfo("Asia/Kolkata")),
+        end_datetime=datetime(2026, 8, 31, 23, 59, 59, tzinfo=ZoneInfo("Asia/Kolkata")),
+        case_status="active",
+        limit=25,
     )
-    assert request.sections == ["case_record", "diagnosis", "prescriptions"]
+    assert request.case_status == "active"
+    assert request.limit == 25

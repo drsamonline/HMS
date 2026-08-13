@@ -69,3 +69,5 @@
 - ServiceActivity projections of canonical records are excluded from aggregate counts.
 - Reporting end dates are inclusive.
 - Daily breakdown is available in the hospital statistics response.
+
+- Reporting/Print-Data Batch 02: report catalog, explicit admission section, and date-range batch case reports implemented.
