@@ -10,7 +10,7 @@
 - Reporting/Print Manifest Batch 05
 
 ## Current Task
-- Server packaging foundation: portable SQLite runtime, writable data paths, and PyInstaller entry point
+- Server startup hardening: first-run runtime preparation, persistent secret, logging, and automatic migrations
 
 ## Next Task
 - LAN client packaging / discovery
@@ -76,6 +76,7 @@
 
 ## Last Updated
 - 2026-08-13 - Reporting/print manifest batch 05 completed.
+- 2026-08-13 - LAN server startup hardening started.
 - 2026-08-13 - LAN server packaging foundation started.
 - 2026-08-13 - Fresh HMS(3).zip audited as the new baseline.
 - 2026-08-12 - Statistics Reporting & Deduplication Batch 05 completed.

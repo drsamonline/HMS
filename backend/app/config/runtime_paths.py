@@ -20,15 +20,10 @@ def data_directory() -> Path:
 
 
 def logs_directory() -> Path:
-    """Return and create the writable HHMS logs directory."""
+    """Return and create the writable HHMS log directory."""
     path = data_directory() / "logs"
     path.mkdir(parents=True, exist_ok=True)
     return path
-
-
-def database_path() -> Path:
-    """Return the default SQLite database path."""
-    return data_directory() / "hhms.sqlite3"
 
 
 def uploads_directory() -> Path:
@@ -44,11 +39,28 @@ def backups_directory() -> Path:
     path.mkdir(parents=True, exist_ok=True)
     return path
 
+
+def config_file_path() -> Path:
+    """Return the optional server configuration file path."""
+    return application_root() / ".env"
+
+
+def database_path() -> Path:
+    """Return the default SQLite database path."""
+    return data_directory() / "hhms.sqlite3"
+
+
+def secret_key_path() -> Path:
+    """Return the persisted local JWT secret path."""
+    return data_directory() / "secret.key"
+
 __all__ = [
     "application_root",
     "data_directory",
     "logs_directory",
-    "database_path",
     "uploads_directory",
     "backups_directory",
+    "config_file_path",
+    "database_path",
+    "secret_key_path",
 ]

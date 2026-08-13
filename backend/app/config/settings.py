@@ -14,14 +14,35 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+import secrets
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.config.runtime_paths import application_root, database_path, logs_directory
+from app.config.runtime_paths import (
+    application_root,
+    database_path,
+    logs_directory,
+    secret_key_path,
+)
 
 
 ROOT_DIR = application_root()
+
+
+def _load_or_create_secret_key() -> str:
+    """Load a persistent local secret or generate one on first startup."""
+    path = secret_key_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        value = path.read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        value = ""
+    if value:
+        return value
+    value = secrets.token_urlsafe(48)
+    path.write_text(value + "\n", encoding="utf-8")
+    return value
 
 
 class Settings(BaseSettings):
@@ -76,8 +97,8 @@ class Settings(BaseSettings):
     # ==========================================================
 
     SECRET_KEY: str = Field(
-        ...,
-        description="JWT secret key.",
+        default_factory=lambda: _load_or_create_secret_key(),
+        description="JWT secret key. Persisted locally when no environment value is supplied.",
     )
 
     JWT_ALGORITHM: str = Field(
