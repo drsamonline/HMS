@@ -119,3 +119,19 @@ The frontend shall use HTML/CSS/JavaScript inside a lightweight native Windows h
 ### Rationale
 
 This matches the hospital LAN operating model, minimizes dependencies, and prevents a browser-first architecture from forcing a later desktop rewrite.
+
+## D-003: Current Client Integration Checkpoint
+
+**Status:** LOCKED
+
+**Date:** 2026-08-13
+
+### Decision
+
+The current client is treated as a functional integration layer built on the backend APIs, not as a finished release build. Each area is classified as IMPLEMENTED, FOUNDATION, PLANNED, or DOCUMENTATION ONLY.
+
+The next development priority is integration correctness and release readiness rather than adding unrelated features.
+
+### Rationale
+
+This prevents working scaffolds from being mistaken for complete modules and keeps the remaining work focused on integration, packaging, testing, and release quality.

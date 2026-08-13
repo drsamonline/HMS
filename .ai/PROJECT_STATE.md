@@ -1,21 +1,45 @@
 # HHMS Project State
+
 ## Current Phase
-- LAN Client / Frontend Foundation
+- Client integration, deployment packaging, and final QA
+
 ## Current Milestone
-- Authenticated client and patient workspace
+- Post-Batch-17 client integration checkpoint
+
 ## Completed
 - Backend clinical/statistics/reporting
 - LAN server packaging/startup/discovery
 - Native WebView2 host
-- Client connection shell
+- Client connection shell/authentication
+- Patient registration/search/workspace
+- Homoeopathic clinical case workspace
+- Diagnosis / ICD-11 / prescription / follow-up client workspace
+- IPD client workspace
+- Investigation / laboratory / X-Ray client workspace
+- Billing / payments client workspace
+- MRD client workspace
+- Statistics / reports workspace
+- A4 print renderer and section selection
+- Date-range and batch case printing
+- Unified client dashboard/navigation
+
 ## Current Task
-- Authenticated client session and patient search
-## Next Task
-- Patient detail/dashboard
-- OPD case record workspace
-- IPD, investigations, billing, MRD client screens
-- Print preview/rendering
-- Final integration and QA
+- Whole-project cleanup/audit followed by final client integration
+- Then LAN packaging verification and end-to-end QA
+
+## Next Tasks
+- Complete cross-module client workflow integration
+- Role-aware navigation and permissions UI
+- Patient longitudinal/timeline experience
+- Final report/print QA and real printer testing
+- WebView2 runtime packaging verification
+- Multi-client LAN testing
+- Backup/restore and failure-recovery testing
+- Performance/security audit
+- Release EXE packaging
+- Clean-machine installation test
+- Final documentation
+
 ## Locked Rules
 - Backend owns business logic and database access.
 - Client never opens SQLite directly.
@@ -26,15 +50,19 @@
 - Optional clinical sections must not block saving.
 - Statistics distinguish unique patients from activities.
 - Printing uses backend report/print manifests and client rendering.
+- Empty clinical blocks must be safe to save, retrieve, print, and ignore when unused.
+- Master data such as departments/services must remain editable rather than hard-coded.
 
-- Client Patient Workspace batch completed: patient detail, registration, and module navigation foundation.
-\n- Client Batch 12: wired Clinical and IPD modules into patient workspace and added investigations/laboratory/X-Ray workspace.\n
-- Client Billing + MRD Workspace Batch 13 implemented.
+## Status Classification
+- IMPLEMENTED: production-capable code exists and is integrated.
+- FOUNDATION: real working code exists but the wider feature is not yet complete.
+- PLANNED: intentionally not implemented yet.
+- DOCUMENTATION ONLY: specification or guidance without implementation.
 
-- Client Batch 14: integrated hospital statistics and reports/printing workspace.
-
-- Client Print Renderer: HTML/A4 preview, section selection, print CSS and window.print() integration implemented.
-
-- Client print Batch 16: batch case selection and multi-case print preview implemented.
-
-- Client Unified Dashboard & Navigation Batch 17 prepared.
+## Working Rules
+- Use the newest verified full-project ZIP as the source of truth.
+- Do not request a new ZIP after every batch; normally use one after about five commits or a major section.
+- Group as many logically related files as safely possible into one ZIP.
+- Never call a scaffold complete.
+- Avoid duplicate models, services, modules, or speculative abstractions.
+- For each batch: verify → stage exact files → staged audit → commit/push.

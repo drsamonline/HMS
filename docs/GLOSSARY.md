@@ -1,96 +1,29 @@
 # HHMS Glossary
 
-This document defines key terms used throughout the HHMS project.
+**Activity** — A recorded departmental or service operation performed for a patient.
 
----
+**Case Record** — The longitudinal homoeopathic case-taking record for a patient.
 
-## A
+**Department** — A configurable hospital organizational unit.
 
-**Term**: Definition
-- Placeholder for future terms
+**Department Service** — A configurable subsection/service belonging to a department.
 
----
+**Encounter** — A clinical contact such as an OPD visit or IPD admission.
 
-## B
+**ICD-11** — International Classification of Diseases, 11th Revision, used here as an optional diagnosis coding reference.
 
-**Term**: Definition
-- Placeholder for future terms
+**IPD** — Inpatient department / inpatient care workflow.
 
----
+**LAN** — Local Area Network used by the hospital client/server deployment.
 
-## C
+**MRD** — Medical Records Department functions such as patient files and archiving.
 
-**Term**: Definition
-- Placeholder for future terms
+**Print Manifest** — Backend-provided description of printable sections, order, and logical page-break behavior.
 
----
+**Report Envelope** — Backend response containing report metadata and structured report data for client rendering.
 
-## D
+**Service Activity** — Department/service activity recorded independently from the hospital-wide unique-patient total.
 
-**Term**: Definition
-- Placeholder for future terms
+**Unique Patient** — A distinct patient identity counted once within the requested reporting scope.
 
----
-
-## H
-
-**HHMS**: Homeopathic Hospital Management System
-- The software system being developed
-
-**Homeopathy**: 
-- A system of alternative medicine (definition to be added)
-
----
-
-## I
-
-**IPD**: In-Patient Department
-- Hospital department managing admitted patients
-
----
-
-## M
-
-**MRD**: Medical Records Department
-- Department responsible for maintaining patient records
-
-**Materia Medica**: 
-- Reference work on homeopathic remedies (not included in HHMS per constitution)
-
----
-
-## O
-
-**Offline First**: 
-- Design principle ensuring the system works without internet connectivity
-
----
-
-## P
-
-**Patient**: 
-- Individual receiving homeopathic treatment
-
-**Prescription**: 
-- Document containing prescribed homeopathic remedies
-
----
-
-## R
-
-**Repertory**: 
-- Index of homeopathic symptoms (not included in HHMS per constitution)
-
----
-
-## Instructions for Adding Terms
-
-1. Add new terms alphabetically under the appropriate letter section
-2. Use bold for the term name
-3. Provide a clear, concise definition
-4. Include cross-references where applicable
-5. Update this glossary with every new feature or concept introduced
-
----
-
-*Last Updated: Session 002 - Repository Standardization*
+**WebView2** — Windows host technology used to render the HHMS HTML/CSS/JavaScript client.

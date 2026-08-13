@@ -1,69 +1,49 @@
-# HHMS - Homeopathic Hospital Management System
+# HHMS — Homeopathic Hospital Management System
 
-## Project Overview
+HHMS is a LAN-based hospital management system designed for homeopathic hospitals and clinics.
 
-HHMS is a comprehensive management system designed for homeopathic hospitals and clinics. It provides tools for patient management, consultation recording, prescription generation, and administrative tasks.
+## Current architecture
 
-## Objectives
-
-- Provide a simple, intuitive interface for homeopathic practitioners
-- Enable offline-first operation for environments with limited connectivity
-- Maintain modular architecture for easy maintenance and extension
-- Ensure data portability and security
-- Support printing of prescriptions and reports
-- Generate administrative reports
-
-## Planned Features (Placeholder)
-
-- Patient registration and management
-- Consultation recording
-- Prescription generation
-- Appointment scheduling
-- Inventory management
-- Billing and invoicing
-- Reports and analytics
-- User management and access control
-
-## Repository Structure
-
-```
-hhms/
-├── .ai/                    # AI context and project documentation
-├── .github/                # GitHub configuration and workflows
-├── docs/                   # User and technical documentation
-├── backend/                # Backend application code
-├── frontend/               # Frontend application code
-├── database/               # Database schemas and migrations
-├── tests/                  # Test suites
-├── scripts/                # Utility scripts
-├── assets/                 # Static assets (images, icons, etc.)
-├── templates/              # Document templates (prescriptions, reports)
-└── tools/                  # Development and deployment tools
+```text
+HHMS-Client.exe
+    ↓
+LAN HTTP/JSON
+    ↓
+HHMS-Server.exe
+    ↓
+server-owned SQLite database
 ```
 
-## Documentation Structure
+The client uses a lightweight HTML/CSS/vanilla-JavaScript interface hosted in WebView2. The client never opens the shared SQLite database directly.
 
-- `.ai/` - AI-assisted development context and rules
-- `docs/` - End-user and developer documentation
-- `README.md` - Project overview
-- `CONTRIBUTING.md` - Contribution guidelines
-- `SECURITY.md` - Security policies
-- `CHANGELOG.md` - Version history
-- `ROADMAP.md` - Development milestones
+## Implemented areas
 
-## Development Workflow
+- Patient registration and search
+- OPD / visits / OPD tokens
+- Homoeopathic case records
+- Diagnosis and ICD-11
+- Prescriptions and medicines
+- IPD admission and clinical documentation
+- Investigations / laboratory / X-Ray
+- Billing and payments
+- MRD / patient files / archives
+- Department and service masters
+- Clinical activity and statistics
+- Reporting and print manifests
+- Client-side report rendering and batch printing
+- LAN discovery and client/server connection
 
-1. Review PROJECT_STATE.md for current objectives
-2. Follow PROJECT_CONSTITUTION.md principles
-3. Complete one task at a time
-4. Update documentation after each change
-5. Run tests before committing
-6. Submit changes for review
+## Remaining release work
 
-## Technology Stack (TBD)
+- Cross-module client integration
+- Role-aware UI
+- Final print/printer QA
+- WebView2 runtime packaging
+- Multi-client LAN tests
+- Backup/restore and recovery
+- Performance/security audit
+- Final EXE packaging and clean-machine installation
 
-Technology decisions will be made during Milestone 0 (Foundation).
+## Development workflow
 
-## License
-
-MIT License - See LICENSE file for details.
+Use the latest verified repository ZIP as the source of truth, implement in coherent batches, verify each batch, stage exact files, and commit/push only after the staged audit is green.

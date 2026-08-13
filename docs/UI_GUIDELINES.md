@@ -1,94 +1,35 @@
 # HHMS UI Guidelines
 
-This document provides placeholder guidelines for future UI development.
+## Current UI stack
 
----
+- HTML5
+- CSS
+- Vanilla JavaScript
+- WebView2 native Windows host
 
-## Overview
+The client is intentionally lightweight. Do not introduce React, Vite, Tailwind, or another UI framework without a new architectural decision.
 
-UI development will begin in Milestone 3 - Frontend. This document will be expanded with detailed guidelines before that milestone begins.
+## Layout
 
----
+- Dashboard and module shell
+- Left navigation for primary modules
+- Compact cards and forms
+- Responsive grid layouts where useful
+- A4-oriented print styles separate from application styles
 
-## Design Principles
+## UX rules
 
-### 1. Simplicity First
-- Clean, uncluttered interfaces
-- Minimal clicks to complete tasks
-- Clear visual hierarchy
+- Empty data must produce a safe empty state, not an exception.
+- Forms should be compact and keyboard-friendly.
+- Long narrative clinical fields remain typable text areas.
+- Structured fields are used only when they reduce entry time.
+- Error messages must be visible and actionable.
+- Loading states must not block unrelated navigation.
+- Unsaved clinical content must be protected from accidental navigation where practical.
 
-### 2. Consistency
-- Uniform button styles
-- Consistent spacing and alignment
-- Standardized color usage
+## Print UI
 
-### 3. Accessibility
-- Keyboard navigation support
-- Screen reader compatibility
-- Sufficient color contrast
-
-### 4. Offline First
-- Clear offline/online status indicators
-- Local data synchronization feedback
-- Graceful degradation without connectivity
-
-### 5. Print-Friendly
-- All printable views clearly marked
-- Print-optimized layouts available
-- Preview before printing
-
----
-
-## Color Palette (TBD)
-
-Primary colors, secondary colors, and accent colors will be defined in Milestone 3.
-
----
-
-## Typography (TBD)
-
-Font families, sizes, and weights will be defined in Milestone 3.
-
----
-
-## Component Library (TBD)
-
-Standard UI components to be developed:
-
-- Forms
-- Tables
-- Buttons
-- Modals
-- Navigation
-- Cards
-- Alerts/Notifications
-
----
-
-## Responsive Design
-
-- Desktop-first approach
-- Tablet support (optional)
-- Mobile support (optional)
-
-*Note: HHMS is primarily designed for desktop use in clinical settings.*
-
----
-
-## Future Sections (To Be Completed)
-
-- [ ] Color specifications
-- [ ] Typography guidelines
-- [ ] Component specifications
-- [ ] Layout templates
-- [ ] Interaction patterns
-- [ ] Animation guidelines
-- [ ] Error handling UI
-- [ ] Loading states
-- [ ] Empty states
-
----
-
-*Last Updated: Session 002 - Repository Standardization*
-
-*Status: Placeholder - To be expanded in Milestone 3*
+- Keep print controls in `.no-print` containers.
+- Use the dedicated print stylesheet.
+- Do not assume physical page counts in JavaScript.
+- Allow whole-report and selected-section printing.
