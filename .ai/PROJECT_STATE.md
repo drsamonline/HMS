@@ -26,3 +26,5 @@
 - Optional clinical sections must not block saving.
 - Statistics distinguish unique patients from activities.
 - Printing uses backend report/print manifests and client rendering.
+
+- Client Patient Workspace batch completed: patient detail, registration, and module navigation foundation.
