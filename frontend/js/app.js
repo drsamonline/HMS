@@ -2,6 +2,7 @@ import{discoverServer}from"./discovery.js";import{checkServer,setServerBaseUrl,g
 import{openClinicalWorkspace}from"./clinical.js";
 import{openIPDWorkspace}from"./ipd.js";
 import{openInvestigationsWorkspace}from"./investigations.js";import{openBillingWorkspace}from"./billing.js";import{openMRDWorkspace}from"./mrd.js";import{openStatisticsWorkspace}from"./statistics.js";import{openReportsWorkspace}from"./reports.js";import{openDashboard}from"./dashboard.js";import{openPatientTimeline}from"./timeline.js";import{applyNavigationAccess,applyRecordAccess,canAccess}from"./rbac.js";
+import{openAdministrationWorkspace}from"./admin.js";
 const $=s=>document.querySelector(s), state=$("#connection-state"), url=$("#server-url"), statusBox=$("#connection-status"), cv=$("#connection-view"), lv=$("#login-view"), wv=$("#workspace-view"), list=$("#patient-list"), search=$("#patient-search"), patientStatus=$("#patient-status"), dialog=$("#patient-dialog");
 function status(el,msg,kind=""){el.textContent=msg;el.className=`status-box ${kind}`.trim()}
 function toggle(el,show){el.classList.toggle("hidden",!show)}
@@ -26,28 +27,6 @@ function enterSignedOutState(message="Please sign in again."){
  toggle(cv,false);
  status($("#login-status"),message,"error");
 }
-
-
-// Lightweight unsaved-change guard for clinical forms.
-let hhmsDirty = false;
-window.hhms = window.hhms || {};
-window.hhms.formState = {
-  isDirty: () => hhmsDirty,
-  markDirty: () => { hhmsDirty = true; document.body.classList.add("has-unsaved-changes"); },
-  markClean: () => { hhmsDirty = false; document.body.classList.remove("has-unsaved-changes"); }
-};
-window.addEventListener("beforeunload", (event) => {
-  if (!hhmsDirty) return;
-  event.preventDefault();
-  event.returnValue = "";
-});
-document.addEventListener("input", (event) => {
-  if (event.target?.closest?.("form")) window.hhms.formState.markDirty();
-});
-document.addEventListener("change", (event) => {
-  if (event.target?.closest?.("form")) window.hhms.formState.markDirty();
-});
-const originalToggle = toggle;
 
 let currentUserProfile=null;
 async function loadUserProfile(){
@@ -77,28 +56,9 @@ function rememberRecentPatient(id){const key="hhms.recent_patients";let ids=[];t
 async function renderRecordView(view,p){const box=$("#record-view");const tab=document.querySelector(`.record-tab[data-record-view="${view}"]`);if(tab?.disabled||tab?.classList.contains("hidden")){box.innerHTML="<div class=\"empty-state\">You do not have permission to open this section.</div>";return;}$(".record-tab.active")?.classList.remove("active");document.querySelector(`.record-tab[data-record-view="${view}"]`)?.classList.add("active");if(view==="clinical"){await openClinicalWorkspace(p,box);return}if(view==="ipd"){await openIPDWorkspace(p,box);return}if(view==="investigations"){await openInvestigationsWorkspace(p,box);return}if(view==="billing"){await openBillingWorkspace(p,box);return}if(view==="mrd"){await openMRDWorkspace(p,box);return}if(view==="reports"){await openReportsWorkspace(box,p);return}if(view==="overview"){await openPatientTimeline(box,p);return}const descriptions={overview:"Patient timeline.",billing:"Billing workspace.",mrd:"MRD workspace."};box.innerHTML=`<h3>${view[0].toUpperCase()+view.slice(1)}</h3><p>${descriptions[view]||"Module not yet available."}</p>`}
 function closePatientDetail(){toggle($("#patient-detail"),false);toggle($(".content-panel"),true)}
 $("#discover").addEventListener("click",discover);$("#connect").addEventListener("click",()=>url.value.trim()?connectTo(url.value.trim()):status(statusBox,"Enter a server address or use Discover Server.","error"));$("#clear").addEventListener("click",()=>{clearSavedServer();url.value="";status(statusBox,"Saved server address cleared.")});$("#login-form").addEventListener("submit",async e=>{e.preventDefault();try{status($("#login-status"),"Signing in…");const fd=new FormData(e.currentTarget);await login(fd.get("username"),fd.get("password"));await loadUserProfile();toggle(lv,false);toggle(wv,true);await loadPatientList();}catch(err){status($("#login-status"),err instanceof Error?err.message:"Unable to sign in.","error")}});$("#logout").addEventListener("click",()=>{clearAccessToken();sessionStorage.removeItem("hhms.current_user");location.reload()});$("#patient-search-button").addEventListener("click",loadPatientList);search.addEventListener("keydown",e=>{if(e.key==="Enter")loadPatientList()});$("#patient-back").addEventListener("click",closePatientDetail);$("#new-patient").addEventListener("click",()=>{dialog.showModal();status($("#create-patient-status"),"")});$("#close-patient-dialog").addEventListener("click",()=>dialog.close());$("#patient-form").addEventListener("submit",async e=>{e.preventDefault();const fd=new FormData(e.currentTarget);const payload=Object.fromEntries(fd.entries());for(const k of Object.keys(payload))if(payload[k]==="")delete payload[k];try{status($("#create-patient-status"),"Saving patient…");const p=await createPatient(payload);dialog.close();search.value=p.patient_number||"";await loadPatientList();await openPatient(p.id);}catch(err){status($("#create-patient-status"),err instanceof Error?err.message:"Unable to register patient.","error")}});document.querySelectorAll(".record-tab").forEach(b=>b.addEventListener("click",async()=>{await renderRecordView(b.dataset.recordView,window.currentPatient)}));window.addEventListener("hhms:open-patient",e=>openPatient(e.detail.patientId));window.addEventListener("hhms:auth-expired",()=>enterSignedOutState("Your HHMS session has expired. Please sign in again."));
-window.addEventListener("hhms:request-timeout",e=>{
- const seconds=Math.max(1,Math.round(Number(e.detail?.timeoutMs||15000)/1000));
- showConnectionBanner(`HHMS server did not respond within ${seconds} seconds. Please retry when the server is reachable.`,"error");
-});
 window.addEventListener("hhms:server-state",e=>{if(e.detail?.online){state.textContent="Connected";hideConnectionBanner();}else{state.textContent="Offline";showConnectionBanner("HHMS server connection lost. Changes cannot be saved until the server is reachable.","error");}});
 window.addEventListener("offline",()=>{state.textContent="Offline";showConnectionBanner("Network connection is unavailable. HHMS will reconnect when the LAN is available.","error")});
 window.addEventListener("online",async()=>{state.textContent="Checking";showConnectionBanner("Network restored. Checking HHMS server…");if(serverBaseUrlSafe())try{await checkServer();hideConnectionBanner();state.textContent="Connected";}catch{}else hideConnectionBanner();});
 function serverBaseUrlSafe(){try{return !!loadClientConfig().manualServerUrl||!!getServerBaseUrl()}catch{return false}}
-document.querySelectorAll(".nav-item[data-app-view]").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".nav-item[data-app-view]").forEach(x=>x.classList.remove("active"));b.classList.add("active");const gv=document.querySelector("#global-view");toggle(gv,true);document.querySelectorAll(".content-panel").forEach(x=>{if(x.id!=="global-view")x.classList.add("hidden")});if(b.dataset.appView==="dashboard"){await openDashboard(gv,{patient:window.currentPatient||null});}else if(b.dataset.appView==="statistics"){await openStatisticsWorkspace(gv);}else if(b.dataset.appView==="reports"){await openReportsWorkspace(gv,window.currentPatient||null);}else if(b.dataset.appView==="patients"){toggle($("#global-view"),false);document.querySelectorAll(".content-panel").forEach(x=>{if(x.id!=="global-view")x.classList.add("hidden")});toggle($(".content-panel"),true);}}));restoreUserProfile();
-async function startup(){
-  const c=loadClientConfig();
-  if(c.manualServerUrl) url.value=c.manualServerUrl;
-  if(c.manualServerUrl){
-    try{ await connectTo(c.manualServerUrl); return; }
-    catch{}
-  }
-  if(getAccessToken()){
-    try{
-      const base=getServerBaseUrl()||c.manualServerUrl;
-      if(base){ await connectTo(base); return; }
-    }catch{}
-  }
-  await discover();
-}
-startup();
+document.querySelectorAll(".nav-item[data-app-view]").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".nav-item[data-app-view]").forEach(x=>x.classList.remove("active"));b.classList.add("active");const gv=document.querySelector("#global-view");toggle(gv,true);document.querySelectorAll(".content-panel").forEach(x=>{if(x.id!=="global-view")x.classList.add("hidden")});if(b.dataset.appView==="dashboard"){await openDashboard(gv,{patient:window.currentPatient||null});}else if(b.dataset.appView==="statistics"){await openStatisticsWorkspace(gv);}else if(b.dataset.appView==="reports"){await openReportsWorkspace(gv,window.currentPatient||null);}else if(b.dataset.appView==="administration"){await openAdministrationWorkspace(gv);}
+else if(b.dataset.appView==="patients"){toggle($("#global-view"),false);document.querySelectorAll(".content-panel").forEach(x=>{if(x.id!=="global-view")x.classList.add("hidden")});toggle($(".content-panel"),true);}}));restoreUserProfile();const c=loadClientConfig();if(c.manualServerUrl)url.value=c.manualServerUrl;discover();

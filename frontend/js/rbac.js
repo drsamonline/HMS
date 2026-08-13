@@ -7,7 +7,8 @@ const ACCESS={
  billing:["billing.read","invoice.read","payments.read"],
  mrd:["mrd.read","patient_files.read","archive.read"],
  statistics:["statistics.read","statistics.view","reports.statistics"],
- reports:["reports.read","report.read","printing.read","reports.print"]
+ reports:["reports.read","report.read","printing.read","reports.print"],
+ administration:["departments.manage","department.manage","department_services.manage","department-services.manage"]
 };
 const normalize=v=>String(v??"").trim().toLowerCase();
 
