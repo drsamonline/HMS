@@ -10,11 +10,10 @@
 - Reporting/Print Manifest Batch 05
 
 ## Current Task
-- LAN server discovery and client connection foundation
+- LAN client connection foundation
 
 ## Next Task
-- LAN client packaging / discovery
-- Then frontend implementation
+- LAN client native host packaging
 - Then frontend implementation
 - Then integration and final audit
 
@@ -83,3 +82,5 @@
 - 2026-08-13 - Fresh HMS(3).zip audited as the new baseline.
 - 2026-08-12 - Statistics Reporting & Deduplication Batch 05 completed.
 - 2026-08-12 - Statistics reporting dimensions and configurable service-type breakdown completed.
+
+- 2026-08-13 - Lightweight client connection foundation created; native host discovery bridge defined.
