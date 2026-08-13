@@ -28,7 +28,4 @@
 - Printing uses backend report/print manifests and client rendering.
 
 - Client Patient Workspace batch completed: patient detail, registration, and module navigation foundation.
-
-- Client Clinical Records — Batch 10: case, diagnosis/ICD-11, prescription, and follow-up workspace integrated.
-
-- Client IPD workspace Batch 11 implemented: admissions, available-bed admission creation, IPD assessment, pain, nutrition, diet, progress and discharge integration.
+\n- Client Batch 12: wired Clinical and IPD modules into patient workspace and added investigations/laboratory/X-Ray workspace.\n
