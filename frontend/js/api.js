@@ -41,3 +41,6 @@ export async function buildClinicalReport(payload){return request("/api/v1/repor
 export async function buildPrintManifest(payload){return request("/api/v1/reports/clinical-data/print-manifest",{method:"POST",body:JSON.stringify(payload)});}
 export async function buildPrintEnvelope(payload){return request("/api/v1/reports/clinical-data/print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 export async function buildClinicalBatch(payload){return request("/api/v1/reports/clinical-data/batch",{method:"POST",body:JSON.stringify(payload)});}
+
+export async function listVisits(patientId){const q=new URLSearchParams({patient_id:String(patientId),skip:"0",limit:"100"});return request(`/api/v1/visits?${q.toString()}`)}
+export async function listAdmissions(patientId){const q=new URLSearchParams({patient_id:String(patientId),skip:"0",limit:"100"});return request(`/api/v1/admissions?${q.toString()}`)}
