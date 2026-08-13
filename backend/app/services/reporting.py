@@ -37,8 +37,31 @@ from app.schemas.reporting import (
     ReportCatalogItem,
     ReportCatalogRead,
     ReportPrintEnvelope,
+    ReportPrintBlock,
+    ReportPrintManifestRead,
+    ReportPrintManifestRequest,
     ReportPrintEnvelopeRequest,
 )
+
+_PRINT_BLOCK_META: dict[str, tuple[str, str, int, bool]] = {
+    "patient": ("Patient", "patient", 1, False),
+    "case_record": ("Homoeopathic Case Record", "case", 2, True),
+    "admission": ("Admission", "ipd", 3, True),
+    "diagnosis": ("Diagnosis / ICD-11", "case", 4, True),
+    "followups": ("Follow-ups", "followup", 5, True),
+    "prescriptions": ("Prescriptions", "prescription", 6, True),
+    "investigations": ("Investigations", "investigation", 7, True),
+    "ipd_assessment": ("IPD Assessment", "ipd", 8, True),
+    "pain_assessments": ("Pain Assessments", "ipd", 9, True),
+    "nutritional_assessment": ("Nutritional Assessment", "ipd", 10, True),
+    "diet_charts": ("Diet Charts", "ipd", 11, True),
+    "progress_notes": ("Progress Notes", "ipd", 12, True),
+    "discharge": ("Discharge Summary", "ipd", 13, True),
+    "billing": ("Billing / Invoices", "billing", 14, True),
+    "payments": ("Payments / Receipts", "billing", 15, True),
+    "medical_documents": ("Medical Documents", "documents", 16, True),
+    "mrd": ("MRD Patient File / Archive", "mrd", 17, True),
+}
 
 _REPORT_CATALOG = [
     ReportCatalogItem(key="patient", label="Patient", description="Patient demographics and registration information.", available_for=["clinical", "case", "ipd"]),
@@ -84,6 +107,40 @@ class ReportingService:
 
     def catalog(self) -> ReportCatalogRead:
         return ReportCatalogRead(sections=_REPORT_CATALOG)
+
+    async def build_print_manifest(
+        self, db: AsyncSession, request: ReportPrintManifestRequest
+    ) -> ReportPrintManifestRead:
+        patient = await self._resolve_patient(db, request)
+        case_record = await self._resolve_case(db, request, patient.id)
+        admission = await self._resolve_admission(db, request, patient.id)
+        selected = list(dict.fromkeys(request.sections)) or list(ALL_REPORT_SECTIONS)
+        blocks: list[ReportPrintBlock] = []
+        for key in selected:
+            meta = _PRINT_BLOCK_META.get(key)
+            if meta is None:
+                continue
+            label, group, order, page_break = meta
+            blocks.append(
+                ReportPrintBlock(
+                    section=key,
+                    label=label,
+                    page_group=group,
+                    print_order=order,
+                    page_break_before=page_break,
+                    available=True,
+                )
+            )
+        blocks.sort(key=lambda block: block.print_order)
+        return ReportPrintManifestRead(
+            title=request.title or "HHMS Clinical Report",
+            generated_at=datetime.utcnow(),
+            patient_id=patient.id,
+            case_record_id=case_record.id if case_record else None,
+            admission_id=admission.id if admission else None,
+            print_scope="complete_case" if not request.sections else "selected_sections",
+            blocks=blocks,
+        )
 
     async def build_clinical_report(self, db: AsyncSession, request: ClinicalReportRequest) -> ClinicalReportRead:
         patient = await self._resolve_patient(db, request)

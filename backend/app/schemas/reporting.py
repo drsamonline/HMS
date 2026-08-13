@@ -111,6 +111,28 @@ class ReportCatalogRead(BaseSchema):
     report_type: Literal["catalog"] = "catalog"
     sections: list[ReportCatalogItem]
 
+
+class ReportPrintBlock(BaseSchema):
+    section: str
+    label: str
+    page_group: str
+    print_order: int = Field(ge=1)
+    page_break_before: bool = False
+    available: bool = True
+
+class ReportPrintManifestRequest(ClinicalReportRequest):
+    title: str | None = Field(default=None, max_length=200)
+
+class ReportPrintManifestRead(BaseSchema):
+    report_type: Literal["print_manifest"] = "print_manifest"
+    title: str
+    generated_at: datetime
+    patient_id: int
+    case_record_id: int | None = None
+    admission_id: int | None = None
+    print_scope: Literal["complete_case", "selected_sections"]
+    blocks: list[ReportPrintBlock]
+
 class ReportPrintEnvelope(BaseSchema):
     report_type: Literal["clinical_print"] = "clinical_print"
     title: str
@@ -135,6 +157,9 @@ __all__ = [
     "ClinicalReportBatchRead",
     "ReportCatalogItem",
     "ReportCatalogRead",
+    "ReportPrintBlock",
+    "ReportPrintManifestRequest",
+    "ReportPrintManifestRead",
     "ReportPrintEnvelope",
     "ReportPrintEnvelopeRequest",
 ]

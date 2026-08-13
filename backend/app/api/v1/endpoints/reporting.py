@@ -10,6 +10,8 @@ from app.schemas.reporting import (
     ClinicalReportBatchRequest,
     ClinicalReportRead,
     ReportPrintEnvelope,
+    ReportPrintManifestRead,
+    ReportPrintManifestRequest,
     ReportPrintEnvelopeRequest,
     ClinicalReportRequest,
     ReportCatalogRead,
@@ -29,6 +31,14 @@ async def build_clinical_report(
     _: CurrentUserDependency,
 ) -> ClinicalReportRead:
     return await reporting_service.build_clinical_report(db, report_in)
+
+@router.post("/clinical-data/print-manifest", response_model=ReportPrintManifestRead)
+async def build_clinical_print_manifest(
+    report_in: ReportPrintManifestRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> ReportPrintManifestRead:
+    return await reporting_service.build_print_manifest(db, report_in)
 
 @router.post("/clinical-data/print-envelope", response_model=ReportPrintEnvelope)
 async def build_clinical_print_envelope(

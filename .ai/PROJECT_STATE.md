@@ -10,7 +10,7 @@
 - Statistics Reporting & Deduplication Batch 05
 
 ## Current Task
-- Audit and correct project architecture documentation, then begin reporting/printing backend
+- Reporting/printing backend: print manifest and section/page-group metadata
 
 ## Next Task
 - Reporting/printing backend
@@ -75,6 +75,7 @@
 - Printing must support entire cases, selected sections/documents, page/document-specific output, date-wise and date-range output, and batch printing where applicable.
 
 ## Last Updated
+- 2026-08-13 - Reporting/print manifest batch 05 prepared.
 - 2026-08-13 - Fresh HMS(3).zip audited as the new baseline.
 - 2026-08-12 - Statistics Reporting & Deduplication Batch 05 completed.
 - 2026-08-12 - Statistics reporting dimensions and configurable service-type breakdown completed.

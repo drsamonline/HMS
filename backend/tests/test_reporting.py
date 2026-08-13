@@ -44,3 +44,21 @@ def test_print_envelope_schema_supports_custom_title() -> None:
     from app.schemas.reporting import ReportPrintEnvelopeRequest
     request = ReportPrintEnvelopeRequest(patient_id=1, title="Complete Case Report")
     assert request.title == "Complete Case Report"
+
+
+def test_print_manifest_request_defaults_to_complete_case_scope() -> None:
+    from app.schemas.reporting import ReportPrintManifestRequest
+    request = ReportPrintManifestRequest(patient_id=1)
+    assert request.sections == []
+
+def test_print_manifest_schema_has_ordered_print_blocks() -> None:
+    from app.schemas.reporting import ReportPrintBlock
+    block = ReportPrintBlock(
+        section="case_record",
+        label="Homoeopathic Case Record",
+        page_group="case",
+        print_order=2,
+        page_break_before=True,
+    )
+    assert block.page_break_before is True
+    assert block.print_order == 2
