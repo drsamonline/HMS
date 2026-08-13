@@ -163,6 +163,7 @@ class Settings(BaseSettings):
 
     BACKEND_CORS_ORIGINS: list[str] = Field(
         default_factory=lambda: [
+            "https://app.hhms.local",
             "http://localhost:3000",
             "http://localhost:5173",
         ]
