@@ -14,6 +14,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.config.settings import get_settings
+from app.network.discovery import server_id
 from app.schemas.health import HealthResponse
 
 
@@ -107,3 +108,20 @@ async def health() -> HealthResponse:
 __all__ = [
     "router",
 ]
+
+@router.get(
+    "/discovery",
+    summary="LAN Discovery Information",
+)
+async def discovery_info() -> dict[str, object]:
+    """Return the connection metadata used by HHMS LAN clients."""
+    settings = get_settings()
+    return {
+        "protocol": "hhms-lan-v1",
+        "enabled": settings.DISCOVERY_ENABLED,
+        "server_id": server_id(),
+        "name": settings.DISCOVERY_NAME,
+        "http_port": int(settings.SERVER_PORT),
+        "discovery_port": int(settings.DISCOVERY_PORT),
+        "api_base": settings.API_V1_PREFIX,
+    }

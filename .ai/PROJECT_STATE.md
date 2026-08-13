@@ -10,7 +10,7 @@
 - Reporting/Print Manifest Batch 05
 
 ## Current Task
-- Server startup hardening: first-run runtime preparation, persistent secret, logging, and automatic migrations
+- LAN server discovery and client connection foundation
 
 ## Next Task
 - LAN client packaging / discovery
@@ -41,7 +41,7 @@
 | MRD | Complete |
 | Statistics | Complete |
 | Reporting / Printing | In Progress |
-| LAN Server / Client Packaging | Pending |
+| LAN Server / Client Packaging | In Progress |
 | Frontend | Pending |
 | Testing / Final Audit | Pending |
 
@@ -78,6 +78,8 @@
 - 2026-08-13 - Reporting/print manifest batch 05 completed.
 - 2026-08-13 - LAN server startup hardening started.
 - 2026-08-13 - LAN server packaging foundation started.
+- 2026-08-13 - LAN server startup hardening completed.
+- 2026-08-13 - Native UDP LAN discovery foundation started.
 - 2026-08-13 - Fresh HMS(3).zip audited as the new baseline.
 - 2026-08-12 - Statistics Reporting & Deduplication Batch 05 completed.
 - 2026-08-12 - Statistics reporting dimensions and configurable service-type breakdown completed.

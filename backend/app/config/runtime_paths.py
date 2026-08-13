@@ -64,3 +64,8 @@ __all__ = [
     "database_path",
     "secret_key_path",
 ]
+
+
+def server_identity_path() -> Path:
+    """Return the persistent local server identity file path."""
+    return data_directory() / "server_id"

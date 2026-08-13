@@ -92,6 +92,12 @@ class Settings(BaseSettings):
     SERVER_HOST: str = Field(default="0.0.0.0")
     SERVER_PORT: int = Field(default=8000, ge=1, le=65535)
 
+    DISCOVERY_ENABLED: bool = Field(default=True)
+
+    DISCOVERY_PORT: int = Field(default=39555, ge=1024, le=65535)
+
+    DISCOVERY_NAME: str = Field(default="HHMS")
+
     # ==========================================================
     # Security
     # ==========================================================
