@@ -20,3 +20,5 @@
 .search-results button{text-align:left;padding:.45rem}
 .empty-state{padding:1rem;border:1px dashed #aaa;border-radius:.5rem}
 @media (max-width:900px){.case-grid,.structured-row,.clinical-two-col{grid-template-columns:1fr}}
+
+.ipd-grid{display:grid;grid-template-columns:minmax(240px,0.8fr) minmax(360px,1.7fr);gap:16px}.admission-card{margin-bottom:8px;width:100%;text-align:left}.ipd-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}.clinical-two-col{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,1fr);gap:16px}.record-card{display:flex;flex-direction:column;gap:5px;padding:10px;border:1px solid #d6dde3;border-radius:8px;margin:8px 0;background:#fff}.empty-state{padding:18px;color:#66717a}@media(max-width:900px){.ipd-grid,.clinical-two-col{grid-template-columns:1fr}}
