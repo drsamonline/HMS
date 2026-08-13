@@ -29,9 +29,4 @@
 
 - Client Patient Workspace batch completed: patient detail, registration, and module navigation foundation.
 
-
-## Current Client Milestone
-- Client Clinical Case Workspace — Batch 09 implemented.
-- Narrative case-taking fields remain free text; quick generals and modalities are compact structured data.
-- Each modality supports Agg./Amel. plus additional text.
-- Empty sections are omitted/null and do not prevent case saving.
+- Client Clinical Records — Batch 10: case, diagnosis/ICD-11, prescription, and follow-up workspace integrated.
