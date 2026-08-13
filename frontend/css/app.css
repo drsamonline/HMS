@@ -23,3 +23,5 @@
 .timeline-type{font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .timeline-card h4{margin:7px 0 4px}.timeline-meta{font-size:.9rem;color:var(--muted,#667085);margin:0 0 4px}
 @media(max-width:900px){.timeline-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.user-identity{display:flex;align-items:flex-end;gap:.45rem;flex-direction:column}.user-role{font-size:.75rem;opacity:.75}.nav-item:disabled{display:none}

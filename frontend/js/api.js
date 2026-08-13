@@ -44,3 +44,5 @@ export async function buildClinicalBatch(payload){return request("/api/v1/report
 
 export async function listVisits(patientId){const q=new URLSearchParams({patient_id:String(patientId),skip:"0",limit:"100"});return request(`/api/v1/visits?${q.toString()}`)}
 export async function listAdmissions(patientId){const q=new URLSearchParams({patient_id:String(patientId),skip:"0",limit:"100"});return request(`/api/v1/admissions?${q.toString()}`)}
+
+export async function getCurrentUserProfile(){return request("/api/v1/auth/me");}

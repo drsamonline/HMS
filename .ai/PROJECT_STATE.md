@@ -39,4 +39,6 @@
 
 - Client Unified Dashboard & Navigation Batch 17 prepared.
 
-- RBAC consistency batch prepared: aligned role/permission associations to integer User/Role schema and added /auth/me profile for client role-aware navigation.
+- Client integration milestone: patient Overview now includes a longitudinal timeline from visits, admissions, investigations, billing invoices, and MRD files.
+
+- Client RBAC navigation batch: consumes /auth/me roles/permissions for top-level module visibility.
