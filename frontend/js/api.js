@@ -30,3 +30,14 @@ export async function listPatientFiles(patientId){return request(`/api/v1/patien
 export async function createPatientFile(payload){return request("/api/v1/patient-files",{method:"POST",body:JSON.stringify(payload)})}
 export async function listArchiveRecords(patientFileId){return request(`/api/v1/archive-records?patient_file_id=${encodeURIComponent(patientFileId)}&skip=0&limit=100`)}
 export async function createArchiveRecord(payload){return request("/api/v1/archive-records",{method:"POST",body:JSON.stringify(payload)})}
+
+export async function getHospitalStatistics(startDate,endDate,departmentId="",serviceId=""){
+ const q=new URLSearchParams({start_date:startDate,end_date:endDate});
+ if(departmentId)q.set("department_id",departmentId); if(serviceId)q.set("service_id",serviceId);
+ return request(`/api/v1/statistics/hospital?${q.toString()}`);
+}
+export async function getReportCatalog(){return request("/api/v1/reports/catalog");}
+export async function buildClinicalReport(payload){return request("/api/v1/reports/clinical-data",{method:"POST",body:JSON.stringify(payload)});}
+export async function buildPrintManifest(payload){return request("/api/v1/reports/clinical-data/print-manifest",{method:"POST",body:JSON.stringify(payload)});}
+export async function buildPrintEnvelope(payload){return request("/api/v1/reports/clinical-data/print-envelope",{method:"POST",body:JSON.stringify(payload)});}
+export async function buildClinicalBatch(payload){return request("/api/v1/reports/clinical-data/batch",{method:"POST",body:JSON.stringify(payload)});}
