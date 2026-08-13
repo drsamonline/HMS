@@ -29,3 +29,4 @@
 
 - Client Patient Workspace batch completed: patient detail, registration, and module navigation foundation.
 \n- Client Batch 12: wired Clinical and IPD modules into patient workspace and added investigations/laboratory/X-Ray workspace.\n
+- Client Billing + MRD Workspace Batch 13 implemented.

@@ -21,3 +21,12 @@ export async function createInvestigationResult(payload){return request("/api/v1
 export async function updateInvestigationResult(id,payload){return request(`/api/v1/investigation-results/${encodeURIComponent(id)}`,{method:"PUT",body:JSON.stringify(payload)})}
 export async function listDepartments(){return request("/api/v1/departments?active_only=true&skip=0&limit=200")}
 export async function listDepartmentServices(departmentId){return request(`/api/v1/department-services?department_id=${encodeURIComponent(departmentId)}&skip=0&limit=200`)}
+
+export async function listInvoices(patientId,paymentStatus=""){const q=new URLSearchParams({skip:"0",limit:"100",patient_id:String(patientId)});if(paymentStatus)q.set("payment_status",paymentStatus);return request(`/api/v1/billing/invoices?${q.toString()}`)}
+export async function createInvoice(payload){return request("/api/v1/billing/invoices",{method:"POST",body:JSON.stringify(payload)})}
+export async function listInvoicePayments(invoiceId){return request(`/api/v1/billing/invoices/${encodeURIComponent(invoiceId)}/payments?skip=0&limit=100`)}
+export async function createPayment(payload){return request("/api/v1/billing/payments",{method:"POST",body:JSON.stringify(payload)})}
+export async function listPatientFiles(patientId){return request(`/api/v1/patient-files?patient_id=${encodeURIComponent(patientId)}&skip=0&limit=100`)}
+export async function createPatientFile(payload){return request("/api/v1/patient-files",{method:"POST",body:JSON.stringify(payload)})}
+export async function listArchiveRecords(patientFileId){return request(`/api/v1/archive-records?patient_file_id=${encodeURIComponent(patientFileId)}&skip=0&limit=100`)}
+export async function createArchiveRecord(payload){return request("/api/v1/archive-records",{method:"POST",body:JSON.stringify(payload)})}
