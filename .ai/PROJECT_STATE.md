@@ -10,10 +10,10 @@
 - Reporting/Print Manifest Batch 05
 
 ## Current Task
-- LAN client connection foundation
+- LAN client native host packaging
 
 ## Next Task
-- LAN client native host packaging
+- LAN client hardening and WebView2 packaging
 - Then frontend implementation
 - Then integration and final audit
 
@@ -84,3 +84,5 @@
 - 2026-08-12 - Statistics reporting dimensions and configurable service-type breakdown completed.
 
 - 2026-08-13 - Lightweight client connection foundation created; native host discovery bridge defined.
+
+- 2026-08-13 - Native Windows WebView2 client host and UDP discovery bridge batch prepared.
