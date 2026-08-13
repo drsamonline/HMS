@@ -86,3 +86,5 @@
 - 2026-08-13 - Lightweight client connection foundation created; native host discovery bridge defined.
 
 - 2026-08-13 - Native Windows WebView2 client host and UDP discovery bridge batch prepared.
+
+- Client Shell & Connection Batch 06: connection UI, manual fallback, persistence, and writable WebView2 runtime path implemented.

@@ -1,33 +1,6 @@
-import { discoverServer } from "./discovery.js";
-import { checkServer, setServerBaseUrl } from "./api.js";
-
-const statusEl = document.querySelector("#status");
-const retryButton = document.querySelector("#retry");
-
-function setStatus(message) {
-  statusEl.textContent = message;
-}
-
-async function connect() {
-  retryButton.disabled = true;
-  setStatus("Searching for HHMS server…");
-  try {
-    const server = await discoverServer();
-    if (!server) {
-      setStatus("HHMS server not found. Configure the server address and retry.");
-      return;
-    }
-
-    setServerBaseUrl(server);
-    setStatus("Checking HHMS server…");
-    const health = await checkServer(server);
-    setStatus(`${health.service} ${health.version} is online.`);
-  } catch (error) {
-    setStatus(error instanceof Error ? error.message : "Unable to connect to HHMS server.");
-  } finally {
-    retryButton.disabled = false;
-  }
-}
-
-retryButton.addEventListener("click", connect);
-connect();
+import{discoverServer}from"./discovery.js";import{checkServer,setServerBaseUrl}from"./api.js";import{clearSavedServer,loadClientConfig}from"./config.js";
+const s=document.querySelector("#status"),state=document.querySelector("#connection-state"),url=document.querySelector("#server-url"),disc=document.querySelector("#discover"),conn=document.querySelector("#connect"),clear=document.querySelector("#clear"),details=document.querySelector("#server-details"),name=document.querySelector("#server-name"),version=document.querySelector("#server-version"),addr=document.querySelector("#server-address"),cv=document.querySelector("#connection-view"),av=document.querySelector("#app-view"),summary=document.querySelector("#server-summary");
+function status(m,k=""){s.textContent=m;s.className=`status-box ${k}`.trim()}function busy(v){disc.disabled=v;conn.disabled=v}
+async function connectTo(base){busy(true);try{const normalized=setServerBaseUrl(base);status("Checking HHMS server…");state.textContent="Checking";const h=await checkServer(normalized);details.classList.remove("hidden");name.textContent=h.service||"HHMS Server";version.textContent=h.version||"—";addr.textContent=normalized;summary.textContent=`${h.service||"HHMS Server"} ${h.version||""}`.trim();status("HHMS server is online.","success");state.textContent="Connected";cv.classList.add("hidden");av.classList.remove("hidden")}catch(e){state.textContent="Offline";status(e instanceof Error?e.message:"Unable to connect to HHMS server.","error")}finally{busy(false)}}
+async function discover(){busy(true);try{status("Searching for HHMS server…");state.textContent="Searching";const found=await discoverServer();if(!found)throw new Error("HHMS server was not found. Enter the server address manually.");url.value=found;await connectTo(found)}catch(e){state.textContent="Offline";status(e instanceof Error?e.message:"Unable to discover HHMS server.","error")}finally{busy(false)}}
+disc.addEventListener("click",discover);conn.addEventListener("click",()=>{const v=url.value.trim();if(!v){status("Enter a server address or use Discover Server.","error");return}connectTo(v)});clear.addEventListener("click",()=>{clearSavedServer();url.value="";state.textContent="Offline";status("Saved server address cleared.")});const c=loadClientConfig();if(c.manualServerUrl)url.value=c.manualServerUrl;discover();
