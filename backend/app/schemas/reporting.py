@@ -22,6 +22,10 @@ ReportSection = Literal[
     "diet_charts",
     "progress_notes",
     "discharge",
+    "billing",
+    "payments",
+    "medical_documents",
+    "mrd",
 ]
 
 ALL_REPORT_SECTIONS: tuple[str, ...] = (
@@ -38,6 +42,10 @@ ALL_REPORT_SECTIONS: tuple[str, ...] = (
     "diet_charts",
     "progress_notes",
     "discharge",
+    "billing",
+    "payments",
+    "medical_documents",
+    "mrd",
 )
 
 class ClinicalReportRequest(BaseSchema):

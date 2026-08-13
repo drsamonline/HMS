@@ -24,3 +24,17 @@ def test_batch_report_request_supports_period_and_case_filter() -> None:
     )
     assert request.case_status == "active"
     assert request.limit == 25
+
+
+def test_reporting_sections_include_billing_documents_and_mrd() -> None:
+    from app.schemas.reporting import ALL_REPORT_SECTIONS, ClinicalReportRequest
+
+    assert "billing" in ALL_REPORT_SECTIONS
+    assert "payments" in ALL_REPORT_SECTIONS
+    assert "medical_documents" in ALL_REPORT_SECTIONS
+    assert "mrd" in ALL_REPORT_SECTIONS
+    request = ClinicalReportRequest(
+        patient_id=1,
+        sections=["billing", "payments", "medical_documents", "mrd"],
+    )
+    assert request.sections == ["billing", "payments", "medical_documents", "mrd"]

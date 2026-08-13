@@ -10,7 +10,7 @@
 - Hospital Statistics Engine and Reporting Dimensions
 
 ## Current Task
-- Build structured report-data selection for complete/partial clinical printing
+- Extend report-data selection to billing, documents, and MRD outputs
 
 ## Next Task
 - Reporting/printing backend
@@ -71,3 +71,5 @@
 - Daily breakdown is available in the hospital statistics response.
 
 - Reporting/Print-Data Batch 02: report catalog, explicit admission section, and date-range batch case reports implemented.
+
+- Reporting/Print Batch 03: billing, payments, medical documents, and MRD report sections implemented.

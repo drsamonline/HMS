@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ResourceNotFoundException
@@ -15,6 +15,11 @@ from app.models.diet_chart import DietChart
 from app.models.discharge import Discharge
 from app.models.followup import FollowUp
 from app.models.investigation import Investigation
+from app.models.invoice import Invoice
+from app.models.payment import Payment
+from app.models.medical_document import MedicalDocument
+from app.models.patient_file import PatientFile
+from app.models.archive_record import ArchiveRecord
 from app.models.ipd_assessment import IPDAssessment
 from app.models.nutritional_assessment import NutritionalAssessment
 from app.models.pain_assessment import PainAssessment
@@ -47,6 +52,10 @@ _REPORT_CATALOG = [
     ReportCatalogItem(key="diet_charts", label="Diet Charts", description="IPD diet chart records.", available_for=["clinical", "ipd"]),
     ReportCatalogItem(key="progress_notes", label="Progress Notes", description="IPD progress notes.", available_for=["clinical", "ipd"]),
     ReportCatalogItem(key="discharge", label="Discharge Summary", description="IPD discharge summary.", available_for=["clinical", "ipd"]),
+    ReportCatalogItem(key="billing", label="Billing / Invoices", description="Patient invoices linked to the selected clinical context.", available_for=["clinical", "case", "ipd", "billing"]),
+    ReportCatalogItem(key="payments", label="Payments / Receipts", description="Payments and receipts linked to patient invoices.", available_for=["clinical", "case", "ipd", "billing"]),
+    ReportCatalogItem(key="medical_documents", label="Medical Documents", description="Medical documents registered for the patient/context.", available_for=["clinical", "case", "ipd", "mrd"]),
+    ReportCatalogItem(key="mrd", label="MRD Patient File / Archive", description="Patient file index and archive records.", available_for=["clinical", "case", "ipd", "mrd"]),
 ]
 
 def _dump_row(obj: Any) -> dict[str, Any]:
@@ -113,6 +122,51 @@ class ReportingService:
             stmt = _apply_time_range(stmt, Investigation.investigation_datetime, request)
             rows = await db.execute(stmt)
             data["investigations"] = [_dump_row(row) for row in rows.scalars().all()]
+
+        if "billing" in sections or "payments" in sections:
+            invoice_stmt = select(Invoice).where(Invoice.patient_id == patient.id).order_by(Invoice.invoice_date)
+            context_filters = []
+            if visit_id is not None:
+                context_filters.append(Invoice.visit_id == visit_id)
+            if admission_id is not None:
+                context_filters.append(Invoice.admission_id == admission_id)
+            if context_filters:
+                invoice_stmt = invoice_stmt.where(or_(*context_filters))
+            invoice_stmt = _apply_time_range(invoice_stmt, Invoice.invoice_date, request)
+            invoice_rows = await db.execute(invoice_stmt)
+            invoices = list(invoice_rows.scalars().all())
+            if "billing" in sections:
+                data["billing"] = [_dump_row(row) for row in invoices]
+            if "payments" in sections:
+                invoice_ids = [row.id for row in invoices]
+                if invoice_ids:
+                    payment_rows = await db.execute(select(Payment).where(Payment.invoice_id.in_(invoice_ids)).order_by(Payment.payment_datetime))
+                    data["payments"] = [_dump_row(row) for row in payment_rows.scalars().all()]
+                else:
+                    data["payments"] = []
+
+        if "medical_documents" in sections:
+            document_stmt = select(MedicalDocument).where(MedicalDocument.patient_id == patient.id).order_by(MedicalDocument.document_date)
+            context_filters = []
+            if visit_id is not None:
+                context_filters.append(MedicalDocument.visit_id == visit_id)
+            if admission_id is not None:
+                context_filters.append(MedicalDocument.admission_id == admission_id)
+            if context_filters:
+                document_stmt = document_stmt.where(or_(*context_filters))
+            document_stmt = _apply_time_range(document_stmt, MedicalDocument.document_date, request)
+            rows = await db.execute(document_stmt)
+            data["medical_documents"] = [_dump_row(row) for row in rows.scalars().all()]
+
+        if "mrd" in sections:
+            file_rows = await db.execute(select(PatientFile).where(PatientFile.patient_id == patient.id).order_by(PatientFile.id))
+            files = list(file_rows.scalars().all())
+            mrd_payload = {"patient_files": [_dump_row(row) for row in files], "archives": []}
+            file_ids = [row.id for row in files]
+            if file_ids:
+                archive_rows = await db.execute(select(ArchiveRecord).where(ArchiveRecord.patient_file_id.in_(file_ids)).order_by(ArchiveRecord.archive_date, ArchiveRecord.id))
+                mrd_payload["archives"] = [_dump_row(row) for row in archive_rows.scalars().all()]
+            data["mrd"] = mrd_payload
 
         if admission_id is not None:
             if "ipd_assessment" in sections:
