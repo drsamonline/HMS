@@ -42,3 +42,5 @@
 - Client integration milestone: patient Overview now includes a longitudinal timeline from visits, admissions, investigations, billing invoices, and MRD files.
 
 - Client RBAC navigation batch: consumes /auth/me roles/permissions for top-level module visibility.
+
+- Batch 21: client record-level RBAC and navigation integrity implemented; duplicate bootstrap markup removed.

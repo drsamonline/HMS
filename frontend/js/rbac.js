@@ -10,6 +10,7 @@ const ACCESS={
  reports:["reports.read","report.read","printing.read","reports.print"]
 };
 const normalize=v=>String(v??"").trim().toLowerCase();
+
 export function canAccess(profile,module){
  if(!profile)return false;
  const roles=(profile.roles||[]).map(normalize);
@@ -19,6 +20,7 @@ export function canAccess(profile,module){
  const candidates=ACCESS[module]||[];
  return candidates.some(p=>permissions.includes(p));
 }
+
 export function applyNavigationAccess(profile){
  document.querySelectorAll(".nav-item[data-access]").forEach(button=>{
   const key=button.dataset.access;
@@ -33,4 +35,21 @@ export function applyNavigationAccess(profile){
   roleEl.textContent=roles.length?roles.join(" · "):"Authenticated user";
  }
 }
-export function allowedRecordSection(profile,section){return canAccess(profile,section);}
+
+export function applyRecordAccess(profile){
+ document.querySelectorAll(".record-tab[data-access]").forEach(button=>{
+  const key=button.dataset.access;
+  const allowed=canAccess(profile,key);
+  button.classList.toggle("hidden",!allowed);
+  button.disabled=!allowed;
+  button.setAttribute("aria-hidden",String(!allowed));
+ });
+ const active=document.querySelector(".record-tab.active");
+ if(active?.disabled||active?.classList.contains("hidden")){
+   active.classList.remove("active");
+   document.querySelector(".record-tab:not(.hidden):not([disabled])")?.classList.add("active");
+ }
+}
+
+export function allowedRecordSection(profile,section){return canAccess(profile,section)}
+export {ACCESS};
