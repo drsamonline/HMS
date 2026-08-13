@@ -32,3 +32,5 @@
 - Client Billing + MRD Workspace Batch 13 implemented.
 
 - Client Batch 14: integrated hospital statistics and reports/printing workspace.
+
+- Client Print Renderer: HTML/A4 preview, section selection, print CSS and window.print() integration implemented.
