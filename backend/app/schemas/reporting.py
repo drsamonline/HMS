@@ -111,6 +111,20 @@ class ReportCatalogRead(BaseSchema):
     report_type: Literal["catalog"] = "catalog"
     sections: list[ReportCatalogItem]
 
+class ReportPrintEnvelope(BaseSchema):
+    report_type: Literal["clinical_print"] = "clinical_print"
+    title: str
+    generated_at: datetime
+    patient_id: int
+    case_record_id: int | None = None
+    admission_id: int | None = None
+    selected_sections: list[str]
+    available_sections: list[str]
+    report: ClinicalReportRead
+
+class ReportPrintEnvelopeRequest(ClinicalReportRequest):
+    title: str | None = Field(default=None, max_length=200)
+
 __all__ = [
     "ReportSection",
     "ALL_REPORT_SECTIONS",
@@ -121,4 +135,6 @@ __all__ = [
     "ClinicalReportBatchRead",
     "ReportCatalogItem",
     "ReportCatalogRead",
+    "ReportPrintEnvelope",
+    "ReportPrintEnvelopeRequest",
 ]

@@ -9,6 +9,8 @@ from app.schemas.reporting import (
     ClinicalReportBatchRead,
     ClinicalReportBatchRequest,
     ClinicalReportRead,
+    ReportPrintEnvelope,
+    ReportPrintEnvelopeRequest,
     ClinicalReportRequest,
     ReportCatalogRead,
 )
@@ -27,6 +29,14 @@ async def build_clinical_report(
     _: CurrentUserDependency,
 ) -> ClinicalReportRead:
     return await reporting_service.build_clinical_report(db, report_in)
+
+@router.post("/clinical-data/print-envelope", response_model=ReportPrintEnvelope)
+async def build_clinical_print_envelope(
+    report_in: ReportPrintEnvelopeRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> ReportPrintEnvelope:
+    return await reporting_service.build_print_envelope(db, report_in)
 
 @router.post("/clinical-data/batch", response_model=ClinicalReportBatchRead)
 async def build_clinical_report_batch(

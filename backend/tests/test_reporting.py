@@ -38,3 +38,9 @@ def test_reporting_sections_include_billing_documents_and_mrd() -> None:
         sections=["billing", "payments", "medical_documents", "mrd"],
     )
     assert request.sections == ["billing", "payments", "medical_documents", "mrd"]
+
+
+def test_print_envelope_schema_supports_custom_title() -> None:
+    from app.schemas.reporting import ReportPrintEnvelopeRequest
+    request = ReportPrintEnvelopeRequest(patient_id=1, title="Complete Case Report")
+    assert request.title == "Complete Case Report"

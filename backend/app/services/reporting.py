@@ -36,6 +36,8 @@ from app.schemas.reporting import (
     ClinicalReportRequest,
     ReportCatalogItem,
     ReportCatalogRead,
+    ReportPrintEnvelope,
+    ReportPrintEnvelopeRequest,
 )
 
 _REPORT_CATALOG = [
@@ -200,6 +202,22 @@ class ReportingService:
             admission_id=admission_id,
             sections=list(data.keys()),
             data=data,
+        )
+
+    async def build_print_envelope(
+        self, db: AsyncSession, request: ReportPrintEnvelopeRequest
+    ) -> ReportPrintEnvelope:
+        report = await self.build_clinical_report(db, request)
+        title = request.title or "HHMS Clinical Report"
+        return ReportPrintEnvelope(
+            title=title,
+            generated_at=datetime.utcnow(),
+            patient_id=report.patient_id,
+            case_record_id=report.case_record_id,
+            admission_id=report.admission_id,
+            selected_sections=report.sections,
+            available_sections=list(ALL_REPORT_SECTIONS),
+            report=report,
         )
 
     async def build_case_batch(self, db: AsyncSession, request: ClinicalReportBatchRequest) -> ClinicalReportBatchRead:
