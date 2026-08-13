@@ -81,4 +81,20 @@ window.addEventListener("hhms:server-state",e=>{if(e.detail?.online){state.textC
 window.addEventListener("offline",()=>{state.textContent="Offline";showConnectionBanner("Network connection is unavailable. HHMS will reconnect when the LAN is available.","error")});
 window.addEventListener("online",async()=>{state.textContent="Checking";showConnectionBanner("Network restored. Checking HHMS server…");if(serverBaseUrlSafe())try{await checkServer();hideConnectionBanner();state.textContent="Connected";}catch{}else hideConnectionBanner();});
 function serverBaseUrlSafe(){try{return !!loadClientConfig().manualServerUrl||!!getServerBaseUrl()}catch{return false}}
-document.querySelectorAll(".nav-item[data-app-view]").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".nav-item[data-app-view]").forEach(x=>x.classList.remove("active"));b.classList.add("active");const gv=document.querySelector("#global-view");toggle(gv,true);document.querySelectorAll(".content-panel").forEach(x=>{if(x.id!=="global-view")x.classList.add("hidden")});if(b.dataset.appView==="dashboard"){await openDashboard(gv,{patient:window.currentPatient||null});}else if(b.dataset.appView==="statistics"){await openStatisticsWorkspace(gv);}else if(b.dataset.appView==="reports"){await openReportsWorkspace(gv,window.currentPatient||null);}else if(b.dataset.appView==="patients"){toggle($("#global-view"),false);document.querySelectorAll(".content-panel").forEach(x=>{if(x.id!=="global-view")x.classList.add("hidden")});toggle($(".content-panel"),true);}}));restoreUserProfile();const c=loadClientConfig();if(c.manualServerUrl)url.value=c.manualServerUrl;discover();
+document.querySelectorAll(".nav-item[data-app-view]").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".nav-item[data-app-view]").forEach(x=>x.classList.remove("active"));b.classList.add("active");const gv=document.querySelector("#global-view");toggle(gv,true);document.querySelectorAll(".content-panel").forEach(x=>{if(x.id!=="global-view")x.classList.add("hidden")});if(b.dataset.appView==="dashboard"){await openDashboard(gv,{patient:window.currentPatient||null});}else if(b.dataset.appView==="statistics"){await openStatisticsWorkspace(gv);}else if(b.dataset.appView==="reports"){await openReportsWorkspace(gv,window.currentPatient||null);}else if(b.dataset.appView==="patients"){toggle($("#global-view"),false);document.querySelectorAll(".content-panel").forEach(x=>{if(x.id!=="global-view")x.classList.add("hidden")});toggle($(".content-panel"),true);}}));restoreUserProfile();
+async function startup(){
+  const c=loadClientConfig();
+  if(c.manualServerUrl) url.value=c.manualServerUrl;
+  if(c.manualServerUrl){
+    try{ await connectTo(c.manualServerUrl); return; }
+    catch{}
+  }
+  if(getAccessToken()){
+    try{
+      const base=getServerBaseUrl()||c.manualServerUrl;
+      if(base){ await connectTo(base); return; }
+    }catch{}
+  }
+  await discover();
+}
+startup();

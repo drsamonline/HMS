@@ -48,3 +48,5 @@
 - Client Runtime Resilience Batch 22: session expiry handling and network loss/recovery UX implemented.
 
 - Client unsaved-change protection: ephemeral dirty-state indicator, navigation confirmation, and before-unload protection added.
+
+- Client Startup / Session Restore Batch 24: saved-server-first startup, authenticated-session reconnect, and LAN discovery fallback implemented.
