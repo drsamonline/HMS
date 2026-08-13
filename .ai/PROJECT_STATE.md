@@ -34,3 +34,5 @@
 - Client Batch 14: integrated hospital statistics and reports/printing workspace.
 
 - Client Print Renderer: HTML/A4 preview, section selection, print CSS and window.print() integration implemented.
+
+- Client print Batch 16: batch case selection and multi-case print preview implemented.

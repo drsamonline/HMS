@@ -33,3 +33,10 @@
   .print-field{break-inside:avoid}
   @page{size:A4 portrait;margin:14mm}
 }
+
+.print-batch-selector{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-top:2px}
+.batch-report-sheet{padding:18px 0;break-before:page}
+.batch-case-heading{border-bottom:2px solid #d7e1e8;padding-bottom:8px;margin-bottom:10px}
+.batch-case-heading h2{margin:0 0 3px}
+.batch-case-heading p{margin:0;color:#65768a}
+@media print{.batch-report-sheet{break-before:page}.batch-report-sheet:first-child{break-before:auto}}
