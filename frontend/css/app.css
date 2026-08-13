@@ -25,3 +25,7 @@
 @media(max-width:900px){.timeline-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .user-identity{display:flex;align-items:flex-end;gap:.45rem;flex-direction:column}.user-role{font-size:.75rem;opacity:.75}.nav-item:disabled{display:none}
+
+#runtime-status{position:sticky;top:0;z-index:20;margin:0 auto 12px;max-width:980px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.status-box[role="status"]{font-weight:600}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #2b6b91;outline-offset:2px}

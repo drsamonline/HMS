@@ -4,7 +4,34 @@ export function setServerBaseUrl(url){const normalized=normalizeBaseUrl(url);ser
 export function getServerBaseUrl(){return serverBaseUrl}
 export function getAccessToken(){return accessToken}
 export function clearAccessToken(){accessToken=null;sessionStorage.removeItem("hhms.access_token")}
-async function request(path,options={}){if(!serverBaseUrl)throw new Error("HHMS server address is not configured.");const headers=new Headers(options.headers||{});headers.set("Accept","application/json");if(accessToken)headers.set("Authorization",`Bearer ${accessToken}`);if(options.body&&!headers.has("Content-Type"))headers.set("Content-Type","application/json");const r=await fetch(`${serverBaseUrl}${path}`,{...options,headers,cache:"no-store"});if(r.status===401){clearAccessToken();throw new Error("Your HHMS session has expired. Please sign in again.")}if(!r.ok){let detail="";try{detail=(await r.json()).detail||""}catch{}throw new Error(detail||`HHMS server returned HTTP ${r.status}.`)}return r.status===204?null:r.json()}
+async function request(path,options={}){
+ if(!serverBaseUrl)throw new Error("HHMS server address is not configured.");
+ const headers=new Headers(options.headers||{});
+ headers.set("Accept","application/json");
+ if(accessToken)headers.set("Authorization",`Bearer ${accessToken}`);
+ if(options.body&&!headers.has("Content-Type"))headers.set("Content-Type","application/json");
+ try{
+  const r=await fetch(`${serverBaseUrl}${path}`,{...options,headers,cache:"no-store"});
+  if(r.status===401){
+   clearAccessToken();
+   window.dispatchEvent(new CustomEvent("hhms:auth-expired"));
+   throw new Error("Your HHMS session has expired. Please sign in again.");
+  }
+  if(!r.ok){
+   let detail="";
+   try{const body=await r.json();detail=body?.detail||body?.message||""}catch{}
+   throw new Error(detail||`HHMS server returned HTTP ${r.status}.`);
+  }
+  window.dispatchEvent(new CustomEvent("hhms:server-state",{detail:{online:true}}));
+  return r.status===204?null:r.json();
+ }catch(error){
+  if(error instanceof TypeError||/Failed to fetch|NetworkError|fetch/i.test(String(error?.message||""))){
+   window.dispatchEvent(new CustomEvent("hhms:server-state",{detail:{online:false}}));
+   throw new Error("HHMS server is unreachable. Check the LAN connection or server address and try again.");
+  }
+  throw error;
+ }
+}
 export async function checkServer(baseUrl=serverBaseUrl){if(baseUrl)serverBaseUrl=normalizeBaseUrl(baseUrl);const c=loadClientConfig();return request(c.healthPath)}
 export async function login(username,password){const c=loadClientConfig();const result=await request(c.loginPath,{method:"POST",body:JSON.stringify({username,password})});if(!result?.access_token)throw new Error("HHMS server returned an invalid authentication response.");accessToken=result.access_token;sessionStorage.setItem("hhms.access_token",accessToken);return result}
 export async function listPatients(search=""){const c=loadClientConfig();const q=new URLSearchParams({skip:"0",limit:"50"});if(search.trim())q.set("search",search.trim());return request(`${c.patientsPath}?${q.toString()}`)}

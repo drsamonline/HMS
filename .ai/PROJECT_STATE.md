@@ -44,3 +44,5 @@
 - Client RBAC navigation batch: consumes /auth/me roles/permissions for top-level module visibility.
 
 - Batch 21: client record-level RBAC and navigation integrity implemented; duplicate bootstrap markup removed.
+
+- Client Runtime Resilience Batch 22: session expiry handling and network loss/recovery UX implemented.
