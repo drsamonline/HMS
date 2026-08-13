@@ -76,3 +76,46 @@ This decision is LOCKED and cannot be changed without formal project governance 
 ### Compliance
 
 [Is this decision locked or can it be revisited?]
+
+
+---
+
+## D-002: LAN Desktop Client/Server Deployment
+
+**Status:** LOCKED
+
+**Date:** 2026-08-13
+
+### Context
+
+HHMS is intended for hospital LAN deployment with multiple client workstations and one server. The client must remain lightweight and must never open the shared database directly.
+
+### Decision
+
+HHMS will target a two-executable deployment:
+
+- `HHMS-Server.exe` owns the FastAPI application and SQLite database.
+- `HHMS-Client.exe` provides the desktop UI and communicates with the server over LAN using HTTP/JSON.
+
+The client shall support automatic LAN server discovery with a manual server-address fallback.
+
+The portable LAN release shall remain SQLite-first. PostgreSQL compatibility is retained for future deployments but is not a production prerequisite for the portable release.
+
+The frontend shall use HTML/CSS/JavaScript inside a lightweight native Windows host; WebView2 is the current target host technology.
+
+### Consequences
+
+**Positive:**
+- Centralized shared patient/database state.
+- No direct database concurrency from clients.
+- No requirement for Python or Node.js on client workstations.
+- Lightweight frontend implementation.
+- Suitable for low-resource hospital PCs.
+
+**Negative:**
+- Client requires the server to be reachable for shared data operations.
+- Windows client packaging and WebView2 runtime distribution must be solved before release.
+
+### Rationale
+
+This matches the hospital LAN operating model, minimizes dependencies, and prevents a browser-first architecture from forcing a later desktop rewrite.

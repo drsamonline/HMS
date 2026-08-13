@@ -30,6 +30,8 @@ If documentation conflicts occur, report them instead of making assumptions.
 
 ## Technology Stack
 
+### Server
+
 Python 3.13+
 
 FastAPI
@@ -40,21 +42,9 @@ Pydantic v2
 
 Alembic
 
-SQLite
+SQLite (primary portable LAN deployment)
 
-PostgreSQL
-
-React
-
-TypeScript
-
-Vite
-
-Tailwind CSS
-
-TanStack Query
-
-React Router
+PostgreSQL (compatibility option)
 
 JWT Authentication
 
@@ -64,7 +54,19 @@ uv
 
 pytest
 
-Playwright
+### Client
+
+Native Windows client host
+
+HTML
+
+CSS
+
+Vanilla JavaScript
+
+Embedded web UI (WebView2 target)
+
+The client framework remains intentionally lightweight. React/Vite/Tailwind are not project defaults and must not be introduced without a documented architectural reason.
 
 ---
 

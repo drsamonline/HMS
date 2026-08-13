@@ -1,233 +1,145 @@
 # HHMS Frontend Architecture
 
----
+## 1. Purpose
 
-# 1. Purpose
+This document defines the frontend architecture for the HHMS LAN desktop client.
 
-This document defines the architectural blueprint for the HHMS frontend application.
+The frontend is not a public website and is not designed around internet deployment. It is a local application UI that communicates with the HHMS server over the hospital LAN.
 
-It establishes the project organization, user interface architecture, component structure, navigation model, state management principles, and frontend development standards.
+## 2. Design Goals
 
-This document complements:
+- Fast navigation on low-resource hardware.
+- Compact clinical workflows.
+- Offline-first LAN operation.
+- No direct client database access.
+- Simple maintenance by a single developer.
+- Reusable HTML/CSS/JavaScript modules.
+- Print-first clinical and administrative workflows.
+- Progressive saving for incomplete clinical records.
 
-- MASTER_SPECIFICATION.md
-- BACKEND_ARCHITECTURE.md
-- API_SPECIFICATION.md
+## 3. Client Architecture
 
----
-
-# 2. Design Goals
-
-The frontend shall be designed to provide:
-
-- Simple and intuitive workflows.
-- Fast navigation.
-- Responsive user interface.
-- Modular component architecture.
-- Consistent user experience.
-- Easy maintenance.
-- Compatibility with low-resource hardware.
-- Future extensibility.
-
----
-
-# 3. Technology Stack
-
-| Component | Technology |
-|-----------|------------|
-| Language | TypeScript |
-| Framework | React |
-| Build Tool | Vite |
-| Routing | React Router |
-| UI Components | shadcn/ui |
-| Styling | Tailwind CSS |
-| Forms | React Hook Form |
-| Validation | Zod |
-| HTTP Client | Axios |
-| State Management | React Context + TanStack Query |
-
----
-
-# 4. Frontend Architecture
-
-The frontend shall follow a feature-first modular architecture.
-
-```
-Pages
-
-↓
-
-Feature Modules
-
-↓
-
-Shared Components
-
-↓
-
-API Client
-
-↓
-
-Backend REST API
+```text
+HHMS-Client.exe
+    |
+    +-- Native Windows client host
+    |
+    +-- Embedded web UI (HTML/CSS/JavaScript)
+    |
+    +-- Centralized API client
+             |
+             | HTTP/JSON over LAN
+             v
+       HHMS-Server.exe
 ```
 
-Business logic shall remain within feature modules.
+The current target for the native web host is WebView2. The exact packaging/runtime strategy will be finalized during the LAN packaging milestone.
 
-Shared components shall remain presentation-only.
+## 4. No Heavy Web Framework by Default
 
----
+The project shall not introduce React, Next.js, Vue, Angular, Electron, Tailwind, or a large UI component framework merely for convenience.
 
-# 5. Project Structure
+The default frontend implementation shall use:
 
-```
+- HTML
+- CSS
+- Vanilla JavaScript
+- small reusable modules
+
+A framework may be introduced only if a later requirement demonstrates that it materially improves maintainability without violating the low-resource design goal.
+
+## 5. Project Structure
+
+```text
 frontend/
-
-├── src/
-│   ├── api/
-│   ├── assets/
-│   ├── components/
-│   ├── features/
-│   ├── hooks/
-│   ├── layouts/
-│   ├── pages/
-│   ├── routes/
-│   ├── types/
-│   ├── utils/
-│   └── main.tsx
-│
-├── public/
-├── package.json
-└── vite.config.ts
+├── index.html
+├── css/
+│   ├── app.css
+│   ├── forms.css
+│   ├── tables.css
+│   └── print.css
+├── js/
+│   ├── app.js
+│   ├── api.js
+│   ├── auth.js
+│   ├── navigation.js
+│   └── feature modules
+├── pages/
+└── assets/
 ```
 
-Each directory shall have a single responsibility.
+The structure may remain smaller when a feature does not justify additional files.
 
----
+## 6. Workflow-Centred Navigation
 
-# 6. Component Standards
+The UI shall be organized around the patient and hospital workflow rather than exposing database tables as the primary navigation model.
 
-Components shall be categorized as:
+Core workspace:
 
-- Layout components
-- Shared UI components
-- Feature components
-- Page components
+```text
+Patient
+├── OPD / Consultation
+├── Homoeopathic Case Record
+├── Diagnosis / ICD-11
+├── Prescription
+├── Follow-up
+├── Investigations
+├── IPD
+├── Billing
+├── Documents
+├── MRD
+└── Timeline
+```
 
-Components shall remain reusable wherever practical.
+## 7. API Communication
 
-Business rules shall not be implemented inside reusable UI components.
+All HTTP requests pass through a centralized API client.
 
----
+Feature modules must not embed independent connection logic or hard-coded server addresses.
 
-# 7. Navigation
+The client shall support:
 
-Application navigation shall be organized by functional modules.
+- authentication
+- request/response handling
+- network-error handling
+- retry
+- configured/discovered server address
+- preservation of unsaved form data when a request fails
 
-Primary navigation shall include:
+## 8. LAN Discovery
 
-- Dashboard
-- Patients
-- OPD
-- Pharmacy
-- Inventory
-- IPD
-- Laboratory
-- Billing
-- Medical Records
-- Administration
+The client shall attempt automatic LAN server discovery.
 
-Routing shall be managed through React Router.
+A manual server address/configuration fallback shall always remain available.
 
-Protected routes shall require authenticated users.
+## 9. Progressive Clinical Saving
 
----
+Clinical forms must permit incomplete records to be saved.
 
-# 8. State Management
+Empty optional sections are valid state and must not be treated as validation errors merely because they are empty.
 
-State shall be divided into:
+## 10. Printing
 
-## Server State
+Printing is a core requirement.
 
-Managed using TanStack Query.
+Frontend print workflows shall support:
 
-Examples:
+- complete case printing
+- selected case sections
+- individual clinical documents
+- page/document-specific output
+- date-wise reports
+- custom date-range reports
+- batch printing where applicable
+- print preview
+- PDF export through the system/browser print pipeline
 
-- Patient lists
-- Visit records
-- Medicines
-- Reports
+## 11. Performance
 
----
+Avoid unnecessary dependencies, large client bundles, aggressive polling, per-keystroke network writes, and excessive DOM complexity.
 
-## Client State
+## 12. Security
 
-Managed using React Context.
+The client shall never contain database credentials or directly open the database file.
 
-Examples:
-
-- Authentication
-- Theme
-- Sidebar
-- User preferences
-
-Local component state shall be used whenever global state is unnecessary.
-
----
-
-# 9. API Communication
-
-All HTTP communication shall pass through a centralized API client.
-
-The API client shall provide:
-
-- Authentication token handling
-- Request configuration
-- Response interception
-- Error handling
-- Automatic retry where appropriate
-
-Feature modules shall not perform direct HTTP requests.
-
----
-
-# 10. Error Handling
-
-Frontend error handling shall remain consistent.
-
-The application shall provide:
-
-- Validation messages
-- API error messages
-- Network error handling
-- Unexpected error handling
-- User-friendly notifications
-
-Internal implementation details shall never be exposed to users.
-
----
-
-# 11. Frontend Standards
-
-Frontend development shall follow these principles.
-
-- Feature-first organization.
-- Reusable components.
-- Responsive layouts.
-- Accessibility considerations.
-- Type-safe development.
-- Consistent naming conventions.
-- Minimal business logic inside UI components.
-- Separation of presentation and application logic.
-
----
-
-# 12. Revision History
-
-| Version | Date | Author | Description |
-|---------|------|--------|-------------|
-| 1.0.0 | 02 August 2026 | Dr. Sohil Momin | Initial frontend architecture completed. |
-
----
-
-**End of Document — HHMS Frontend Architecture**
+All protected operations go through the authenticated HHMS server API.

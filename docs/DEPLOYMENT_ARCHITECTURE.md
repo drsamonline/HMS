@@ -1,142 +1,125 @@
 # HHMS Deployment Architecture
 
----
+## 1. Purpose
 
-# 1. Purpose
+This document defines the deployment architecture for the HHMS LAN client/server application.
 
-This document defines the deployment architecture for the Homoeopathic Hospital Management System (HHMS).
+## 2. Target Deployment
 
-It establishes the deployment strategy, environment organization, configuration management, database deployment, backup procedures, and operational standards required for running HHMS.
+```text
+Hospital LAN
 
-This document complements:
+          +----------------------+
+          |   Server Computer    |
+          |   HHMS-Server.exe    |
+          |   FastAPI + SQLite   |
+          +----------+-----------+
+                     |
+                  LAN HTTP
+                     |
+        +------------+------------+
+        |                         |
++-------+-------+         +-------+-------+
+| Client PC 1   |         | Client PC 2   |
+| HHMS-Client   |   ...   | HHMS-Client   |
++---------------+         +---------------+
+```
 
-- BACKEND_ARCHITECTURE.md
-- FRONTEND_ARCHITECTURE.md
-- SECURITY_ARCHITECTURE.md
-- TESTING_STRATEGY.md
+## 3. Server
 
----
+HHMS-Server.exe is responsible for:
 
-# 2. Deployment Objectives
+- FastAPI application
+- database access
+- migrations
+- authentication
+- business services
+- reporting
+- file/document management
+- audit logging
 
-The deployment architecture shall provide:
+The server is the only component that opens the database.
 
-- Reliable application startup.
-- Consistent environments.
-- Secure configuration management.
-- Database portability.
-- Simple maintenance.
-- Backup and recovery capability.
-- Scalable production deployment.
+## 4. Client
 
----
+HHMS-Client.exe provides the application UI.
 
-# 3. Deployment Environments
+The client contains:
 
-The application shall support:
+- native Windows host
+- embedded HTML/CSS/JavaScript frontend
+- API client
+- LAN server discovery/configuration
 
-## Development
+The client never accesses SQLite directly.
 
-- Local SQLite database.
-- Hot reload enabled.
-- Debug logging.
+## 5. Database
 
----
+SQLite is the primary database for the portable LAN deployment.
 
-## Testing
+The database shall live on the server computer in an application-data location rather than inside source code.
 
-- Isolated test database.
-- Automated test execution.
+PostgreSQL compatibility may remain available for future deployments, but PostgreSQL is not required for the portable LAN release.
 
----
+## 6. LAN Discovery
 
-## Production
+The client shall attempt automatic discovery of the HHMS server on the local network.
 
-- PostgreSQL database.
-- Optimized logging.
-- Secure configuration.
-- Debug mode disabled.
+A manual server address and port configuration shall be available as a fallback.
 
----
+## 7. Offline / Network Behaviour
 
-# 4. Environment Configuration
+HHMS is offline-first with respect to internet connectivity: normal hospital operation must not require cloud services.
 
-Configuration shall be provided through environment variables.
+A client requires the HHMS server to be reachable for shared hospital data operations. The client must clearly report server-unavailable conditions and must not silently create a second database.
 
-Typical configuration includes:
+## 8. Packaging
 
-- Application environment.
-- Database URL.
-- JWT secret.
-- Token expiration.
-- Upload directory.
-- Logging level.
+The final deployment target is:
 
-Sensitive values shall never be stored in source code.
+- one server executable/bundle
+- one client executable/bundle
 
----
+Application dependencies must be packaged with the appropriate executable/bundle so that end users do not need a separate Python, Node.js, or development environment.
 
-# 5. Database Deployment
+The WebView2 runtime packaging strategy will be finalized during the client packaging milestone.
 
-Database schema changes shall be managed through Alembic migrations.
+## 9. Configuration
 
-Deployment process:
+Environment-specific settings must not be hard-coded.
 
-1. Apply pending migrations.
-2. Verify migration success.
-3. Start application services.
+Server configuration includes:
 
-Database initialization shall remain repeatable and version controlled.
+- database location
+- server bind address
+- server port
+- JWT secret
+- logging level
+- uploads/documents location
+- backup location
 
----
+Client configuration includes:
 
-# 6. Backup and Recovery
+- discovered/configured server address
+- server port
+- client-specific preferences
 
-The deployment shall support regular database backups.
+## 10. Backup
 
-Backup procedures shall include:
+The server is responsible for database and uploaded-document backups.
 
-- Scheduled backups.
-- Backup verification.
-- Recovery testing.
+Backups must be stored outside the active database location and periodically verified.
 
-Uploaded files shall be included in backup operations.
+## 11. Startup
 
----
+The production release shall provide a simple server startup mechanism suitable for a hospital server PC.
 
-# 7. Logging and Monitoring
+Whether this is a desktop process or Windows service will be finalized during the packaging milestone.
 
-Production deployments shall maintain centralized application logs.
+## 12. Security
 
-Monitoring shall include:
+LAN communication must use authenticated API access.
 
-- Application startup.
-- API errors.
-- Database connectivity.
-- Authentication failures.
-- Critical system events.
+Database credentials are never exposed to clients.
 
----
-
-# 8. Deployment Standards
-
-Deployment shall follow these principles.
-
-- Environment-specific configuration.
-- Immutable application code.
-- Version-controlled database schema.
-- Automated migrations.
-- Consistent deployment process.
-- Secure secret management.
-
----
-
-# 9. Revision History
-
-| Version | Date | Author | Description |
-|---------|------|--------|-------------|
-| 1.0.0 | 02 August 2026 | Dr. Sohil Momin | Initial deployment architecture completed. |
-
----
-
-**End of Document — HHMS Deployment Architecture**
+Secrets are never embedded in source code or the client executable.
