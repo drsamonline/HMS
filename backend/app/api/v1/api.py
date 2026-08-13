@@ -93,6 +93,9 @@ from app.api.v1.endpoints.service_activities import (
 from app.api.v1.endpoints.statistics import (
     router as statistics_router,
 )
+from app.api.v1.endpoints.reporting import (
+    router as reporting_router,
+)
 
 
 api_router = APIRouter()
@@ -201,6 +204,11 @@ api_router.include_router(
 
 api_router.include_router(
     statistics_router,
+)
+
+
+api_router.include_router(
+    reporting_router,
 )
 
 
