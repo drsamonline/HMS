@@ -4,6 +4,9 @@ export function setServerBaseUrl(url){const normalized=normalizeBaseUrl(url);ser
 export function getServerBaseUrl(){return serverBaseUrl}
 export function getAccessToken(){return accessToken}
 export function clearAccessToken(){accessToken=null;sessionStorage.removeItem("hhms.access_token")}
+export function saveClinicalContext(context){sessionStorage.setItem("hhms.clinical_context",JSON.stringify(context||{}));window.dispatchEvent(new CustomEvent("hhms:clinical-context",{detail:context||{}}));}
+export function loadClinicalContext(){try{return JSON.parse(sessionStorage.getItem("hhms.clinical_context")||"{}")}catch{return {}}}
+export function clearClinicalContext(){sessionStorage.removeItem("hhms.clinical_context");window.dispatchEvent(new CustomEvent("hhms:clinical-context",{detail:{}}));}
 async function request(path,options={}){
  if(!serverBaseUrl)throw new Error("HHMS server address is not configured.");
  const headers=new Headers(options.headers||{});

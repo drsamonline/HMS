@@ -2,7 +2,7 @@ import {
   listDiagnoses, createDiagnosis, updateDiagnosis, searchICD11,
   listFollowups, createFollowup,
   createPrescription, listMedicines, listCaseRecords, listVisits, createVisit,
-  listDepartments, listDepartmentServices, listPrescriptionsByVisit, getCurrentUserProfile
+  listDepartments, listDepartmentServices, listPrescriptionsByVisit, getCurrentUserProfile, saveClinicalContext, clearClinicalContext
 } from "./api.js";
 
 let clinicalState = { patient: null, caseRecord: null, diagnoses: [], followups: [], prescription: null, medicines: [], visits: [], visit: null, departments: [], services: [] };
@@ -13,6 +13,7 @@ export function initClinicalWorkspace() {
 
 export async function openClinicalWorkspace(patient, host) {
   clinicalState.patient = patient;
+  saveClinicalContext({ patient_id: patient.id });
   host.innerHTML = renderClinicalShell();
   wireClinicalShell(host);
   await refreshVisitSelector(host);
@@ -111,6 +112,7 @@ async function saveVisit(host){
     const profile=await getCurrentUserProfile();
     const payload={patient_id:clinicalState.patient.id,visit_type:$("#visit-type",host).value.trim()||"OPD",visit_datetime:new Date($("#visit-datetime",host).value).toISOString(),chief_complaint:$("#visit-chief-complaint",host).value.trim()||null,consultation_status:"registered",consulting_doctor_id:Number(profile?.id||profile?.user?.id||profile?.sub),case_type:$("#visit-case-type",host).value};
     clinicalState.visit=await createVisit(payload);
+    saveClinicalContext({patient_id: clinicalState.patient.id, visit_id: clinicalState.visit.id, case_record_id: null, admission_id: null});
     setStatus(host,`Visit ${clinicalState.visit.visit_number} saved.`,"success");
     await refreshVisitSelector(host);
     startNewCase(host);
@@ -133,6 +135,7 @@ async function loadCase(id,host){
   try{
     const cases=await listCaseRecords(clinicalState.patient.id); const found=cases.find(c=>String(c.id)===String(id));
     clinicalState.caseRecord=found||null;
+    saveClinicalContext({patient_id: clinicalState.patient.id, visit_id: clinicalState.caseRecord?.visit_id || clinicalState.visit?.id || null, case_record_id: clinicalState.caseRecord?.id || null, admission_id: clinicalState.caseRecord?.admission_id || null});
     if(clinicalState.caseRecord?.visit_id){
       clinicalState.visit=clinicalState.visits.find(v=>String(v.id)===String(clinicalState.caseRecord.visit_id))||clinicalState.visit;
       const visitSelect=$("#visit-selector",host); if(visitSelect&&clinicalState.visit) visitSelect.value=String(clinicalState.visit.id);
@@ -141,6 +144,7 @@ async function loadCase(id,host){
   }catch(e){setStatus(host,e.message||"Unable to load case.","error");}
 }
 function startNewCase(host){
+  saveClinicalContext({patient_id: clinicalState.patient?.id || null, visit_id: clinicalState.visit?.id || null, case_record_id: null, admission_id: null});
   clinicalState.caseRecord={patient_id:clinicalState.patient.id,visit_id:clinicalState.visit?.id||null,case_status:"draft",quick_generals:{},modalities:{}};
   clinicalState.diagnoses=[]; clinicalState.followups=[]; clinicalState.prescription=null;
   setStatus(host,"New draft case ready.");
