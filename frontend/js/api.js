@@ -106,6 +106,10 @@ export async function updateAdmission(id,payload){return request(`/api/v1/admiss
 export async function listAllAdmissions(status=""){const q=new URLSearchParams({skip:"0",limit:"100"});if(status)q.set("status",status);return request(`/api/v1/admissions?${q.toString()}`)}
 export async function getBed(id){return request(`/api/v1/beds/${encodeURIComponent(id)}`)}
 
-
-export async function getDischargeByAdmission(admissionId){return request(`/api/v1/discharges/admission/${encodeURIComponent(admissionId)}`)}
-export async function createDischarge(payload){return request("/api/v1/discharges",{method:"POST",body:JSON.stringify(payload)})}
+export async function listAdminUsers(){return request("/api/v1/administration/users");}
+export async function createAdminUser(payload){return request("/api/v1/administration/users",{method:"POST",body:JSON.stringify(payload)});}
+export async function updateAdminUser(id,payload){return request(`/api/v1/administration/users/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)});}
+export async function listAdminRoles(){return request("/api/v1/administration/roles");}
+export async function createAdminRole(payload){return request("/api/v1/administration/roles",{method:"POST",body:JSON.stringify(payload)});}
+export async function updateAdminRole(id,payload){return request(`/api/v1/administration/roles/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)});}
+export async function listAdminPermissions(){return request("/api/v1/administration/permissions");}
