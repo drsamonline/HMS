@@ -2,20 +2,18 @@
 ## Current Phase
 - LAN Client / Frontend Foundation
 ## Current Milestone
-- Authenticated client and patient workspace
+- End-to-end clinical workflow integration
 ## Completed
 - Backend clinical/statistics/reporting
 - LAN server packaging/startup/discovery
 - Native WebView2 host
 - Client connection shell
 ## Current Task
-- Authenticated client session and patient search
+- Link visits, case records, diagnosis, prescriptions, and follow-ups into one clinical encounter workflow
 ## Next Task
-- Patient detail/dashboard
-- OPD case record workspace
-- IPD, investigations, billing, MRD client screens
-- Print preview/rendering
-- Final integration and QA
+- Clinical workflow continuation and final integration
+- Pharmacy/stock transaction UI
+- Final packaging, LAN QA, and release testing
 ## Locked Rules
 - Backend owns business logic and database access.
 - Client never opens SQLite directly.
@@ -48,3 +46,5 @@
 - Client Runtime Resilience Batch 22: session expiry handling and network loss/recovery UX implemented.
 
 - Client Department/Service Master UI: Batch 26 implemented against existing editable master APIs; reporting capability flags remain data-driven.
+
+- End-to-end clinical workflow integration: linked Visit context to Case Record, Diagnosis, Prescription, and Follow-up; prescription listing can now be scoped by Visit.

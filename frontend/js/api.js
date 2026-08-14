@@ -79,3 +79,6 @@ export async function createDepartmentService(payload){return request("/api/v1/d
 export async function updateDepartmentService(id,payload){return request(`/api/v1/department-services/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
 
 export async function getCurrentUserProfile(){return request("/api/v1/auth/me");}
+
+export async function createVisit(payload){return request("/api/v1/visits",{method:"POST",body:JSON.stringify(payload)});}
+export async function listPrescriptionsByVisit(visitId){return request(`/api/v1/prescriptions?visit_id=${encodeURIComponent(visitId)}`);}

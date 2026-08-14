@@ -25,6 +25,30 @@ router = APIRouter(
 )
 
 
+@router.get(
+    "",
+    response_model=list[PrescriptionRead],
+)
+async def list_prescriptions(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    visit_id: int | None = None,
+) -> list[PrescriptionRead]:
+    if visit_id is None:
+        return []
+    prescriptions = await prescription_service.repository.get_by_visit(db, visit_id)
+    result: list[PrescriptionRead] = []
+    for prescription in prescriptions:
+        items = await prescription_service.get_items(db, prescription.id)
+        result.append(
+            PrescriptionRead(
+                **prescription.__dict__,
+                items=items,
+            )
+        )
+    return result
+
+
 @router.post(
     "",
     response_model=PrescriptionRead,
