@@ -36,3 +36,5 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .pharmacy-item{width:100%;text-align:left;display:flex;justify-content:space-between;gap:.75rem;align-items:flex-start}
 .pharmacy-item-list{margin-top:.75rem}
 @media(max-width:900px){.pharmacy-grid{grid-template-columns:1fr}}
+
+.opd-toolbar{display:grid;grid-template-columns:180px 1fr auto;gap:10px;align-items:end;margin-bottom:14px}.opd-toolbar label{margin:0}.opd-actions{display:flex;gap:6px;flex-wrap:wrap}.opd-actions button{padding:6px 9px;font-size:.85rem}@media(max-width:760px){.opd-toolbar{grid-template-columns:1fr}}

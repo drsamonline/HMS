@@ -93,3 +93,10 @@ export async function createInventoryItem(payload){return request("/api/v1/inven
 export async function updateInventoryItem(id,payload){return request(`/api/v1/inventory-items/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
 export async function listStockTransactions(itemId){return request(`/api/v1/stock-transactions/item/${encodeURIComponent(itemId)}?skip=0&limit=100`)}
 export async function createStockTransaction(payload){return request("/api/v1/stock-transactions",{method:"POST",body:JSON.stringify(payload)})}
+
+export async function listVisits(patientId){return request(`/api/v1/visits?patient_id=${encodeURIComponent(patientId)}&skip=0&limit=100`)}
+export async function createVisit(payload){return request("/api/v1/visits",{method:"POST",body:JSON.stringify(payload)})}
+export async function listOPDTokens(queueDate){return request(`/api/v1/opd-tokens?queue_date=${encodeURIComponent(queueDate)}&skip=0&limit=200`)}
+export async function createOPDToken(payload){return request("/api/v1/opd-tokens",{method:"POST",body:JSON.stringify(payload)})}
+export async function updateOPDToken(tokenId,payload){return request(`/api/v1/opd-tokens/${encodeURIComponent(tokenId)}`,{method:"PUT",body:JSON.stringify(payload)})}
+export async function cancelOPDToken(tokenId){return request(`/api/v1/opd-tokens/${encodeURIComponent(tokenId)}`,{method:"DELETE"})}
