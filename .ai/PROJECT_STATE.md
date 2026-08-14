@@ -58,3 +58,6 @@
 - Batch 36: Client Administration and RBAC management workspace implemented.
 
 - Batch 37: editable staff designation master API and migration implemented; client-ready.
+
+- Current functional build milestone: Hospital/System Settings and Number Sequence client/backend foundation.
+- Remaining build focus: complete functional administration/configuration, deeper workflow integration, final packaging, then comprehensive QA/release.

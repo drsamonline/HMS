@@ -117,3 +117,10 @@ export async function listAdminPermissions(){return request("/api/v1/administrat
 export async function listDesignations(){return request("/api/v1/designations?skip=0&limit=200");}
 export async function createDesignation(payload){return request("/api/v1/designations",{method:"POST",body:JSON.stringify(payload)});}
 export async function updateDesignation(id,payload){return request(`/api/v1/designations/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)});}
+
+export async function getHospitalSettings(){return request('/settings/hospital');}
+export async function updateHospitalSettings(data){return request('/settings/hospital',{method:'PUT',body:JSON.stringify(data)});}
+export async function listSystemSettings(){return request('/settings/system');}
+export async function upsertSystemSetting(key,data){return request(`/settings/system/${encodeURIComponent(key)}`,{method:'PUT',body:JSON.stringify(data)});}
+export async function listNumberSequences(){return request('/settings/sequences');}
+export async function updateNumberSequence(id,data){return request(`/settings/sequences/${id}`,{method:'PATCH',body:JSON.stringify(data)});}

@@ -217,6 +217,10 @@ api_router.include_router(
     reporting_router,
 )
 
+api_router.include_router(
+    settings_router,
+)
+
 
 __all__ = [
     "api_router",

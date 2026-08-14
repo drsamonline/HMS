@@ -25,6 +25,9 @@ from .dispensing_record import DispensingRecord
 from .investigation import Investigation
 from .investigation_result import InvestigationResult
 from .inventory_item import InventoryItem
+from .hospital import Hospital
+from .system_setting import SystemSetting
+from .number_sequence import NumberSequence
 from .ipd_assessment import IPDAssessment
 from .pain_assessment import PainAssessment
 from .nutritional_assessment import NutritionalAssessment
@@ -76,6 +79,10 @@ __all__ = [
     "Permission",
     "UserRole",
     "RolePermission",
+
+    "Hospital",
+    "SystemSetting",
+    "NumberSequence",
 
     "Department",
     "DepartmentService",
