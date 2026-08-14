@@ -62,4 +62,4 @@
 - Current functional build milestone: Hospital/System Settings and Number Sequence client/backend foundation.
 - Remaining build focus: complete functional administration/configuration, deeper workflow integration, final packaging, then comprehensive QA/release.
 
-- Batch 42: MRD medical-document management added; metadata records integrated into the client MRD workspace.
+- Batch 43: invoice line-item billing implemented with transactional total recalculation.

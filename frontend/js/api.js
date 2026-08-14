@@ -125,6 +125,6 @@ export async function upsertSystemSetting(key,data){return request(`/settings/sy
 export async function listNumberSequences(){return request('/settings/sequences');}
 export async function updateNumberSequence(id,data){return request(`/settings/sequences/${id}`,{method:'PATCH',body:JSON.stringify(data)});}
 
-export async function listMedicalDocuments(patientId){return request(`/api/v1/medical-documents?patient_id=${encodeURIComponent(patientId)}&skip=0&limit=200`)}
-export async function createMedicalDocument(payload){return request("/api/v1/medical-documents",{method:"POST",body:JSON.stringify(payload)})}
-export async function updateMedicalDocument(id,payload){return request(`/api/v1/medical-documents/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
+export async function listInvoiceItems(invoiceId){return apiGet(`/billing/invoices/${invoiceId}/items`)}
+export async function createInvoiceItem(invoiceId,payload){return apiPost(`/billing/invoices/${invoiceId}/items`,payload)}
+export async function deleteInvoiceItem(itemId){return apiDelete(`/billing/invoice-items/${itemId}`)}

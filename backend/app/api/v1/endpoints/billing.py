@@ -14,6 +14,8 @@ from app.dependencies.database import DatabaseSession
 from app.schemas.billing import (
     InvoiceCreate,
     InvoiceRead,
+    InvoiceItemCreate,
+    InvoiceItemRead,
     InvoiceSummary,
     InvoiceUpdate,
     PaymentCreate,
@@ -218,6 +220,44 @@ async def get_payment(
         db,
         payment_id,
     )
+
+
+@router.get(
+    "/invoices/{invoice_id}/items",
+    response_model=list[InvoiceItemRead],
+)
+async def list_invoice_items(
+    invoice_id: int,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> list[InvoiceItemRead]:
+    return await billing_service.list_invoice_items(db, invoice_id)
+
+
+@router.post(
+    "/invoices/{invoice_id}/items",
+    response_model=InvoiceItemRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_invoice_item(
+    invoice_id: int,
+    item_in: InvoiceItemCreate,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvoiceItemRead:
+    return await billing_service.add_invoice_item(db, invoice_id, item_in)
+
+
+@router.delete(
+    "/invoice-items/{item_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_invoice_item(
+    item_id: int,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> None:
+    await billing_service.delete_invoice_item(db, item_id)
 
 
 __all__ = [

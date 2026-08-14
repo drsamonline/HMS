@@ -10,6 +10,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from decimal import Decimal
 
+from sqlalchemy import func, select
 from sqlalchemy.exc import (
     IntegrityError,
     SQLAlchemyError,
@@ -24,9 +25,11 @@ from app.core.exceptions import (
 )
 from app.models.admission import Admission
 from app.models.invoice import Invoice
+from app.models.invoice_item import InvoiceItem
 from app.models.patient import Patient
 from app.models.payment import Payment
 from app.models.visit import Visit
+from app.repositories.invoice_item import invoice_item_repository
 from app.repositories.billing import (
     InvoiceRepository,
     PaymentRepository,
@@ -35,6 +38,7 @@ from app.repositories.billing import (
 )
 from app.schemas.billing import (
     InvoiceCreate,
+    InvoiceItemCreate,
     InvoiceUpdate,
     PaymentCreate,
 )
@@ -416,6 +420,62 @@ class BillingService:
             raise DatabaseException(
                 "Unable to create payment."
             ) from exc
+
+
+    async def list_invoice_items(self, db: AsyncSession, invoice_id: int) -> list[InvoiceItem]:
+        await self.get_invoice(db, invoice_id)
+        return await invoice_item_repository.list_by_invoice(db, invoice_id)
+
+    async def _recalculate_invoice_total(self, db: AsyncSession, invoice: Invoice) -> None:
+        result = await db.execute(
+            select(func.coalesce(func.sum(InvoiceItem.line_total), 0)).where(
+                InvoiceItem.invoice_id == invoice.id
+            )
+        )
+        invoice.total_amount = Decimal(str(result.scalar_one()))
+        invoice.updated_at = datetime.now(timezone.utc)
+
+    async def add_invoice_item(self, db: AsyncSession, invoice_id: int, data: InvoiceItemCreate) -> InvoiceItem:
+        invoice = await self.get_invoice(db, invoice_id)
+        now = datetime.now(timezone.utc)
+        quantity = Decimal(data.quantity)
+        unit_price = Decimal(data.unit_price)
+        item = InvoiceItem(
+            invoice_id=invoice.id,
+            item_type=data.item_type,
+            description=data.description,
+            quantity=quantity,
+            unit_price=unit_price,
+            line_total=(quantity * unit_price).quantize(Decimal("0.01")),
+            remarks=data.remarks,
+            created_at=now,
+            updated_at=now,
+        )
+        try:
+            db.add(item)
+            await db.flush()
+            await self._recalculate_invoice_total(db, invoice)
+            invoice.payment_status = "unpaid"
+            await db.commit()
+            await db.refresh(item)
+            return item
+        except SQLAlchemyError as exc:
+            await db.rollback()
+            raise DatabaseException("Unable to add invoice item.") from exc
+
+    async def delete_invoice_item(self, db: AsyncSession, item_id: int) -> None:
+        item = await db.get(InvoiceItem, item_id)
+        if item is None:
+            raise ResourceNotFoundException("Invoice item not found.")
+        invoice = await self.get_invoice(db, item.invoice_id)
+        try:
+            await db.delete(item)
+            await db.flush()
+            await self._recalculate_invoice_total(db, invoice)
+            await db.commit()
+        except SQLAlchemyError as exc:
+            await db.rollback()
+            raise DatabaseException("Unable to delete invoice item.") from exc
 
     async def invoice_summary(
         self,

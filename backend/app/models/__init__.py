@@ -35,6 +35,7 @@ from .diet_chart import DietChart
 from .progress_note import ProgressNote
 from .followup import FollowUp
 from .invoice import Invoice
+from .invoice_item import InvoiceItem
 from .medical_document import MedicalDocument
 from .patient_file import PatientFile
 from .archive_record import ArchiveRecord
@@ -61,9 +62,6 @@ from .stock_transaction import StockTransaction
 from .user import User
 from .user_role import UserRole
 from .visit import Visit
-from .goods_receipt import GoodsReceipt, GoodsReceiptItem
-from .purchase_order import PurchaseOrder, PurchaseOrderItem
-from .supplier import Supplier
 
 
 __all__ = [
@@ -104,11 +102,6 @@ __all__ = [
 
     "Medicine",
     "MedicineBatch",
-    "GoodsReceiptItem",
-    "GoodsReceipt",
-    "PurchaseOrderItem",
-    "PurchaseOrder",
-    "Supplier",
     "DispenseRecord",
     "DispensingRecord",
 
@@ -128,6 +121,7 @@ __all__ = [
     "InvestigationResult",
 
     "Invoice",
+    "InvoiceItem",
     "Payment",
 
     "MedicalDocument",

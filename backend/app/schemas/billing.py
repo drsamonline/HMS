@@ -121,6 +121,27 @@ class InvoiceSummary(BaseSchema):
     balance_amount: Decimal
 
 
+class InvoiceItemCreate(BaseSchema):
+    item_type: str = Field(min_length=1, max_length=40)
+    description: str = Field(min_length=1, max_length=255)
+    quantity: Decimal = Field(gt=0)
+    unit_price: Decimal = Field(ge=0)
+    remarks: str | None = None
+
+
+class InvoiceItemRead(BaseSchema):
+    id: int
+    invoice_id: int
+    item_type: str
+    description: str
+    quantity: Decimal
+    unit_price: Decimal
+    line_total: Decimal
+    remarks: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
 __all__ = [
     "PaymentStatus",
     "PaymentMethod",
@@ -130,4 +151,6 @@ __all__ = [
     "PaymentCreate",
     "PaymentRead",
     "InvoiceSummary",
+    "InvoiceItemCreate",
+    "InvoiceItemRead",
 ]
