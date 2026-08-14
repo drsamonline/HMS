@@ -87,3 +87,9 @@ export async function createDispense(payload){return request("/api/v1/dispenses"
 
 export async function listPrescriptions(visitId){return request(`/api/v1/prescriptions?visit_id=${encodeURIComponent(visitId)}&skip=0&limit=100`)}
 export async function getPrescription(prescriptionId){return request(`/api/v1/prescriptions/${encodeURIComponent(prescriptionId)}`)}
+
+\nexport async function listInventoryItems(search=""){const q=new URLSearchParams({skip:"0",limit:"100",active_only:"true"});if(search.trim())q.set("search",search.trim());return request(`/api/v1/inventory-items?${q.toString()}`)}
+export async function createInventoryItem(payload){return request("/api/v1/inventory-items",{method:"POST",body:JSON.stringify(payload)})}
+export async function updateInventoryItem(id,payload){return request(`/api/v1/inventory-items/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
+export async function listStockTransactions(itemId){return request(`/api/v1/stock-transactions/item/${encodeURIComponent(itemId)}?skip=0&limit=100`)}
+export async function createStockTransaction(payload){return request("/api/v1/stock-transactions",{method:"POST",body:JSON.stringify(payload)})}
