@@ -102,6 +102,9 @@ from app.api.v1.endpoints.administration import (
 from app.api.v1.endpoints.designations import (
     router as designations_router,
 )
+from app.api.v1.endpoints.procurement import (
+    router as procurement_router,
+)
 
 
 api_router = APIRouter()

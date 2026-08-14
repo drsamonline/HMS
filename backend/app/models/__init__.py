@@ -61,6 +61,9 @@ from .stock_transaction import StockTransaction
 from .user import User
 from .user_role import UserRole
 from .visit import Visit
+from .goods_receipt import GoodsReceipt, GoodsReceiptItem
+from .purchase_order import PurchaseOrder, PurchaseOrderItem
+from .supplier import Supplier
 
 
 __all__ = [
@@ -101,6 +104,11 @@ __all__ = [
 
     "Medicine",
     "MedicineBatch",
+    "GoodsReceiptItem",
+    "GoodsReceipt",
+    "PurchaseOrderItem",
+    "PurchaseOrder",
+    "Supplier",
     "DispenseRecord",
     "DispensingRecord",
 

@@ -64,3 +64,5 @@
 
 
 - Functional build Batch 40: general inventory stock balance and transactional stock ledger completed.
+
+- Functional build Batch 41: supplier, purchase order and goods receipt procurement workflow implemented; goods receipt posts MedicineBatch stock.
