@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, status
 
+from app.core.exceptions import AuthenticationException
 from app.dependencies.auth import CurrentUserDependency
 from app.dependencies.database import DatabaseSession
 from app.schemas.dispense import (
@@ -14,11 +15,26 @@ from app.schemas.dispense import (
 )
 from app.services.dispense import dispense_service
 
-
 router = APIRouter(
     prefix="/dispenses",
     tags=["Pharmacy Dispensing"],
 )
+
+
+def _current_user_id(current_user: dict) -> int:
+    subject = current_user.get("sub")
+    try:
+        user_id = int(subject)
+    except (TypeError, ValueError) as exc:
+        raise AuthenticationException(
+            "Authenticated user identity is invalid."
+        ) from exc
+
+    if user_id <= 0:
+        raise AuthenticationException(
+            "Authenticated user identity is invalid."
+        )
+    return user_id
 
 
 @router.post(
@@ -29,11 +45,12 @@ router = APIRouter(
 async def create_dispense(
     dispense_in: DispenseCreate,
     db: DatabaseSession,
-    _: CurrentUserDependency,
+    current_user: CurrentUserDependency,
 ) -> DispenseRead:
     return await dispense_service.create(
         db,
         dispense_in,
+        performed_by=_current_user_id(current_user),
     )
 
 
