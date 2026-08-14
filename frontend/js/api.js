@@ -4,9 +4,6 @@ export function setServerBaseUrl(url){const normalized=normalizeBaseUrl(url);ser
 export function getServerBaseUrl(){return serverBaseUrl}
 export function getAccessToken(){return accessToken}
 export function clearAccessToken(){accessToken=null;sessionStorage.removeItem("hhms.access_token")}
-export function saveClinicalContext(context){sessionStorage.setItem("hhms.clinical_context",JSON.stringify(context||{}));window.dispatchEvent(new CustomEvent("hhms:clinical-context",{detail:context||{}}));}
-export function loadClinicalContext(){try{return JSON.parse(sessionStorage.getItem("hhms.clinical_context")||"{}")}catch{return {}}}
-export function clearClinicalContext(){sessionStorage.removeItem("hhms.clinical_context");window.dispatchEvent(new CustomEvent("hhms:clinical-context",{detail:{}}));}
 async function request(path,options={}){
  if(!serverBaseUrl)throw new Error("HHMS server address is not configured.");
  const headers=new Headers(options.headers||{});
@@ -83,5 +80,10 @@ export async function updateDepartmentService(id,payload){return request(`/api/v
 
 export async function getCurrentUserProfile(){return request("/api/v1/auth/me");}
 
-export async function createVisit(payload){return request("/api/v1/visits",{method:"POST",body:JSON.stringify(payload)});}
-export async function listPrescriptionsByVisit(visitId){return request(`/api/v1/prescriptions?visit_id=${encodeURIComponent(visitId)}`);}
+export async function listMedicines(search=""){const q=new URLSearchParams({skip:"0",limit:"100",active_only:"true"});if(search.trim())q.set("search",search.trim());return request(`/api/v1/medicines?${q.toString()}`)}
+export async function getMedicineStock(medicineId){return request(`/api/v1/stock-batches/medicine/${encodeURIComponent(medicineId)}?active_only=true&skip=0&limit=200`)}
+export async function getDispensesForPrescriptionItem(itemId){return request(`/api/v1/dispenses/prescription-item/${encodeURIComponent(itemId)}`)}
+export async function createDispense(payload){return request("/api/v1/dispenses",{method:"POST",body:JSON.stringify(payload)})}
+
+export async function listPrescriptions(visitId){return request(`/api/v1/prescriptions?visit_id=${encodeURIComponent(visitId)}&skip=0&limit=100`)}
+export async function getPrescription(prescriptionId){return request(`/api/v1/prescriptions/${encodeURIComponent(prescriptionId)}`)}

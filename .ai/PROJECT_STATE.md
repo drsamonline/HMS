@@ -49,4 +49,4 @@
 
 - Client Department/Service Master UI: Batch 26 implemented against existing editable master APIs; reporting capability flags remain data-driven.
 
-- Batch 28: shared clinical encounter context now propagates the selected visit/admission/case into investigation and billing workflows, preventing orphan investigation/invoice creation and removing manual context entry.
+- Client Pharmacy / Dispensing workspace: implemented as next client integration milestone.
