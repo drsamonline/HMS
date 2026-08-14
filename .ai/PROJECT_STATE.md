@@ -54,3 +54,5 @@
 - Client OPD Queue Batch 32: functional front-desk visit registration and token management added.
 
 - Functional build milestone: Client IPD Management workspace — bed census and active admission workflow.
+
+- Client IPD discharge workflow (Batch 34): active admission discharge UI, discharge API client integration, and authenticated discharged_by propagation.
