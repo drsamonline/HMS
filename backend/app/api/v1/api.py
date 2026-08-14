@@ -102,9 +102,6 @@ from app.api.v1.endpoints.administration import (
 from app.api.v1.endpoints.designations import (
     router as designations_router,
 )
-from app.api.v1.endpoints.procurement import (
-    router as procurement_router,
-)
 
 
 api_router = APIRouter()
@@ -235,3 +232,5 @@ api_router.include_router(
 api_router.include_router(
     designations_router,
 )
+
+api_router.include_router(medical_documents_router)

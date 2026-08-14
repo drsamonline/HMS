@@ -62,7 +62,4 @@
 - Current functional build milestone: Hospital/System Settings and Number Sequence client/backend foundation.
 - Remaining build focus: complete functional administration/configuration, deeper workflow integration, final packaging, then comprehensive QA/release.
 
-
-- Functional build Batch 40: general inventory stock balance and transactional stock ledger completed.
-
-- Functional build Batch 41: supplier, purchase order and goods receipt procurement workflow implemented; goods receipt posts MedicineBatch stock.
+- Batch 42: MRD medical-document management added; metadata records integrated into the client MRD workspace.

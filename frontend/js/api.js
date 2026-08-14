@@ -125,14 +125,6 @@ export async function upsertSystemSetting(key,data){return request(`/settings/sy
 export async function listNumberSequences(){return request('/settings/sequences');}
 export async function updateNumberSequence(id,data){return request(`/settings/sequences/${id}`,{method:'PATCH',body:JSON.stringify(data)});}
 
-
-export async function createMedicine(payload){return request("/api/v1/medicines",{method:"POST",body:JSON.stringify(payload)})}
-export async function updateMedicine(id,payload){return request(`/api/v1/medicines/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
-export async function listMedicineBatches(medicineId,{activeOnly=true,availableOnly=false}={}){const q=new URLSearchParams({active_only:String(activeOnly),available_only:String(availableOnly),skip:"0",limit:"200"});return request(`/api/v1/medicine-batches/medicine/${encodeURIComponent(medicineId)}?${q.toString()}`)}
-export async function createMedicineBatch(payload){return request("/api/v1/medicine-batches",{method:"POST",body:JSON.stringify(payload)})}
-export async function updateMedicineBatch(id,payload){return request(`/api/v1/medicine-batches/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
-export async function listSuppliers(){return request('/api/v1/procurement/suppliers')}
-export async function createSupplier(payload){return request('/api/v1/procurement/suppliers',{method:'POST',body:JSON.stringify(payload)})}
-export async function listPurchaseOrders(status=''){return request(`/api/v1/procurement/purchase-orders${status?`?status=${encodeURIComponent(status)}`:''}`)}
-export async function createPurchaseOrder(payload){return request('/api/v1/procurement/purchase-orders',{method:'POST',body:JSON.stringify(payload)})}
-export async function createGoodsReceipt(payload){return request('/api/v1/procurement/goods-receipts',{method:'POST',body:JSON.stringify(payload)})}
+export async function listMedicalDocuments(patientId){return request(`/api/v1/medical-documents?patient_id=${encodeURIComponent(patientId)}&skip=0&limit=200`)}
+export async function createMedicalDocument(payload){return request("/api/v1/medical-documents",{method:"POST",body:JSON.stringify(payload)})}
+export async function updateMedicalDocument(id,payload){return request(`/api/v1/medical-documents/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
