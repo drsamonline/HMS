@@ -38,3 +38,5 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 @media(max-width:900px){.pharmacy-grid{grid-template-columns:1fr}}
 
 .opd-toolbar{display:grid;grid-template-columns:180px 1fr auto;gap:10px;align-items:end;margin-bottom:14px}.opd-toolbar label{margin:0}.opd-actions{display:flex;gap:6px;flex-wrap:wrap}.opd-actions button{padding:6px 9px;font-size:.85rem}@media(max-width:760px){.opd-toolbar{grid-template-columns:1fr}}
+
+.admin-wide{grid-column:1/-1}.pharmacy-master-grid{display:grid;grid-template-columns:minmax(240px,1fr) minmax(420px,2fr);gap:1rem}.pharmacy-master-grid .admin-list-item{cursor:pointer}.full-width{grid-column:1/-1}@media(max-width:900px){.pharmacy-master-grid{grid-template-columns:1fr}}

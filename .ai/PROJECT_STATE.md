@@ -61,3 +61,5 @@
 
 - Current functional build milestone: Hospital/System Settings and Number Sequence client/backend foundation.
 - Remaining build focus: complete functional administration/configuration, deeper workflow integration, final packaging, then comprehensive QA/release.
+
+- Functional build Batch 39: client Medicine Master and Medicine Batch management added to Administration/Pharmacy configuration.
