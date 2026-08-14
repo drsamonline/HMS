@@ -99,6 +99,9 @@ from app.api.v1.endpoints.reporting import (
 from app.api.v1.endpoints.administration import (
     router as administration_router,
 )
+from app.api.v1.endpoints.designations import (
+    router as designations_router,
+)
 
 
 api_router = APIRouter()
@@ -220,4 +223,8 @@ __all__ = [
 ]
 api_router.include_router(
     administration_router,
+)
+
+api_router.include_router(
+    designations_router,
 )

@@ -56,3 +56,5 @@
 - Functional build milestone: Client IPD Management workspace — bed census and active admission workflow.
 
 - Batch 36: Client Administration and RBAC management workspace implemented.
+
+- Batch 37: editable staff designation master API and migration implemented; client-ready.

@@ -113,3 +113,7 @@ export async function listAdminRoles(){return request("/api/v1/administration/ro
 export async function createAdminRole(payload){return request("/api/v1/administration/roles",{method:"POST",body:JSON.stringify(payload)});}
 export async function updateAdminRole(id,payload){return request(`/api/v1/administration/roles/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)});}
 export async function listAdminPermissions(){return request("/api/v1/administration/permissions");}
+
+export async function listDesignations(){return request("/api/v1/designations?skip=0&limit=200");}
+export async function createDesignation(payload){return request("/api/v1/designations",{method:"POST",body:JSON.stringify(payload)});}
+export async function updateDesignation(id,payload){return request(`/api/v1/designations/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)});}
