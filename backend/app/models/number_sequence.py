@@ -18,5 +18,6 @@ class NumberSequence(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default="CURRENT_TIMESTAMP")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default="CURRENT_TIMESTAMP", onupdate=datetime.utcnow)
+    last_reset_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 __all__ = ["NumberSequence"]

@@ -22,6 +22,8 @@ from app.repositories.patient import (
 )
 from app.schemas.patient import PatientCreate, PatientUpdate
 
+from app.services.number_sequence import number_sequence_service
+
 
 class PatientService:
     """Business workflows for patient management."""
@@ -73,18 +75,11 @@ class PatientService:
     ) -> Patient:
         patient = Patient(
             **patient_in.model_dump(),
-            patient_number="PENDING",
+            patient_number=await number_sequence_service.next_number(db, "patient_number"),
         )
 
         try:
             patient = await self.repository.add(
-                db,
-                patient,
-            )
-
-            patient.patient_number = f"PAT-{patient.id:06d}"
-
-            await self.repository.update(
                 db,
                 patient,
             )

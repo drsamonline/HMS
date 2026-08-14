@@ -21,6 +21,7 @@ from app.repositories.visit import (
     visit_repository,
 )
 from app.schemas.visit import VisitCreate, VisitUpdate
+from app.services.number_sequence import number_sequence_service
 from app.services.activity_context import resolve_activity_context
 
 
@@ -90,20 +91,11 @@ class VisitService:
 
         visit = Visit(
             **data,
-            visit_number="PENDING",
+            visit_number=await number_sequence_service.next_number(db, "visit_number"),
         )
 
         try:
             visit = await self.repository.add(
-                db,
-                visit,
-            )
-
-            visit.visit_number = (
-                f"VIS-{visit.id:06d}"
-            )
-
-            await self.repository.update(
                 db,
                 visit,
             )

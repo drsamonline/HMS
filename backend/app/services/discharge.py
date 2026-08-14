@@ -32,6 +32,8 @@ from app.schemas.discharge import (
     DischargeCreate,
 )
 
+from app.services.number_sequence import number_sequence_service
+
 
 class DischargeService:
     """Business workflows for inpatient discharge."""
@@ -150,7 +152,7 @@ class DischargeService:
 
         discharge = Discharge(
             admission_id=data.admission_id,
-            discharge_number="PENDING",
+            discharge_number=await number_sequence_service.next_number(db, "discharge_number"),
             discharge_datetime=(
                 data.discharge_datetime
             ),
@@ -168,15 +170,6 @@ class DischargeService:
 
         try:
             discharge = await self.repository.add(
-                db,
-                discharge,
-            )
-
-            discharge.discharge_number = (
-                f"DIS-{discharge.id:06d}"
-            )
-
-            await self.repository.update(
                 db,
                 discharge,
             )

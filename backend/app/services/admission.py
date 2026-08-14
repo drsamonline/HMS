@@ -31,6 +31,7 @@ from app.schemas.admission import (
     AdmissionCreate,
     AdmissionUpdate,
 )
+from app.services.number_sequence import number_sequence_service
 from app.services.activity_context import resolve_activity_context
 
 
@@ -120,7 +121,7 @@ class AdmissionService:
 
         admission = Admission(
             patient_id=admission_in.patient_id,
-            admission_number="PENDING",
+            admission_number=await number_sequence_service.next_number(db, "admission_number"),
             admission_datetime=(
                 admission_in.admission_datetime
             ),
@@ -142,15 +143,6 @@ class AdmissionService:
 
         try:
             admission = await self.repository.add(
-                db,
-                admission,
-            )
-
-            admission.admission_number = (
-                f"ADM-{admission.id:06d}"
-            )
-
-            await self.repository.update(
                 db,
                 admission,
             )

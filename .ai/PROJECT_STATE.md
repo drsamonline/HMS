@@ -63,3 +63,7 @@
 - Remaining build focus: complete functional administration/configuration, deeper workflow integration, final packaging, then comprehensive QA/release.
 
 - Batch 43: invoice line-item billing implemented with transactional total recalculation.
+
+- Functional build Batch: operational number sequences integrated into patient/visit/case/IPD/prescription/investigation/billing identifiers.
+
+- Functional build Batch 44: configurable number sequences now generate patient, visit, case, admission, discharge, prescription, investigation, invoice, and receipt identifiers; OPD tokens retain their dedicated queue numbering.

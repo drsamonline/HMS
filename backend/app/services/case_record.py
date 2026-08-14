@@ -20,6 +20,8 @@ from app.models.visit import Visit
 from app.repositories.case_record import CaseRecordRepository, case_record_repository
 from app.schemas.case_record import CaseRecordCreate, CaseRecordUpdate
 
+from app.services.number_sequence import number_sequence_service
+
 
 class CaseRecordService:
     def __init__(self, repository: CaseRecordRepository | None = None) -> None:
@@ -60,7 +62,7 @@ class CaseRecordService:
         now = datetime.now(timezone.utc)
         record = CaseRecord(
             **data.model_dump(),
-            case_number="PENDING",
+            case_number=await number_sequence_service.next_number(db, "case_number"),
             created_by=created_by,
             created_at=now,
             updated_at=now,
@@ -68,8 +70,6 @@ class CaseRecordService:
 
         try:
             record = await self.repository.add(db, record)
-            record.case_number = f"CASE-{record.id:06d}"
-            await self.repository.update(db, record)
             await db.commit()
             return record
         except IntegrityError as exc:

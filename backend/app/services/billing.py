@@ -43,6 +43,8 @@ from app.schemas.billing import (
     PaymentCreate,
 )
 
+from app.services.number_sequence import number_sequence_service
+
 
 class BillingService:
     """Business operations for invoices and payments."""
@@ -170,7 +172,7 @@ class BillingService:
             patient_id=data.patient_id,
             visit_id=data.visit_id,
             admission_id=data.admission_id,
-            invoice_number="PENDING",
+            invoice_number=await number_sequence_service.next_number(db, "invoice_number"),
             invoice_date=data.invoice_date,
             total_amount=data.total_amount,
             payment_status="unpaid",
@@ -182,15 +184,6 @@ class BillingService:
 
         try:
             invoice = await self.invoice_repo.add(
-                db,
-                invoice,
-            )
-
-            invoice.invoice_number = (
-                f"INV-{invoice.id:06d}"
-            )
-
-            await self.invoice_repo.update(
                 db,
                 invoice,
             )
@@ -356,7 +349,7 @@ class BillingService:
 
         payment = Payment(
             invoice_id=invoice.id,
-            receipt_number="PENDING",
+            receipt_number=await number_sequence_service.next_number(db, "receipt_number"),
             payment_datetime=(
                 data.payment_datetime
             ),
@@ -373,15 +366,6 @@ class BillingService:
 
         try:
             payment = await self.payment_repo.add(
-                db,
-                payment,
-            )
-
-            payment.receipt_number = (
-                f"RCT-{payment.id:06d}"
-            )
-
-            await self.payment_repo.update(
                 db,
                 payment,
             )

@@ -28,6 +28,8 @@ from app.schemas.prescription import (
     PrescriptionUpdate,
 )
 
+from app.services.number_sequence import number_sequence_service
+
 
 class PrescriptionService:
     """Business operations for clinical prescriptions."""
@@ -81,7 +83,7 @@ class PrescriptionService:
 
         prescription = Prescription(
             visit_id=data.visit_id,
-            prescription_number="PENDING",
+            prescription_number=await number_sequence_service.next_number(db, "prescription_number"),
             diagnosis=data.diagnosis,
             clinical_notes=data.clinical_notes,
             treatment_plan=data.treatment_plan,
@@ -94,10 +96,6 @@ class PrescriptionService:
         try:
             db.add(prescription)
             await db.flush()
-
-            prescription.prescription_number = (
-                f"RX-{prescription.id:06d}"
-            )
 
             for item_data in data.items:
                 item = PrescriptionItem(

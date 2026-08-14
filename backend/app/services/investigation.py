@@ -33,6 +33,7 @@ from app.schemas.investigation import (
     InvestigationCreate,
     InvestigationUpdate,
 )
+from app.services.number_sequence import number_sequence_service
 from app.services.activity_context import resolve_activity_context
 
 
@@ -179,7 +180,7 @@ class InvestigationService:
             service_id=service_id,
             case_type=data.case_type,
             fulfillment_mode=data.fulfillment_mode,
-            investigation_number="PENDING",
+            investigation_number=await number_sequence_service.next_number(db, "investigation_number"),
             investigation_name=(
                 data.investigation_name
             ),
@@ -197,15 +198,6 @@ class InvestigationService:
 
         try:
             investigation = await self.repository.add(
-                db,
-                investigation,
-            )
-
-            investigation.investigation_number = (
-                f"LAB-{investigation.id:06d}"
-            )
-
-            await self.repository.update(
                 db,
                 investigation,
             )
