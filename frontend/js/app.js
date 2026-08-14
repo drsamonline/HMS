@@ -2,7 +2,7 @@ import{discoverServer}from"./discovery.js";import{checkServer,setServerBaseUrl,g
 import{openClinicalWorkspace}from"./clinical.js";
 import{openIPDWorkspace}from"./ipd.js";
 import{openInvestigationsWorkspace}from"./investigations.js";import{openBillingWorkspace}from"./billing.js";import{openMRDWorkspace}from"./mrd.js";import{openStatisticsWorkspace}from"./statistics.js";import{openReportsWorkspace}from"./reports.js";import{openDashboard}from"./dashboard.js";import{openPatientTimeline}from"./timeline.js";import{applyNavigationAccess,applyRecordAccess,canAccess}from"./rbac.js";
-import{openAdministrationWorkspace}from"./admin.js";import{openOPDQueueWorkspace}from"./opd.js";
+import{openAdministrationWorkspace}from"./admin.js";import{openOPDQueueWorkspace}from"./opd.js";import{openIPDManagementWorkspace}from"./ipd_management.js";
 const $=s=>document.querySelector(s), state=$("#connection-state"), url=$("#server-url"), statusBox=$("#connection-status"), cv=$("#connection-view"), lv=$("#login-view"), wv=$("#workspace-view"), list=$("#patient-list"), search=$("#patient-search"), patientStatus=$("#patient-status"), dialog=$("#patient-dialog");
 function status(el,msg,kind=""){el.textContent=msg;el.className=`status-box ${kind}`.trim()}
 function toggle(el,show){el.classList.toggle("hidden",!show)}
@@ -61,7 +61,7 @@ window.addEventListener("offline",()=>{state.textContent="Offline";showConnectio
 window.addEventListener("online",async()=>{state.textContent="Checking";showConnectionBanner("Network restored. Checking HHMS server…");if(serverBaseUrlSafe())try{await checkServer();hideConnectionBanner();state.textContent="Connected";}catch{}else hideConnectionBanner();});
 function serverBaseUrlSafe(){try{return !!loadClientConfig().manualServerUrl||!!getServerBaseUrl()}catch{return false}}
 document.querySelectorAll(".nav-item[data-app-view]").forEach(b=>b.addEventListener("click",async()=>{document.querySelectorAll(".nav-item[data-app-view]").forEach(x=>x.classList.remove("active"));b.classList.add("active");const gv=document.querySelector("#global-view");toggle(gv,true);document.querySelectorAll(".content-panel").forEach(x=>{if(x.id!=="global-view")x.classList.add("hidden")});if(b.dataset.appView==="dashboard"){await openDashboard(gv,{patient:window.currentPatient||null});}else if(b.dataset.appView==="statistics"){await openStatisticsWorkspace(gv);}else if(b.dataset.appView==="reports"){await openReportsWorkspace(gv,window.currentPatient||null);}else if(b.dataset.appView==="administration"){await openAdministrationWorkspace(gv);}else if(b.dataset.appView==="inventory"){const m=await import("./inventory.js");await m.openInventoryWorkspace(gv);}
-else if(b.dataset.appView==="opd"){await openOPDQueueWorkspace(gv);}
+else if(b.dataset.appView==="opd"){await openOPDQueueWorkspace(gv);}else if(b.dataset.appView==="ipd-management"){await openIPDManagementWorkspace(gv,currentUserProfile);}
 else if(b.dataset.appView==="patients"){toggle($("#global-view"),false);document.querySelectorAll(".content-panel").forEach(x=>{if(x.id!=="global-view")x.classList.add("hidden")});toggle($(".content-panel"),true);}}));restoreUserProfile();const c=loadClientConfig();if(c.manualServerUrl)url.value=c.manualServerUrl;discover();
 
 import("./pharmacy.js").then(m=>m.initPharmacyWorkspace()).catch(()=>{});\nimport("./inventory.js").then(m=>window.hhmsInventoryModule=m).catch(()=>{});

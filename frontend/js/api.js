@@ -100,3 +100,9 @@ export async function listOPDTokens(queueDate){return request(`/api/v1/opd-token
 export async function createOPDToken(payload){return request("/api/v1/opd-tokens",{method:"POST",body:JSON.stringify(payload)})}
 export async function updateOPDToken(tokenId,payload){return request(`/api/v1/opd-tokens/${encodeURIComponent(tokenId)}`,{method:"PUT",body:JSON.stringify(payload)})}
 export async function cancelOPDToken(tokenId){return request(`/api/v1/opd-tokens/${encodeURIComponent(tokenId)}`,{method:"DELETE"})}
+export async function listBeds(filters={}){const q=new URLSearchParams({skip:"0",limit:"200",active_only:"true"});if(filters.ward)q.set("ward",filters.ward);if(filters.occupancy_status)q.set("occupancy_status",filters.occupancy_status);return request(`/api/v1/beds?${q.toString()}`)}
+export async function createAdmission(payload){return request("/api/v1/admissions",{method:"POST",body:JSON.stringify(payload)})}
+export async function updateAdmission(id,payload){return request(`/api/v1/admissions/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
+export async function listAllAdmissions(status=""){const q=new URLSearchParams({skip:"0",limit:"100"});if(status)q.set("status",status);return request(`/api/v1/admissions?${q.toString()}`)}
+export async function getBed(id){return request(`/api/v1/beds/${encodeURIComponent(id)}`)}
+

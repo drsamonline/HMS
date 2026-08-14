@@ -52,3 +52,5 @@
 - Client Pharmacy / Dispensing workspace: implemented as next client integration milestone.
 \n- Functional build phase: Batch 31 adds client Inventory & Stock Ledger workspace. QA/hardening remains deferred until functional scope is substantially complete.\n
 - Client OPD Queue Batch 32: functional front-desk visit registration and token management added.
+
+- Functional build milestone: Client IPD Management workspace — bed census and active admission workflow.
