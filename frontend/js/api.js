@@ -128,3 +128,16 @@ export async function updateNumberSequence(id,data){return request(`/settings/se
 export async function listInvoiceItems(invoiceId){return apiGet(`/billing/invoices/${invoiceId}/items`)}
 export async function createInvoiceItem(invoiceId,payload){return apiPost(`/billing/invoices/${invoiceId}/items`,payload)}
 export async function deleteInvoiceItem(itemId){return apiDelete(`/billing/invoice-items/${itemId}`)}
+
+
+export async function listAuditLogs(params = {}) {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) { if (value !== undefined && value !== null && value !== "") qs.set(key, value); }
+  return request(`/audit-logs${qs.toString() ? `?${qs}` : ""}`);
+}
+
+export async function listServiceActivities(patientId = null) {
+  const qs = new URLSearchParams();
+  if (patientId) qs.set("patient_id", patientId);
+  return request(`/service-activities${qs.toString() ? `?${qs}` : ""}`);
+}
