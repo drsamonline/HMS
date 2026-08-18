@@ -1,63 +1,58 @@
 # HHMS Project State
 
-## Current phase
-Functional application build and integration.
+## Authoritative baseline
+- Current working baseline follows HMS27 plus completed Batch 53 Historical Data Access.
+- Latest completed functional milestone before this batch: Batch 53 — Historical Data Access + Archive Workspace.
+- Current phase: Functional application build and cross-module integration.
+- Comprehensive QA/debugging is not the primary phase yet.
 
-## Latest completed milestone
-Batch 50 — OPD clinical handoff.
+## Locked workflow
+1. Build functional application code first.
+2. Combine logically related functionality into the largest safe batch whenever technically coherent.
+3. Audit the actual generated ZIP before issuing any `git add` command.
+4. Provide one combined verification/staging command sequence per batch.
+5. Keep commit/push separate until GREEN.
+6. Fix defects that block the feature being built; defer broad hardening to QA.
+7. Do not create duplicate models, services, endpoints, or frontend modules.
+8. Clean only confirmed generated/stale/duplicate clutter.
+9. Request fresh full-project baselines at major checkpoints or when state cannot be safely reconstructed.
 
-## New architectural integration
-- Annual archive policy: 1 year live, years 2–5 online archive, years 6–10 cold archive.
-- Patient master remains live; yearly case records renew into the live database while preserving a stable case family and historical linkage.
-- Safe maintenance includes runtime cleanup, WAL checkpoint, SQLite optimize, verified backups and health reporting.
-- Historical archives are read-only snapshots loaded on demand; live operational queries must not eagerly attach historical databases.
-
-
-## Current batch
-Batch 48 — operational navigation convergence.
-
-## Scope
-- Preserve Inventory, Procurement, Audit/Activity navigation alongside the Backup workspace.
-- Restore shared procurement API exports lost when the Backup batch replaced api.js.
-- Keep Backup access permission-aware.
-- Preserve Patients navigation and global workspace routing.
-
-## Rules
-- Complete functional code before comprehensive QA/debug.
-- Combine logically related functional work whenever technically safe.
-- Audit generated ZIP contents before issuing git add commands.
-- Use one combined verification/staging command.
-- Keep commit/push separate until GREEN.
-- Avoid duplicate models, services, endpoints, or frontend modules.
-- Remove only confirmed generated/stale/duplicate clutter.
-
-
-## Current Functional Batch
-- Batch 49: OPD Queue integrated into the global client workspace and RBAC navigation.
-
-## Batch 50
-- OPD visit/token creation now opens the patient Clinical Workspace directly.
-- Preserves server-authoritative token generation and existing OPD queue behavior.
-
-## Data lifecycle policy (LOCKED)
-- Current operational year stays in the live database.
+## Data lifecycle policy — LOCKED
 - Patient master remains live regardless of encounter age.
-- Years 2–5 are online read-only annual archives and are loaded only on demand.
-- Years 6–10 are cold archives and are not opened during normal operations.
-- A renewed case for a new year is a new live CaseRecord in the same case family; prior-year case remains historically traceable.
-- Safe background maintenance may clean runtime artifacts, checkpoint WAL, run PRAGMA optimize and create a verified backup.
-- VACUUM is administrator-triggered.
-- Business data is never automatically deleted by generic cleanup.
-
-
-## Operational year
-- Supports calendar-year or configurable financial-year basis.
-- Actual timestamps remain authoritative; operational-year label is derived.
-- Case renewal and archive boundaries use the configured basis.
-
-
-## Operational year basis
-- HHMS supports Calendar Year or configurable Financial Year.
-- Default financial start is 1 April.
+- Current operational year remains live.
+- Years 2–5 are online, read-only annual archives loaded on demand.
+- Years 6–10 are cold archives accessed only when explicitly requested.
+- A renewed case in a new operational year is a new live CaseRecord in the same case family and linked to the prior case.
 - Actual clinical timestamps remain authoritative.
-- Case renewal, archive boundaries, and annual reporting derive from the configured operational year.
+- Operational year can be calendar year or configurable financial year; default financial-year start is 1 April.
+- Archive age is calculated from the configured operational year, not blindly from Gregorian year.
+- Generic cleanup never deletes clinical/business data.
+- Safe maintenance may remove runtime artifacts, checkpoint WAL, run SQLite optimization and create verified backups.
+- VACUUM is administrator-triggered.
+- Historical archive databases are not kept attached during normal operation.
+- Years beyond the configured cold-retention window are flagged for policy review, not automatically deleted.
+
+## Completed functional areas
+- Backend/core, clinical/IPD, billing/MRD, pharmacy/inventory/procurement: substantially complete.
+- Statistics/reporting/printing: substantially complete.
+- LAN server/client foundation: implemented.
+- Administration/RBAC/settings: substantially implemented.
+- Audit/service activity: implemented.
+- Operational year and case renewal foundation: implemented.
+- Historical data access: implemented.
+- Archive retention tier planning/access: current batch.
+
+## Current functional focus
+- Archive retention tier enforcement.
+- Cross-module workflow continuity.
+- Remaining operational integrations.
+- Server/client packaging and deployment.
+
+## QA boundary
+- Comprehensive QA/debugging, performance testing, security testing, recovery testing and release validation begin only after functional code and integration are substantially complete.
+
+## Cleanup policy
+- Transfer baselines exclude `.git`, `.env`, Python caches/compiled files, test caches and build artifacts.
+- Local `E:\HMS` cleanup may remove only confirmed generated clutter unless explicitly instructed otherwise.
+- Do not delete source files based only on filename similarity; confirm references first.
+- Historical documentation is retained unless demonstrably obsolete, duplicated or contradicted.

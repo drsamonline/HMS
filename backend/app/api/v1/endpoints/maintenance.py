@@ -7,18 +7,44 @@ from app.dependencies.database import DatabaseSession
 from app.services.administration import _require_admin
 from app.services.maintenance import maintenance_service
 from app.services.archive_manager import archive_manager
+from app.services.archive_retention import archive_retention_service
+
 router=APIRouter(prefix="/maintenance",tags=["Maintenance"])
 def actor_id(user: CurrentUserDependency)->int:return int(str(user["sub"]))
+
 @router.get("/status")
 async def status(db: DatabaseSession,user: CurrentUserDependency): await _require_admin(db,actor_id(user)); return await maintenance_service.health()
+
 @router.post("/run")
 async def run(db: DatabaseSession,user: CurrentUserDependency): await _require_admin(db,actor_id(user)); return await maintenance_service.run_safe_maintenance()
+
 @router.post("/vacuum")
 async def vacuum(db: DatabaseSession,user: CurrentUserDependency): await _require_admin(db,actor_id(user)); return await maintenance_service.vacuum()
+
 @router.get("/archives")
 async def archives(db: DatabaseSession,user: CurrentUserDependency): await _require_admin(db,actor_id(user)); return await archive_manager.list_archives(db)
+
 @router.post("/archives/{year}")
 async def create_archive(year:int,db:DatabaseSession,user:CurrentUserDependency): await _require_admin(db,actor_id(user)); return await archive_manager.create_year_archive(db,year)
+
+@router.get("/archives/retention/preview")
+async def archive_retention_preview(db: DatabaseSession,user: CurrentUserDependency):
+    await _require_admin(db,actor_id(user))
+    plan = await archive_retention_service.plan(db)
+    return {
+        "current_year": plan.current_year,
+        "online_years": plan.online_years,
+        "cold_years": plan.cold_years,
+        "promote_to_cold": list(plan.promote_to_cold),
+        "retain_online": list(plan.retain_online),
+        "retention_review": list(plan.retention_review),
+        "invalid_or_future": list(plan.invalid_or_future),
+    }
+
+@router.post("/archives/retention/execute")
+async def archive_retention_execute(db: DatabaseSession,user: CurrentUserDependency):
+    await _require_admin(db,actor_id(user))
+    return await archive_retention_service.execute_eligible(db)
 
 @router.get("/archives/{year}/patients/{patient_id}/cases")
 async def historical_cases(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
@@ -38,4 +64,5 @@ async def download_archive(year:int,db:DatabaseSession,user:CurrentUserDependenc
     await _require_admin(db,actor_id(user)); rows=await archive_manager.list_archives(db); row=next((x for x in rows if x.archive_year==year),None)
     if row is None: raise ValueError("Archive year not found")
     path=archive_manager.archive_path(row); return FileResponse(path=path,filename=path.name,media_type="application/octet-stream")
+
 __all__=["router"]
