@@ -11,6 +11,7 @@ const ACCESS={
  inventory:["inventory.read","inventory.manage","stock.read","stock.manage"],
  procurement:["procurement.read","procurement.manage","purchasing.read"],
  activity:["audit.read","audit_logs.read","service_activity.read","activity.read"],
+ backups:["backup.read","backup.manage","backups.read","backups.manage"],
  pharmacy:["pharmacy.read","pharmacy.manage","dispensing.read","dispensing.manage"],
  administration:["departments.manage","department.manage","department_services.manage","department-services.manage"]
 };
