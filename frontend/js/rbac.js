@@ -1,5 +1,6 @@
 const ALL_ACCESS_ROLES=new Set(["admin","administrator","hospital administrator","super administrator"]);
 const ACCESS={
+ opd:["opd.read","opd.manage","opd.queue","visits.read","visits.create"],
  patients:["patients.read","patient.read","patients.view","patient.view"],
  clinical:["clinical.read","case_records.read","case_record.read","clinical.case.read"],
  ipd:["ipd.read","admission.read","ipd.view"],

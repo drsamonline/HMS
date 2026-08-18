@@ -23,3 +23,7 @@ Batch 48 — operational navigation convergence.
 - Keep commit/push separate until GREEN.
 - Avoid duplicate models, services, endpoints, or frontend modules.
 - Remove only confirmed generated/stale/duplicate clutter.
+
+
+## Current Functional Batch
+- Batch 49: OPD Queue integrated into the global client workspace and RBAC navigation.
