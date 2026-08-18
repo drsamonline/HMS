@@ -111,6 +111,8 @@ from app.api.v1.endpoints.designations import (
 )
 
 
+from app.api.v1.endpoints import goods_receipts
+
 api_router = APIRouter()
 
 
@@ -257,3 +259,4 @@ from app.api.v1.endpoints import operational_year
 
 api_router.include_router(operational_year.router)
 api_router.include_router(patient_history_router)
+api_router.include_router(goods_receipts.router)
