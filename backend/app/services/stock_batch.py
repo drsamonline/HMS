@@ -20,7 +20,6 @@ from app.repositories.stock_batch import (
     StockBatchRepository,
     stock_batch_repository,
 )
-from app.services.stock_card import stock_card_service
 from app.schemas.stock_batch import (
     StockBatchCreate,
     StockBatchUpdate,
@@ -76,7 +75,6 @@ class StockBatchService:
         self,
         db: AsyncSession,
         data: StockBatchCreate,
-        performed_by: int,
     ) -> StockBatch:
         now = datetime.now(timezone.utc)
 
@@ -102,8 +100,6 @@ class StockBatchService:
 
         try:
             db.add(batch)
-            await db.flush()
-            await stock_card_service.record(db,batch=batch,transaction_type="RECEIPT",quantity_in=data.quantity_received,quantity_out=Decimal("0"),performed_by=performed_by,reference_type="STOCK_BATCH",reference_id=batch.id,remarks="Initial stock receipt")
             await db.commit()
             await db.refresh(batch)
 

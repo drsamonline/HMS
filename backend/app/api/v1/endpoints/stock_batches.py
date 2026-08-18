@@ -51,12 +51,11 @@ async def list_medicine_stock(
 async def create_stock_batch(
     batch_in: StockBatchCreate,
     db: DatabaseSession,
-    user: CurrentUserDependency,
+    _: CurrentUserDependency,
 ) -> StockBatchRead:
     return await stock_batch_service.create(
         db,
         batch_in,
-        performed_by=int(str(user["sub"])),
     )
 
 

@@ -1,42 +1,62 @@
 # HHMS Project State
 
 ## Authoritative baseline
-- Baseline source: user-provided HMS28.zip.
-- Batch 58 is accepted as the pharmacy StockCard/atomic-adjustment layer.
-- Current milestone: Batch 59 — Goods Receipt → Pharmacy Stock Integration.
-- Current phase: Functional application build and cross-module integration.
-- Comprehensive QA/debugging is not the primary phase.
+- Baseline: current GitHub main after Batch 54 Archive Retention Tier Enforcement.
+- Latest completed functional milestone: Batch 55 — Unified Patient History (corrected by Batch 56).
+- Current milestone: Batch 56 — Corrected Unified Patient History.
+- Current project phase: Functional application build and cross-module integration.
+- Comprehensive QA/debugging has NOT started as the primary phase.
 
 ## Locked workflow
-1. Latest user-supplied ZIP is authoritative.
-2. Never reconstruct the supplied baseline from GitHub/remote repositories unless explicitly requested.
-3. Clean generated/stale transfer clutter before implementation.
-4. Build functional code first; broad QA/debugging comes after functional completion.
-5. Combine logically related work into the largest safe coherent batch.
-6. Audit the generated batch ZIP before issuing `git add`.
-7. Keep commit/push separate until GREEN.
-8. Never delete source files based only on filename similarity.
-
-## Pharmacy workflow — LOCKED
-Medicine master → Purchase Order → Goods Receipt → StockBatch → StockCard → Dispensing.
-- Goods Receipt is the authoritative inbound pharmacy-stock event.
-- Receipt posting updates PO received quantities, creates StockBatch rows and StockCard receipt entries atomically.
-- Dispensing decrements StockBatch and records StockCard issue atomically.
-- Stock adjustments update StockBatch and StockCard atomically.
-- General inventory StockTransaction remains separate from pharmacy batch stock.
+1. Build functional application code first.
+2. Combine logically related work into the largest safe batch whenever technically coherent.
+3. Audit the actual generated ZIP against the intended change set before issuing any `git add` command.
+4. Use one combined verification/staging command sequence per batch.
+5. Keep commit/push separate until GREEN.
+6. Fix defects that block the current feature immediately; defer broad hardening to QA.
+7. Do not create duplicate models, services, endpoints, or frontend modules.
+8. Clean only confirmed generated/stale/duplicate clutter.
+9. Use fresh full-project baselines at major checkpoints or when the current tree cannot be reconstructed safely.
 
 ## Data lifecycle — LOCKED
-- Patient master remains live.
+- Patient master remains live regardless of encounter age.
 - Current operational year remains live.
-- Years 2–5 are online read-only archives; years 6–10 are cold archives loaded on demand.
-- New-year case renewal creates a new live case linked to its prior case family.
-- Operational year may be calendar or configurable financial year.
-- Clinical timestamps remain authoritative.
-- Generic cleanup never deletes clinical/business records.
-- Verified backup precedes high-risk maintenance.
+- Years 2–5 are online, read-only annual archives loaded on demand.
+- Years 6–10 are cold archives accessed only when explicitly requested.
+- A renewed case in a new operational year becomes a new live CaseRecord in the same case family and links to the prior case.
+- Operational year may be calendar year or configurable financial year.
+- Actual clinical timestamps remain authoritative.
+- Generic cleanup never deletes clinical/business data.
+- Safe maintenance may clean generated runtime artifacts, checkpoint WAL, run SQLite optimization and create verified backups.
+- VACUUM is administrator-triggered.
+
+## Batch 55 functional addition
+- Patient Timeline can load live patient activity normally.
+- Archived case history can be explicitly loaded by selecting a verified historical year.
+- Historical records remain read-only through this access path.
+- The client does not attach all archive databases during normal operation.
+- Existing archive and operational-year APIs remain the source of truth.
 
 ## Remaining before QA
-- Finish remaining IPD, laboratory, billing/MRD and frontend/reporting workflow continuity.
 - Complete physical live-to-archive rollover migration.
-- Complete packaging/deployment.
-- Then comprehensive QA, security/performance/recovery testing and release validation.
+- Complete remaining cross-module workflow continuity.
+- Complete server/client packaging and deployment workflow.
+- Complete final reporting/printing integration.
+- Then comprehensive QA/debugging, performance/security testing, recovery testing, clean-machine testing and release validation.
+
+## Cleanup policy
+- Transfer baselines always exclude `.git`, `.env`, Python caches/compiled files, test caches and build artifacts.
+- Local `E:\HMS` cleanup removes only confirmed generated clutter unless explicitly instructed otherwise.
+- Do not delete source files based only on filename similarity; confirm references first.
+- Historical documentation is retained unless demonstrably obsolete, duplicated or contradicted.
+
+## Batch 55 correction
+- Batch 55 was committed with an incomplete client-only history implementation.
+- Batch 56 restores the correct backend history contract and wires the client to it.
+- The latest ZIP from the user remains authoritative; remote repository inspection is not used for baseline reconstruction.
+
+
+## Batch 61 — IPD Bed Occupancy Concurrency
+- Admission/discharge now use row locking for the affected bed/admission.
+- Database partial unique index prevents more than one active admission per bed.
+- Bed allocation/release remains atomic with admission/discharge.

@@ -104,10 +104,14 @@ class DischargeService:
         *,
         data: DischargeCreate,
     ) -> Discharge:
-        admission = await db.get(
-            Admission,
-            data.admission_id,
+        from sqlalchemy import select
+
+        admission_result = await db.execute(
+            select(Admission)
+            .where(Admission.id == data.admission_id)
+            .with_for_update()
         )
+        admission = admission_result.scalar_one_or_none()
 
         if admission is None:
             raise ResourceNotFoundException(
@@ -138,10 +142,12 @@ class DischargeService:
                 "discharge record."
             )
 
-        bed = await db.get(
-            Bed,
-            admission.bed_id,
+        bed_result = await db.execute(
+            select(Bed)
+            .where(Bed.id == admission.bed_id)
+            .with_for_update()
         )
+        bed = bed_result.scalar_one_or_none()
 
         if bed is None:
             raise ResourceNotFoundException(

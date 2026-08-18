@@ -87,10 +87,14 @@ class AdmissionService:
         *,
         admission_in: AdmissionCreate,
     ) -> Admission:
-        bed = await db.get(
-            Bed,
-            admission_in.bed_id,
+        from sqlalchemy import select
+
+        bed_result = await db.execute(
+            select(Bed)
+            .where(Bed.id == admission_in.bed_id)
+            .with_for_update()
         )
+        bed = bed_result.scalar_one_or_none()
 
         if bed is None:
             raise ResourceNotFoundException(
@@ -109,6 +113,15 @@ class AdmissionService:
         }:
             raise BusinessRuleException(
                 "Selected bed is not available."
+            )
+
+        active_admission = await self.repository.get_active_for_bed_for_update(
+            db,
+            admission_in.bed_id,
+        )
+        if active_admission is not None:
+            raise BusinessRuleException(
+                "Selected bed already has an active admission."
             )
 
         now = datetime.now(timezone.utc)

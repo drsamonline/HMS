@@ -29,6 +29,21 @@ class AdmissionRepository(RepositoryBase[Admission]):
             Admission,
             admission_id,
         )
+    async def get_active_for_bed_for_update(
+        self,
+        db: AsyncSession,
+        bed_id: int,
+    ) -> Admission | None:
+        result = await db.execute(
+            select(Admission)
+            .where(
+                Admission.bed_id == bed_id,
+                Admission.admission_status.in_(("admitted", "active")),
+            )
+            .with_for_update()
+        )
+        return result.scalar_one_or_none()
+
 
     async def list_all(
         self,

@@ -23,7 +23,6 @@ from app.core.exceptions import (
 from app.models.dispense_record import DispenseRecord
 from app.models.prescription_item import PrescriptionItem
 from app.models.stock_batch import StockBatch
-from app.services.stock_card import stock_card_service
 from app.repositories.dispense import (
     DispenseRepository,
     dispense_repository,
@@ -173,9 +172,6 @@ class DispenseService:
             )
 
             db.add(record)
-            await db.flush()
-            stock_batch.quantity_remaining = stock_batch.quantity_remaining
-            await stock_card_service.record(db,batch=stock_batch,transaction_type="DISPENSE",quantity_in=Decimal("0"),quantity_out=requested,performed_by=performed_by,reference_type="DISPENSE",reference_id=record.id,remarks="Pharmacy dispensing")
             await db.commit()
             await db.refresh(record)
 
