@@ -159,3 +159,6 @@ export async function runMaintenance(){return apiPost("/maintenance/run",{});}
 export async function vacuumDatabase(){return apiPost("/maintenance/vacuum",{});}
 export async function listArchives(){return request("/maintenance/archives");}
 export async function createYearArchive(year){return apiPost(`/maintenance/archives/${encodeURIComponent(year)}`,{});}
+
+export async function getOperationalYear(){return apiGet('/operational-year');}
+export async function updateOperationalYear(payload){return apiPut('/operational-year',payload);}

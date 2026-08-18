@@ -23,6 +23,7 @@ from app.repositories.case_record import CaseRecordRepository, case_record_repos
 from app.schemas.case_record import CaseRecordCreate, CaseRecordUpdate
 
 from app.services.number_sequence import number_sequence_service
+from app.services.operational_year import operational_year_service
 
 
 class CaseRecordService:
@@ -44,8 +45,10 @@ class CaseRecordService:
         self, db: AsyncSession, patient_id: int, created_by: int, visit_id: int | None = None, admission_id: int | None = None
     ) -> CaseRecord:
         now = datetime.now(timezone.utc)
+        op_cfg = await operational_year_service.get_config(db)
+        op_year = operational_year_service.current_year(now.date(), op_cfg)
         rows = await self.repository.list_by_patient(db, patient_id, 0, 100)
-        current = next((c for c in rows if c.case_year == now.year and c.is_current_year and c.storage_tier == "live"), None)
+        current = next((c for c in rows if c.case_year == op_year and c.is_current_year and c.storage_tier == "live"), None)
         if current is not None:
             return current
         previous = rows[0] if rows else None
@@ -64,7 +67,7 @@ class CaseRecordService:
                 raise BusinessRuleException("Admission does not belong to the patient.")
         for item in rows:
             item.is_current_year = False
-            if item.storage_tier == "live" and item.case_year < now.year:
+            if item.storage_tier == "live" and item.case_year < op_year:
                 item.storage_tier = "online_archive"
         baseline_fields = {
             "past_history": previous.past_history, "family_history": previous.family_history,
@@ -79,7 +82,7 @@ class CaseRecordService:
             **baseline_fields,
             case_number=await number_sequence_service.next_number(db, "case_number"),
             case_family_id=previous.case_family_id,
-            case_year=now.year,
+            case_year=op_year,
             renewed_from_case_id=previous.id,
             storage_tier="live",
             is_current_year=True,
@@ -114,12 +117,14 @@ class CaseRecordService:
                 raise BusinessRuleException("Admission does not belong to the patient.")
 
         now = datetime.now(timezone.utc)
+        op_cfg = await operational_year_service.get_config(db)
+        op_year = operational_year_service.current_year(now.date(), op_cfg)
         values = data.model_dump(exclude={"case_family_id"})
         record = CaseRecord(
             **values,
             case_number=await number_sequence_service.next_number(db, "case_number"),
             case_family_id=data.case_family_id or str(uuid4()),
-            case_year=now.year,
+            case_year=op_year,
             storage_tier="live",
             is_current_year=True,
             created_by=created_by,

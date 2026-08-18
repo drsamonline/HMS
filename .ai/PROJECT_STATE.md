@@ -48,3 +48,16 @@ Batch 48 — operational navigation convergence.
 - Safe background maintenance may clean runtime artifacts, checkpoint WAL, run PRAGMA optimize and create a verified backup.
 - VACUUM is administrator-triggered.
 - Business data is never automatically deleted by generic cleanup.
+
+
+## Operational year
+- Supports calendar-year or configurable financial-year basis.
+- Actual timestamps remain authoritative; operational-year label is derived.
+- Case renewal and archive boundaries use the configured basis.
+
+
+## Operational year basis
+- HHMS supports Calendar Year or configurable Financial Year.
+- Default financial start is 1 April.
+- Actual clinical timestamps remain authoritative.
+- Case renewal, archive boundaries, and annual reporting derive from the configured operational year.

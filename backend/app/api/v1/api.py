@@ -243,3 +243,7 @@ api_router.include_router(
 )
 
 api_router.include_router(medical_documents_router)
+
+from app.api.v1.endpoints import operational_year
+
+api_router.include_router(operational_year.router)
