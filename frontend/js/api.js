@@ -177,3 +177,5 @@ export async function getPatientHistory(patientId, years = []) {
 export async function getPatientHistoryArchives(patientId) {
   return request(`/api/v1/patients/${encodeURIComponent(patientId)}/history/archives`);
 }
+
+export async function getPatientHistoryYearEvents(patientId, year){return request(`/api/v1/patients/${encodeURIComponent(patientId)}/history/years/${encodeURIComponent(year)}/events`);}

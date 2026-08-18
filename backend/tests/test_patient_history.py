@@ -2,12 +2,13 @@ from datetime import date
 from app.services.operational_year import OperationalYearConfig, OperationalYearService
 
 
-def test_calendar_year_history_basis():
-    cfg = OperationalYearConfig("calendar", 4, 1)
-    assert OperationalYearService.current_year(date(2026, 8, 18), cfg) == 2026
+def test_calendar_bounds():
+    start, end = OperationalYearService.bounds_for_year(2026, OperationalYearConfig("calendar", 4, 1))
+    assert start.date() == date(2026, 1, 1)
+    assert end.date() == date(2027, 1, 1)
 
 
-def test_financial_year_history_basis():
-    cfg = OperationalYearConfig("financial", 4, 1)
-    assert OperationalYearService.current_year(date(2026, 3, 31), cfg) == 2025
-    assert OperationalYearService.current_year(date(2026, 4, 1), cfg) == 2026
+def test_financial_bounds():
+    start, end = OperationalYearService.bounds_for_year(2026, OperationalYearConfig("financial", 4, 1))
+    assert start.date() == date(2026, 4, 1)
+    assert end.date() == date(2027, 4, 1)

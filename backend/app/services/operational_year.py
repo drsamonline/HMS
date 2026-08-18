@@ -71,5 +71,18 @@ class OperationalYearService:
     def contains(case_year: int, today: date, config: OperationalYearConfig) -> bool:
         return case_year == OperationalYearService.current_year(today, config)
 
+    @staticmethod
+    def bounds_for_year(year: int, config: OperationalYearConfig):
+        """Return an inclusive-start/exclusive-end UTC datetime window for an operational year."""
+        from datetime import datetime, timezone
+        if config.basis == CALENDAR:
+            start = datetime(year, 1, 1, tzinfo=timezone.utc)
+            end = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+            return start, end
+        start = datetime(year, config.start_month, config.start_day, tzinfo=timezone.utc)
+        end = datetime(year + 1, config.start_month, config.start_day, tzinfo=timezone.utc)
+        return start, end
+
+
 operational_year_service = OperationalYearService()
 __all__ = ["OperationalYearConfig", "OperationalYearService", "operational_year_service", "CALENDAR", "FINANCIAL"]

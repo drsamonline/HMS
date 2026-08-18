@@ -51,8 +51,9 @@ export async function openPatientTimeline(box, patient) {
       status(st, "Loading patient history…");
       const [liveEvents, history] = await Promise.all([loadLiveEvents(), getPatientHistory(patient.id, selectedYears)]);
       const cases = history?.cases || [];
+      const historicalEvents = (history?.historical_events || []).map(e => item(e.event_datetime, e.event_type, e.title, `${e.meta || ""} · ${e.year || ""} · ${e.storage_tier || "archive"}`, e.detail || ""));
       const caseEvents = cases.map(row => item(row.updated_at || row.created_at, row.source === "archive" ? "Historical Case" : "Current Case", row.case_number || "Case", `Year ${row.case_year} · ${row.storage_tier}${row.renewed_from_case_id ? ` · renewed from ${row.renewed_from_case_id}` : ""}`, row.case_status || ""));
-      render([...liveEvents, ...caseEvents], cases.filter(row => row.source === "archive"));
+      render([...liveEvents, ...caseEvents, ...historicalEvents], cases.filter(row => row.source === "archive"));
       status(st, selectedYears.length ? `Live history plus ${selectedYears.length} selected archive year(s) loaded.` : "Live history loaded.", "success");
     } catch (e) { status(st, e?.message || "Unable to load patient history.", "error"); list.innerHTML = ""; }
   }

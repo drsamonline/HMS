@@ -48,4 +48,14 @@ async def get_patient_history_archives(
     return {"patient_id": patient_id, "archives": await patient_history_service.available_archives(db)}
 
 
+@router.get("/{patient_id}/history/years/{year}/events")
+async def get_patient_history_year_events(
+    patient_id: int,
+    year: int,
+    db: DatabaseSession,
+    user: CurrentUserDependency,
+):
+    await _require_history_access(db, int(str(user["sub"])))
+    return {"patient_id": patient_id, "year": year, "events": await patient_history_service.archived_events(db, patient_id, year)}
+
 __all__ = ["router"]
