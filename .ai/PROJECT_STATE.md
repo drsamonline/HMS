@@ -1,58 +1,51 @@
 # HHMS Project State
 
 ## Authoritative baseline
-- Current working baseline follows HMS27 plus completed Batch 53 Historical Data Access.
-- Latest completed functional milestone before this batch: Batch 53 — Historical Data Access + Archive Workspace.
-- Current phase: Functional application build and cross-module integration.
-- Comprehensive QA/debugging is not the primary phase yet.
+- Baseline: current GitHub main after Batch 54 Archive Retention Tier Enforcement.
+- Latest completed functional milestone: Batch 54 — Archive Retention Tier Enforcement.
+- Current milestone: Batch 55 — Unified Patient History.
+- Current project phase: Functional application build and cross-module integration.
+- Comprehensive QA/debugging has NOT started as the primary phase.
 
 ## Locked workflow
 1. Build functional application code first.
-2. Combine logically related functionality into the largest safe batch whenever technically coherent.
-3. Audit the actual generated ZIP before issuing any `git add` command.
-4. Provide one combined verification/staging command sequence per batch.
+2. Combine logically related work into the largest safe batch whenever technically coherent.
+3. Audit the actual generated ZIP against the intended change set before issuing any `git add` command.
+4. Use one combined verification/staging command sequence per batch.
 5. Keep commit/push separate until GREEN.
-6. Fix defects that block the feature being built; defer broad hardening to QA.
+6. Fix defects that block the current feature immediately; defer broad hardening to QA.
 7. Do not create duplicate models, services, endpoints, or frontend modules.
 8. Clean only confirmed generated/stale/duplicate clutter.
-9. Request fresh full-project baselines at major checkpoints or when state cannot be safely reconstructed.
+9. Use fresh full-project baselines at major checkpoints or when the current tree cannot be reconstructed safely.
 
-## Data lifecycle policy — LOCKED
+## Data lifecycle — LOCKED
 - Patient master remains live regardless of encounter age.
 - Current operational year remains live.
 - Years 2–5 are online, read-only annual archives loaded on demand.
 - Years 6–10 are cold archives accessed only when explicitly requested.
-- A renewed case in a new operational year is a new live CaseRecord in the same case family and linked to the prior case.
+- A renewed case in a new operational year becomes a new live CaseRecord in the same case family and links to the prior case.
+- Operational year may be calendar year or configurable financial year.
 - Actual clinical timestamps remain authoritative.
-- Operational year can be calendar year or configurable financial year; default financial-year start is 1 April.
-- Archive age is calculated from the configured operational year, not blindly from Gregorian year.
 - Generic cleanup never deletes clinical/business data.
-- Safe maintenance may remove runtime artifacts, checkpoint WAL, run SQLite optimization and create verified backups.
+- Safe maintenance may clean generated runtime artifacts, checkpoint WAL, run SQLite optimization and create verified backups.
 - VACUUM is administrator-triggered.
-- Historical archive databases are not kept attached during normal operation.
-- Years beyond the configured cold-retention window are flagged for policy review, not automatically deleted.
 
-## Completed functional areas
-- Backend/core, clinical/IPD, billing/MRD, pharmacy/inventory/procurement: substantially complete.
-- Statistics/reporting/printing: substantially complete.
-- LAN server/client foundation: implemented.
-- Administration/RBAC/settings: substantially implemented.
-- Audit/service activity: implemented.
-- Operational year and case renewal foundation: implemented.
-- Historical data access: implemented.
-- Archive retention tier planning/access: current batch.
+## Batch 55 functional addition
+- Patient Timeline can load live patient activity normally.
+- Archived case history can be explicitly loaded by selecting a verified historical year.
+- Historical records remain read-only through this access path.
+- The client does not attach all archive databases during normal operation.
+- Existing archive and operational-year APIs remain the source of truth.
 
-## Current functional focus
-- Archive retention tier enforcement.
-- Cross-module workflow continuity.
-- Remaining operational integrations.
-- Server/client packaging and deployment.
-
-## QA boundary
-- Comprehensive QA/debugging, performance testing, security testing, recovery testing and release validation begin only after functional code and integration are substantially complete.
+## Remaining before QA
+- Complete physical live-to-archive rollover migration.
+- Complete remaining cross-module workflow continuity.
+- Complete server/client packaging and deployment workflow.
+- Complete final reporting/printing integration.
+- Then comprehensive QA/debugging, performance/security testing, recovery testing, clean-machine testing and release validation.
 
 ## Cleanup policy
-- Transfer baselines exclude `.git`, `.env`, Python caches/compiled files, test caches and build artifacts.
-- Local `E:\HMS` cleanup may remove only confirmed generated clutter unless explicitly instructed otherwise.
+- Transfer baselines always exclude `.git`, `.env`, Python caches/compiled files, test caches and build artifacts.
+- Local `E:\HMS` cleanup removes only confirmed generated clutter unless explicitly instructed otherwise.
 - Do not delete source files based only on filename similarity; confirm references first.
 - Historical documentation is retained unless demonstrably obsolete, duplicated or contradicted.
