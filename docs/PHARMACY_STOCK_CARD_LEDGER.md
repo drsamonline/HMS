@@ -1,17 +1,7 @@
-# Pharmacy Stock Card Ledger — Batch 57
+# Pharmacy Stock Card Ledger
 
-HHMS now maintains an immutable stock-card ledger for each pharmacy StockBatch.
+Each pharmacy StockBatch movement produces an immutable StockCard entry. Receipt, dispensing and manual adjustments share the same transaction boundary as the StockBatch balance change.
 
-## Workflow
+StockCard is append-only through the service layer. Historical rows are not edited or deleted by routine inventory operations.
 
-Receipt/return/issue/adjustment → atomic StockBatch balance update → StockCard entry.
-
-Dispensing creates the DispenseRecord and its corresponding `StockCard` issue entry in the same database transaction.
-
-## Safety
-
-- Stock can never become negative through an issue or adjustment.
-- The stock-card entry records the post-transaction balance.
-- Dispensing and its stock issue ledger are committed atomically.
-- Existing generic `StockTransaction` remains the ledger for non-pharmacy InventoryItem records.
-- No clinical/business data is deleted or rewritten.
+General inventory StockTransaction remains a separate subsystem.

@@ -50,12 +50,12 @@
 - Do not delete source files based only on filename similarity; confirm references first.
 - Historical documentation is retained unless demonstrably obsolete, duplicated or contradicted.
 
+## Batch 57/58 stock lifecycle
+- HMS28 baseline contained StockBatch but not the expected pharmacy StockCard ledger; the current functional batch supplies the missing authoritative ledger and adjustment workflow.
+- Pharmacy StockCard is append-only and records receipt, dispensing and adjustment movements.
+- General inventory StockTransaction remains separate from pharmacy stock.
+
 ## Batch 55 correction
 - Batch 55 was committed with an incomplete client-only history implementation.
 - Batch 56 restores the correct backend history contract and wires the client to it.
 - The latest ZIP from the user remains authoritative; remote repository inspection is not used for baseline reconstruction.
-
-## Batch 57 functional addition
-- Pharmacy StockCard ledger added for StockBatch movements.
-- Dispensing now creates an atomic StockCard Issue entry alongside DispenseRecord and batch quantity decrement.
-- Generic StockTransaction remains the ledger for non-pharmacy InventoryItem stock.
