@@ -27,3 +27,7 @@ Batch 48 — operational navigation convergence.
 
 ## Current Functional Batch
 - Batch 49: OPD Queue integrated into the global client workspace and RBAC navigation.
+
+## Batch 50
+- OPD visit/token creation now opens the patient Clinical Workspace directly.
+- Preserves server-authoritative token generation and existing OPD queue behavior.
