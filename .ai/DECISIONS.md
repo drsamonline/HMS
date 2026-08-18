@@ -149,3 +149,19 @@ Safe maintenance runs may clean runtime artifacts, checkpoint/optimize SQLite an
 
 ### Rationale
 This reduces operational database growth, keeps normal queries focused on current work, preserves historical access, and prevents loss of longitudinal patient identity and case continuity.
+
+## D-007: Permanent Clean Transfer Baseline
+**Status:** LOCKED
+
+HHMS full-project transfer ZIPs must exclude repository metadata (`.git`), local secrets/configuration (`.env`), generated Python caches/compiled files, test caches, coverage output and build artifacts. Functional source, tests, migrations, documentation and required project configuration are retained.
+
+## D-008: Large Coherent Functional Batches
+**Status:** LOCKED
+
+Related functionality must be combined whenever technically safe and logically coherent. Batch count is not a project goal. Splitting is permitted only when dependencies, rollback safety, testing boundaries or scope make one batch unsafe.
+
+## D-009: Functional Build Before Comprehensive QA
+**Status:** LOCKED
+
+The project remains in functional build/integration until the working application is substantially complete. Broad QA/debugging, performance, security, recovery and release validation begin only after functional implementation and packaging are substantially complete.
+
