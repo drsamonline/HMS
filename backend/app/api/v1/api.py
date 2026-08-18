@@ -244,6 +244,9 @@ api_router.include_router(
 
 api_router.include_router(medical_documents_router)
 
+from app.api.v1.endpoints.patient_history import router as patient_history_router
+
 from app.api.v1.endpoints import operational_year
 
 api_router.include_router(operational_year.router)
+api_router.include_router(patient_history_router)

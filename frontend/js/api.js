@@ -5,13 +5,16 @@ export function getServerBaseUrl(){return serverBaseUrl}
 export function getAccessToken(){return accessToken}
 export function clearAccessToken(){accessToken=null;sessionStorage.removeItem("hhms.access_token")}
 async function request(path,options={}){
+ const rawResponse=options.rawResponse===true;
+ const requestOptions={...options};
+ delete requestOptions.rawResponse;
  if(!serverBaseUrl)throw new Error("HHMS server address is not configured.");
  const headers=new Headers(options.headers||{});
  headers.set("Accept","application/json");
  if(accessToken)headers.set("Authorization",`Bearer ${accessToken}`);
  if(options.body&&!headers.has("Content-Type"))headers.set("Content-Type","application/json");
  try{
-  const r=await fetch(`${serverBaseUrl}${path}`,{...options,headers,cache:"no-store"});
+  const r=await fetch(`${serverBaseUrl}${path}`,{...requestOptions,headers,cache:"no-store"});
   if(r.status===401){
    clearAccessToken();
    window.dispatchEvent(new CustomEvent("hhms:auth-expired"));
@@ -89,7 +92,7 @@ export async function createDispense(payload){return request("/api/v1/dispenses"
 export async function listPrescriptions(visitId){return request(`/api/v1/prescriptions?visit_id=${encodeURIComponent(visitId)}&skip=0&limit=100`)}
 export async function getPrescription(prescriptionId){return request(`/api/v1/prescriptions/${encodeURIComponent(prescriptionId)}`)}
 
-\nexport async function listInventoryItems(search=""){const q=new URLSearchParams({skip:"0",limit:"100",active_only:"true"});if(search.trim())q.set("search",search.trim());return request(`/api/v1/inventory-items?${q.toString()}`)}
+export async function listInventoryItems(search=""){const q=new URLSearchParams({skip:"0",limit:"100",active_only:"true"});if(search.trim())q.set("search",search.trim());return request(`/api/v1/inventory-items?${q.toString()}`)}
 export async function createInventoryItem(payload){return request("/api/v1/inventory-items",{method:"POST",body:JSON.stringify(payload)})}
 export async function updateInventoryItem(id,payload){return request(`/api/v1/inventory-items/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
 export async function listStockTransactions(itemId){return request(`/api/v1/stock-transactions/item/${encodeURIComponent(itemId)}?skip=0&limit=100`)}
@@ -159,7 +162,18 @@ export async function runMaintenance(){return apiPost("/maintenance/run",{});}
 export async function vacuumDatabase(){return apiPost("/maintenance/vacuum",{});}
 export async function listArchives(){return request("/maintenance/archives");}
 export async function createYearArchive(year){return apiPost(`/maintenance/archives/${encodeURIComponent(year)}`,{});}
-export async function getHistoricalCases(year, patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/cases`);}
 
 export async function getOperationalYear(){return apiGet('/operational-year');}
+export async function apiPut(path, body, options = {}) { return request(path, { method: "PUT", body: JSON.stringify(body), ...options }); }
 export async function updateOperationalYear(payload){return apiPut('/operational-year',payload);}
+
+export async function getPatientHistory(patientId, years = []) {
+  const qs = new URLSearchParams();
+  for (const year of years) qs.append("year", String(year));
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return request(`/api/v1/patients/${encodeURIComponent(patientId)}/history${suffix}`);
+}
+
+export async function getPatientHistoryArchives(patientId) {
+  return request(`/api/v1/patients/${encodeURIComponent(patientId)}/history/archives`);
+}

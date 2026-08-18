@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: current GitHub main after Batch 54 Archive Retention Tier Enforcement.
-- Latest completed functional milestone: Batch 54 — Archive Retention Tier Enforcement.
-- Current milestone: Batch 55 — Unified Patient History.
+- Latest completed functional milestone: Batch 55 — Unified Patient History (corrected by Batch 56).
+- Current milestone: Batch 56 — Corrected Unified Patient History.
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -49,3 +49,8 @@
 - Local `E:\HMS` cleanup removes only confirmed generated clutter unless explicitly instructed otherwise.
 - Do not delete source files based only on filename similarity; confirm references first.
 - Historical documentation is retained unless demonstrably obsolete, duplicated or contradicted.
+
+## Batch 55 correction
+- Batch 55 was committed with an incomplete client-only history implementation.
+- Batch 56 restores the correct backend history contract and wires the client to it.
+- The latest ZIP from the user remains authoritative; remote repository inspection is not used for baseline reconstruction.
