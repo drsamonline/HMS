@@ -36,6 +36,10 @@ async def create_case_record(
     return await case_record_service.create(db, case_in, _user_id(current_user))
 
 
+@router.post("/patient/{patient_id}/renew-current-year", response_model=CaseRecordRead)
+async def renew_current_year_case(patient_id:int, db:DatabaseSession, current_user:CurrentUserDependency, visit_id:int|None=None, admission_id:int|None=None)->CaseRecordRead:
+    return await case_record_service.renew_current_year(db, patient_id, _user_id(current_user), visit_id, admission_id)
+
 @router.get("/{case_record_id}", response_model=CaseRecordRead)
 async def get_case_record(
     case_record_id: int,

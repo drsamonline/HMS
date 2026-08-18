@@ -39,6 +39,7 @@ from .invoice_item import InvoiceItem
 from .medical_document import MedicalDocument
 from .patient_file import PatientFile
 from .archive_record import ArchiveRecord
+from .archive_manifest import ArchiveManifest
 from .medicine import Medicine
 from .medicine_batch import MedicineBatch
 from .mixins import (
@@ -127,5 +128,6 @@ __all__ = [
     "MedicalDocument",
     "PatientFile",
     "ArchiveRecord",
+    "ArchiveManifest",
     "AuditLog",
 ]

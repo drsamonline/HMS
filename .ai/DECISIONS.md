@@ -135,3 +135,17 @@ The next development priority is integration correctness and release readiness r
 ### Rationale
 
 This prevents working scaffolds from being mistaken for complete modules and keeps the remaining work focused on integration, packaging, testing, and release quality.
+
+## D-006: Data Lifecycle, Annual Archives and Case Renewal
+
+**Status:** LOCKED
+
+**Date:** 2026-08-18
+
+### Decision
+HHMS uses a year-aware data lifecycle: the current operational year remains live; years 2–5 are online read-only archives; years 6–10 are cold archives. Patient master remains live for identity continuity. When a patient returns in a new operational year, HHMS creates a renewed CaseRecord in the live database using the same case family while preserving historical linkage.
+
+Safe maintenance runs may clean runtime artifacts, checkpoint/optimize SQLite and create verified backups. Generic maintenance never deletes clinical/business data.
+
+### Rationale
+This reduces operational database growth, keeps normal queries focused on current work, preserves historical access, and prevents loss of longitudinal patient identity and case continuity.

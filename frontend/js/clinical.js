@@ -2,7 +2,7 @@ import {
   listDiagnoses, createDiagnosis, updateDiagnosis, searchICD11,
   listFollowups, createFollowup,
   createPrescription, getPrescription, listMedicines,
-  listCaseRecords
+  listCaseRecords, renewCurrentYearCase
 } from "./api.js";
 
 let clinicalState = { patient: null, caseRecord: null, diagnoses: [], followups: [], prescription: null, medicines: [] };
@@ -68,9 +68,11 @@ function setStatus(host,msg,kind=""){ const el=$("#clinical-status",host); el.te
 async function refreshCaseSelector(host){
   if(!clinicalState.patient) return;
   try{
-    const cases=await listCaseRecords(clinicalState.patient.id);
+    let cases=await listCaseRecords(clinicalState.patient.id);
+    const thisYear=new Date().getFullYear();
+    if(cases.length && Number(cases[0]?.case_year||0)<thisYear){ try { const renewed=await renewCurrentYearCase(clinicalState.patient.id, window.hhmsContext||{}); cases=[renewed,...cases.filter(c=>String(c.id)!==String(renewed.id))]; setStatus(host,`Case renewed for ${thisYear}.`); } catch {} }
     const select=$("#case-selector",host); select.replaceChildren(new Option("Select case",""));
-    cases.forEach(c=>select.add(new Option(`${c.case_number} · ${c.case_status}`,String(c.id))));
+    cases.forEach(c=>select.add(new Option(`${c.case_number} · ${c.case_year||"—"} · ${c.case_status}`,String(c.id))));
     if(cases[0]){ select.value=String(cases[0].id); await loadCase(cases[0].id,host); }
     else startNewCase(host);
   }catch(e){setStatus(host,e.message||"Unable to load cases.","error");}

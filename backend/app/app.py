@@ -14,6 +14,8 @@ Author  : Dr. Sohil Momin
 """
 
 from __future__ import annotations
+from contextlib import asynccontextmanager
+from app.services.maintenance_scheduler import maintenance_scheduler
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,6 +30,14 @@ from app.middleware import (
     register_exception_handlers,
 )
 
+
+@asynccontextmanager
+async def _lifespan(_application):
+    await maintenance_scheduler.start()
+    try:
+        yield
+    finally:
+        await maintenance_scheduler.stop()
 
 def create_application() -> FastAPI:
     """
@@ -47,6 +57,7 @@ def create_application() -> FastAPI:
         title=settings.APP_NAME,
         version=settings.APP_VERSION,
         debug=settings.DEBUG,
+        lifespan=_lifespan,
     )
 
     application.add_middleware(

@@ -102,6 +102,7 @@ from app.api.v1.endpoints.administration import (
 from app.api.v1.endpoints.audit_logs import (
     router as audit_logs_router,
 )
+from app.api.v1.endpoints.maintenance import router as maintenance_router
 from app.api.v1.endpoints.designations import (
     router as designations_router,
 )
@@ -235,6 +236,7 @@ api_router.include_router(
 api_router.include_router(
     audit_logs_router,
 )
+api_router.include_router(maintenance_router)
 
 api_router.include_router(
     designations_router,

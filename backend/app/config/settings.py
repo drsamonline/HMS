@@ -142,6 +142,18 @@ class Settings(BaseSettings):
     WHO_ICD11_RELEASE: str = Field(default="2026-01")
 
     # ==========================================================
+    # Data lifecycle / maintenance
+    # ==========================================================
+
+    LIVE_DATA_YEARS: int = Field(default=1, ge=1, le=2)
+    ONLINE_ARCHIVE_YEARS: int = Field(default=5, ge=1, le=10)
+    COLD_ARCHIVE_YEARS: int = Field(default=10, ge=1, le=20)
+    AUTO_MAINTENANCE_ENABLED: bool = Field(default=True)
+    AUTO_BACKUP_ENABLED: bool = Field(default=True)
+    MAINTENANCE_INTERVAL_HOURS: int = Field(default=24, ge=1, le=168)
+    LOG_RETENTION_DAYS: int = Field(default=30, ge=7, le=365)
+
+    # ==========================================================
     # Logging
     # ==========================================================
 

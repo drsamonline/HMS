@@ -152,3 +152,10 @@ export async function createSupplier(payload){return request("/api/v1/procuremen
 export async function listPurchaseOrders(status=""){const q=new URLSearchParams({});if(status)q.set("status",status);const suffix=q.toString()?`?${q.toString()}`:"";return request(`/api/v1/procurement/purchase-orders${suffix}`)}
 export async function createPurchaseOrder(payload){return request("/api/v1/procurement/purchase-orders",{method:"POST",body:JSON.stringify(payload)})}
 export async function createGoodsReceipt(payload){return request("/api/v1/procurement/goods-receipts",{method:"POST",body:JSON.stringify(payload)})}
+
+export async function renewCurrentYearCase(patientId, options={}){const q=new URLSearchParams(); if(options.visit_id)q.set("visit_id",options.visit_id); if(options.admission_id)q.set("admission_id",options.admission_id); const suffix=q.toString()?`?${q}`:""; return request(`/api/v1/case-records/patient/${encodeURIComponent(patientId)}/renew-current-year${suffix}`,{method:"POST"});}
+export async function getSystemHealth(){return request("/api/v1/health/system");}
+export async function runMaintenance(){return apiPost("/maintenance/run",{});}
+export async function vacuumDatabase(){return apiPost("/maintenance/vacuum",{});}
+export async function listArchives(){return request("/maintenance/archives");}
+export async function createYearArchive(year){return apiPost(`/maintenance/archives/${encodeURIComponent(year)}`,{});}

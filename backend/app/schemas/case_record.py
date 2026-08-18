@@ -18,6 +18,7 @@ class CaseRecordCreate(BaseSchema):
     visit_id: int | None = Field(default=None, gt=0)
     admission_id: int | None = Field(default=None, gt=0)
     case_status: CaseStatus = "draft"
+    case_family_id: str | None = None
 
     chief_complaints: str | None = None
     history_present_illness: str | None = None
@@ -78,6 +79,10 @@ class CaseRecordUpdate(BaseSchema):
 
 class CaseRecordRead(CaseRecordCreate):
     id: int
+    case_year: int
+    storage_tier: str
+    is_current_year: bool
+    renewed_from_case_id: int | None = None
     case_number: str
     created_by: int
     created_at: datetime

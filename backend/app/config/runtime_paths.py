@@ -50,6 +50,34 @@ def database_path() -> Path:
     return data_directory() / "hhms.sqlite3"
 
 
+def archive_directory() -> Path:
+    """Return the writable online archive directory."""
+    path = data_directory() / "archive"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def cold_archive_directory() -> Path:
+    """Return the protected cold-archive directory."""
+    path = data_directory() / "archive" / "cold"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def maintenance_directory() -> Path:
+    """Return the writable maintenance workspace."""
+    path = data_directory() / "maintenance"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def temporary_directory() -> Path:
+    """Return the disposable HHMS temporary directory."""
+    path = data_directory() / "tmp"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def secret_key_path() -> Path:
     """Return the persisted local JWT secret path."""
     return data_directory() / "secret.key"
@@ -60,6 +88,10 @@ __all__ = [
     "logs_directory",
     "uploads_directory",
     "backups_directory",
+    "archive_directory",
+    "cold_archive_directory",
+    "maintenance_directory",
+    "temporary_directory",
     "config_file_path",
     "database_path",
     "secret_key_path",

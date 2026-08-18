@@ -16,6 +16,7 @@ from fastapi import APIRouter
 from app.config.settings import get_settings
 from app.network.discovery import server_id
 from app.schemas.health import HealthResponse
+from app.services.maintenance import maintenance_service
 
 
 router = APIRouter(
@@ -103,6 +104,11 @@ async def health() -> HealthResponse:
     """
 
     return _response()
+
+
+@router.get("/system", summary="Live system health")
+async def system_health() -> dict[str, object]:
+    return await maintenance_service.health()
 
 
 __all__ = [

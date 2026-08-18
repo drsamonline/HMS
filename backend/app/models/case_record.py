@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import uuid4
 from typing import Any
 
 from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text
@@ -38,6 +39,22 @@ class CaseRecord(Base):
     case_number: Mapped[str] = mapped_column(
         String(20), nullable=False, unique=True, index=True
     )
+    case_family_id: Mapped[str] = mapped_column(
+        String(36), nullable=False, index=True
+    )
+    case_year: Mapped[int] = mapped_column(
+        Integer, nullable=False, index=True
+    )
+    renewed_from_case_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("CaseRecord.id", name="fk_case_record_renewed_from"), nullable=True, index=True
+    )
+    storage_tier: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="live", index=True
+    )
+    is_current_year: Mapped[bool] = mapped_column(
+        nullable=False, default=True, index=True
+    )
+
     case_status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="draft", index=True
     )
