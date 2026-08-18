@@ -141,3 +141,9 @@ export async function listServiceActivities(patientId = null) {
   if (patientId) qs.set("patient_id", patientId);
   return request(`/service-activities${qs.toString() ? `?${qs}` : ""}`);
 }
+
+export async function listSuppliers(){return request("/api/v1/procurement/suppliers")}
+export async function createSupplier(payload){return request("/api/v1/procurement/suppliers",{method:"POST",body:JSON.stringify(payload)})}
+export async function listPurchaseOrders(status=""){const q=new URLSearchParams({});if(status)q.set("status",status);const suffix=q.toString()?`?${q.toString()}`:"";return request(`/api/v1/procurement/purchase-orders${suffix}`)}
+export async function createPurchaseOrder(payload){return request("/api/v1/procurement/purchase-orders",{method:"POST",body:JSON.stringify(payload)})}
+export async function createGoodsReceipt(payload){return request("/api/v1/procurement/goods-receipts",{method:"POST",body:JSON.stringify(payload)})}

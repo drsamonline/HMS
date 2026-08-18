@@ -4,10 +4,10 @@
 Functional application build and integration.
 
 ## Latest completed milestone
-Batch 44 — configurable number-sequence integration.
+Batch 45 — audit trail and service-activity visibility.
 
 ## Current batch
-Batch 45 — audit trail and service-activity visibility.
+Batch 46 — client operational workspace integration.
 
 ## Rules
 - Combine logically related functional work whenever technically safe.
