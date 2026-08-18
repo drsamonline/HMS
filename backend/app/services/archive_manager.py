@@ -9,6 +9,7 @@ from app.config.runtime_paths import archive_directory, cold_archive_directory, 
 from app.config.settings import get_settings
 from app.core.exceptions import BusinessRuleException, ResourceNotFoundException
 from app.models.archive_manifest import ArchiveManifest
+from app.services.operational_year import operational_year_service
 
 def _copy_sqlite(source: Path, target: Path) -> None:
     src=sqlite3.connect(source); dst=sqlite3.connect(target)
@@ -32,8 +33,17 @@ class ArchiveManager:
         if not source.exists(): raise ResourceNotFoundException("HHMS database does not exist.")
         existing=await db.scalar(select(ArchiveManifest).where(ArchiveManifest.archive_year==year))
         if existing and existing.verified: return existing
-        current_year=datetime.now(timezone.utc).year
-        chosen=tier or ("online" if current_year-year < get_settings().ONLINE_ARCHIVE_YEARS else "cold")
+        op_cfg = await operational_year_service.get_config(db)
+        current_year = operational_year_service.current_year(datetime.now(timezone.utc).date(), op_cfg)
+        if year >= current_year:
+            raise BusinessRuleException("Only completed operational years can be archived.")
+        age = current_year - year
+        max_age = get_settings().COLD_ARCHIVE_YEARS
+        if age > max_age:
+            raise BusinessRuleException("Requested archive is outside the configured retention window.")
+        chosen=tier or ("online" if age < get_settings().ONLINE_ARCHIVE_YEARS else "cold")
+        if chosen == "online" and age >= get_settings().ONLINE_ARCHIVE_YEARS:
+            raise BusinessRuleException("Archive age exceeds the online archive window.")
         base=cold_archive_directory() if chosen=="cold" else archive_directory()
         outdir=base/str(year); outdir.mkdir(parents=True,exist_ok=True)
         target=outdir/f"HHMS_{year}_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.sqlite3"

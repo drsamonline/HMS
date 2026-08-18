@@ -9,6 +9,7 @@ const ACCESS={
  mrd:["mrd.read","patient_files.read","archive.read"],
  statistics:["statistics.read","statistics.view","reports.statistics"],
  reports:["reports.read","report.read","printing.read","reports.print"],
+ historical:["reports.read","report.read","patients.read","patient.read"],
  inventory:["inventory.read","inventory.manage","stock.read","stock.manage"],
  procurement:["procurement.read","procurement.manage","purchasing.read"],
  activity:["audit.read","audit_logs.read","service_activity.read","activity.read"],

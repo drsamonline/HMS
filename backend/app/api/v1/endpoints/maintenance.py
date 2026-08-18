@@ -22,7 +22,15 @@ async def create_archive(year:int,db:DatabaseSession,user:CurrentUserDependency)
 
 @router.get("/archives/{year}/patients/{patient_id}/cases")
 async def historical_cases(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
-    await _require_admin(db,actor_id(user))
+    uid = actor_id(user)
+    try:
+        await _require_admin(db, uid)
+    except Exception:
+        from app.services.auth import auth_service
+        _, roles, permissions = await auth_service.get_current_user_profile(db, user_id=uid)
+        normalized = {str(p).strip().lower() for p in permissions}
+        if not (normalized & {"reports.read", "report.read", "patients.read", "patient.read"}):
+            raise
     return await archive_manager.read_case_records(db,year,patient_id)
 
 @router.get("/archives/{year}/download",response_class=FileResponse)
