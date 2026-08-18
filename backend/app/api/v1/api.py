@@ -42,6 +42,7 @@ from app.api.v1.endpoints.patients import (
 from app.api.v1.endpoints.prescriptions import (
     router as prescriptions_router,
 )
+from app.api.v1.endpoints.stock_cards import router as stock_cards_router
 from app.api.v1.endpoints.stock_transactions import (
     router as stock_transactions_router,
 )
@@ -145,6 +146,10 @@ api_router.include_router(
 
 api_router.include_router(
     stock_transactions_router,
+)
+
+api_router.include_router(
+    stock_cards_router,
 )
 
 api_router.include_router(

@@ -59,6 +59,7 @@ from .prescription_item import PrescriptionItem
 from .role import Role
 from .role_permission import RolePermission
 from .stock_batch import StockBatch
+from .stock_card import StockCard
 from .stock_transaction import StockTransaction
 from .user import User
 from .user_role import UserRole
@@ -108,6 +109,7 @@ __all__ = [
 
     "InventoryItem",
     "StockBatch",
+    "StockCard",
     "StockTransaction",
 
     "Admission",

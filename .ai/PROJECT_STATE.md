@@ -54,3 +54,8 @@
 - Batch 55 was committed with an incomplete client-only history implementation.
 - Batch 56 restores the correct backend history contract and wires the client to it.
 - The latest ZIP from the user remains authoritative; remote repository inspection is not used for baseline reconstruction.
+
+## Batch 57 functional addition
+- Pharmacy StockCard ledger added for StockBatch movements.
+- Dispensing now creates an atomic StockCard Issue entry alongside DispenseRecord and batch quantity decrement.
+- Generic StockTransaction remains the ledger for non-pharmacy InventoryItem stock.

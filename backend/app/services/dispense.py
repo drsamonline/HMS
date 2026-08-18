@@ -23,6 +23,7 @@ from app.core.exceptions import (
 from app.models.dispense_record import DispenseRecord
 from app.models.prescription_item import PrescriptionItem
 from app.models.stock_batch import StockBatch
+from app.models.stock_card import StockCard
 from app.repositories.dispense import (
     DispenseRepository,
     dispense_repository,
@@ -172,6 +173,23 @@ class DispenseService:
             )
 
             db.add(record)
+            await db.flush()
+
+            ledger = StockCard(
+                medicine_id=stock_batch.medicine_id,
+                stock_batch_id=stock_batch.id,
+                transaction_type="Issue",
+                quantity_in=Decimal("0"),
+                quantity_out=requested,
+                balance_quantity=Decimal(stock_batch.quantity_remaining) - requested,
+                reference_type="DispenseRecord",
+                reference_id=record.id,
+                transaction_datetime=now,
+                created_by=performed_by,
+                remarks=data.notes,
+                created_at=now,
+            )
+            db.add(ledger)
             await db.commit()
             await db.refresh(record)
 
