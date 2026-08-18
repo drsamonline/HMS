@@ -23,6 +23,7 @@ async function request(path,options={}){
    throw new Error(detail||`HHMS server returned HTTP ${r.status}.`);
   }
   window.dispatchEvent(new CustomEvent("hhms:server-state",{detail:{online:true}}));
+  if(rawResponse) return r;
   return r.status===204?null:r.json();
  }catch(error){
   if(error instanceof TypeError||/Failed to fetch|NetworkError|fetch/i.test(String(error?.message||""))){
@@ -142,8 +143,6 @@ export async function listServiceActivities(patientId = null) {
   return request(`/service-activities${qs.toString() ? `?${qs}` : ""}`);
 }
 
-export async function listSuppliers(){return request("/api/v1/procurement/suppliers")}
-export async function createSupplier(payload){return request("/api/v1/procurement/suppliers",{method:"POST",body:JSON.stringify(payload)})}
-export async function listPurchaseOrders(status=""){const q=new URLSearchParams({});if(status)q.set("status",status);const suffix=q.toString()?`?${q.toString()}`:"";return request(`/api/v1/procurement/purchase-orders${suffix}`)}
-export async function createPurchaseOrder(payload){return request("/api/v1/procurement/purchase-orders",{method:"POST",body:JSON.stringify(payload)})}
-export async function createGoodsReceipt(payload){return request("/api/v1/procurement/goods-receipts",{method:"POST",body:JSON.stringify(payload)})}
+export async function apiGet(path, options = {}) { return request(path, { method: "GET", ...options }); }
+export async function apiPost(path, body, options = {}) { return request(path, { method: "POST", body: JSON.stringify(body), ...options }); }
+export async function apiDelete(path) { return request(path, { method: "DELETE" }); }

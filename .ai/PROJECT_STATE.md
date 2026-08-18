@@ -4,10 +4,10 @@
 Functional application build and integration.
 
 ## Latest completed milestone
-Batch 45 — audit trail and service-activity visibility.
+Batch 44 — configurable number-sequence integration.
 
 ## Current batch
-Batch 46 — client operational workspace integration.
+Batch 45 — audit trail and service-activity visibility.
 
 ## Rules
 - Combine logically related functional work whenever technically safe.
@@ -17,3 +17,5 @@ Batch 46 — client operational workspace integration.
 - Do not label foundations as complete.
 - Avoid duplicate models, services, endpoints, or frontend modules.
 - Functional build comes before comprehensive QA.
+
+- Batch 47: administrative local SQLite backup management implemented; restore intentionally deferred to deployment/runtime workflow.
