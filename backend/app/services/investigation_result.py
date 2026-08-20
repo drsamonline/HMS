@@ -142,6 +142,11 @@ class InvestigationResultService:
 
         now = datetime.now(timezone.utc)
 
+        if data.report_status in {"verified", "released"} and not str(data.result_text or "").strip():
+            raise BusinessRuleException(
+                "Result text is required before a laboratory report can be verified or released."
+            )
+
         result = InvestigationResult(
             investigation_id=(
                 data.investigation_id
@@ -238,6 +243,25 @@ class InvestigationResultService:
             "report_status",
             result.report_status,
         )
+
+        allowed_transitions = {
+            "draft": {"draft", "verified", "released"},
+            "verified": {"verified", "released"},
+        }
+        if target_status not in allowed_transitions.get(result.report_status, set()):
+            raise BusinessRuleException(
+                f"Laboratory report cannot transition from "
+                f"{result.report_status} to {target_status}."
+            )
+
+        target_result_text = values.get(
+            "result_text",
+            result.result_text,
+        )
+        if target_status in {"verified", "released"} and not str(target_result_text or "").strip():
+            raise BusinessRuleException(
+                "Result text is required before a laboratory report can be verified or released."
+            )
 
         target_verified_by = values.get(
             "verified_by",
