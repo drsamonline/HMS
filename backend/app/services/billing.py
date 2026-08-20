@@ -312,10 +312,19 @@ class BillingService:
         data: PaymentCreate,
         received_by: int,
     ) -> Payment:
-        invoice = await self.get_invoice(
-            db,
-            data.invoice_id,
+        if data.payment_datetime.tzinfo is None:
+            raise BusinessRuleException(
+                "Payment datetime must include timezone information."
+            )
+
+        invoice_result = await db.execute(
+            select(Invoice)
+            .where(Invoice.id == data.invoice_id)
+            .with_for_update()
         )
+        invoice = invoice_result.scalar_one_or_none()
+        if invoice is None:
+            raise ResourceNotFoundException("Invoice not found.")
 
         if invoice.payment_status == "cancelled":
             raise BusinessRuleException(
@@ -376,9 +385,10 @@ class BillingService:
 
             if new_total_paid >= invoice.total_amount:
                 invoice.payment_status = "paid"
-
-            else:
+            elif new_total_paid > Decimal("0"):
                 invoice.payment_status = "partial"
+            else:
+                invoice.payment_status = "unpaid"
 
             invoice.updated_at = now
 
@@ -420,7 +430,15 @@ class BillingService:
         invoice.updated_at = datetime.now(timezone.utc)
 
     async def add_invoice_item(self, db: AsyncSession, invoice_id: int, data: InvoiceItemCreate) -> InvoiceItem:
-        invoice = await self.get_invoice(db, invoice_id)
+        invoice_result = await db.execute(
+            select(Invoice).where(Invoice.id == invoice_id).with_for_update()
+        )
+        invoice = invoice_result.scalar_one_or_none()
+        if invoice is None:
+            raise ResourceNotFoundException("Invoice not found.")
+        if invoice.payment_status == "paid":
+            raise BusinessRuleException("A fully paid invoice cannot be modified.")
+
         now = datetime.now(timezone.utc)
         quantity = Decimal(data.quantity)
         unit_price = Decimal(data.unit_price)
@@ -439,10 +457,18 @@ class BillingService:
             db.add(item)
             await db.flush()
             await self._recalculate_invoice_total(db, invoice)
-            invoice.payment_status = "unpaid"
+            total_paid = await self.payment_repo.total_paid(db, invoice.id)
+            invoice.payment_status = (
+                "paid" if total_paid >= invoice.total_amount
+                else "partial" if total_paid > Decimal("0")
+                else "unpaid"
+            )
             await db.commit()
             await db.refresh(item)
             return item
+        except BusinessRuleException:
+            await db.rollback()
+            raise
         except SQLAlchemyError as exc:
             await db.rollback()
             raise DatabaseException("Unable to add invoice item.") from exc
@@ -451,12 +477,32 @@ class BillingService:
         item = await db.get(InvoiceItem, item_id)
         if item is None:
             raise ResourceNotFoundException("Invoice item not found.")
-        invoice = await self.get_invoice(db, item.invoice_id)
+        invoice_result = await db.execute(
+            select(Invoice).where(Invoice.id == item.invoice_id).with_for_update()
+        )
+        invoice = invoice_result.scalar_one_or_none()
+        if invoice is None:
+            raise ResourceNotFoundException("Invoice not found.")
+        if invoice.payment_status == "paid":
+            raise BusinessRuleException("A fully paid invoice cannot be modified.")
         try:
             await db.delete(item)
             await db.flush()
             await self._recalculate_invoice_total(db, invoice)
+            total_paid = await self.payment_repo.total_paid(db, invoice.id)
+            if total_paid > invoice.total_amount:
+                raise BusinessRuleException(
+                    "Invoice item cannot be removed because recorded payments exceed the resulting invoice total."
+                )
+            invoice.payment_status = (
+                "paid" if total_paid >= invoice.total_amount and invoice.total_amount > Decimal("0")
+                else "partial" if total_paid > Decimal("0")
+                else "unpaid"
+            )
             await db.commit()
+        except BusinessRuleException:
+            await db.rollback()
+            raise
         except SQLAlchemyError as exc:
             await db.rollback()
             raise DatabaseException("Unable to delete invoice item.") from exc

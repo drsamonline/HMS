@@ -88,3 +88,16 @@ Desktop.ini
 # Misc
 # ===========================
 .cache/
+
+# Personal/local HHMS cleanup helpers
+/tools/cleanup-hms.ps1
+/tools/cleanup.bat
+# Personal/local HHMS cleanup helpers
+/tools/cleanup-hms.ps1
+/tools/cleanup.bat
+
+# Local HHMS tools
+/tools/
+
+# Local HHMS tools
+/tools/

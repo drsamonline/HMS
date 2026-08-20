@@ -71,3 +71,10 @@
 - Dispensing now creates a corresponding `StockCard` ISSUE/`DISPENSE` entry in the same transaction as stock decrement and `DispenseRecord`.
 - Expired StockBatch records are blocked from dispensing at the service layer.
 - Stock-batch status endpoint exposes available/expiring/expired/exhausted states for client workflows.
+
+## Batch 67 — Billing Integrity
+- Billing invoice/payment workflow now validates timezone-aware payment timestamps.
+- Payment creation locks the invoice row during balance calculation to reduce concurrent overpayment races.
+- Invoice-item additions/removals cannot modify fully paid invoices.
+- Invoice total changes recalculate payment status from actual recorded payments.
+- Invoice-item removal is rejected if the resulting total would be below recorded payments.
