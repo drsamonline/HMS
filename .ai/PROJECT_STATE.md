@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: current GitHub main after Batch 54 Archive Retention Tier Enforcement.
-- Latest completed functional milestone: Batch 55 — Unified Patient History (corrected by Batch 56).
-- Current milestone: Batch 56 — Corrected Unified Patient History.
+- Latest completed functional milestone: Batch 64 — Pharmacy Dispensing Ledger Completion.
+- Current milestone: Batch 65 — Cross-Module Encounter Integrity.
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -65,3 +65,10 @@
 - Dispensing now creates a corresponding `StockCard` ISSUE/`DISPENSE` entry in the same transaction as stock decrement and `DispenseRecord`.
 - Expired StockBatch records are blocked from dispensing at the service layer.
 - Stock-batch status endpoint exposes available/expiring/expired/exhausted states for client workflows.
+
+
+## Batch 65 — Cross-Module Encounter Integrity
+- Admission validates patient existence and timezone-aware admission timestamps.
+- Discharge validates timezone-aware chronology and prevents discharge before admission.
+- Investigation requests against closed admissions are rejected.
+- Existing encounter ownership checks remain enforced.

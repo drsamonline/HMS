@@ -23,6 +23,7 @@ from app.core.exceptions import (
 )
 from app.models.admission import Admission
 from app.models.bed import Bed
+from app.models.patient import Patient
 from app.repositories.admission import (
     AdmissionRepository,
     admission_repository,
@@ -88,6 +89,17 @@ class AdmissionService:
         admission_in: AdmissionCreate,
     ) -> Admission:
         from sqlalchemy import select
+
+        patient = await db.get(Patient, admission_in.patient_id)
+        if patient is None:
+            raise ResourceNotFoundException(
+                "Patient not found."
+            )
+
+        if admission_in.admission_datetime.tzinfo is None:
+            raise BusinessRuleException(
+                "Admission datetime must include timezone information."
+            )
 
         bed_result = await db.execute(
             select(Bed)

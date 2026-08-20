@@ -134,6 +134,11 @@ class InvestigationService:
                     "to the selected patient."
                 )
 
+        if data.requested_datetime.tzinfo is None:
+            raise BusinessRuleException(
+                "Investigation requested datetime must include timezone information."
+            )
+
         if data.admission_id is not None:
             admission = await db.get(
                 Admission,
@@ -152,6 +157,14 @@ class InvestigationService:
                 raise BusinessRuleException(
                     "The selected admission does not belong "
                     "to the selected patient."
+                )
+
+            if admission.admission_status.lower() not in {
+                "admitted",
+                "active",
+            }:
+                raise BusinessRuleException(
+                    "Investigations cannot be ordered against a closed admission."
                 )
 
     async def create(

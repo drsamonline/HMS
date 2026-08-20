@@ -129,6 +129,19 @@ class DischargeService:
                 "Only an active admission can be discharged."
             )
 
+        if data.discharge_datetime.tzinfo is None:
+            raise BusinessRuleException(
+                "Discharge datetime must include timezone information."
+            )
+
+        if (
+            admission.admission_datetime is not None
+            and data.discharge_datetime < admission.admission_datetime
+        ):
+            raise BusinessRuleException(
+                "Discharge datetime cannot be earlier than admission datetime."
+            )
+
         existing = (
             await self.repository.get_by_admission(
                 db,
