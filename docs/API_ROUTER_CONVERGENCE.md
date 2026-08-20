@@ -1,16 +1,7 @@
-# Batch 62 — API Router Convergence
+# API Router Convergence — Batch 63 correction
 
-The project contains a broad set of functional backend modules, but the API root registration had become fragmented: some routers were omitted, some were referenced before import, and newer workflow endpoints were appended after the module's public export block.
+This batch corrects the Batch 62 router convergence by registering all existing operational endpoint modules that were present in the baseline but omitted from `api.py`.
 
-Batch 62 consolidates router imports and registration in one place without changing the business logic of those modules.
+Included: administration, backups, departments, dispenses, procurement and stock-batches, in addition to the routers already registered by Batch 62.
 
-## Registered workflow groups
-- Core/session
-- Clinical/pharmacy
-- IPD
-- Laboratory and assessments
-- Billing
-- Medical records/history
-- Administration/reporting/system operations
-
-The purpose is to make the implemented backend modules reachable through the authoritative API router before further cross-module feature work and later QA.
+No endpoint implementation is redesigned in this batch. This is API surface integration only.

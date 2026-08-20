@@ -3,6 +3,12 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from app.api.v1.endpoints.administration import router as administration_router
+from app.api.v1.endpoints.backups import router as backups_router
+from app.api.v1.endpoints.departments import router as departments_router
+from app.api.v1.endpoints.dispenses import router as dispenses_router
+from app.api.v1.endpoints.procurement import router as procurement_router
+from app.api.v1.endpoints.stock_batches import router as stock_batches_router
 from app.api.v1.endpoints.admissions import router as admissions_router
 from app.api.v1.endpoints.archive_records import router as archive_records_router
 from app.api.v1.endpoints.audit_logs import router as audit_logs_router
@@ -55,10 +61,13 @@ for router in (
     prescriptions_router,
     medicines_router,
     medicine_batches_router,
+    stock_batches_router,
     stock_transactions_router,
     stock_cards_router,
     inventory_items_router,
     goods_receipts_router,
+    dispenses_router,
+    procurement_router,
 ):
     api_router.include_router(router)
 
@@ -95,6 +104,7 @@ for router in (
 
 # Administration / reporting / system operations
 for router in (
+    departments_router,
     department_services_router,
     service_activities_router,
     statistics_router,
@@ -103,6 +113,7 @@ for router in (
     administration_router,
     audit_logs_router,
     maintenance_router,
+    backups_router,
     designations_router,
     operational_year_router,
 ):

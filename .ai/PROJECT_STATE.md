@@ -42,3 +42,8 @@
 ## Cleanup policy
 - Transfer ZIPs exclude `.git`, `.env`, Python caches/compiled files, test caches, coverage output and build artifacts.
 - Local cleanup removes only confirmed generated clutter.
+
+## Batch 63 — API router convergence correction
+- Corrects an undefined `administration_router` reference introduced by the prior router convergence change.
+- Registers the existing backup, department, dispense, procurement, and stock-batch endpoint routers that were omitted from the prior convergence.
+- No endpoint business logic is changed in this correction batch.
