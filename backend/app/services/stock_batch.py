@@ -120,6 +120,34 @@ class StockBatchService:
                 "Unable to create stock batch."
             ) from exc
 
+    async def status_by_medicine(
+        self,
+        db: AsyncSession,
+        medicine_id: int,
+        *,
+        warning_days: int = 90,
+    ) -> list[dict[str, object]]:
+        from datetime import date
+        if warning_days < 0:
+            raise BusinessRuleException("Expiry warning window cannot be negative.")
+        batches = await self.repository.list_by_medicine(db, medicine_id, active_only=True, skip=0, limit=500)
+        today = date.today()
+        return [
+            {
+                "id": batch.id,
+                "batch_no": batch.batch_no,
+                "quantity_remaining": batch.quantity_remaining,
+                "expiry_date": batch.expiry_date,
+                "status": (
+                    "EXPIRED" if batch.expiry_date and batch.expiry_date < today
+                    else "EXPIRING_SOON" if batch.expiry_date and (batch.expiry_date - today).days <= warning_days
+                    else "AVAILABLE" if batch.quantity_remaining > 0
+                    else "EXHAUSTED"
+                ),
+            }
+            for batch in batches
+        ]
+
     async def update(
         self,
         db: AsyncSession,

@@ -43,6 +43,20 @@ async def list_medicine_stock(
     )
 
 
+@router.get(
+    "/medicine/{medicine_id}/status",
+)
+async def stock_status(
+    medicine_id: int,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    warning_days: int = Query(default=90, ge=0, le=3650),
+) -> list[dict[str, object]]:
+    return await stock_batch_service.status_by_medicine(
+        db, medicine_id, warning_days=warning_days
+    )
+
+
 @router.post(
     "",
     response_model=StockBatchRead,
