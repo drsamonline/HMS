@@ -72,9 +72,9 @@
 - Expired StockBatch records are blocked from dispensing at the service layer.
 - Stock-batch status endpoint exposes available/expiring/expired/exhausted states for client workflows.
 
-## Batch 67 — Billing Integrity
-- Billing invoice/payment workflow now validates timezone-aware payment timestamps.
-- Payment creation locks the invoice row during balance calculation to reduce concurrent overpayment races.
-- Invoice-item additions/removals cannot modify fully paid invoices.
-- Invoice total changes recalculate payment status from actual recorded payments.
-- Invoice-item removal is rejected if the resulting total would be below recorded payments.
+## Batch 68 — Billing Atomic Consistency
+- Payment creation locks the invoice row while checking and recording the outstanding balance.
+- Invoice payment status is derived from payment totals and is no longer directly client-controlled through invoice update.
+- Invoice items cannot be added/removed on paid or cancelled invoices.
+- Item add/remove recalculates invoice total and preserves a derived unpaid/partial/paid status.
+- Item deletion is blocked if the resulting invoice total would fall below the amount already paid.
