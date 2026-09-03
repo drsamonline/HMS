@@ -1,9 +1,9 @@
 # HHMS Project State
 
 ## Authoritative baseline
-- Baseline: current GitHub main after Batch 54 Archive Retention Tier Enforcement.
-- Latest completed functional milestone: Batch 55 — Unified Patient History (corrected by Batch 56).
-- Current milestone: Batch 56 — Corrected Unified Patient History.
+- Baseline: latest user-supplied full ZIP (`HMS(5).zip`), superseding all older ZIP baselines.
+- Latest completed functional milestone: Batch 69 — Annual Case Rollover.
+- Current milestone: Batch 69 — Annual Case Rollover.
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -37,8 +37,17 @@
 - The client does not attach all archive databases during normal operation.
 - Existing archive and operational-year APIs remain the source of truth.
 
+## Batch 69 — Annual Case Rollover
+- Added verified pre-rollover backup before annual case archival.
+- Added permanent `CaseArchiveReference` records so patient/case identity survives physical live-database removal.
+- Added administrator-only rollover preview and execution endpoints plus System Health UI action.
+- Rollover physically removes `Diagnosis`, `FollowUp` and `CaseRecord` rows for the selected completed operational year after archive preparation.
+- Live `renewed_from_case_id` references are cleared when they would point at a physically archived case; `case_family_id` remains the longitudinal linkage.
+- The verified annual archive remains a read-only-by-convention SQLite snapshot and is checksum/integrity validated.
+- Other encounter, billing, pharmacy and administrative rows remain live until their own lifecycle metadata and rollover rules are implemented.
+
 ## Remaining before QA
-- Complete physical live-to-archive rollover migration.
+- Extend physical rollover to the remaining lifecycle-managed encounter/business data as its archival metadata is completed.
 - Complete remaining cross-module workflow continuity.
 - Complete server/client packaging and deployment workflow.
 - Complete final reporting/printing integration.

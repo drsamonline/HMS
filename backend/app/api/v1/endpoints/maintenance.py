@@ -27,6 +27,16 @@ async def archives(db: DatabaseSession,user: CurrentUserDependency): await _requ
 @router.post("/archives/{year}")
 async def create_archive(year:int,db:DatabaseSession,user:CurrentUserDependency): await _require_admin(db,actor_id(user)); return await archive_manager.create_year_archive(db,year)
 
+@router.get("/archives/rollover/preview")
+async def archive_rollover_preview(db: DatabaseSession,user: CurrentUserDependency):
+    await _require_admin(db, actor_id(user))
+    return await archive_manager.rollover_preview(db)
+
+@router.post("/archives/rollover/{year}")
+async def archive_rollover(year: int, db: DatabaseSession, user: CurrentUserDependency):
+    await _require_admin(db, actor_id(user))
+    return await archive_manager.rollover_case_year(db, year)
+
 @router.get("/archives/retention/preview")
 async def archive_retention_preview(db: DatabaseSession,user: CurrentUserDependency):
     await _require_admin(db,actor_id(user))

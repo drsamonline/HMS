@@ -175,3 +175,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Version set to 0.0.1
 - Project constitution locked with 12 principles
 - Roadmap defined with 8 milestones (0-7)
+
+## Batch 69 — Annual Case Rollover
+
+- Added verified pre-rollover backup and administrator-only annual case rollover.
+- Added permanent `CaseArchiveReference` records for cases physically removed from the live database.
+- Preserved archived case lineage through `case_family_id` and the verified annual archive snapshot.
+- Safely removes direct case children (`Diagnosis` and `FollowUp`) before removing archived `CaseRecord` rows.
+- Clears live `renewed_from_case_id` references that would otherwise point at physically archived cases.
+- Added rollover preview and execution API endpoints.
+- Added the rollover action to the System Health & Data Lifecycle workspace.

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from .admission import Admission
 from .case_record import CaseRecord
+from .case_archive_reference import CaseArchiveReference
 from .audit_log import AuditLog
 from .base import (
     Base,
@@ -94,6 +95,7 @@ __all__ = [
     "Patient",
     "ServiceActivity",
     "CaseRecord",
+    "CaseArchiveReference",
     "Diagnosis",
     "FollowUp",
     "Visit",

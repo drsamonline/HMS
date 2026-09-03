@@ -42,8 +42,7 @@ dev = [
 ]
 
 
-[project.optional-dependencies.package]
-server = [
+package = [
     "pyinstaller>=6.10,<7.0",
 ]
 
