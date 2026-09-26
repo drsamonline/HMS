@@ -164,6 +164,6 @@ def test_breakdown_contracts() -> None:
 
 def test_department_stats_does_not_select_service_type_without_grouping() -> None:
     from pathlib import Path
-    source = Path("backend/app/services/statistics.py").read_text(encoding="utf-8")
+    source = (Path(__file__).resolve().parents[1] / "app/services/statistics.py").read_text(encoding="utf-8")
     department_section = source.split("async def _department_stats", 1)[1].split("async def _service_stats", 1)[0]
     assert "DepartmentService.service_type.label" not in department_section

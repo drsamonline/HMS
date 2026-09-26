@@ -130,15 +130,50 @@ function renderCase(host){
   <div class="structured-row">
     <label>Quick Generals JSON<textarea id="quick-generals" rows="5">${escapeHtml(JSON.stringify(c.quick_generals||{},null,2))}</textarea></label>
     <label>Modalities JSON<textarea id="modalities" rows="5">${escapeHtml(JSON.stringify(c.modalities||{},null,2))}</textarea></label>
+  </div>
+  <div class="modality-section">
+    <h3>Homoeopathic Case Record — Modalities</h3>
+    <p class="muted">Record each modality (e.g. heat, cold, motion) with its effect and additional detail.</p>
+    <table class="modality-table"><thead><tr><th>Modality</th><th>Effect</th><th>Additional</th><th></th></tr></thead>
+      <tbody id="modality-rows">${renderModalityRows(c.modalities||{})}</tbody>
+    </table>
+    <button type="button" id="add-modality" class="secondary">Add Modality</button>
   </div>`;
+}
+function renderModalityRows(modalities){
+  const entries=Object.entries(modalities||{});
+  if(!entries.length) entries.push(["",""]);
+  return entries.map(([name,value])=>{
+    const effect=(value==="agg"||value==="amel")?value:(value&&typeof value==="object"?value.effect:"")||"";
+    const additional=(value&&typeof value==="object"?value.additional:"")||"";
+    return `<tr><td><input data-mod-name value="${escapeHtml(name)}" placeholder="e.g. heat"></td>
+      <td><select data-mod-effect><option value="">—</option><option value="agg"${effect==="agg"?" selected":""}>Aggravated (agg)</option><option value="amel"${effect==="amel"?" selected":""}>Ameliorated (amel)</option></select></td>
+      <td><input data-mod-note value="${escapeHtml(additional)}" placeholder="Additional detail"></td>
+      <td><button type="button" class="remove-modality secondary">Remove</button></td></tr>`;
+  }).join("");
 }
 function collectCase(host){
   const c={...clinicalState.caseRecord};
   host.querySelectorAll("[data-case-field]").forEach(el=>{ c[el.dataset.caseField]=el.value; });
   try{ c.quick_generals=JSON.parse($("#quick-generals",host).value||"{}"); }catch{ throw new Error("Quick Generals must contain valid JSON."); }
-  try{ c.modalities=JSON.parse($("#modalities",host).value||"{}"); }catch{ throw new Error("Modalities must contain valid JSON."); }
+  const modalities={};
+  host.querySelectorAll("#modality-rows tr").forEach(tr=>{
+    const name=tr.querySelector("[data-mod-name]")?.value.trim()||"";
+    if(!name) return;
+    const effect=tr.querySelector("[data-mod-effect]")?.value||"";
+    const additional=tr.querySelector("[data-mod-note]")?.value.trim()||"";
+    modalities[name]={effect,additional};
+  });
+  c.modalities=modalities;
   for(const k of Object.keys(c)) if(c[k]===""||c[k]===null) delete c[k];
   return c;
+}
+function wireModalityEditor(host){
+  $("#add-modality",host)?.addEventListener("click",()=>{
+    const tbody=$("#modality-rows",host);
+    tbody.insertAdjacentHTML("beforeend",renderModalityRows({}));
+  });
+  host.querySelectorAll(".remove-modality").forEach(b=>b.addEventListener("click",e=>e.target.closest("tr")?.remove()));
 }
 async function saveCase(host){
   try{

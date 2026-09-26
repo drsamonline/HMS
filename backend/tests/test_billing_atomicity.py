@@ -2,7 +2,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = (ROOT / "app/services/billing.py").read_text(encoding="utf-8")
+SOURCE = (ROOT / "backend/app/services/billing.py").read_text(encoding="utf-8")
 
 
 def test_payment_locks_invoice_row():

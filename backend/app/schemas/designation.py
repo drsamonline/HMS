@@ -12,9 +12,9 @@ from app.core.enums import DesignationType
 from app.schemas.base import BaseSchema
 
 
-class DesignationCreate(BaseSchema):
+class DesignationBase(BaseSchema):
     """
-    Schema used to create a designation.
+    Shared attributes for designation request and response DTOs.
     """
 
     code: str
@@ -24,6 +24,12 @@ class DesignationCreate(BaseSchema):
     description: str | None = None
 
     designation_type: DesignationType
+
+
+class DesignationCreate(DesignationBase):
+    """
+    Schema used to create a designation.
+    """
 
 
 class DesignationUpdate(BaseSchema):
@@ -40,23 +46,16 @@ class DesignationUpdate(BaseSchema):
     designation_type: DesignationType | None = None
 
 
-class DesignationRead(BaseSchema):
+class DesignationRead(DesignationBase):
     """
     Schema returned by the API.
     """
 
     id: UUID
 
-    code: str
-
-    name: str
-
-    description: str | None
-
-    designation_type: DesignationType
-
 
 __all__ = [
+    "DesignationBase",
     "DesignationCreate",
     "DesignationUpdate",
     "DesignationRead",
