@@ -8,13 +8,18 @@ async function request(path,options={}){
  const rawResponse=options.rawResponse===true;
  const requestOptions={...options};
  delete requestOptions.rawResponse;
+ delete requestOptions.timeoutMs;
  if(!serverBaseUrl)throw new Error("HHMS server address is not configured.");
  const headers=new Headers(options.headers||{});
  headers.set("Accept","application/json");
  if(accessToken)headers.set("Authorization",`Bearer ${accessToken}`);
  if(options.body&&!headers.has("Content-Type"))headers.set("Content-Type","application/json");
+ const controller=new AbortController();
+ const timeoutMs=options.timeoutMs??15000;
+ const timeoutId=setTimeout(()=>controller.abort(),timeoutMs);
  try{
-  const r=await fetch(`${serverBaseUrl}${path}`,{...requestOptions,headers,cache:"no-store"});
+  const r=await fetch(`${serverBaseUrl}${path}`,{...requestOptions,headers,cache:"no-store",signal:controller.signal});
+  clearTimeout(timeoutId);
   if(r.status===401){
    clearAccessToken();
    window.dispatchEvent(new CustomEvent("hhms:auth-expired"));
@@ -29,11 +34,17 @@ async function request(path,options={}){
   if(rawResponse) return r;
   return r.status===204?null:r.json();
  }catch(error){
+  if(error?.name==="AbortError"){
+   window.dispatchEvent(new CustomEvent("hhms:request-timeout",{detail:{path}}));
+   throw new Error(`HHMS server request timed out: ${path}`);
+  }
   if(error instanceof TypeError||/Failed to fetch|NetworkError|fetch/i.test(String(error?.message||""))){
    window.dispatchEvent(new CustomEvent("hhms:server-state",{detail:{online:false}}));
    throw new Error("HHMS server is unreachable. Check the LAN connection or server address and try again.");
   }
   throw error;
+ }finally{
+  clearTimeout(timeoutId);
  }
 }
 export async function checkServer(baseUrl=serverBaseUrl){if(baseUrl)serverBaseUrl=normalizeBaseUrl(baseUrl);const c=loadClientConfig();return request(c.healthPath)}
@@ -76,6 +87,38 @@ export async function buildClinicalBatch(payload){return request("/api/v1/report
 export async function listVisits(patientId){const q=new URLSearchParams({patient_id:String(patientId),skip:"0",limit:"100"});return request(`/api/v1/visits?${q.toString()}`)}
 export async function listAdmissions(patientId){const q=new URLSearchParams({patient_id:String(patientId),skip:"0",limit:"100"});return request(`/api/v1/admissions?${q.toString()}`)}
 
+export function getCurrentUserId(){try{const raw=sessionStorage.getItem("hhms.current_user");if(!raw)return null;const u=JSON.parse(raw);return u?.id??u?.user_id??null}catch{return null}}
+
+const CLINICAL_CONTEXT_KEY="hhms.clinical_context";
+export function saveClinicalContext(ctx={}){try{localStorage.setItem(CLINICAL_CONTEXT_KEY,JSON.stringify({visit_id:ctx.visit_id??null,admission_id:ctx.admission_id??null}))}catch{}}
+export function loadClinicalContext(){try{return JSON.parse(localStorage.getItem(CLINICAL_CONTEXT_KEY)||"{}")}catch{return{}}}
+
+export async function listCaseRecords(patientId){const q=new URLSearchParams({patient_id:String(patientId),skip:"0",limit:"100"});return request(`/api/v1/case-records?${q.toString()}`)}
+export async function getCaseRecord(id){return request(`/api/v1/case-records/${encodeURIComponent(id)}`)}
+export async function createCaseRecord(payload){return request("/api/v1/case-records",{method:"POST",body:JSON.stringify(payload)})}
+export async function updateCaseRecord(id,payload){return request(`/api/v1/case-records/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
+
+export async function listDiagnoses(caseId){const q=new URLSearchParams({case_record_id:String(caseId),skip:"0",limit:"100"});return request(`/api/v1/diagnoses?${q.toString()}`)}
+export async function createDiagnosis(payload){return request("/api/v1/diagnoses",{method:"POST",body:JSON.stringify(payload)})}
+export async function updateDiagnosis(id,payload){return request(`/api/v1/diagnoses/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
+export async function listFollowups(caseId){const q=new URLSearchParams({case_record_id:String(caseId),skip:"0",limit:"100"});return request(`/api/v1/followups?${q.toString()}`)}
+export async function createFollowup(payload){return request("/api/v1/followups",{method:"POST",body:JSON.stringify(payload)})}
+export async function searchICD11(q){return request(`/api/v1/icd11/search?q=${encodeURIComponent(q)}&limit=15`)}
+export async function createPrescription(payload){return request("/api/v1/prescriptions",{method:"POST",body:JSON.stringify(payload)})}
+
+export async function createMedicine(payload){return request("/api/v1/medicines",{method:"POST",body:JSON.stringify(payload)})}
+export async function updateMedicine(id,payload){return request(`/api/v1/medicines/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
+export async function listMedicineBatches(medicineId,options={}){const q=new URLSearchParams({skip:"0",limit:"200",active_only:String(options.activeOnly!==false)});return request(`/api/v1/medicine-batches/medicine/${encodeURIComponent(medicineId)}?${q.toString()}`)}
+export async function createMedicineBatch(payload){return request("/api/v1/medicine-batches",{method:"POST",body:JSON.stringify(payload)})}
+export async function updateMedicineBatch(id,payload){return request(`/api/v1/medicine-batches/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
+
+export async function listIPDAssessments(admissionId){const q=new URLSearchParams({admission_id:String(admissionId),skip:"0",limit:"100"});return request(`/api/v1/ipd-assessments?${q.toString()}`)}
+export async function createIPDAssessment(payload){return request("/api/v1/ipd-assessments",{method:"POST",body:JSON.stringify(payload)})}
+export async function createDischarge(payload){return request("/api/v1/discharges",{method:"POST",body:JSON.stringify(payload)})}
+export async function getDischargeByAdmission(admissionId){return request(`/api/v1/discharges/admission/${encodeURIComponent(admissionId)}`)}
+export async function createBed(payload){return request("/api/v1/beds",{method:"POST",body:JSON.stringify(payload)})}
+export async function updateBed(id,payload){return request(`/api/v1/beds/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
+
 
 export async function createDepartment(payload){return request("/api/v1/departments",{method:"POST",body:JSON.stringify(payload)})}
 export async function updateDepartment(id,payload){return request(`/api/v1/departments/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
@@ -98,7 +141,6 @@ export async function updateInventoryItem(id,payload){return request(`/api/v1/in
 export async function listStockTransactions(itemId){return request(`/api/v1/stock-transactions/item/${encodeURIComponent(itemId)}?skip=0&limit=100`)}
 export async function createStockTransaction(payload){return request("/api/v1/stock-transactions",{method:"POST",body:JSON.stringify(payload)})}
 
-export async function listVisits(patientId){return request(`/api/v1/visits?patient_id=${encodeURIComponent(patientId)}&skip=0&limit=100`)}
 export async function createVisit(payload){return request("/api/v1/visits",{method:"POST",body:JSON.stringify(payload)})}
 export async function listOPDTokens(queueDate){return request(`/api/v1/opd-tokens?queue_date=${encodeURIComponent(queueDate)}&skip=0&limit=200`)}
 export async function createOPDToken(payload){return request("/api/v1/opd-tokens",{method:"POST",body:JSON.stringify(payload)})}
