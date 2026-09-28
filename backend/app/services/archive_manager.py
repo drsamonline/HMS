@@ -31,6 +31,8 @@ from app.models.invoice_item import InvoiceItem
 from app.models.investigation import Investigation
 from app.models.investigation_result import InvestigationResult
 from app.models.lab_archive_reference import InvestigationArchiveReference
+from app.models.medical_document import MedicalDocument
+from app.models.mrd_archive_reference import MedicalDocumentArchiveReference
 from app.models.payment import Payment
 from app.models.pharmacy_archive_reference import DispenseArchiveReference
 from app.models.visit import Visit
@@ -187,6 +189,10 @@ class ArchiveManager:
             select(Admission.id).where(Admission.admission_year == target_year)
         )
         admission_count = len(admission_result.scalars().all())
+        document_result = await db.execute(
+            select(MedicalDocument.id).where(MedicalDocument.document_year == target_year)
+        )
+        document_count = len(document_result.scalars().all())
         return {
             "current_year": current_year,
             "target_year": target_year,
@@ -199,6 +205,7 @@ class ArchiveManager:
             "dispense_count": dispense_count,
             "investigation_count": investigation_count,
             "admission_count": admission_count,
+            "document_count": document_count,
         }
 
     async def rollover_case_year(
@@ -290,6 +297,15 @@ class ArchiveManager:
                         select(Admission)
                         .where(Admission.admission_year == year)
                         .order_by(Admission.id)
+                    )
+                ).scalars().all()
+            )
+            documents = list(
+                (
+                    await db.execute(
+                        select(MedicalDocument)
+                        .where(MedicalDocument.document_year == year)
+                        .order_by(MedicalDocument.id)
                     )
                 ).scalars().all()
             )
@@ -403,6 +419,19 @@ class ArchiveManager:
                     )
                 )
 
+            for document in documents:
+                db.add(
+                    MedicalDocumentArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_document_id=document.id,
+                        patient_id=document.patient_id,
+                        visit_id=document.visit_id,
+                        admission_id=document.admission_id,
+                        document_number=document.document_number,
+                        document_year=year,
+                    )
+                )
+
             case_ids = [case.id for case in cases]
             if case_ids:
                 now = datetime.now(timezone.utc)
@@ -486,6 +515,14 @@ class ArchiveManager:
                     delete(Admission).where(Admission.id.in_(admission_ids))
                 )
 
+            document_ids = [document.id for document in documents]
+            if document_ids:
+                await db.execute(
+                    delete(MedicalDocument).where(
+                        MedicalDocument.id.in_(document_ids)
+                    )
+                )
+
             await db.flush()
             await db.commit()
         except Exception:
@@ -515,6 +552,9 @@ class ArchiveManager:
         live_admission_remaining = await db.scalar(
             select(Admission.id).where(Admission.admission_year == year).limit(1)
         )
+        live_document_remaining = await db.scalar(
+            select(MedicalDocument.id).where(MedicalDocument.document_year == year).limit(1)
+        )
         live_healthy = await asyncio.to_thread(_integrity, database_path())
         if (
             live_remaining is not None
@@ -524,6 +564,7 @@ class ArchiveManager:
             or live_dispense_remaining is not None
             or live_investigation_remaining is not None
             or live_admission_remaining is not None
+            or live_document_remaining is not None
             or not live_healthy
         ):
             raise BusinessRuleException(
@@ -541,6 +582,7 @@ class ArchiveManager:
             "dispenses_archived": len(dispenses),
             "investigations_archived": len(investigations),
             "admissions_archived": len(admissions),
+            "documents_archived": len(documents),
             "backup": backup,
             "archive_file": str(target),
             "archive_checksum_sha256": checksum,
@@ -779,6 +821,38 @@ class ArchiveManager:
                     "admission_status, admission_year, storage_tier, is_current_year "
                     "FROM Admission WHERE patient_id = ? AND admission_year = ? "
                     "ORDER BY admission_datetime DESC, id DESC",
+                    (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_documents(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, document_number, patient_id, visit_id, admission_id, "
+                    "document_type, document_title, file_name, document_date, "
+                    "uploaded_by, remarks, document_year, storage_tier, is_current_year "
+                    "FROM MedicalDocument WHERE patient_id = ? AND document_year = ? "
+                    "ORDER BY document_date DESC, id DESC",
                     (patient_id, year),
                 )
                 return [dict(row) for row in cur.fetchall()]

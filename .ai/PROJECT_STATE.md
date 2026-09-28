@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: latest user-supplied full ZIP (`HMS(5).zip`), superseding all older ZIP baselines.
-- Latest completed functional milestone: Batch 74 — Laboratory Annual Lifecycle & Rollover.
-- Current milestone: Batch 74 (next cross-module workflow continuity item).
+- Latest completed functional milestone: Batch 75 — MRD Annual Lifecycle & Rollover.
+- Current milestone: Batch 75 (next cross-module workflow continuity item).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -79,8 +79,13 @@
 - Annual rollover physically archives completed-year investigations together with their results; preview reports `investigation_count` and post-rollover validation confirms no live laboratory rows remain for the year.
 - Archived laboratory orders are readable through `/maintenance/archives/{year}/patients/{patient_id}/investigations` (client wrapper `getHistoricalArchiveInvestigations`); read schemas expose the lifecycle fields.
 
+## Batch 75 — MRD Annual Lifecycle & Rollover
+- `MedicalDocument` carries lifecycle metadata (`document_year`, `storage_tier`, `is_current_year`) derived at creation via operational-year configuration (migration `0026_mrd_operational_year_lifecycle` backfills existing rows).
+- Permanent `MedicalDocumentArchiveReference` records preserve document identity and visit/admission lineage after physical live-database removal.
+- Annual rollover physically archives completed-year medical documents; preview reports `document_count`, post-rollover validation confirms no live MRD rows remain for the year, and results include `documents_archived`.
+- Archived MRD documents are readable through `/maintenance/archives/{year}/patients/{patient_id}/documents` (client wrapper `getHistoricalArchiveDocuments`); `MedicalDocumentRead` exposes the lifecycle fields.
+
 ## Remaining before QA
-- Extend annual lifecycle metadata and physical rollover to the remaining lifecycle-managed business data (MRD document handling) as its archival design is completed.
 - Complete remaining cross-module workflow continuity.
 - Complete server/client packaging and deployment workflow.
 - Complete final reporting/printing integration.

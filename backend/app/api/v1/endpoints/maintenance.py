@@ -147,6 +147,19 @@ async def historical_admissions(year:int, patient_id:int, db:DatabaseSession, us
             raise
     return await archive_manager.read_admissions(db,year,patient_id)
 
+@router.get("/archives/{year}/patients/{patient_id}/documents")
+async def historical_documents(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
+    uid = actor_id(user)
+    try:
+        await _require_admin(db, uid)
+    except Exception:
+        from app.services.auth import auth_service
+        _, roles, permissions = await auth_service.get_current_user_profile(db, user_id=uid)
+        normalized = {str(p).strip().lower() for p in permissions}
+        if not (normalized & {"reports.read", "report.read", "patients.read", "patient.read"}):
+            raise
+    return await archive_manager.read_documents(db,year,patient_id)
+
 @router.get("/archives/{year}/download",response_class=FileResponse)
 async def download_archive(year:int,db:DatabaseSession,user:CurrentUserDependency)->FileResponse:
     await _require_admin(db,actor_id(user)); rows=await archive_manager.list_archives(db); row=next((x for x in rows if x.archive_year==year),None)

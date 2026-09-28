@@ -146,6 +146,18 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_table("InvestigationArchiveReference")
+    op.drop_index(
+        "ix_investigation_result_is_current_year", table_name="InvestigationResult"
+    )
+    op.drop_index(
+        "ix_investigation_result_storage_tier", table_name="InvestigationResult"
+    )
+    op.drop_index(
+        "ix_investigation_result_result_year", table_name="InvestigationResult"
+    )
+    op.drop_column("InvestigationResult", "is_current_year")
+    op.drop_column("InvestigationResult", "storage_tier")
+    op.drop_column("InvestigationResult", "result_year")
     op.drop_index("ix_investigation_is_current_year", table_name="Investigation")
     op.drop_index("ix_investigation_storage_tier", table_name="Investigation")
     op.drop_index("ix_investigation_investigation_year", table_name="Investigation")
