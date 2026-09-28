@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -24,12 +24,12 @@ class DispenseRecord(Base):
         autoincrement=True,
     )
 
-    prescription_item_id: Mapped[int] = mapped_column(
+    prescription_item_id: Mapped[int | None] = mapped_column(
         ForeignKey(
             "PrescriptionItem.id",
             name="fk_dispense_prescription_item",
         ),
-        nullable=False,
+        nullable=True,
         index=True,
     )
 
@@ -59,6 +59,27 @@ class DispenseRecord(Base):
     dispense_date: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
+    )
+
+    dispense_year: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        index=True,
+    )
+
+    storage_tier: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="live",
+        index=True,
+    )
+
+    is_current_year: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        index=True,
     )
 
     dispensed_by: Mapped[int] = mapped_column(
