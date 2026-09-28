@@ -207,6 +207,9 @@ export async function createYearArchive(year){return apiPost(`/maintenance/archi
 export async function getArchiveRolloverPreview(){return request("/maintenance/archives/rollover/preview");}
 export async function rolloverArchiveYear(year){return apiPost(`/maintenance/archives/rollover/${encodeURIComponent(year)}`,{});}
 export async function getHistoricalArchiveVisits(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/visits`);}
+export async function getHistoricalArchiveInvoices(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/invoices`);}
+export async function getHistoricalArchivePayments(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/payments`);}
+export async function getHistoricalArchiveDispenses(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/dispenses`);}
 
 export async function getOperationalYear(){return apiGet('/operational-year');}
 export async function apiPut(path, body, options = {}) { return request(path, { method: "PUT", body: JSON.stringify(body), ...options }); }

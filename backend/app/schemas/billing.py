@@ -76,6 +76,9 @@ class InvoiceRead(BaseSchema):
     invoice_date: datetime
     total_amount: Decimal
     payment_status: str
+    invoice_year: int
+    storage_tier: str
+    is_current_year: bool
     generated_by: int
     remarks: str | None
     created_at: datetime
@@ -107,6 +110,9 @@ class PaymentRead(BaseSchema):
     receipt_number: str
     payment_datetime: datetime
     payment_method: str
+    payment_year: int
+    storage_tier: str
+    is_current_year: bool
     amount_paid: Decimal
     received_by: int
     transaction_reference: str | None

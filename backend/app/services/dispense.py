@@ -11,6 +11,7 @@ from app.models.prescription_item import PrescriptionItem
 from app.models.stock_batch import StockBatch
 from app.repositories.dispense import DispenseRepository, dispense_repository
 from app.schemas.dispense import DispenseCreate
+from app.services.operational_year import operational_year_service
 from app.services.stock_card import stock_card_service
 
 
@@ -78,6 +79,18 @@ class DispenseService:
                 raise BusinessRuleException("Insufficient stock in the selected batch.")
 
             await db.refresh(stock_batch)
+
+            # Derive the annual lifecycle fields from the dispense date so every
+            # dispense record carries its operational-year identity at creation.
+            dispense_local_date = (
+                now.astimezone(timezone.utc).date()
+                if now.tzinfo is not None
+                else now.date()
+            )
+            op_cfg = await operational_year_service.get_config(db)
+            dispense_year = operational_year_service.current_year(dispense_local_date, op_cfg)
+            current_year = operational_year_service.current_year(date.today(), op_cfg)
+
             record = DispenseRecord(
                 prescription_item_id=data.prescription_item_id,
                 medicine_id=data.medicine_id,
@@ -85,6 +98,9 @@ class DispenseService:
                 quantity_dispensed=requested,
                 dispense_date=now,
                 dispensed_by=performed_by,
+                dispense_year=dispense_year,
+                storage_tier="live",
+                is_current_year=dispense_year == current_year,
                 notes=data.notes,
                 created_at=now,
                 updated_at=now,

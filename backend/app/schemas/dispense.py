@@ -23,12 +23,15 @@ class DispenseCreate(BaseSchema):
 
 class DispenseRead(BaseSchema):
     id: int
-    prescription_item_id: int
+    prescription_item_id: int | None
     medicine_id: int
     stock_batch_id: int
     quantity_dispensed: Decimal
     dispense_date: datetime
     dispensed_by: int
+    dispense_year: int | None = None
+    storage_tier: str | None = None
+    is_current_year: bool | None = None
     notes: str | None
     created_at: datetime
     updated_at: datetime

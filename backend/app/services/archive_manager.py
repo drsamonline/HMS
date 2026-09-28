@@ -22,10 +22,12 @@ from app.models.billing_archive_reference import (
 from app.models.case_archive_reference import CaseArchiveReference
 from app.models.case_record import CaseRecord
 from app.models.diagnosis import Diagnosis
+from app.models.dispense_record import DispenseRecord
 from app.models.followup import FollowUp
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.models.payment import Payment
+from app.models.pharmacy_archive_reference import DispenseArchiveReference
 from app.models.visit import Visit
 from app.models.visit_archive_reference import VisitArchiveReference
 from app.services.operational_year import operational_year_service
@@ -168,6 +170,10 @@ class ArchiveManager:
             select(Payment.id).where(Payment.payment_year == target_year)
         )
         payment_count = len(payment_result.scalars().all())
+        dispense_result = await db.execute(
+            select(DispenseRecord.id).where(DispenseRecord.dispense_year == target_year)
+        )
+        dispense_count = len(dispense_result.scalars().all())
         return {
             "current_year": current_year,
             "target_year": target_year,
@@ -177,6 +183,7 @@ class ArchiveManager:
             "visit_count": visit_count,
             "invoice_count": invoice_count,
             "payment_count": payment_count,
+            "dispense_count": dispense_count,
         }
 
     async def rollover_case_year(
@@ -241,6 +248,15 @@ class ArchiveManager:
                         select(Payment)
                         .where(Payment.payment_year == year)
                         .order_by(Payment.id)
+                    )
+                ).scalars().all()
+            )
+            dispenses = list(
+                (
+                    await db.execute(
+                        select(DispenseRecord)
+                        .where(DispenseRecord.dispense_year == year)
+                        .order_by(DispenseRecord.id)
                     )
                 ).scalars().all()
             )
@@ -310,6 +326,19 @@ class ArchiveManager:
                     )
                 )
 
+            for dispense in dispenses:
+                db.add(
+                    DispenseArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_dispense_id=dispense.id,
+                        prescription_item_id=dispense.prescription_item_id,
+                        dispense_year=year,
+                        medicine_id=dispense.medicine_id,
+                        quantity_dispensed=dispense.quantity_dispensed,
+                        dispense_date=dispense.dispense_date,
+                    )
+                )
+
             case_ids = [case.id for case in cases]
             if case_ids:
                 now = datetime.now(timezone.utc)
@@ -361,6 +390,12 @@ class ArchiveManager:
                     delete(Payment).where(Payment.id.in_(payment_ids))
                 )
 
+            dispense_ids = [dispense.id for dispense in dispenses]
+            if dispense_ids:
+                await db.execute(
+                    delete(DispenseRecord).where(DispenseRecord.id.in_(dispense_ids))
+                )
+
             await db.flush()
             await db.commit()
         except Exception:
@@ -381,12 +416,16 @@ class ArchiveManager:
         live_payment_remaining = await db.scalar(
             select(Payment.id).where(Payment.payment_year == year).limit(1)
         )
+        live_dispense_remaining = await db.scalar(
+            select(DispenseRecord.id).where(DispenseRecord.dispense_year == year).limit(1)
+        )
         live_healthy = await asyncio.to_thread(_integrity, database_path())
         if (
             live_remaining is not None
             or live_visit_remaining is not None
             or live_invoice_remaining is not None
             or live_payment_remaining is not None
+            or live_dispense_remaining is not None
             or not live_healthy
         ):
             raise BusinessRuleException(
@@ -401,6 +440,7 @@ class ArchiveManager:
             "visits_archived": len(visits),
             "invoices_archived": len(invoices),
             "payments_archived": len(payments),
+            "dispenses_archived": len(dispenses),
             "backup": backup,
             "archive_file": str(target),
             "archive_checksum_sha256": checksum,
@@ -469,6 +509,111 @@ class ArchiveManager:
                     "consultation_status, case_type, visit_year, storage_tier, "
                     "is_current_year FROM Visit WHERE patient_id = ? AND visit_year = ? "
                     "ORDER BY visit_datetime DESC, id DESC",
+                    (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_invoices(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, invoice_number, patient_id, visit_id, admission_id, "
+                    "invoice_date, total_amount, payment_status, invoice_year, "
+                    "storage_tier, is_current_year, remarks FROM Invoice "
+                    "WHERE patient_id = ? AND invoice_year = ? "
+                    "ORDER BY invoice_date DESC, id DESC",
+                    (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_payments(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                # Payments are archived by their own payment_year; join through
+                # the archived Invoice table to scope results to the patient.
+                cur = con.execute(
+                    "SELECT p.id, p.receipt_number, p.invoice_id, p.payment_datetime, "
+                    "p.payment_method, p.amount_paid, p.transaction_reference, "
+                    "p.payment_year, p.storage_tier, p.is_current_year, p.remarks "
+                    "FROM Payment p JOIN Invoice i ON p.invoice_id = i.id "
+                    "WHERE i.patient_id = ? AND p.payment_year = ? "
+                    "ORDER BY p.payment_datetime DESC, p.id DESC",
+                    (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_dispenses(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                # Dispense rows are archived by their own dispense_year; join
+                # through the prescription lineage to scope results to the patient.
+                cur = con.execute(
+                    "SELECT d.id, d.prescription_item_id, d.medicine_id, d.stock_batch_id, "
+                    "d.quantity_dispensed, d.dispense_date, d.dispensed_by, "
+                    "d.dispense_year, d.storage_tier, d.is_current_year, d.notes "
+                    "FROM DispenseRecord d "
+                    "JOIN PrescriptionItem pi ON d.prescription_item_id = pi.id "
+                    "JOIN Prescription pr ON pi.prescription_id = pr.id "
+                    "JOIN Visit v ON pr.visit_id = v.id "
+                    "WHERE v.patient_id = ? AND d.dispense_year = ? "
+                    "ORDER BY d.dispense_date DESC, d.id DESC",
                     (patient_id, year),
                 )
                 return [dict(row) for row in cur.fetchall()]

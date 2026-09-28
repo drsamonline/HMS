@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: latest user-supplied full ZIP (`HMS(5).zip`), superseding all older ZIP baselines.
-- Latest completed functional milestone: Batch 70 — Encounter Annual Lifecycle & Rollover.
-- Current milestone: Batch 71 (next cross-module workflow continuity item).
+- Latest completed functional milestone: Batch 72 — Pharmacy Annual Lifecycle & Rollover.
+- Current milestone: Batch 72 (next cross-module workflow continuity item).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -53,8 +53,22 @@
 - Archived visits are readable on demand through `/maintenance/archives/{year}/patients/{patient_id}/visits` (client wrapper `getHistoricalArchiveVisits`); historical reads come from the verified annual archive snapshot.
 - Rollover preview reports `visit_count` for the target year.
 
+## Batch 71 — Billing Annual Lifecycle & Rollover
+- `Invoice` and `Payment` now carry lifecycle metadata (`invoice_year`/`payment_year`, `storage_tier`, `is_current_year`) derived from the billing date via the operational-year configuration at creation time (migration `0022_billing_operational_year_lifecycle` backfills existing rows; `Payment.invoice_id` made nullable).
+- Permanent `InvoiceArchiveReference` and `PaymentArchiveReference` records preserve billing identity and archive linkage after physical live-database removal.
+- Annual rollover physically removes completed-year invoices and payments alongside cases and visits: child payments are detached from archived invoices first, references are created before deletion, and post-rollover validation confirms no live billing rows for the rolled-over year remain.
+- Archived billing is readable on demand through `/maintenance/archives/{year}/patients/{patient_id}/invoices|payments` (client wrappers `getHistoricalArchiveInvoices` / `getHistoricalArchivePayments`); historical reads come from the verified annual archive snapshot.
+- Rollover preview reports `invoice_count` and `payment_count` for the target year; `InvoiceRead`/`PaymentRead` schemas expose the lifecycle fields.
+
+## Batch 72 — Pharmacy Annual Lifecycle & Rollover
+- `DispenseRecord` now carries lifecycle metadata (`dispense_year`, `storage_tier`, `is_current_year`) derived from the dispense date via the operational-year configuration at creation time (migration `0023_pharmacy_operational_year_lifecycle` backfills existing rows; `prescription_item_id` made nullable).
+- Permanent `DispenseArchiveReference` records preserve dispense identity and archive linkage after physical live-database removal.
+- Annual rollover physically removes completed-year dispense records alongside cases, visits and billing: references are created before deletion, and post-rollover validation confirms no live pharmacy rows for the rolled-over year remain.
+- Archived dispensing is readable on demand through `/maintenance/archives/{year}/patients/{patient_id}/dispenses` (client wrapper `getHistoricalArchiveDispenses`), joined through the PrescriptionItem→Prescription→Visit lineage inside the verified annual archive snapshot.
+- Rollover preview reports `dispense_count` for the target year; `DispenseRead` schema exposes the lifecycle fields.
+
 ## Remaining before QA
-- Extend physical rollover to the remaining lifecycle-managed business data (billing, pharmacy, IPD, laboratory, MRD) as its archival metadata is completed.
+- Extend physical rollover to the remaining lifecycle-managed business data (IPD, laboratory, MRD) as its archival metadata is completed.
 - Complete remaining cross-module workflow continuity.
 - Complete server/client packaging and deployment workflow.
 - Complete final reporting/printing integration.
