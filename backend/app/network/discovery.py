@@ -72,7 +72,7 @@ class LanDiscoveryResponder:
             {
                 "protocol": "hhms-lan-v1",
                 "name": settings.DISCOVERY_NAME,
-                "server_id": _server_id(),
+                "server_id": server_id(),
                 "app_name": settings.APP_NAME,
                 "version": settings.APP_VERSION,
                 "http_port": int(settings.SERVER_PORT),

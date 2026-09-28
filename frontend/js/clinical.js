@@ -139,6 +139,7 @@ function renderCase(host){
     </table>
     <button type="button" id="add-modality" class="secondary">Add Modality</button>
   </div>`;
+  wireModalityEditor(host);
 }
 function renderModalityRows(modalities){
   const entries=Object.entries(modalities||{});

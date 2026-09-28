@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
+    BusinessRuleException,
     DatabaseException,
     DuplicateResourceException,
     ResourceNotFoundException,
@@ -119,6 +120,26 @@ class StockBatchService:
             raise DatabaseException(
                 "Unable to create stock batch."
             ) from exc
+
+    @staticmethod
+    def expiry_status(
+        batch,
+        *,
+        as_of,
+        warning_days: int = 90,
+    ) -> str:
+        """Classify a stock batch's lifecycle status.
+
+        Precedence: inactive batches are EXHAUSTED; exhausted quantity takes
+        precedence over expiry only when the batch is not already expired.
+        """
+        if batch.expiry_date and batch.expiry_date < as_of:
+            return "EXPIRED"
+        if not batch.is_active or batch.quantity_remaining <= 0:
+            return "EXHAUSTED"
+        if batch.expiry_date and (batch.expiry_date - as_of).days <= warning_days:
+            return "EXPIRING_SOON"
+        return "AVAILABLE"
 
     async def status_by_medicine(
         self,
