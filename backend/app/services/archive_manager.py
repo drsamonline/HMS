@@ -1083,6 +1083,129 @@ class ArchiveManager:
 
         return await asyncio.to_thread(query)
 
+    async def read_purchase_orders(
+        self,
+        db: AsyncSession,
+        year: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, order_no, supplier_id, order_date, expected_delivery_date, "
+                    "status, total_amount, notes, created_by, order_year, storage_tier, "
+                    "is_current_year FROM PurchaseOrder WHERE order_year = ? "
+                    "ORDER BY order_date DESC, id DESC",
+                    (year,),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_goods_receipts(
+        self,
+        db: AsyncSession,
+        year: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, receipt_no, purchase_order_id, supplier_id, receipt_date, "
+                    "total_quantity, accepted_quantity, rejected_quantity, remarks, "
+                    "received_by, receipt_year, storage_tier, is_current_year "
+                    "FROM GoodsReceipt WHERE receipt_year = ? "
+                    "ORDER BY receipt_date DESC, id DESC",
+                    (year,),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_stock_transactions(
+        self,
+        db: AsyncSession,
+        year: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, inventory_item_id, transaction_type, quantity, "
+                    "reference_number, transaction_datetime, performed_by, remarks, "
+                    "transaction_year, storage_tier, is_current_year FROM StockTransaction "
+                    "WHERE transaction_year = ? ORDER BY transaction_datetime DESC, id DESC",
+                    (year,),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_stock_cards(
+        self,
+        db: AsyncSession,
+        year: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, medicine_id, stock_batch_id, transaction_type, "
+                    "quantity_in, quantity_out, balance_quantity, reference_type, "
+                    "reference_id, transaction_datetime, created_by, remarks, "
+                    "transaction_year, storage_tier, is_current_year "
+                    "FROM StockCard WHERE transaction_year = ? "
+                    "ORDER BY transaction_datetime DESC, id DESC",
+                    (year,),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
     def archive_path(self, manifest: ArchiveManifest) -> Path:
         path = Path(manifest.file_path)
         if not path.exists():

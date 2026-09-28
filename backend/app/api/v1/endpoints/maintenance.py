@@ -160,6 +160,26 @@ async def historical_documents(year:int, patient_id:int, db:DatabaseSession, use
             raise
     return await archive_manager.read_documents(db,year,patient_id)
 
+@router.get("/archives/{year}/purchase-orders")
+async def historical_purchase_orders(year:int, db:DatabaseSession, user:CurrentUserDependency):
+    await _require_admin(db,actor_id(user))
+    return await archive_manager.read_purchase_orders(db,year)
+
+@router.get("/archives/{year}/goods-receipts")
+async def historical_goods_receipts(year:int, db:DatabaseSession, user:CurrentUserDependency):
+    await _require_admin(db,actor_id(user))
+    return await archive_manager.read_goods_receipts(db,year)
+
+@router.get("/archives/{year}/stock-transactions")
+async def historical_stock_transactions(year:int, db:DatabaseSession, user:CurrentUserDependency):
+    await _require_admin(db,actor_id(user))
+    return await archive_manager.read_stock_transactions(db,year)
+
+@router.get("/archives/{year}/stock-cards")
+async def historical_stock_cards(year:int, db:DatabaseSession, user:CurrentUserDependency):
+    await _require_admin(db,actor_id(user))
+    return await archive_manager.read_stock_cards(db,year)
+
 @router.get("/archives/{year}/download",response_class=FileResponse)
 async def download_archive(year:int,db:DatabaseSession,user:CurrentUserDependency)->FileResponse:
     await _require_admin(db,actor_id(user)); rows=await archive_manager.list_archives(db); row=next((x for x in rows if x.archive_year==year),None)
