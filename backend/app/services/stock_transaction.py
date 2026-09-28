@@ -1,6 +1,6 @@
 """HHMS Stock Transaction Service."""
 from __future__ import annotations
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.core.exceptions import BusinessRuleException, DatabaseException, ResourceNotFoundException
@@ -8,6 +8,7 @@ from app.models.inventory_item import InventoryItem
 from app.models.stock_transaction import StockTransaction
 from app.repositories.stock_transaction import StockTransactionRepository, stock_transaction_repository
 from app.schemas.stock_transaction import StockTransactionCreate
+from app.services.operational_year import operational_year_service
 class StockTransactionService:
     """Immutable stock ledger with transactional balance maintenance."""
     def __init__(self, repository: StockTransactionRepository | None = None) -> None:
@@ -37,7 +38,13 @@ class StockTransactionService:
         new_balance=Decimal(item.quantity_on_hand or 0)+delta
         if new_balance<0: raise BusinessRuleException("Insufficient stock for this transaction.")
         now=datetime.now(timezone.utc)
-        tx=StockTransaction(inventory_item_id=data.inventory_item_id,transaction_type=data.transaction_type,quantity=qty,reference_number=data.reference_number,transaction_datetime=data.transaction_datetime or now,performed_by=performed_by,remarks=data.remarks,created_at=now,updated_at=now)
+        tx_datetime=data.transaction_datetime or now
+        # Derive annual lifecycle fields from the transaction timestamp (Batch 76).
+        op_cfg=await operational_year_service.get_config(db)
+        tx_local_date=(tx_datetime.astimezone(timezone.utc).date() if tx_datetime.tzinfo is not None else tx_datetime.date())
+        transaction_year=operational_year_service.current_year(tx_local_date,op_cfg)
+        current_year=operational_year_service.current_year(date.today(),op_cfg)
+        tx=StockTransaction(inventory_item_id=data.inventory_item_id,transaction_type=data.transaction_type,quantity=qty,reference_number=data.reference_number,transaction_datetime=tx_datetime,performed_by=performed_by,remarks=data.remarks,transaction_year=transaction_year,storage_tier="live",is_current_year=transaction_year==current_year,created_at=now,updated_at=now)
         item.quantity_on_hand=new_balance
         item.updated_at=now
         try:

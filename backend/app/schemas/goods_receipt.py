@@ -33,5 +33,8 @@ class GoodsReceiptRead(BaseSchema):
     rejected_quantity: Decimal
     remarks: str | None
     received_by: int
+    receipt_year: int
+    storage_tier: str
+    is_current_year: bool
     created_at: datetime
     updated_at: datetime

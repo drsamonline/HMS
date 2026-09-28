@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -10,6 +10,7 @@ from app.models.purchase_order import PurchaseOrder, PurchaseOrderItem
 from app.models.stock_batch import StockBatch
 from app.repositories.goods_receipt import goods_receipt_repository
 from app.schemas.goods_receipt import GoodsReceiptCreate
+from app.services.operational_year import operational_year_service
 from app.services.stock_card import stock_card_service
 
 class GoodsReceiptService:
@@ -34,12 +35,17 @@ class GoodsReceiptService:
         if await goods_receipt_repository.get_by_receipt_no(db, data.receipt_no):
             raise DuplicateResourceException("Goods receipt number already exists.")
         now = datetime.now(timezone.utc)
+        # Derive annual lifecycle fields from the receipt date (Batch 76).
+        op_cfg = await operational_year_service.get_config(db)
+        receipt_year = operational_year_service.current_year(data.receipt_date, op_cfg)
+        current_year = operational_year_service.current_year(date.today(), op_cfg)
         receipt = GoodsReceipt(
             purchase_order_id=order.id, receipt_no=data.receipt_no, receipt_date=data.receipt_date,
             supplier_id=data.supplier_id,
             total_quantity=sum((Decimal(i.quantity_received) for i in data.items), Decimal("0")),
             accepted_quantity=sum((Decimal(i.quantity_received) for i in data.items), Decimal("0")),
             rejected_quantity=Decimal("0"), remarks=data.remarks, received_by=received_by,
+            receipt_year=receipt_year, storage_tier="live", is_current_year=receipt_year == current_year,
             created_at=now, updated_at=now,
         )
         db.add(receipt)
