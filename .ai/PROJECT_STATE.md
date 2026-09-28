@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: latest user-supplied full ZIP (`HMS(5).zip`), superseding all older ZIP baselines.
-- Latest completed functional milestone: Batch 72 — Pharmacy Annual Lifecycle & Rollover.
-- Current milestone: Batch 72 (next cross-module workflow continuity item).
+- Latest completed functional milestone: Batch 74 — Laboratory Annual Lifecycle & Rollover.
+- Current milestone: Batch 74 (next cross-module workflow continuity item).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -67,8 +67,20 @@
 - Archived dispensing is readable on demand through `/maintenance/archives/{year}/patients/{patient_id}/dispenses` (client wrapper `getHistoricalArchiveDispenses`), joined through the PrescriptionItem→Prescription→Visit lineage inside the verified annual archive snapshot.
 - Rollover preview reports `dispense_count` for the target year; `DispenseRead` schema exposes the lifecycle fields.
 
+## Batch 73 — IPD Annual Lifecycle & Rollover
+- `Admission` carries lifecycle metadata (`admission_year`, `storage_tier`, `is_current_year`) derived from the admission datetime via operational-year configuration at creation (migration `0024_ipd_operational_year_lifecycle` backfills existing rows).
+- Permanent `AdmissionArchiveReference` records preserve admission identity and lineage after physical live-database removal.
+- Annual rollover physically archives completed-year admissions: preview reports `admission_count`, references are created before deletion, investigations requested during archived admissions are detached safely, and post-rollover validation confirms no live IPD rows remain for the year.
+- Archived IPD episodes are readable through `/maintenance/archives/{year}/patients/{patient_id}/admissions` (client wrapper `getHistoricalArchiveAdmissions`); `AdmissionRead` exposes the lifecycle fields.
+
+## Batch 74 — Laboratory Annual Lifecycle & Rollover
+- `Investigation` and `InvestigationResult` carry lifecycle metadata (`investigation_year`/`result_year`, `storage_tier`, `is_current_year`) derived at creation via operational-year configuration (migration `0025_lab_operational_year_lifecycle` backfills existing rows).
+- Permanent `InvestigationArchiveReference` records preserve investigation identity and visit/admission lineage after physical live-database removal.
+- Annual rollover physically archives completed-year investigations together with their results; preview reports `investigation_count` and post-rollover validation confirms no live laboratory rows remain for the year.
+- Archived laboratory orders are readable through `/maintenance/archives/{year}/patients/{patient_id}/investigations` (client wrapper `getHistoricalArchiveInvestigations`); read schemas expose the lifecycle fields.
+
 ## Remaining before QA
-- Extend physical rollover to the remaining lifecycle-managed business data (IPD, laboratory, MRD) as its archival metadata is completed.
+- Extend annual lifecycle metadata and physical rollover to the remaining lifecycle-managed business data (MRD document handling) as its archival design is completed.
 - Complete remaining cross-module workflow continuity.
 - Complete server/client packaging and deployment workflow.
 - Complete final reporting/printing integration.

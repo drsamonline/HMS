@@ -62,6 +62,9 @@ class AdmissionRead(BaseSchema):
     admission_reason: str | None
     admission_status: str
     remarks: str | None
+    admission_year: int | None = None
+    storage_tier: str | None = None
+    is_current_year: bool | None = None
     created_at: datetime
     updated_at: datetime
 

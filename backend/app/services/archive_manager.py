@@ -15,6 +15,8 @@ from app.config.runtime_paths import archive_directory, cold_archive_directory, 
 from app.config.settings import get_settings
 from app.core.exceptions import BusinessRuleException, ResourceNotFoundException
 from app.models.archive_manifest import ArchiveManifest
+from app.models.admission import Admission
+from app.models.admission_archive_reference import AdmissionArchiveReference
 from app.models.billing_archive_reference import (
     InvoiceArchiveReference,
     PaymentArchiveReference,
@@ -181,6 +183,10 @@ class ArchiveManager:
             select(Investigation.id).where(Investigation.investigation_year == target_year)
         )
         investigation_count = len(investigation_result.scalars().all())
+        admission_result = await db.execute(
+            select(Admission.id).where(Admission.admission_year == target_year)
+        )
+        admission_count = len(admission_result.scalars().all())
         return {
             "current_year": current_year,
             "target_year": target_year,
@@ -192,6 +198,7 @@ class ArchiveManager:
             "payment_count": payment_count,
             "dispense_count": dispense_count,
             "investigation_count": investigation_count,
+            "admission_count": admission_count,
         }
 
     async def rollover_case_year(
@@ -274,6 +281,15 @@ class ArchiveManager:
                         select(Investigation)
                         .where(Investigation.investigation_year == year)
                         .order_by(Investigation.id)
+                    )
+                ).scalars().all()
+            )
+            admissions = list(
+                (
+                    await db.execute(
+                        select(Admission)
+                        .where(Admission.admission_year == year)
+                        .order_by(Admission.id)
                     )
                 ).scalars().all()
             )
@@ -369,6 +385,24 @@ class ArchiveManager:
                     )
                 )
 
+            for admission in admissions:
+                db.add(
+                    AdmissionArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_admission_id=admission.id,
+                        patient_id=admission.patient_id,
+                        admission_year=year,
+                        admission_number=admission.admission_number,
+                        admission_datetime=admission.admission_datetime,
+                        bed_id=admission.bed_id,
+                        department_id=admission.department_id,
+                        service_id=admission.service_id,
+                        case_type=admission.case_type,
+                        admitted_by=admission.admitted_by,
+                        admission_status=admission.admission_status,
+                    )
+                )
+
             case_ids = [case.id for case in cases]
             if case_ids:
                 now = datetime.now(timezone.utc)
@@ -439,6 +473,19 @@ class ArchiveManager:
                     delete(Investigation).where(Investigation.id.in_(investigation_ids))
                 )
 
+            admission_ids = [admission.id for admission in admissions]
+            if admission_ids:
+                # Investigations requested during an archived admission keep
+                # their patient linkage; detach the episode reference only.
+                await db.execute(
+                    update(Investigation)
+                    .where(Investigation.admission_id.in_(admission_ids))
+                    .values(admission_id=None)
+                )
+                await db.execute(
+                    delete(Admission).where(Admission.id.in_(admission_ids))
+                )
+
             await db.flush()
             await db.commit()
         except Exception:
@@ -465,6 +512,9 @@ class ArchiveManager:
         live_investigation_remaining = await db.scalar(
             select(Investigation.id).where(Investigation.investigation_year == year).limit(1)
         )
+        live_admission_remaining = await db.scalar(
+            select(Admission.id).where(Admission.admission_year == year).limit(1)
+        )
         live_healthy = await asyncio.to_thread(_integrity, database_path())
         if (
             live_remaining is not None
@@ -473,6 +523,7 @@ class ArchiveManager:
             or live_payment_remaining is not None
             or live_dispense_remaining is not None
             or live_investigation_remaining is not None
+            or live_admission_remaining is not None
             or not live_healthy
         ):
             raise BusinessRuleException(
@@ -489,6 +540,7 @@ class ArchiveManager:
             "payments_archived": len(payments),
             "dispenses_archived": len(dispenses),
             "investigations_archived": len(investigations),
+            "admissions_archived": len(admissions),
             "backup": backup,
             "archive_file": str(target),
             "archive_checksum_sha256": checksum,
@@ -695,6 +747,38 @@ class ArchiveManager:
                     "FROM Investigation i "
                     "WHERE i.patient_id = ? AND i.investigation_year = ? "
                     "ORDER BY i.requested_datetime DESC, i.id DESC",
+                    (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_admissions(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, admission_number, patient_id, admission_datetime, "
+                    "bed_id, admitted_by, department_id, service_id, case_type, "
+                    "admission_status, admission_year, storage_tier, is_current_year "
+                    "FROM Admission WHERE patient_id = ? AND admission_year = ? "
+                    "ORDER BY admission_datetime DESC, id DESC",
                     (patient_id, year),
                 )
                 return [dict(row) for row in cur.fetchall()]
