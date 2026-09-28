@@ -12,9 +12,9 @@ from app.core.enums import DepartmentType
 from app.schemas.base import BaseSchema
 
 
-class DepartmentCreate(BaseSchema):
+class DepartmentBase(BaseSchema):
     """
-    Schema used to create a department.
+    Shared attributes for department request and response DTOs.
     """
 
     code: str
@@ -24,6 +24,12 @@ class DepartmentCreate(BaseSchema):
     description: str | None = None
 
     department_type: DepartmentType
+
+
+class DepartmentCreate(DepartmentBase):
+    """
+    Schema used to create a department.
+    """
 
 
 class DepartmentUpdate(BaseSchema):
@@ -42,25 +48,18 @@ class DepartmentUpdate(BaseSchema):
     is_active: bool | None = None
 
 
-class DepartmentRead(BaseSchema):
+class DepartmentRead(DepartmentBase):
     """
     Schema returned by the API.
     """
 
     id: UUID
 
-    code: str
-
-    name: str
-
-    description: str | None
-
-    department_type: DepartmentType
-
     is_active: bool
 
 
 __all__ = [
+    "DepartmentBase",
     "DepartmentCreate",
     "DepartmentUpdate",
     "DepartmentRead",
