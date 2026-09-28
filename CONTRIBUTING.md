@@ -1,54 +1,83 @@
-# CONTRIBUTING.md
+# Contributing to HHMS
 
-## How to Contribute
+Thank you for considering contributing to HHMS! This document explains how to
+contribute to the project. All contributions — code, documentation, or review —
+must follow the rules below.
 
-Thank you for considering contributing to HHMS! This document provides guidelines for contributing to the project.
+## Quick Start
 
-## Development Guidelines
+1. Read [.ai/PROJECT_CONSTITUTION.md](.ai/PROJECT_CONSTITUTION.md) — the 12 locked project principles.
+2. Review [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md) for current objectives and batch status.
+3. Check [ROADMAP.md](ROADMAP.md) for planned features and milestone position.
+4. Browse the documentation catalogue in [docs/INDEX.md](docs/INDEX.md).
+5. Ensure your contribution aligns with the project principles (see below).
 
-### Before You Start
+## Development Workflow
 
-1. Read the PROJECT_CONSTITUTION.md in the `.ai/` directory
-2. Review PROJECT_STATE.md for current objectives
-3. Check the ROADMAP.md for planned features
-4. Ensure your contribution aligns with project principles
+HHMS development follows a strict sequential workflow — no step may be skipped:
 
-### Code Contributions
+```text
+Specification → Review → Implementation → Code Review → Testing → Git Commit → Next Milestone
+```
 
-1. **Follow Coding Standards**: Adhere to CODING_RULES.md
-2. **No Duplicate Code**: Reuse existing components when possible
-3. **Clear Naming**: Use descriptive names for variables, functions, and classes
-4. **Modular Design**: Keep components small and focused
-5. **Documentation**: Update relevant documentation with your changes
+Work is combined into the **largest safe coherent batch**, audited against the
+intended change set, and committed only after verification is green. The full
+locked workflow is defined in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md).
 
-### Documentation Contributions
+## Code Contributions
 
-1. Keep documentation clear and concise
-2. Update CHANGELOG.md with significant changes
-3. Ensure examples are accurate and tested
+- **Follow coding standards** — see [.ai/CODING_RULES.md](.ai/CODING_RULES.md) and [docs/NAMING_CONVENTIONS.md](docs/NAMING_CONVENTIONS.md).
+- **No duplicate code** — reuse existing components; never create duplicate models, services, endpoints, or frontend modules.
+- **Clear naming** — descriptive names for variables, functions, and classes.
+- **Modular design** — keep components small and focused.
+- **Documentation** — update relevant documentation with every change (docs are kept in sync with code).
+- **Implementation rules** — respect [docs/IMPLEMENTATION_RULES.md](docs/IMPLEMENTATION_RULES.md) and [docs/VALIDATION_RULES.md](docs/VALIDATION_RULES.md).
 
-### Commit Messages
+## Documentation Contributions
 
-- Use clear, descriptive commit messages
-- Reference issues or milestones when applicable
-- Follow conventional commit format when possible
+- Keep documentation clear, concise, and unambiguous.
+- Update [CHANGELOG.md](CHANGELOG.md) with significant changes.
+- Ensure examples are accurate and tested.
+- Add new documents to the catalogue in [docs/INDEX.md](docs/INDEX.md).
 
-### Pull Request Process
+## Commit Messages
 
-1. Ensure all tests pass
-2. Update documentation as needed
-3. Describe your changes clearly
-4. Link related issues
+- Use the imperative mood ("Add", not "Added").
+- First line: short summary (max 50 characters); body wrapped at 72 characters.
+- Follow the conventional format defined in [docs/NAMING_CONVENTIONS.md](docs/NAMING_CONVENTIONS.md#10-git-commit-message-format):
+
+  ```text
+  feat: add patient registration form
+
+  Implemented the patient registration UI with form validation.
+
+  References: #12, D-001
+  ```
+
+- Types: `feat` · `fix` · `docs` · `style` · `refactor` · `test` · `chore`.
+
+## Pull Request Process
+
+1. Ensure all tests pass (see [docs/TESTING_STRATEGY.md](docs/TESTING_STRATEGY.md)).
+2. Update documentation as needed.
+3. Describe your changes clearly and link related issues.
+4. Verify compliance using [.ai/REVIEW_CHECKLIST.md](.ai/REVIEW_CHECKLIST.md).
 
 ## Project Principles
 
-- **Simplicity First**: Prefer simple solutions over complex ones
-- **No Scope Creep**: Stay within defined requirements
-- **One Feature Per Milestone**: Focus on completing one thing at a time
-- **Offline First**: Design for offline operation
-- **Modular Architecture**: Build reusable, independent components
-- **Documentation Updated With Every Change**: Keep docs in sync with code
+| Principle | Meaning |
+|-----------|---------|
+| **Simplicity First** | Prefer simple solutions over complex ones. |
+| **No Scope Creep** | Stay within the frozen v1.0 requirements. |
+| **One Feature Per Milestone** | Focus on completing one thing at a time. |
+| **Offline First** | Design for LAN/offline operation; no internet dependency. |
+| **Modular Architecture** | Build reusable, independent components. |
+| **Docs With Every Change** | Keep documentation in sync with code. |
+
+## Reporting Security Issues
+
+Do **not** open a public issue for vulnerabilities. Follow [SECURITY.md](SECURITY.md).
 
 ## Questions?
 
-If you have questions about contributing, please open an issue for discussion.
+Open an issue for discussion — contributions large and small are welcome.

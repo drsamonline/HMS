@@ -70,6 +70,9 @@ class VisitRead(VisitBase):
 
     id: int
     visit_number: str
+    visit_year: int = 0
+    storage_tier: str = "live"
+    is_current_year: bool = True
     created_at: datetime
     updated_at: datetime
 
