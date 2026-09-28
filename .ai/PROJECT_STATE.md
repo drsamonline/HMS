@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: latest user-supplied full ZIP (`HMS(5).zip`), superseding all older ZIP baselines.
-- Latest completed functional milestone: Batch 69 — Annual Case Rollover.
-- Current milestone: Batch 69 — Annual Case Rollover.
+- Latest completed functional milestone: Batch 70 — Encounter Annual Lifecycle & Rollover.
+- Current milestone: Batch 71 (next cross-module workflow continuity item).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -46,8 +46,15 @@
 - The verified annual archive remains a read-only-by-convention SQLite snapshot and is checksum/integrity validated.
 - Other encounter, billing, pharmacy and administrative rows remain live until their own lifecycle metadata and rollover rules are implemented.
 
+## Batch 70 — Encounter Annual Lifecycle & Rollover
+- `Visit` now carries lifecycle metadata (`visit_year`, `storage_tier`, `is_current_year`) derived from the encounter date via the operational-year configuration at creation time (migration `0021_visit_operational_year_lifecycle` backfills existing rows).
+- Permanent `VisitArchiveReference` records preserve visit identity and archive linkage after physical live-database removal.
+- Annual rollover physically removes completed-year `Visit` rows alongside cases: `CaseRecord.visit_id` links are detached first, references are created before deletion, and post-rollover validation confirms no live rows for the rolled-over year remain.
+- Archived visits are readable on demand through `/maintenance/archives/{year}/patients/{patient_id}/visits` (client wrapper `getHistoricalArchiveVisits`); historical reads come from the verified annual archive snapshot.
+- Rollover preview reports `visit_count` for the target year.
+
 ## Remaining before QA
-- Extend physical rollover to the remaining lifecycle-managed encounter/business data as its archival metadata is completed.
+- Extend physical rollover to the remaining lifecycle-managed business data (billing, pharmacy, IPD, laboratory, MRD) as its archival metadata is completed.
 - Complete remaining cross-module workflow continuity.
 - Complete server/client packaging and deployment workflow.
 - Complete final reporting/printing integration.

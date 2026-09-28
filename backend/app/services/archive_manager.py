@@ -15,10 +15,17 @@ from app.config.runtime_paths import archive_directory, cold_archive_directory, 
 from app.config.settings import get_settings
 from app.core.exceptions import BusinessRuleException, ResourceNotFoundException
 from app.models.archive_manifest import ArchiveManifest
+from app.models.billing_archive_reference import (
+    InvoiceArchiveReference,
+    PaymentArchiveReference,
+)
 from app.models.case_archive_reference import CaseArchiveReference
 from app.models.case_record import CaseRecord
 from app.models.diagnosis import Diagnosis
 from app.models.followup import FollowUp
+from app.models.invoice import Invoice
+from app.models.invoice_item import InvoiceItem
+from app.models.payment import Payment
 from app.models.visit import Visit
 from app.models.visit_archive_reference import VisitArchiveReference
 from app.services.operational_year import operational_year_service
@@ -153,6 +160,14 @@ class ArchiveManager:
             select(Visit.id).where(Visit.visit_year == target_year)
         )
         visit_count = len(visit_result.scalars().all())
+        invoice_result = await db.execute(
+            select(Invoice.id).where(Invoice.invoice_year == target_year)
+        )
+        invoice_count = len(invoice_result.scalars().all())
+        payment_result = await db.execute(
+            select(Payment.id).where(Payment.payment_year == target_year)
+        )
+        payment_count = len(payment_result.scalars().all())
         return {
             "current_year": current_year,
             "target_year": target_year,
@@ -160,6 +175,8 @@ class ArchiveManager:
             "already_archived": bool(existing and existing.verified),
             "case_count": case_count,
             "visit_count": visit_count,
+            "invoice_count": invoice_count,
+            "payment_count": payment_count,
         }
 
     async def rollover_case_year(
@@ -209,6 +226,24 @@ class ArchiveManager:
                     )
                 ).scalars().all()
             )
+            invoices = list(
+                (
+                    await db.execute(
+                        select(Invoice)
+                        .where(Invoice.invoice_year == year)
+                        .order_by(Invoice.id)
+                    )
+                ).scalars().all()
+            )
+            payments = list(
+                (
+                    await db.execute(
+                        select(Payment)
+                        .where(Payment.payment_year == year)
+                        .order_by(Payment.id)
+                    )
+                ).scalars().all()
+            )
             target, chosen, checksum = await self._prepare_archive_file(db, year)
             if await db.scalar(
                 select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
@@ -249,6 +284,32 @@ class ArchiveManager:
                     )
                 )
 
+            for invoice in invoices:
+                db.add(
+                    InvoiceArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_invoice_id=invoice.id,
+                        patient_id=invoice.patient_id,
+                        invoice_number=invoice.invoice_number,
+                        invoice_year=year,
+                        total_amount=invoice.total_amount,
+                        payment_status=invoice.payment_status,
+                    )
+                )
+
+            for payment in payments:
+                db.add(
+                    PaymentArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_payment_id=payment.id,
+                        original_invoice_id=payment.invoice_id,
+                        receipt_number=payment.receipt_number,
+                        payment_year=year,
+                        amount_paid=payment.amount_paid,
+                        payment_method=payment.payment_method,
+                    )
+                )
+
             case_ids = [case.id for case in cases]
             if case_ids:
                 now = datetime.now(timezone.utc)
@@ -279,6 +340,27 @@ class ArchiveManager:
                 )
                 await db.execute(delete(Visit).where(Visit.id.in_(visit_ids)))
 
+            invoice_ids = [invoice.id for invoice in invoices]
+            if invoice_ids:
+                # Payment rows for the rolled-over year are removed through their
+                # own payment_year rule below; detach any payments that reference
+                # invoices being physically archived while remaining live.
+                await db.execute(
+                    update(Payment)
+                    .where(Payment.invoice_id.in_(invoice_ids))
+                    .values(invoice_id=None)
+                )
+                await db.execute(
+                    delete(InvoiceItem).where(InvoiceItem.invoice_id.in_(invoice_ids))
+                )
+                await db.execute(delete(Invoice).where(Invoice.id.in_(invoice_ids)))
+
+            payment_ids = [payment.id for payment in payments]
+            if payment_ids:
+                await db.execute(
+                    delete(Payment).where(Payment.id.in_(payment_ids))
+                )
+
             await db.flush()
             await db.commit()
         except Exception:
@@ -293,10 +375,18 @@ class ArchiveManager:
         live_visit_remaining = await db.scalar(
             select(Visit.id).where(Visit.visit_year == year).limit(1)
         )
+        live_invoice_remaining = await db.scalar(
+            select(Invoice.id).where(Invoice.invoice_year == year).limit(1)
+        )
+        live_payment_remaining = await db.scalar(
+            select(Payment.id).where(Payment.payment_year == year).limit(1)
+        )
         live_healthy = await asyncio.to_thread(_integrity, database_path())
         if (
             live_remaining is not None
             or live_visit_remaining is not None
+            or live_invoice_remaining is not None
+            or live_payment_remaining is not None
             or not live_healthy
         ):
             raise BusinessRuleException(
@@ -309,6 +399,8 @@ class ArchiveManager:
             "storage_tier": chosen,
             "case_records_archived": len(cases),
             "visits_archived": len(visits),
+            "invoices_archived": len(invoices),
+            "payments_archived": len(payments),
             "backup": backup,
             "archive_file": str(target),
             "archive_checksum_sha256": checksum,

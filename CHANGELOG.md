@@ -10,6 +10,14 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 70 · Encounter Annual Lifecycle & Rollover
+- Visit lifecycle metadata (`visit_year`, `storage_tier`, `is_current_year`) derived from the encounter date at creation, honoring the configured operational year.
+- Alembic migration `0021_visit_operational_year_lifecycle` with backfill of existing visit rows.
+- Permanent `VisitArchiveReference` records so visit identity survives physical live-database removal.
+- Annual rollover now physically archives completed-year visits alongside cases (children detached first, post-rollover validation extended to visits).
+- Historical archived-visit read endpoint `/maintenance/archives/{year}/patients/{patient_id}/visits` and client API wrapper `getHistoricalArchiveVisits`.
+- Contract test suite `backend/tests/test_visit_archive_rollover.py` (7 tests; full suite 149 passed).
+
 ### Added — Batch 69 · Annual Case Rollover
 - Verified pre-rollover backup and administrator-only annual case rollover.
 - Permanent `CaseArchiveReference` records for cases physically removed from the live database.

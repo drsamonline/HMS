@@ -103,7 +103,7 @@ class PaymentCreate(BaseSchema):
 
 class PaymentRead(BaseSchema):
     id: int
-    invoice_id: int
+    invoice_id: int | None
     receipt_number: str
     payment_datetime: datetime
     payment_method: str
