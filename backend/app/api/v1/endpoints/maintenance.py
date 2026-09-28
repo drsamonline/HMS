@@ -121,6 +121,32 @@ async def historical_dispenses(year:int, patient_id:int, db:DatabaseSession, use
             raise
     return await archive_manager.read_dispenses(db,year,patient_id)
 
+@router.get("/archives/{year}/patients/{patient_id}/prescriptions")
+async def historical_prescriptions(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
+    uid = actor_id(user)
+    try:
+        await _require_admin(db, uid)
+    except Exception:
+        from app.services.auth import auth_service
+        _, roles, permissions = await auth_service.get_current_user_profile(db, user_id=uid)
+        normalized = {str(p).strip().lower() for p in permissions}
+        if not (normalized & {"reports.read", "report.read", "patients.read", "patient.read"}):
+            raise
+    return await archive_manager.read_prescriptions(db,year,patient_id)
+
+@router.get("/archives/{year}/patients/{patient_id}/prescription-items")
+async def historical_prescription_items(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
+    uid = actor_id(user)
+    try:
+        await _require_admin(db, uid)
+    except Exception:
+        from app.services.auth import auth_service
+        _, roles, permissions = await auth_service.get_current_user_profile(db, user_id=uid)
+        normalized = {str(p).strip().lower() for p in permissions}
+        if not (normalized & {"reports.read", "report.read", "patients.read", "patient.read"}):
+            raise
+    return await archive_manager.read_prescription_items(db,year,patient_id)
+
 @router.get("/archives/{year}/patients/{patient_id}/investigations")
 async def historical_investigations(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
     uid = actor_id(user)

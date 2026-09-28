@@ -1,1 +1,7 @@
-(empty)
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Environment variables (common for backend projects)
+.env
+.env.local

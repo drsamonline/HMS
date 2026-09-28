@@ -34,6 +34,9 @@ class PrescriptionItemRead(PrescriptionItemCreate):
 
     id: int
     prescription_id: int
+    item_year: int = 0
+    storage_tier: str = "live"
+    is_current_year: bool = True
     created_at: datetime
     updated_at: datetime
 
@@ -65,7 +68,7 @@ class PrescriptionRead(BaseSchema):
     """Complete prescription returned by the API."""
 
     id: int
-    visit_id: int
+    visit_id: int | None = None
     prescription_number: str
     diagnosis: str | None
     clinical_notes: str | None
@@ -73,6 +76,9 @@ class PrescriptionRead(BaseSchema):
     prescribed_by: int
     prescription_datetime: datetime
     printed_at: datetime | None
+    prescription_year: int = 0
+    storage_tier: str = "live"
+    is_current_year: bool = True
     created_at: datetime
     updated_at: datetime
     items: list[PrescriptionItemRead]

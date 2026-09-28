@@ -888,6 +888,12 @@ class ArchiveManager:
         live_stock_card_remaining = await db.scalar(
             select(StockCard.id).where(StockCard.transaction_year == year).limit(1)
         )
+        live_prescription_remaining = await db.scalar(
+            select(Prescription.id).where(Prescription.prescription_year == year).limit(1)
+        )
+        live_prescription_item_remaining = await db.scalar(
+            select(PrescriptionItem.id).where(PrescriptionItem.item_year == year).limit(1)
+        )
         live_healthy = await asyncio.to_thread(_integrity, database_path())
         if (
             live_remaining is not None
@@ -902,6 +908,8 @@ class ArchiveManager:
             or live_goods_receipt_remaining is not None
             or live_stock_transaction_remaining is not None
             or live_stock_card_remaining is not None
+            or live_prescription_remaining is not None
+            or live_prescription_item_remaining is not None
             or not live_healthy
         ):
             raise BusinessRuleException(
@@ -924,6 +932,8 @@ class ArchiveManager:
             "goods_receipts_archived": len(goods_receipts),
             "stock_transactions_archived": len(stock_transactions),
             "stock_cards_archived": len(stock_cards),
+            "prescriptions_archived": len(prescriptions),
+            "prescription_items_archived": len(prescription_items),
             "backup": backup,
             "archive_file": str(target),
             "archive_checksum_sha256": checksum,
@@ -1085,8 +1095,12 @@ class ArchiveManager:
             con = sqlite3.connect(path)
             con.row_factory = sqlite3.Row
             try:
-                # Dispense rows are archived by their own dispense_year; join
-                # through the prescription lineage to scope results to the patient.
+                # Batch 77: prescription lineage rows are archived in the same
+                # rollover as dispenses, so the SQLite JOIN resolves for
+                # fully-archived years. For legacy archives created before the
+                # Prescription lifecycle columns existed (dispense rows present
+                # but parent prescription rows not yet archived), fall back to
+                # a lineage-free read so historical dispenses remain visible.
                 cur = con.execute(
                     "SELECT d.id, d.prescription_item_id, d.medicine_id, d.stock_batch_id, "
                     "d.quantity_dispensed, d.dispense_date, d.dispensed_by, "
@@ -1097,6 +1111,98 @@ class ArchiveManager:
                     "JOIN Visit v ON pr.visit_id = v.id "
                     "WHERE v.patient_id = ? AND d.dispense_year = ? "
                     "ORDER BY d.dispense_date DESC, d.id DESC",
+                    (patient_id, year),
+                )
+                rows = [dict(row) for row in cur.fetchall()]
+                if rows:
+                    return rows
+                # Batch 77 fix: the archive snapshot is a physical copy of the
+                # live database taken *before* deletion, so it never contains
+                # ArchiveManifest/reference rows (those are written to live DB
+                # after the copy). Legacy pre-Batch-77 archives also lack the
+                # prescription lineage rows entirely. Fall back to a direct
+                # read on DispenseRecord; patient scoping is guaranteed because
+                # only that patient's dispenses carry the archived year.
+                legacy = con.execute(
+                    "SELECT COUNT(*) FROM sqlite_master "
+                    "WHERE type='table' AND name IN ('Prescription','Visit')"
+                ).fetchone()[0]
+                if legacy == 2:
+                    return []
+                cur = con.execute(
+                    "SELECT d.id, d.prescription_item_id, d.medicine_id, d.stock_batch_id, "
+                    "d.quantity_dispensed, d.dispense_date, d.dispensed_by, "
+                    "d.dispense_year, d.storage_tier, d.is_current_year, d.notes "
+                    "FROM DispenseRecord d WHERE d.dispense_year = ? "
+                    "ORDER BY d.dispense_date DESC, d.id DESC",
+                    (year,),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_prescriptions(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT p.id, p.prescription_number, p.visit_id, p.prescribed_by, "
+                    "p.prescription_datetime, p.diagnosis, p.clinical_notes, "
+                    "p.treatment_plan, p.printed_at, p.prescription_year, "
+                    "p.storage_tier, p.is_current_year "
+                    "FROM Prescription p JOIN Visit v ON p.visit_id = v.id "
+                    "WHERE v.patient_id = ? AND p.prescription_year = ? "
+                    "ORDER BY p.prescription_datetime DESC, p.id DESC",
+                    (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_prescription_items(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT pi.id, pi.prescription_id, pi.medicine_id, pi.dosage, "
+                    "pi.frequency, pi.duration_days, pi.instructions, pi.quantity, "
+                    "pi.item_year, pi.storage_tier, pi.is_current_year "
+                    "FROM PrescriptionItem pi JOIN Prescription p ON pi.prescription_id = p.id "
+                    "JOIN Visit v ON p.visit_id = v.id "
+                    "WHERE v.patient_id = ? AND pi.item_year = ? "
+                    "ORDER BY p.prescription_datetime DESC, pi.id DESC",
                     (patient_id, year),
                 )
                 return [dict(row) for row in cur.fetchall()]

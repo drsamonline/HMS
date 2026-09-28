@@ -10,6 +10,14 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 77 · Prescription Annual Lifecycle & Lineage Rollover
+- Prescription and PrescriptionItem lifecycle metadata (`prescription_year`, `item_year`, `storage_tier`, `is_current_year`) derived from the prescription datetime at creation; migration `0028_prescription_operational_year_lifecycle` backfills existing rows and makes `Prescription.visit_id` nullable so prescriptions survive visit rollover with detached lineage.
+- Permanent `PrescriptionArchiveReference` and `PrescriptionItemArchiveReference` records so prescription identity, visit lineage and dispensing pointers survive physical live-database removal (closes the integrity gap where visits were archived but prescriptions had no lifecycle).
+- Annual rollover now physically archives completed-year prescriptions and items before visits (preview counts `prescription_count`/`prescription_item_count`, references-before-delete, live `DispenseRecord.prescription_item_id` and `FollowUp.previous/next_prescription_id` detach, post-rollover validation keys `prescriptions_archived`/`prescription_items_archived`).
+- Historical archived prescription read endpoints `/maintenance/archives/{year}/patients/{patient_id}/prescriptions|prescription-items` and client wrappers `getHistoricalArchivePrescriptions`, `getHistoricalArchivePrescriptionItems`; legacy pre-Batch-77 archive files fall back to a lineage-free dispense read so historical pharmacy history stays visible.
+- Read schemas (`PrescriptionRead`, `PrescriptionItemRead`) expose lifecycle fields; `PrescriptionRead.visit_id` is now optional.
+- Contract test suite `backend/tests/test_prescription_archive_rollover.py` (8 tests; full suite 203 passed).
+
 ### Added — Batch 76 · Procurement & Inventory Annual Lifecycle & Rollover
 - PurchaseOrder, GoodsReceipt, StockTransaction and StockCard lifecycle metadata (`order_year`, `receipt_year`, `transaction_year`, `storage_tier`, `is_current_year`) derived from the document date at creation; migration `0027_procurement_inventory_operational_year_lifecycle` backfills existing rows.
 - Permanent `PurchaseOrderArchiveReference`, `GoodsReceiptArchiveReference`, `StockTransactionArchiveReference` and `StockCardArchiveReference` records so procurement/inventory identity survives physical live-database removal.
