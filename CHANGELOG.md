@@ -1,187 +1,76 @@
-# CHANGELOG
+# Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+Sessions are listed newest-first within each release; batch entries reflect the
+functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md).
+
 ## [Unreleased]
 
-### Added
-- Initial repository structure
-- Project documentation foundation
+### Added — Batch 69 · Annual Case Rollover
+- Verified pre-rollover backup and administrator-only annual case rollover.
+- Permanent `CaseArchiveReference` records for cases physically removed from the live database.
+- Archived-case lineage preserved through `case_family_id` and the verified annual archive snapshot.
+- Safe removal of direct case children (`Diagnosis`, `FollowUp`) before removing archived `CaseRecord` rows.
+- Live `renewed_from_case_id` references cleared when they would point at physically archived cases.
+- Rollover preview and execution API endpoints.
+- Rollover action in the System Health & Data Lifecycle workspace.
+- See [docs/ANNUAL_CASE_ROLLOVER.md](docs/ANNUAL_CASE_ROLLOVER.md).
 
 ## [0.0.1] - 2025-01-30
 
-### Added - Session 001
-- Repository initialization
-- Project constitution and rules
-- Documentation templates
-- Directory structure (11 root folders)
-- Core documentation files (README, LICENSE, ROADMAP, etc.)
-- AI context files (PROJECT_CONSTITUTION, PROJECT_STATE, etc.)
+Foundation phase (Milestone 0) — repository initialization, standards, specification, and database design.
 
-### Added - Session 002 (FND-002)
-- Enhanced directory structure:
-  - .github/ISSUE_TEMPLATE/
-  - docs/ subfolders (01_Project through 10_Release_Notes)
-  - backend/app/, backend/tests/
-  - frontend/src/, frontend/public/
-  - database/schema/, database/migrations/
-  - scripts/setup/, scripts/backup/
-  - assets/logos/, assets/icons/, assets/screenshots/
-  - templates/print/, templates/reports/
-  - tools/dev/
+### Added — Session 004 · Database Schema Design (DB-002)
+- [docs/DATABASE_ENTITIES.md](docs/DATABASE_ENTITIES.md) — frozen entity list with 35 entities.
+- [docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) — complete relational database schema.
+- All 35 tables defined with columns, primary keys, foreign keys, and indexes.
+- `snake_case` naming throughout; `created_at`/`updated_at` on all tables; `is_active` only on master/configuration tables.
+- No circular dependencies; ~3NF normalization achieved.
+- Module breakdown: Core 3 · Patients 2 · Clinical 3 · Prescription 2 · Pharmacy 3 · Inventory 6 · Billing 3 · IPD 6 · MRD 2 · Administration 2 · Settings 3.
+
+### Added — Session 004 · Master Specification Finalized (SPEC-001-FINAL)
+- Master Specification finalized in compact format (~8–10 pages equivalent):
+  one-paragraph purpose, simplified scope lists, 12 modules (≤4 bullets each),
+  12-item navigation menu, screens by module, one-line role descriptions,
+  report and print-document lists, future-version feature list.
+- Milestone 0 marked COMPLETE (100%).
+
+### Added — Session 003 · Master Specification (SPEC-001)
+- [docs/MASTER_SPECIFICATION.md](docs/MASTER_SPECIFICATION.md) — complete scope definition for HHMS v1.0:
+  project purpose and objectives, scope boundaries (included/excluded),
+  12 modules with purposes and functions, navigation structure,
+  full screen inventory (60+ screens), database entity list (27 entities),
+  8 major workflows, 6 user roles, report catalog (8 categories, 30+ reports),
+  printable documents list, and a "Planned After Version 1" section (10 feature categories).
+- Scope officially **FROZEN** for Version 1.0.
+
+### Added — Session 002 · Repository Standardization (FND-002)
+- Directory structure:
+  `.github/ISSUE_TEMPLATE/`, `docs/` subfolders (01_Project → 10_Release_Notes),
+  `backend/app/`, `backend/tests/`, `frontend/src/`, `frontend/public/`,
+  `database/schema/`, `database/migrations/`, `scripts/setup/`, `scripts/backup/`,
+  `assets/logos/`, `assets/icons/`, `assets/screenshots/`,
+  `templates/print/`, `templates/reports/`, `tools/dev/`.
 - Documentation standards:
-  - docs/INDEX.md - Documentation navigation
-  - docs/GLOSSARY.md - Terminology definitions
-  - docs/NAMING_CONVENTIONS.md - Naming standards
-  - docs/UI_GUIDELINES.md - UI design guidelines (placeholder)
-  - docs/PRINT_STANDARDS.md - Printing standards
-  - docs/VALIDATION_RULES.md - Validation rules (placeholder)
-- AI governance enhancements:
-  - .ai/PROJECT_INDEX.md - Repository navigation guide
-  - .ai/MODULE_STATUS.md - Module progress dashboard
-- Updated all session tracking files
+  [docs/INDEX.md](docs/INDEX.md), [docs/GLOSSARY.md](docs/GLOSSARY.md),
+  [docs/NAMING_CONVENTIONS.md](docs/NAMING_CONVENTIONS.md),
+  [docs/UI_GUIDELINES.md](docs/UI_GUIDELINES.md),
+  [docs/PRINT_STANDARDS.md](docs/PRINT_STANDARDS.md),
+  [docs/VALIDATION_RULES.md](docs/VALIDATION_RULES.md).
+- AI governance: `.ai/PROJECT_INDEX.md`, `.ai/MODULE_STATUS.md`.
 
-### Added - Session 003 (SPEC-001)
-- Master Specification document:
-  - docs/MASTER_SPECIFICATION.md - Complete scope definition for HHMS v1.0
-  - Project purpose and objectives
-  - Scope boundaries (included/excluded features)
-  - 12 modules documented with purposes and functions
-  - Navigation structure defined
-  - Complete screen inventory (60+ screens)
-  - Database entity list (27 entities)
-  - 8 major workflows documented
-  - 6 user roles with responsibilities
-  - Report catalog (8 categories, 30+ reports)
-  - Printable documents list
-  - "Planned After Version 1" section (10 feature categories)
-- Scope officially FROZEN for Version 1.0
-
-### Added - Session 004 (SPEC-001-FINAL)
-- Master Specification finalized in compact format:
-  - Concise one-paragraph purpose
-  - Simplified scope lists
-  - 12 modules with 4 bullet points each maximum
-  - Navigation menu (12 items)
-  - Screens listed by module (names only)
-  - User roles (one line each)
-  - Reports list (names only)
-  - Print documents list (names only)
-  - Future version features (list only)
-- Document optimized to ~8-10 pages equivalent
-- Milestone 0 marked as COMPLETE (100%)
+### Added — Session 001 · Repository Initialization (FND-001)
+- Initial directory structure (11 root folders).
+- Root documentation: `README.md`, `LICENSE` (MIT), `CHANGELOG.md`, `ROADMAP.md`
+  (8 milestones, 0–7), `CONTRIBUTING.md`, `SECURITY.md`, `VERSION` (0.0.1),
+  `.gitignore`, `.editorconfig`.
+- AI context files in `.ai/`: project constitution (12 locked principles),
+  coding rules, decisions, state tracking, review checklist, prompts.
 
 ### Changed
-- PROJECT_STATE.md updated to reflect Session 003 progress
-- PROGRESS.md updated to 90% completion for Milestone 0
-- TODO.md expanded with SPEC-001 completion notes
-- SESSION_LOG.md added Session 003 entry
-
-### Changed - Session 004
-- PROJECT_STATE.md: Status changed to COMPLETE, next task is Milestone 1
-- PROGRESS.md: Milestone 0 now at 100% completion
-- TODO.md: Added specification section, noted Milestone 0 completion
-- SESSION_LOG.md: Added Session 004 entry
-
-
-## [0.0.1] - 2025-01-30
-
-### Session 004 - Database Schema Design (DB-002)
-
-#### Added
-- docs/DATABASE_ENTITIES.md - Frozen entity list with 35 entities
-- docs/DATABASE_SCHEMA.md - Complete relational database schema
-
-#### Changed
-- Updated .ai/PROJECT_STATE.md - Marked DB-002 complete
-- Updated .ai/PROGRESS.md - Database design phase complete
-- Updated .ai/TODO.md - Added completed database design tasks
-- Updated .ai/SESSION_LOG.md - Added Session 004 details
-
-#### Details
-- Defined all 35 tables with columns, primary keys, foreign keys, and indexes
-- Applied snake_case naming convention throughout
-- Added created_at/updated_at timestamps to all tables
-- Added is_active flag only to master/configuration tables
-- Validated no circular dependencies
-- Achieved ~3NF normalization
-
-#### Module Breakdown
-- Core: 3 tables (User, Role, AuditLog)
-- Patients: 2 tables (Patient, Guardian)
-- Clinical: 3 tables (Consultation, Diagnosis, ClinicalNote)
-- Prescription: 2 tables (Prescription, PrescriptionItem)
-- Pharmacy: 3 tables (Medicine, DispenseRecord, StockAdjustment)
-- Inventory: 6 tables (Supplier, StockBatch, PurchaseOrder, PurchaseOrderItem, GoodsReceipt, StockCard)
-- Billing: 3 tables (Invoice, InvoiceItem, Payment)
-- IPD: 6 tables (Ward, Room, Bed, Admission, Discharge, BedAssignment)
-- MRD: 2 tables (PatientFile, ArchiveRecord)
-- Administration: 2 tables (Department, Designation)
-- Settings: 3 tables (Hospital, SystemSetting, NumberSequence)
-
-### Session 003 - Master Specification (SPEC-001)
-
-#### Added
-- docs/MASTER_SPECIFICATION.md - Complete functional specification for v1.0
-
-#### Changed
-- Updated all project state tracking files
-- Froze scope for Version 1.0
-
-#### Details
-- Defined 12 modules with purposes and functions
-- Listed 60+ screens grouped by module
-- Identified 6 user roles with responsibilities
-- Listed 30+ reports across 8 categories
-- Defined 9 printable document types
-- Moved advanced features to "Planned After Version 1"
-
-### Session 002 - Repository Standardization (FND-002)
-
-#### Added
-- docs/ subdirectories (01_Project through 10_Release_Notes)
-- backend/app/, backend/tests/
-- frontend/src/, frontend/public/
-- database/schema/, database/migrations/
-- scripts/setup/, scripts/backup/
-- assets/logos/, assets/icons/, assets/screenshots/
-- templates/print/, templates/reports/
-- tools/dev/
-- .github/ISSUE_TEMPLATE/
-- docs/INDEX.md
-- docs/GLOSSARY.md
-- docs/NAMING_CONVENTIONS.md
-- docs/UI_GUIDELINES.md
-- docs/PRINT_STANDARDS.md
-- docs/VALIDATION_RULES.md
-- .ai/PROJECT_INDEX.md
-- .ai/MODULE_STATUS.md
-
-#### Changed
-- Updated all project state tracking files
-
-### Session 001 - Repository Initialization (FND-001)
-
-#### Added
-- Initial directory structure (11 directories)
-- Root documentation files (README.md, LICENSE, CHANGELOG.md, ROADMAP.md, CONTRIBUTING.md, SECURITY.md, VERSION, .gitignore, .editorconfig)
-- AI context files (.ai/PROJECT_CONSTITUTION.md, .ai/PROJECT_STATE.md, .ai/AI_CONTEXT.md, .ai/CODING_RULES.md, .ai/PROGRESS.md, .ai/TODO.md, .ai/SESSION_LOG.md, .ai/DECISIONS.md, .ai/PROMPTS.md, .ai/QWEN_RULES.md, .ai/REVIEW_CHECKLIST.md)
-
-#### Details
-- MIT License applied
-- Version set to 0.0.1
-- Project constitution locked with 12 principles
-- Roadmap defined with 8 milestones (0-7)
-
-## Batch 69 — Annual Case Rollover
-
-- Added verified pre-rollover backup and administrator-only annual case rollover.
-- Added permanent `CaseArchiveReference` records for cases physically removed from the live database.
-- Preserved archived case lineage through `case_family_id` and the verified annual archive snapshot.
-- Safely removes direct case children (`Diagnosis` and `FollowUp`) before removing archived `CaseRecord` rows.
-- Clears live `renewed_from_case_id` references that would otherwise point at physically archived cases.
-- Added rollover preview and execution API endpoints.
-- Added the rollover action to the System Health & Data Lifecycle workspace.
+- `.ai/` session-tracking files (PROJECT_STATE, PROGRESS, TODO, SESSION_LOG)
+  updated after each session to reflect current status.
