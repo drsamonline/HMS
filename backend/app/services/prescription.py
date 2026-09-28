@@ -7,7 +7,7 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,6 +29,7 @@ from app.schemas.prescription import (
 )
 
 from app.services.number_sequence import number_sequence_service
+from app.services.operational_year import operational_year_service
 
 
 class PrescriptionService:
@@ -81,6 +82,20 @@ class PrescriptionService:
     ) -> Prescription:
         now = datetime.now(timezone.utc)
 
+        # Derive the annual lifecycle fields from the prescription date so every
+        # prescription (and its items) carries its operational-year identity at
+        # creation, mirroring the dispense-record pattern (Batch 72).
+        prescription_local_date = (
+            data.prescription_datetime.astimezone(timezone.utc).date()
+            if data.prescription_datetime.tzinfo is not None
+            else data.prescription_datetime.date()
+        )
+        op_cfg = await operational_year_service.get_config(db)
+        prescription_year = operational_year_service.current_year(
+            prescription_local_date, op_cfg
+        )
+        current_year = operational_year_service.current_year(date.today(), op_cfg)
+
         prescription = Prescription(
             visit_id=data.visit_id,
             prescription_number=await number_sequence_service.next_number(db, "prescription_number"),
@@ -89,6 +104,9 @@ class PrescriptionService:
             treatment_plan=data.treatment_plan,
             prescribed_by=data.prescribed_by,
             prescription_datetime=data.prescription_datetime,
+            prescription_year=prescription_year,
+            storage_tier="live",
+            is_current_year=prescription_year == current_year,
             created_at=now,
             updated_at=now,
         )
@@ -106,6 +124,9 @@ class PrescriptionService:
                     duration_days=item_data.duration_days,
                     instructions=item_data.instructions,
                     quantity=item_data.quantity,
+                    item_year=prescription_year,
+                    storage_tier="live",
+                    is_current_year=prescription_year == current_year,
                     created_at=now,
                     updated_at=now,
                 )

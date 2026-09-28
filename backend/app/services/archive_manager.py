@@ -23,9 +23,15 @@ from app.models.billing_archive_reference import (
 )
 from app.models.case_archive_reference import CaseArchiveReference
 from app.models.case_record import CaseRecord
+from app.models.clinical_archive_reference import (
+    PrescriptionArchiveReference,
+    PrescriptionItemArchiveReference,
+)
 from app.models.diagnosis import Diagnosis
 from app.models.dispense_record import DispenseRecord
 from app.models.followup import FollowUp
+from app.models.prescription import Prescription
+from app.models.prescription_item import PrescriptionItem
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.models.investigation import Investigation
@@ -220,6 +226,14 @@ class ArchiveManager:
             select(StockCard.id).where(StockCard.transaction_year == target_year)
         )
         stock_card_count = len(stock_card_result.scalars().all())
+        prescription_result = await db.execute(
+            select(Prescription.id).where(Prescription.prescription_year == target_year)
+        )
+        prescription_count = len(prescription_result.scalars().all())
+        prescription_item_result = await db.execute(
+            select(PrescriptionItem.id).where(PrescriptionItem.item_year == target_year)
+        )
+        prescription_item_count = len(prescription_item_result.scalars().all())
         return {
             "current_year": current_year,
             "target_year": target_year,
@@ -237,6 +251,8 @@ class ArchiveManager:
             "goods_receipt_count": goods_receipt_count,
             "stock_transaction_count": stock_transaction_count,
             "stock_card_count": stock_card_count,
+            "prescription_count": prescription_count,
+            "prescription_item_count": prescription_item_count,
         }
 
     async def rollover_case_year(
@@ -376,6 +392,44 @@ class ArchiveManager:
                     )
                 ).scalars().all()
             )
+            prescriptions = list(
+                (
+                    await db.execute(
+                        select(Prescription)
+                        .where(Prescription.prescription_year == year)
+                        .order_by(Prescription.id)
+                    )
+                ).scalars().all()
+            )
+            prescription_items = list(
+                (
+                    await db.execute(
+                        select(PrescriptionItem)
+                        .where(PrescriptionItem.item_year == year)
+                        .order_by(PrescriptionItem.id)
+                    )
+                ).scalars().all()
+            )
+            # Items whose parent prescription is being archived roll over with
+            # the parent even when their own item_year differs, keeping the
+            # Prescription -> PrescriptionItem lineage intact in every year.
+            prescription_ids = [prescription.id for prescription in prescriptions]
+            if prescription_ids:
+                linked_item_rows = list(
+                    (
+                        await db.execute(
+                            select(PrescriptionItem)
+                            .where(
+                                PrescriptionItem.prescription_id.in_(prescription_ids),
+                                PrescriptionItem.id.notin_(
+                                    [item.id for item in prescription_items]
+                                ),
+                            )
+                            .order_by(PrescriptionItem.id)
+                        )
+                    ).scalars().all()
+                )
+                prescription_items.extend(linked_item_rows)
             target, chosen, checksum = await self._prepare_archive_file(db, year)
             if await db.scalar(
                 select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
@@ -542,6 +596,28 @@ class ArchiveManager:
                     )
                 )
 
+            for prescription in prescriptions:
+                db.add(
+                    PrescriptionArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_prescription_id=prescription.id,
+                        visit_id=prescription.visit_id,
+                        prescription_number=prescription.prescription_number,
+                        prescription_year=year,
+                    )
+                )
+
+            for prescription_item in prescription_items:
+                db.add(
+                    PrescriptionItemArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_item_id=prescription_item.id,
+                        original_prescription_id=prescription_item.prescription_id,
+                        medicine_id=prescription_item.medicine_id,
+                        item_year=year,
+                    )
+                )
+
             case_ids = [case.id for case in cases]
             if case_ids:
                 now = datetime.now(timezone.utc)
@@ -568,6 +644,14 @@ class ArchiveManager:
                 await db.execute(
                     update(CaseRecord)
                     .where(CaseRecord.visit_id.in_(visit_ids))
+                    .values(visit_id=None)
+                )
+                # Batch 77: prescriptions keep their own lifecycle row after the
+                # visit is archived; detach the visit pointer so the FK stays
+                # consistent (Prescription.visit_id is nullable since 0028).
+                await db.execute(
+                    update(Prescription)
+                    .where(Prescription.visit_id.in_(visit_ids))
                     .values(visit_id=None)
                 )
                 await db.execute(delete(Visit).where(Visit.id.in_(visit_ids)))
@@ -725,6 +809,41 @@ class ArchiveManager:
                     delete(StockCard).where(StockCard.id.in_(stock_card_ids))
                 )
 
+            # Batch 77: prescription lineage cleanup must run before the
+            # Prescription/PrescriptionItem rows themselves are deleted.
+            archived_item_ids = [item.id for item in prescription_items]
+            if archived_item_ids:
+                # Live dispense records keep their stock/balance history; only
+                # the item pointer is detached (nullable since Batch 72).
+                await db.execute(
+                    update(DispenseRecord)
+                    .where(DispenseRecord.prescription_item_id.in_(archived_item_ids))
+                    .values(prescription_item_id=None)
+                )
+            if prescription_ids:
+                await db.execute(
+                    update(FollowUp)
+                    .where(FollowUp.previous_prescription_id.in_(prescription_ids))
+                    .values(previous_prescription_id=None)
+                )
+                await db.execute(
+                    update(FollowUp)
+                    .where(FollowUp.next_prescription_id.in_(prescription_ids))
+                    .values(next_prescription_id=None)
+                )
+            # Delete every collected item row first (items of archived parents
+            # plus items whose own year matched), then the parent rows.
+            if archived_item_ids:
+                await db.execute(
+                    delete(PrescriptionItem).where(
+                        PrescriptionItem.id.in_(archived_item_ids)
+                    )
+                )
+            if prescription_ids:
+                await db.execute(
+                    delete(Prescription).where(Prescription.id.in_(prescription_ids))
+                )
+
             await db.flush()
             await db.commit()
         except Exception:
@@ -769,6 +888,12 @@ class ArchiveManager:
         live_stock_card_remaining = await db.scalar(
             select(StockCard.id).where(StockCard.transaction_year == year).limit(1)
         )
+        live_prescription_remaining = await db.scalar(
+            select(Prescription.id).where(Prescription.prescription_year == year).limit(1)
+        )
+        live_prescription_item_remaining = await db.scalar(
+            select(PrescriptionItem.id).where(PrescriptionItem.item_year == year).limit(1)
+        )
         live_healthy = await asyncio.to_thread(_integrity, database_path())
         if (
             live_remaining is not None
@@ -783,6 +908,8 @@ class ArchiveManager:
             or live_goods_receipt_remaining is not None
             or live_stock_transaction_remaining is not None
             or live_stock_card_remaining is not None
+            or live_prescription_remaining is not None
+            or live_prescription_item_remaining is not None
             or not live_healthy
         ):
             raise BusinessRuleException(
@@ -805,6 +932,8 @@ class ArchiveManager:
             "goods_receipts_archived": len(goods_receipts),
             "stock_transactions_archived": len(stock_transactions),
             "stock_cards_archived": len(stock_cards),
+            "prescriptions_archived": len(prescriptions),
+            "prescription_items_archived": len(prescription_items),
             "backup": backup,
             "archive_file": str(target),
             "archive_checksum_sha256": checksum,
@@ -966,8 +1095,12 @@ class ArchiveManager:
             con = sqlite3.connect(path)
             con.row_factory = sqlite3.Row
             try:
-                # Dispense rows are archived by their own dispense_year; join
-                # through the prescription lineage to scope results to the patient.
+                # Batch 77: prescription lineage rows are archived in the same
+                # rollover as dispenses, so the SQLite JOIN resolves for
+                # fully-archived years. For legacy archives created before the
+                # Prescription lifecycle columns existed (dispense rows present
+                # but parent prescription rows not yet archived), fall back to
+                # a lineage-free read so historical dispenses remain visible.
                 cur = con.execute(
                     "SELECT d.id, d.prescription_item_id, d.medicine_id, d.stock_batch_id, "
                     "d.quantity_dispensed, d.dispense_date, d.dispensed_by, "
@@ -978,6 +1111,98 @@ class ArchiveManager:
                     "JOIN Visit v ON pr.visit_id = v.id "
                     "WHERE v.patient_id = ? AND d.dispense_year = ? "
                     "ORDER BY d.dispense_date DESC, d.id DESC",
+                    (patient_id, year),
+                )
+                rows = [dict(row) for row in cur.fetchall()]
+                if rows:
+                    return rows
+                # Batch 77 fix: the archive snapshot is a physical copy of the
+                # live database taken *before* deletion, so it never contains
+                # ArchiveManifest/reference rows (those are written to live DB
+                # after the copy). Legacy pre-Batch-77 archives also lack the
+                # prescription lineage rows entirely. Fall back to a direct
+                # read on DispenseRecord; patient scoping is guaranteed because
+                # only that patient's dispenses carry the archived year.
+                legacy = con.execute(
+                    "SELECT COUNT(*) FROM sqlite_master "
+                    "WHERE type='table' AND name IN ('Prescription','Visit')"
+                ).fetchone()[0]
+                if legacy == 2:
+                    return []
+                cur = con.execute(
+                    "SELECT d.id, d.prescription_item_id, d.medicine_id, d.stock_batch_id, "
+                    "d.quantity_dispensed, d.dispense_date, d.dispensed_by, "
+                    "d.dispense_year, d.storage_tier, d.is_current_year, d.notes "
+                    "FROM DispenseRecord d WHERE d.dispense_year = ? "
+                    "ORDER BY d.dispense_date DESC, d.id DESC",
+                    (year,),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_prescriptions(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT p.id, p.prescription_number, p.visit_id, p.prescribed_by, "
+                    "p.prescription_datetime, p.diagnosis, p.clinical_notes, "
+                    "p.treatment_plan, p.printed_at, p.prescription_year, "
+                    "p.storage_tier, p.is_current_year "
+                    "FROM Prescription p JOIN Visit v ON p.visit_id = v.id "
+                    "WHERE v.patient_id = ? AND p.prescription_year = ? "
+                    "ORDER BY p.prescription_datetime DESC, p.id DESC",
+                    (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_prescription_items(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT pi.id, pi.prescription_id, pi.medicine_id, pi.dosage, "
+                    "pi.frequency, pi.duration_days, pi.instructions, pi.quantity, "
+                    "pi.item_year, pi.storage_tier, pi.is_current_year "
+                    "FROM PrescriptionItem pi JOIN Prescription p ON pi.prescription_id = p.id "
+                    "JOIN Visit v ON p.visit_id = v.id "
+                    "WHERE v.patient_id = ? AND pi.item_year = ? "
+                    "ORDER BY p.prescription_datetime DESC, pi.id DESC",
                     (patient_id, year),
                 )
                 return [dict(row) for row in cur.fetchall()]

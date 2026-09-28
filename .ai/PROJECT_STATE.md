@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: latest user-supplied full ZIP (`HMS(5).zip`), superseding all older ZIP baselines.
-- Latest completed functional milestone: Batch 76 — Procurement & Inventory Annual Lifecycle & Rollover.
-- Current milestone: Batch 76 (annual lifecycle now complete for case, visit, billing, pharmacy, IPD, laboratory, MRD, procurement and inventory domains).
+- Latest completed functional milestone: Batch 77 — Prescription Annual Lifecycle & Lineage Rollover.
+- Current milestone: Batch 77 (annual lifecycle now complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 

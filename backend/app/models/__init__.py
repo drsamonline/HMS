@@ -22,7 +22,9 @@ from .department_service import DepartmentService
 from .diagnosis import Diagnosis
 from .designation import Designation
 from .dispense_record import DispenseRecord
-from .dispensing_record import DispensingRecord
+from .goods_receipt import GoodsReceipt, GoodsReceiptItem
+from .purchase_order import PurchaseOrder, PurchaseOrderItem
+from .supplier import Supplier
 from .investigation import Investigation
 from .investigation_result import InvestigationResult
 from .inventory_item import InventoryItem
@@ -74,6 +76,10 @@ from .billing_archive_reference import (
 from .pharmacy_archive_reference import DispenseArchiveReference
 from .lab_archive_reference import InvestigationArchiveReference
 from .mrd_archive_reference import MedicalDocumentArchiveReference
+from .clinical_archive_reference import (
+    PrescriptionArchiveReference,
+    PrescriptionItemArchiveReference,
+)
 from .procurement_archive_reference import (
     PurchaseOrderArchiveReference,
     GoodsReceiptArchiveReference,
@@ -121,6 +127,8 @@ __all__ = [
     "DispenseArchiveReference",
     "InvestigationArchiveReference",
     "MedicalDocumentArchiveReference",
+    "PrescriptionArchiveReference",
+    "PrescriptionItemArchiveReference",
     "PurchaseOrderArchiveReference",
     "GoodsReceiptArchiveReference",
     "StockTransactionArchiveReference",
@@ -133,7 +141,12 @@ __all__ = [
     "Medicine",
     "MedicineBatch",
     "DispenseRecord",
-    "DispensingRecord",
+
+    "Supplier",
+    "PurchaseOrder",
+    "PurchaseOrderItem",
+    "GoodsReceipt",
+    "GoodsReceiptItem",
 
     "InventoryItem",
     "StockBatch",
