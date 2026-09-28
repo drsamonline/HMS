@@ -7,7 +7,7 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy.exc import (
     IntegrityError,
@@ -33,6 +33,7 @@ from app.schemas.investigation_result import (
     InvestigationResultCreate,
     InvestigationResultUpdate,
 )
+from app.services.operational_year import operational_year_service
 
 
 class InvestigationResultService:
@@ -147,6 +148,17 @@ class InvestigationResultService:
                 "Result text is required before a laboratory report can be verified or released."
             )
 
+        # Derive the annual lifecycle fields from the result date so every
+        # laboratory result carries its operational-year identity at creation.
+        result_local_date = (
+            data.result_datetime.astimezone(timezone.utc).date()
+            if data.result_datetime.tzinfo is not None
+            else data.result_datetime.date()
+        )
+        op_cfg = await operational_year_service.get_config(db)
+        result_year = operational_year_service.current_year(result_local_date, op_cfg)
+        current_year = operational_year_service.current_year(date.today(), op_cfg)
+
         result = InvestigationResult(
             investigation_id=(
                 data.investigation_id
@@ -156,6 +168,9 @@ class InvestigationResultService:
             result_datetime=(
                 data.result_datetime
             ),
+            result_year=result_year,
+            storage_tier="live",
+            is_current_year=result_year == current_year,
             verified_by=data.verified_by,
             verification_datetime=(
                 data.verification_datetime

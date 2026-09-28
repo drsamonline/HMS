@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -102,6 +102,27 @@ class Admission(Base):
     remarks: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
+    )
+
+    admission_year: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        index=True,
+    )
+
+    storage_tier: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="live",
+        index=True,
+    )
+
+    is_current_year: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        index=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(

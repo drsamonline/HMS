@@ -7,7 +7,7 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy.exc import (
     IntegrityError,
@@ -35,6 +35,7 @@ from app.schemas.investigation import (
 )
 from app.services.number_sequence import number_sequence_service
 from app.services.activity_context import resolve_activity_context
+from app.services.operational_year import operational_year_service
 
 
 class InvestigationService:
@@ -185,6 +186,20 @@ class InvestigationService:
 
         now = datetime.now(timezone.utc)
 
+        # Derive the annual lifecycle fields from the requested date so every
+        # investigation carries its operational-year identity at creation.
+        requested_local_date = (
+            data.requested_datetime.astimezone(timezone.utc).date()
+            if data.requested_datetime.tzinfo is not None
+            else data.requested_datetime.date()
+        )
+        op_cfg = await operational_year_service.get_config(db)
+        investigation_year = operational_year_service.current_year(
+            requested_local_date,
+            op_cfg,
+        )
+        current_year = operational_year_service.current_year(date.today(), op_cfg)
+
         investigation = Investigation(
             patient_id=data.patient_id,
             visit_id=data.visit_id,
@@ -204,6 +219,9 @@ class InvestigationService:
             investigation_status=(
                 data.investigation_status
             ),
+            investigation_year=investigation_year,
+            storage_tier="live",
+            is_current_year=investigation_year == current_year,
             remarks=data.remarks,
             created_at=now,
             updated_at=now,

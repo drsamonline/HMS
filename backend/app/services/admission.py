@@ -7,7 +7,7 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy.exc import (
     IntegrityError,
@@ -34,6 +34,7 @@ from app.schemas.admission import (
 )
 from app.services.number_sequence import number_sequence_service
 from app.services.activity_context import resolve_activity_context
+from app.services.operational_year import operational_year_service
 
 
 class AdmissionService:
@@ -144,6 +145,15 @@ class AdmissionService:
             service_id=admission_in.service_id,
         )
 
+        admission_local_date = (
+            admission_in.admission_datetime.astimezone(timezone.utc).date()
+        )
+        op_cfg = await operational_year_service.get_config(db)
+        admission_year = operational_year_service.current_year(
+            admission_local_date, op_cfg
+        )
+        current_year = operational_year_service.current_year(date.today(), op_cfg)
+
         admission = Admission(
             patient_id=admission_in.patient_id,
             admission_number=await number_sequence_service.next_number(db, "admission_number"),
@@ -162,6 +172,9 @@ class AdmissionService:
                 admission_in.admission_status
             ),
             remarks=admission_in.remarks,
+            admission_year=admission_year,
+            storage_tier="live",
+            is_current_year=admission_year == current_year,
             created_at=now,
             updated_at=now,
         )

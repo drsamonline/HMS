@@ -10,6 +10,17 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 73 · IPD Annual Lifecycle & Rollover
+- Admission lifecycle metadata (`admission_year`, `storage_tier`, `is_current_year`) derived from the admission datetime at creation; migration `0024_ipd_operational_year_lifecycle` backfills existing rows.
+- Permanent `AdmissionArchiveReference` records so admission identity survives physical live-database removal.
+- Annual rollover now physically archives completed-year admissions (preview count, references-before-delete, investigation detach, post-rollover validation) and exposes historical reads via `/maintenance/archives/{year}/patients/{patient_id}/admissions`.
+
+### Added — Batch 74 · Laboratory Annual Lifecycle & Rollover
+- Investigation/result lifecycle metadata (`investigation_year`, `result_year`, `storage_tier`, `is_current_year`) derived at creation; migration `0025_lab_operational_year_lifecycle` backfills existing rows.
+- Permanent `InvestigationArchiveReference` records preserving visit/admission lineage after archival.
+- Annual rollover physically archives completed-year investigations with their results; historical reads exposed via `/maintenance/archives/{year}/patients/{patient_id}/investigations` and client wrapper `getHistoricalArchiveInvestigations`.
+
+
 ### Added — Batch 72 · Pharmacy Annual Lifecycle & Rollover
 - Dispense lifecycle metadata (`dispense_year`, `storage_tier`, `is_current_year`) derived from the dispense date at creation, honoring the configured operational year.
 - Alembic migration `0023_pharmacy_operational_year_lifecycle` with backfill of existing dispense rows; `DispenseRecord.prescription_item_id` made nullable so archived links detach safely.
