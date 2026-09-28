@@ -2,7 +2,8 @@ import {
   listDiagnoses, createDiagnosis, updateDiagnosis, searchICD11,
   listFollowups, createFollowup,
   createPrescription, getPrescription, listMedicines,
-  listCaseRecords, renewCurrentYearCase
+  listCaseRecords, renewCurrentYearCase, saveClinicalContext,
+  listVisits, createVisit, getCurrentUserProfile
 } from "./api.js";
 
 let clinicalState = { patient: null, caseRecord: null, diagnoses: [], followups: [], prescription: null, medicines: [] };
@@ -81,7 +82,7 @@ async function loadCase(id,host){
   if(!id){startNewCase(host);return;}
   try{
     const cases=await listCaseRecords(clinicalState.patient.id); const found=cases.find(c=>String(c.id)===String(id));
-    clinicalState.caseRecord=found||null; await loadRelated(host); await renderTab(host.querySelector(".clinical-tab.active")?.dataset.clinicalTab||"case",host);
+    clinicalState.caseRecord=found||null; saveClinicalContext({visit_id:clinicalState.caseRecord?.visit_id??null,admission_id:clinicalState.caseRecord?.admission_id??null}); await loadRelated(host); await renderTab(host.querySelector(".clinical-tab.active")?.dataset.clinicalTab||"case",host);
   }catch(e){setStatus(host,e.message||"Unable to load case.","error");}
 }
 function startNewCase(host){
@@ -181,7 +182,7 @@ async function saveCase(host){
     const c=collectCase(host); let saved;
     if(c.id){ saved=await (await import("./api.js")).updateCaseRecord(c.id,c); }
     else { saved=await (await import("./api.js")).createCaseRecord({patient_id:clinicalState.patient.id,case_status:c.case_status||"draft",...c}); }
-    clinicalState.caseRecord=saved; setStatus(host,"Case saved successfully.","success"); await refreshCaseSelector(host);
+    clinicalState.caseRecord=saved; saveClinicalContext({visit_id:saved?.visit_id??null,admission_id:saved?.admission_id??null}); setStatus(host,"Case saved successfully.","success"); await refreshCaseSelector(host);
   }catch(e){setStatus(host,e.message||"Unable to save case.","error");}
 }
 async function renderTab(tab,host){
