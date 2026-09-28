@@ -23,9 +23,15 @@ from app.models.billing_archive_reference import (
 )
 from app.models.case_archive_reference import CaseArchiveReference
 from app.models.case_record import CaseRecord
+from app.models.clinical_archive_reference import (
+    PrescriptionArchiveReference,
+    PrescriptionItemArchiveReference,
+)
 from app.models.diagnosis import Diagnosis
 from app.models.dispense_record import DispenseRecord
 from app.models.followup import FollowUp
+from app.models.prescription import Prescription
+from app.models.prescription_item import PrescriptionItem
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.models.investigation import Investigation
@@ -220,6 +226,14 @@ class ArchiveManager:
             select(StockCard.id).where(StockCard.transaction_year == target_year)
         )
         stock_card_count = len(stock_card_result.scalars().all())
+        prescription_result = await db.execute(
+            select(Prescription.id).where(Prescription.prescription_year == target_year)
+        )
+        prescription_count = len(prescription_result.scalars().all())
+        prescription_item_result = await db.execute(
+            select(PrescriptionItem.id).where(PrescriptionItem.item_year == target_year)
+        )
+        prescription_item_count = len(prescription_item_result.scalars().all())
         return {
             "current_year": current_year,
             "target_year": target_year,
@@ -237,6 +251,8 @@ class ArchiveManager:
             "goods_receipt_count": goods_receipt_count,
             "stock_transaction_count": stock_transaction_count,
             "stock_card_count": stock_card_count,
+            "prescription_count": prescription_count,
+            "prescription_item_count": prescription_item_count,
         }
 
     async def rollover_case_year(
@@ -376,6 +392,44 @@ class ArchiveManager:
                     )
                 ).scalars().all()
             )
+            prescriptions = list(
+                (
+                    await db.execute(
+                        select(Prescription)
+                        .where(Prescription.prescription_year == year)
+                        .order_by(Prescription.id)
+                    )
+                ).scalars().all()
+            )
+            prescription_items = list(
+                (
+                    await db.execute(
+                        select(PrescriptionItem)
+                        .where(PrescriptionItem.item_year == year)
+                        .order_by(PrescriptionItem.id)
+                    )
+                ).scalars().all()
+            )
+            # Items whose parent prescription is being archived roll over with
+            # the parent even when their own item_year differs, keeping the
+            # Prescription -> PrescriptionItem lineage intact in every year.
+            prescription_ids = [prescription.id for prescription in prescriptions]
+            if prescription_ids:
+                linked_item_rows = list(
+                    (
+                        await db.execute(
+                            select(PrescriptionItem)
+                            .where(
+                                PrescriptionItem.prescription_id.in_(prescription_ids),
+                                PrescriptionItem.id.notin_(
+                                    [item.id for item in prescription_items]
+                                ),
+                            )
+                            .order_by(PrescriptionItem.id)
+                        )
+                    ).scalars().all()
+                )
+                prescription_items.extend(linked_item_rows)
             target, chosen, checksum = await self._prepare_archive_file(db, year)
             if await db.scalar(
                 select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
@@ -542,6 +596,28 @@ class ArchiveManager:
                     )
                 )
 
+            for prescription in prescriptions:
+                db.add(
+                    PrescriptionArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_prescription_id=prescription.id,
+                        visit_id=prescription.visit_id,
+                        prescription_number=prescription.prescription_number,
+                        prescription_year=year,
+                    )
+                )
+
+            for prescription_item in prescription_items:
+                db.add(
+                    PrescriptionItemArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_item_id=prescription_item.id,
+                        original_prescription_id=prescription_item.prescription_id,
+                        medicine_id=prescription_item.medicine_id,
+                        item_year=year,
+                    )
+                )
+
             case_ids = [case.id for case in cases]
             if case_ids:
                 now = datetime.now(timezone.utc)
@@ -568,6 +644,14 @@ class ArchiveManager:
                 await db.execute(
                     update(CaseRecord)
                     .where(CaseRecord.visit_id.in_(visit_ids))
+                    .values(visit_id=None)
+                )
+                # Batch 77: prescriptions keep their own lifecycle row after the
+                # visit is archived; detach the visit pointer so the FK stays
+                # consistent (Prescription.visit_id is nullable since 0028).
+                await db.execute(
+                    update(Prescription)
+                    .where(Prescription.visit_id.in_(visit_ids))
                     .values(visit_id=None)
                 )
                 await db.execute(delete(Visit).where(Visit.id.in_(visit_ids)))
@@ -723,6 +807,41 @@ class ArchiveManager:
             if stock_card_ids:
                 await db.execute(
                     delete(StockCard).where(StockCard.id.in_(stock_card_ids))
+                )
+
+            # Batch 77: prescription lineage cleanup must run before the
+            # Prescription/PrescriptionItem rows themselves are deleted.
+            archived_item_ids = [item.id for item in prescription_items]
+            if archived_item_ids:
+                # Live dispense records keep their stock/balance history; only
+                # the item pointer is detached (nullable since Batch 72).
+                await db.execute(
+                    update(DispenseRecord)
+                    .where(DispenseRecord.prescription_item_id.in_(archived_item_ids))
+                    .values(prescription_item_id=None)
+                )
+            if prescription_ids:
+                await db.execute(
+                    update(FollowUp)
+                    .where(FollowUp.previous_prescription_id.in_(prescription_ids))
+                    .values(previous_prescription_id=None)
+                )
+                await db.execute(
+                    update(FollowUp)
+                    .where(FollowUp.next_prescription_id.in_(prescription_ids))
+                    .values(next_prescription_id=None)
+                )
+            # Delete every collected item row first (items of archived parents
+            # plus items whose own year matched), then the parent rows.
+            if archived_item_ids:
+                await db.execute(
+                    delete(PrescriptionItem).where(
+                        PrescriptionItem.id.in_(archived_item_ids)
+                    )
+                )
+            if prescription_ids:
+                await db.execute(
+                    delete(Prescription).where(Prescription.id.in_(prescription_ids))
                 )
 
             await db.flush()
