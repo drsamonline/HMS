@@ -22,7 +22,9 @@ from .department_service import DepartmentService
 from .diagnosis import Diagnosis
 from .designation import Designation
 from .dispense_record import DispenseRecord
-from .dispensing_record import DispensingRecord
+from .goods_receipt import GoodsReceipt, GoodsReceiptItem
+from .purchase_order import PurchaseOrder, PurchaseOrderItem
+from .supplier import Supplier
 from .investigation import Investigation
 from .investigation_result import InvestigationResult
 from .inventory_item import InventoryItem
@@ -139,7 +141,12 @@ __all__ = [
     "Medicine",
     "MedicineBatch",
     "DispenseRecord",
-    "DispensingRecord",
+
+    "Supplier",
+    "PurchaseOrder",
+    "PurchaseOrderItem",
+    "GoodsReceipt",
+    "GoodsReceiptItem",
 
     "InventoryItem",
     "StockBatch",

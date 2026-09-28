@@ -1,7 +1,3 @@
-# Python bytecode
+# Compiled/Binary files
 __pycache__/
 *.pyc
-
-# Environment variables (common for backend projects)
-.env
-.env.local
