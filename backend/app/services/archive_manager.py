@@ -477,6 +477,73 @@ class ArchiveManager:
 
         return await asyncio.to_thread(query)
 
+    async def read_invoices(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, invoice_number, patient_id, visit_id, admission_id, "
+                    "invoice_date, total_amount, payment_status, invoice_year, "
+                    "storage_tier, is_current_year, remarks FROM Invoice "
+                    "WHERE patient_id = ? AND invoice_year = ? "
+                    "ORDER BY invoice_date DESC, id DESC",
+                    (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_payments(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                # Payments are archived by their own payment_year; join through
+                # the archived Invoice table to scope results to the patient.
+                cur = con.execute(
+                    "SELECT p.id, p.receipt_number, p.invoice_id, p.payment_datetime, "
+                    "p.payment_method, p.amount_paid, p.transaction_reference, "
+                    "p.payment_year, p.storage_tier, p.is_current_year, p.remarks "
+                    "FROM Payment p JOIN Invoice i ON p.invoice_id = i.id "
+                    "WHERE i.patient_id = ? AND p.payment_year = ? "
+                    "ORDER BY p.payment_datetime DESC, p.id DESC",
+                    (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
     def archive_path(self, manifest: ArchiveManifest) -> Path:
         path = Path(manifest.file_path)
         if not path.exists():

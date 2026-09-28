@@ -10,6 +10,15 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 71 · Billing Annual Lifecycle & Rollover
+- Invoice and payment lifecycle metadata (`invoice_year`, `payment_year`, `storage_tier`, `is_current_year`) derived from the billing date at creation, honoring the configured operational year.
+- Alembic migration `0022_billing_operational_year_lifecycle` with backfill of existing invoice/payment rows; `Payment.invoice_id` made nullable so archived links detach safely.
+- Permanent `InvoiceArchiveReference` and `PaymentArchiveReference` records so billing identity survives physical live-database removal.
+- Annual rollover now physically archives completed-year invoices and payments alongside cases and visits (child payments detached from archived invoices first, post-rollover validation extended to billing).
+- Historical archived billing read endpoints `/maintenance/archives/{year}/patients/{patient_id}/invoices|payments` and client API wrappers `getHistoricalArchiveInvoices` / `getHistoricalArchivePayments`.
+- Read schemas expose lifecycle fields on `InvoiceRead` / `PaymentRead`.
+- Contract test suite `backend/tests/test_billing_archive_rollover.py` (8 tests; full suite 157 passed).
+
 ### Added — Batch 70 · Encounter Annual Lifecycle & Rollover
 - Visit lifecycle metadata (`visit_year`, `storage_tier`, `is_current_year`) derived from the encounter date at creation, honoring the configured operational year.
 - Alembic migration `0021_visit_operational_year_lifecycle` with backfill of existing visit rows.
