@@ -7,6 +7,8 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
+from datetime import date, datetime, timezone
+
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +25,7 @@ from app.repositories.visit import (
 from app.schemas.visit import VisitCreate, VisitUpdate
 from app.services.number_sequence import number_sequence_service
 from app.services.activity_context import resolve_activity_context
+from app.services.operational_year import operational_year_service
 
 
 class VisitService:
@@ -89,9 +92,23 @@ class VisitService:
         data["department_id"] = department_id
         data["service_id"] = service_id
 
+        # Derive the annual lifecycle fields from the encounter date so every
+        # visit carries its operational-year identity from creation onward.
+        visit_dt = data["visit_datetime"]
+        if visit_dt.tzinfo is not None:
+            local_date = visit_dt.astimezone(timezone.utc).date()
+        else:
+            local_date = visit_dt.date()
+        op_cfg = await operational_year_service.get_config(db)
+        visit_year = operational_year_service.current_year(local_date, op_cfg)
+        current_year = operational_year_service.current_year(date.today(), op_cfg)
+
         visit = Visit(
             **data,
             visit_number=await number_sequence_service.next_number(db, "visit_number"),
+            visit_year=visit_year,
+            storage_tier="live",
+            is_current_year=visit_year == current_year,
         )
 
         try:

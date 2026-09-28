@@ -19,6 +19,8 @@ from app.models.case_archive_reference import CaseArchiveReference
 from app.models.case_record import CaseRecord
 from app.models.diagnosis import Diagnosis
 from app.models.followup import FollowUp
+from app.models.visit import Visit
+from app.models.visit_archive_reference import VisitArchiveReference
 from app.services.operational_year import operational_year_service
 
 
@@ -147,12 +149,17 @@ class ArchiveManager:
             select(CaseRecord.id).where(CaseRecord.case_year == target_year)
         )
         case_count = len(result.scalars().all())
+        visit_result = await db.execute(
+            select(Visit.id).where(Visit.visit_year == target_year)
+        )
+        visit_count = len(visit_result.scalars().all())
         return {
             "current_year": current_year,
             "target_year": target_year,
             "eligible": target_year < current_year,
             "already_archived": bool(existing and existing.verified),
             "case_count": case_count,
+            "visit_count": visit_count,
         }
 
     async def rollover_case_year(
@@ -193,6 +200,15 @@ class ArchiveManager:
                     )
                 ).scalars().all()
             )
+            visits = list(
+                (
+                    await db.execute(
+                        select(Visit)
+                        .where(Visit.visit_year == year)
+                        .order_by(Visit.id)
+                    )
+                ).scalars().all()
+            )
             target, chosen, checksum = await self._prepare_archive_file(db, year)
             if await db.scalar(
                 select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
@@ -222,6 +238,17 @@ class ArchiveManager:
                     )
                 )
 
+            for visit in visits:
+                db.add(
+                    VisitArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_visit_id=visit.id,
+                        patient_id=visit.patient_id,
+                        visit_number=visit.visit_number,
+                        visit_year=year,
+                    )
+                )
+
             case_ids = [case.id for case in cases]
             if case_ids:
                 now = datetime.now(timezone.utc)
@@ -243,6 +270,15 @@ class ArchiveManager:
                 )
                 await db.execute(delete(CaseRecord).where(CaseRecord.id.in_(case_ids)))
 
+            visit_ids = [visit.id for visit in visits]
+            if visit_ids:
+                await db.execute(
+                    update(CaseRecord)
+                    .where(CaseRecord.visit_id.in_(visit_ids))
+                    .values(visit_id=None)
+                )
+                await db.execute(delete(Visit).where(Visit.id.in_(visit_ids)))
+
             await db.flush()
             await db.commit()
         except Exception:
@@ -254,8 +290,15 @@ class ArchiveManager:
         live_remaining = await db.scalar(
             select(CaseRecord.id).where(CaseRecord.case_year == year).limit(1)
         )
+        live_visit_remaining = await db.scalar(
+            select(Visit.id).where(Visit.visit_year == year).limit(1)
+        )
         live_healthy = await asyncio.to_thread(_integrity, database_path())
-        if live_remaining is not None or not live_healthy:
+        if (
+            live_remaining is not None
+            or live_visit_remaining is not None
+            or not live_healthy
+        ):
             raise BusinessRuleException(
                 "Post-rollover validation failed; the live database requires administrative review."
             )
@@ -265,6 +308,7 @@ class ArchiveManager:
             "archive_year": year,
             "storage_tier": chosen,
             "case_records_archived": len(cases),
+            "visits_archived": len(visits),
             "backup": backup,
             "archive_file": str(target),
             "archive_checksum_sha256": checksum,
@@ -302,6 +346,37 @@ class ArchiveManager:
                     "storage_tier, is_current_year, renewed_from_case_id, created_at, "
                     "updated_at FROM CaseRecord WHERE patient_id = ? AND case_year = ? "
                     "ORDER BY updated_at DESC, id DESC",
+                    (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_visits(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, visit_number, patient_id, visit_type, visit_datetime, "
+                    "consultation_status, case_type, visit_year, storage_tier, "
+                    "is_current_year FROM Visit WHERE patient_id = ? AND visit_year = ? "
+                    "ORDER BY visit_datetime DESC, id DESC",
                     (patient_id, year),
                 )
                 return [dict(row) for row in cur.fetchall()]

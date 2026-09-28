@@ -65,6 +65,7 @@ from .stock_transaction import StockTransaction
 from .user import User
 from .user_role import UserRole
 from .visit import Visit
+from .visit_archive_reference import VisitArchiveReference
 
 
 __all__ = [
@@ -99,6 +100,7 @@ __all__ = [
     "Diagnosis",
     "FollowUp",
     "Visit",
+    "VisitArchiveReference",
     "OPDToken",
 
     "Prescription",

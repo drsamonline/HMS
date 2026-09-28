@@ -89,6 +89,26 @@ class Visit(Base):
         index=True,
     )
 
+    visit_year: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        index=True,
+    )
+
+    storage_tier: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="live",
+        index=True,
+    )
+
+    is_current_year: Mapped[bool] = mapped_column(
+        nullable=False,
+        default=True,
+        index=True,
+    )
+
     consulting_doctor_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey(
