@@ -29,7 +29,11 @@ async def download_backup(name: str, db: DatabaseSession, current_user: CurrentU
     path = backup_service.backup_path(name)
     return FileResponse(path=path, filename=path.name, media_type="application/octet-stream")
 
-@router.delete("/{name}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{name}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
+)
 async def delete_backup(name: str, db: DatabaseSession, current_user: CurrentUserDependency) -> None:
     await _require_admin(db, actor_id(current_user))
     await backup_service.delete_backup(name)

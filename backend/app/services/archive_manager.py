@@ -33,6 +33,17 @@ from app.models.investigation_result import InvestigationResult
 from app.models.lab_archive_reference import InvestigationArchiveReference
 from app.models.medical_document import MedicalDocument
 from app.models.mrd_archive_reference import MedicalDocumentArchiveReference
+from app.models.goods_receipt import GoodsReceipt, GoodsReceiptItem
+from app.models.procurement_archive_reference import (
+    GoodsReceiptArchiveReference,
+    PurchaseOrderArchiveReference,
+    StockCardArchiveReference,
+    StockTransactionArchiveReference,
+)
+from app.models.purchase_order import PurchaseOrder, PurchaseOrderItem
+from app.models.stock_batch import StockBatch
+from app.models.stock_card import StockCard
+from app.models.stock_transaction import StockTransaction
 from app.models.payment import Payment
 from app.models.pharmacy_archive_reference import DispenseArchiveReference
 from app.models.visit import Visit
@@ -193,6 +204,22 @@ class ArchiveManager:
             select(MedicalDocument.id).where(MedicalDocument.document_year == target_year)
         )
         document_count = len(document_result.scalars().all())
+        purchase_order_result = await db.execute(
+            select(PurchaseOrder.id).where(PurchaseOrder.order_year == target_year)
+        )
+        purchase_order_count = len(purchase_order_result.scalars().all())
+        goods_receipt_result = await db.execute(
+            select(GoodsReceipt.id).where(GoodsReceipt.receipt_year == target_year)
+        )
+        goods_receipt_count = len(goods_receipt_result.scalars().all())
+        stock_transaction_result = await db.execute(
+            select(StockTransaction.id).where(StockTransaction.transaction_year == target_year)
+        )
+        stock_transaction_count = len(stock_transaction_result.scalars().all())
+        stock_card_result = await db.execute(
+            select(StockCard.id).where(StockCard.transaction_year == target_year)
+        )
+        stock_card_count = len(stock_card_result.scalars().all())
         return {
             "current_year": current_year,
             "target_year": target_year,
@@ -206,6 +233,10 @@ class ArchiveManager:
             "investigation_count": investigation_count,
             "admission_count": admission_count,
             "document_count": document_count,
+            "purchase_order_count": purchase_order_count,
+            "goods_receipt_count": goods_receipt_count,
+            "stock_transaction_count": stock_transaction_count,
+            "stock_card_count": stock_card_count,
         }
 
     async def rollover_case_year(
@@ -306,6 +337,42 @@ class ArchiveManager:
                         select(MedicalDocument)
                         .where(MedicalDocument.document_year == year)
                         .order_by(MedicalDocument.id)
+                    )
+                ).scalars().all()
+            )
+            purchase_orders = list(
+                (
+                    await db.execute(
+                        select(PurchaseOrder)
+                        .where(PurchaseOrder.order_year == year)
+                        .order_by(PurchaseOrder.id)
+                    )
+                ).scalars().all()
+            )
+            goods_receipts = list(
+                (
+                    await db.execute(
+                        select(GoodsReceipt)
+                        .where(GoodsReceipt.receipt_year == year)
+                        .order_by(GoodsReceipt.id)
+                    )
+                ).scalars().all()
+            )
+            stock_transactions = list(
+                (
+                    await db.execute(
+                        select(StockTransaction)
+                        .where(StockTransaction.transaction_year == year)
+                        .order_by(StockTransaction.id)
+                    )
+                ).scalars().all()
+            )
+            stock_cards = list(
+                (
+                    await db.execute(
+                        select(StockCard)
+                        .where(StockCard.transaction_year == year)
+                        .order_by(StockCard.id)
                     )
                 ).scalars().all()
             )
@@ -432,6 +499,49 @@ class ArchiveManager:
                     )
                 )
 
+            for purchase_order in purchase_orders:
+                db.add(
+                    PurchaseOrderArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_purchase_order_id=purchase_order.id,
+                        supplier_id=purchase_order.supplier_id,
+                        order_no=purchase_order.order_no,
+                        order_year=year,
+                    )
+                )
+
+            for goods_receipt in goods_receipts:
+                db.add(
+                    GoodsReceiptArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_goods_receipt_id=goods_receipt.id,
+                        goods_receipt_no=goods_receipt.receipt_no,
+                        receipt_year=year,
+                    )
+                )
+
+            for stock_transaction in stock_transactions:
+                db.add(
+                    StockTransactionArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_stock_transaction_id=stock_transaction.id,
+                        inventory_item_id=stock_transaction.inventory_item_id,
+                        transaction_type=stock_transaction.transaction_type,
+                        reference_number=stock_transaction.reference_number,
+                        transaction_year=year,
+                    )
+                )
+
+            for stock_card in stock_cards:
+                db.add(
+                    StockCardArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_stock_card_id=stock_card.id,
+                        medicine_id=stock_card.medicine_id,
+                        transaction_year=year,
+                    )
+                )
+
             case_ids = [case.id for case in cases]
             if case_ids:
                 now = datetime.now(timezone.utc)
@@ -523,6 +633,98 @@ class ArchiveManager:
                     )
                 )
 
+            purchase_order_ids = [purchase_order.id for purchase_order in purchase_orders]
+            goods_receipt_ids = [goods_receipt.id for goods_receipt in goods_receipts]
+            # A live goods receipt can only reference a purchase order that is
+            # being archived when the two fall in different operational years.
+            # Such receipts are rolled over together with their parent order so
+            # the PurchaseOrderItem FK stays consistent; their identity is
+            # preserved through GoodsReceiptArchiveReference rows added above.
+            if purchase_order_ids:
+                linked_receipt_ids = list(
+                    (
+                        await db.execute(
+                            select(GoodsReceipt.id).where(
+                                GoodsReceipt.purchase_order_id.in_(purchase_order_ids),
+                                GoodsReceipt.id.notin_(goods_receipt_ids),
+                            )
+                        )
+                    ).scalars().all()
+                )
+                if linked_receipt_ids:
+                    goods_receipt_ids.extend(linked_receipt_ids)
+                    extra_receipts = list(
+                        (
+                            await db.execute(
+                                select(GoodsReceipt).where(
+                                    GoodsReceipt.id.in_(linked_receipt_ids)
+                                )
+                            )
+                        ).scalars().all()
+                    )
+                    for extra_receipt in extra_receipts:
+                        db.add(
+                            GoodsReceiptArchiveReference(
+                                archive_manifest_id=manifest.id,
+                                original_goods_receipt_id=extra_receipt.id,
+                                goods_receipt_no=extra_receipt.receipt_no,
+                                receipt_year=year,
+                            )
+                        )
+            # Detach the receipt links from live stock batches first so batch
+            # balances survive rollover (Batch 76 design decision).
+            if goods_receipt_ids:
+                await db.execute(
+                    update(StockBatch)
+                    .where(StockBatch.goods_receipt_id.in_(goods_receipt_ids))
+                    .values(goods_receipt_id=None)
+                )
+            if purchase_order_ids:
+                po_item_ids = list(
+                    (
+                        await db.execute(
+                            select(PurchaseOrderItem.id).where(
+                                PurchaseOrderItem.purchase_order_id.in_(purchase_order_ids)
+                            )
+                        )
+                    ).scalars().all()
+                )
+                if po_item_ids:
+                    await db.execute(
+                        delete(PurchaseOrderItem).where(
+                            PurchaseOrderItem.id.in_(po_item_ids)
+                        )
+                    )
+                await db.execute(
+                    delete(PurchaseOrder).where(PurchaseOrder.id.in_(purchase_order_ids))
+                )
+
+            if goods_receipt_ids:
+                await db.execute(
+                    delete(GoodsReceiptItem).where(
+                        GoodsReceiptItem.goods_receipt_id.in_(goods_receipt_ids)
+                    )
+                )
+                await db.execute(
+                    delete(GoodsReceipt).where(GoodsReceipt.id.in_(goods_receipt_ids))
+                )
+
+            stock_transaction_ids = [
+                stock_transaction.id for stock_transaction in stock_transactions
+            ]
+            if stock_transaction_ids:
+                await db.execute(
+                    delete(StockTransaction).where(
+                        StockTransaction.id.in_(stock_transaction_ids)
+                    )
+                )
+
+            stock_card_ids = [stock_card.id for stock_card in stock_cards]
+            if stock_card_ids:
+                await db.execute(
+                    delete(StockCard).where(StockCard.id.in_(stock_card_ids))
+                )
+
             await db.flush()
             await db.commit()
         except Exception:
@@ -555,6 +757,18 @@ class ArchiveManager:
         live_document_remaining = await db.scalar(
             select(MedicalDocument.id).where(MedicalDocument.document_year == year).limit(1)
         )
+        live_purchase_order_remaining = await db.scalar(
+            select(PurchaseOrder.id).where(PurchaseOrder.order_year == year).limit(1)
+        )
+        live_goods_receipt_remaining = await db.scalar(
+            select(GoodsReceipt.id).where(GoodsReceipt.receipt_year == year).limit(1)
+        )
+        live_stock_transaction_remaining = await db.scalar(
+            select(StockTransaction.id).where(StockTransaction.transaction_year == year).limit(1)
+        )
+        live_stock_card_remaining = await db.scalar(
+            select(StockCard.id).where(StockCard.transaction_year == year).limit(1)
+        )
         live_healthy = await asyncio.to_thread(_integrity, database_path())
         if (
             live_remaining is not None
@@ -565,6 +779,10 @@ class ArchiveManager:
             or live_investigation_remaining is not None
             or live_admission_remaining is not None
             or live_document_remaining is not None
+            or live_purchase_order_remaining is not None
+            or live_goods_receipt_remaining is not None
+            or live_stock_transaction_remaining is not None
+            or live_stock_card_remaining is not None
             or not live_healthy
         ):
             raise BusinessRuleException(
@@ -583,6 +801,10 @@ class ArchiveManager:
             "investigations_archived": len(investigations),
             "admissions_archived": len(admissions),
             "documents_archived": len(documents),
+            "purchase_orders_archived": len(purchase_orders),
+            "goods_receipts_archived": len(goods_receipts),
+            "stock_transactions_archived": len(stock_transactions),
+            "stock_cards_archived": len(stock_cards),
             "backup": backup,
             "archive_file": str(target),
             "archive_checksum_sha256": checksum,
@@ -854,6 +1076,129 @@ class ArchiveManager:
                     "FROM MedicalDocument WHERE patient_id = ? AND document_year = ? "
                     "ORDER BY document_date DESC, id DESC",
                     (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_purchase_orders(
+        self,
+        db: AsyncSession,
+        year: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, order_no, supplier_id, order_date, expected_delivery_date, "
+                    "status, total_amount, notes, created_by, order_year, storage_tier, "
+                    "is_current_year FROM PurchaseOrder WHERE order_year = ? "
+                    "ORDER BY order_date DESC, id DESC",
+                    (year,),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_goods_receipts(
+        self,
+        db: AsyncSession,
+        year: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, receipt_no, purchase_order_id, supplier_id, receipt_date, "
+                    "total_quantity, accepted_quantity, rejected_quantity, remarks, "
+                    "received_by, receipt_year, storage_tier, is_current_year "
+                    "FROM GoodsReceipt WHERE receipt_year = ? "
+                    "ORDER BY receipt_date DESC, id DESC",
+                    (year,),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_stock_transactions(
+        self,
+        db: AsyncSession,
+        year: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, inventory_item_id, transaction_type, quantity, "
+                    "reference_number, transaction_datetime, performed_by, remarks, "
+                    "transaction_year, storage_tier, is_current_year FROM StockTransaction "
+                    "WHERE transaction_year = ? ORDER BY transaction_datetime DESC, id DESC",
+                    (year,),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_stock_cards(
+        self,
+        db: AsyncSession,
+        year: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, medicine_id, stock_batch_id, transaction_type, "
+                    "quantity_in, quantity_out, balance_quantity, reference_type, "
+                    "reference_id, transaction_datetime, created_by, remarks, "
+                    "transaction_year, storage_tier, is_current_year "
+                    "FROM StockCard WHERE transaction_year = ? "
+                    "ORDER BY transaction_datetime DESC, id DESC",
+                    (year,),
                 )
                 return [dict(row) for row in cur.fetchall()]
             finally:

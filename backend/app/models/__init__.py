@@ -74,6 +74,12 @@ from .billing_archive_reference import (
 from .pharmacy_archive_reference import DispenseArchiveReference
 from .lab_archive_reference import InvestigationArchiveReference
 from .mrd_archive_reference import MedicalDocumentArchiveReference
+from .procurement_archive_reference import (
+    PurchaseOrderArchiveReference,
+    GoodsReceiptArchiveReference,
+    StockTransactionArchiveReference,
+    StockCardArchiveReference,
+)
 
 
 __all__ = [
@@ -115,6 +121,10 @@ __all__ = [
     "DispenseArchiveReference",
     "InvestigationArchiveReference",
     "MedicalDocumentArchiveReference",
+    "PurchaseOrderArchiveReference",
+    "GoodsReceiptArchiveReference",
+    "StockTransactionArchiveReference",
+    "StockCardArchiveReference",
     "OPDToken",
 
     "Prescription",

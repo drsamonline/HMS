@@ -213,6 +213,10 @@ export async function getHistoricalArchiveDispenses(year,patientId){return reque
 export async function getHistoricalArchiveInvestigations(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/investigations`);}
 export async function getHistoricalArchiveAdmissions(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/admissions`);}
 export async function getHistoricalArchiveDocuments(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/documents`);}
+export async function getHistoricalPurchaseOrders(year){return request(`/maintenance/archives/${encodeURIComponent(year)}/purchase-orders`);}
+export async function getHistoricalGoodsReceipts(year){return request(`/maintenance/archives/${encodeURIComponent(year)}/goods-receipts`);}
+export async function getHistoricalStockTransactions(year){return request(`/maintenance/archives/${encodeURIComponent(year)}/stock-transactions`);}
+export async function getHistoricalStockCards(year){return request(`/maintenance/archives/${encodeURIComponent(year)}/stock-cards`);}
 
 export async function getOperationalYear(){return apiGet('/operational-year');}
 export async function apiPut(path, body, options = {}) { return request(path, { method: "PUT", body: JSON.stringify(body), ...options }); }

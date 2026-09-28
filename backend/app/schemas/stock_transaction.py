@@ -55,6 +55,9 @@ class StockTransactionRead(BaseSchema):
     transaction_datetime: datetime
     performed_by: int
     remarks: str | None
+    transaction_year: int
+    storage_tier: str
+    is_current_year: bool
     created_at: datetime
     updated_at: datetime
 

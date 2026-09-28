@@ -10,6 +10,17 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 76 · Procurement & Inventory Annual Lifecycle & Rollover
+- PurchaseOrder, GoodsReceipt, StockTransaction and StockCard lifecycle metadata (`order_year`, `receipt_year`, `transaction_year`, `storage_tier`, `is_current_year`) derived from the document date at creation; migration `0027_procurement_inventory_operational_year_lifecycle` backfills existing rows.
+- Permanent `PurchaseOrderArchiveReference`, `GoodsReceiptArchiveReference`, `StockTransactionArchiveReference` and `StockCardArchiveReference` records so procurement/inventory identity survives physical live-database removal.
+- Annual rollover now physically archives completed-year purchase orders, goods receipts, stock transactions and stock-card ledger entries (preview counts `purchase_order_count`/`goods_receipt_count`/`stock_transaction_count`/`stock_card_count`, references-before-delete, post-rollover validation). Master data (Supplier, Medicine, InventoryItem) and live StockBatch balances are intentionally never rolled over.
+- Historical archived procurement/inventory read endpoints `/maintenance/archives/{year}/purchase-orders|goods-receipts|stock-transactions|stock-cards` (administrator-only, year-scoped because these records carry no patient lineage) and client wrappers `getHistoricalPurchaseOrders`, `getHistoricalGoodsReceipts`, `getHistoricalStockTransactions`, `getHistoricalStockCards`.
+- Read schemas (`PurchaseOrderRead`, `GoodsReceiptRead`, `StockTransactionRead`, `StockCardRead`) expose lifecycle fields.
+- Contract test suite `backend/tests/test_procurement_archive_rollover.py` (7 tests; full suite 195 passed).
+
+### Fixed — FastAPI 204 response-model route registration error
+- `DELETE /maintenance/backups/{name}` and `DELETE /billing/invoice-items/{item_id}` declared a `None` return annotation that FastAPI turned into an implicit response model, raising `AssertionError: Status code 204 must not have a response body` at application startup. Both routes now declare `response_model=None` explicitly; the app boots cleanly (206 routes registered).
+
 ### Added — Batch 75 · MRD Annual Lifecycle & Rollover
 - MedicalDocument lifecycle metadata (`document_year`, `storage_tier`, `is_current_year`) derived from the document date at creation; migration `0026_mrd_operational_year_lifecycle` backfills existing rows.
 - Permanent `MedicalDocumentArchiveReference` records so document identity and visit/admission lineage survive physical live-database removal.

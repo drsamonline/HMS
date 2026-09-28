@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: latest user-supplied full ZIP (`HMS(5).zip`), superseding all older ZIP baselines.
-- Latest completed functional milestone: Batch 75 — MRD Annual Lifecycle & Rollover.
-- Current milestone: Batch 75 (next cross-module workflow continuity item).
+- Latest completed functional milestone: Batch 76 — Procurement & Inventory Annual Lifecycle & Rollover.
+- Current milestone: Batch 76 (annual lifecycle now complete for case, visit, billing, pharmacy, IPD, laboratory, MRD, procurement and inventory domains).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -84,6 +84,15 @@
 - Permanent `MedicalDocumentArchiveReference` records preserve document identity and visit/admission lineage after physical live-database removal.
 - Annual rollover physically archives completed-year medical documents; preview reports `document_count`, post-rollover validation confirms no live MRD rows remain for the year, and results include `documents_archived`.
 - Archived MRD documents are readable through `/maintenance/archives/{year}/patients/{patient_id}/documents` (client wrapper `getHistoricalArchiveDocuments`); `MedicalDocumentRead` exposes the lifecycle fields.
+
+## Batch 76 — Procurement & Inventory Annual Lifecycle & Rollover
+- `PurchaseOrder`, `GoodsReceipt`, `StockTransaction` and `StockCard` carry lifecycle metadata (`order_year`/`receipt_year`/`transaction_year`, `storage_tier`, `is_current_year`) derived at creation via operational-year configuration (migration `0027_procurement_inventory_operational_year_lifecycle` backfills existing rows).
+- Permanent `PurchaseOrderArchiveReference`, `GoodsReceiptArchiveReference`, `StockTransactionArchiveReference` and `StockCardArchiveReference` records preserve procurement/inventory identity after physical live-database removal.
+- Annual rollover physically archives completed-year purchase orders, goods receipts, stock transactions and stock-card ledger entries; preview reports `purchase_order_count`, `goods_receipt_count`, `stock_transaction_count` and `stock_card_count`, and post-rollover validation confirms no live rows remain for the year.
+- Master data (Supplier, Medicine, InventoryItem) and live StockBatch balance rows are never rolled over: batches carry current `quantity_remaining` that dispensing depends on; only document/ledger rows participate in annual archival.
+- Archived procurement/inventory rows are readable through administrator-only, year-scoped endpoints `/maintenance/archives/{year}/purchase-orders|goods-receipts|stock-transactions|stock-cards` (no patient lineage exists on these records, so the patient-scoped pattern does not apply); client wrappers `getHistoricalPurchaseOrders`, `getHistoricalGoodsReceipts`, `getHistoricalStockTransactions`, `getHistoricalStockCards`.
+- Read schemas expose lifecycle fields; contract test suite `backend/tests/test_procurement_archive_rollover.py` (full suite 195 passed).
+- Fixed a startup-blocking FastAPI defect: 204-status DELETE routes (`/maintenance/backups/{name}`, `/billing/invoice-items/{item_id}`) now declare `response_model=None` explicitly.
 
 ## Remaining before QA
 - Complete remaining cross-module workflow continuity.

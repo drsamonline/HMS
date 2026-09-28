@@ -1,6 +1,6 @@
 """HHMS Pharmacy Stock Card Service."""
 from __future__ import annotations
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -10,6 +10,7 @@ from app.models.stock_batch import StockBatch
 from app.models.stock_card import StockCard
 from app.repositories.stock_card import stock_card_repository
 from app.schemas.stock_card import StockAdjustmentCreate
+from app.services.operational_year import operational_year_service
 
 class StockCardService:
     async def list_by_batch(self,db:AsyncSession,stock_batch_id:int,skip:int=0,limit:int=200):
@@ -18,7 +19,11 @@ class StockCardService:
         return await stock_card_repository.list_by_medicine(db,medicine_id,skip,limit)
     async def record(self,db:AsyncSession,*,batch:StockBatch,transaction_type:str,quantity_in:Decimal,quantity_out:Decimal,performed_by:int,reference_type:str|None=None,reference_id:int|None=None,remarks:str|None=None,commit:bool=False)->StockCard:
         now=datetime.now(timezone.utc)
-        card=StockCard(medicine_id=batch.medicine_id,stock_batch_id=batch.id,transaction_type=transaction_type,quantity_in=quantity_in,quantity_out=quantity_out,balance_quantity=Decimal(batch.quantity_remaining),reference_type=reference_type,reference_id=reference_id,transaction_datetime=now,created_by=performed_by,remarks=remarks,created_at=now)
+        # Derive annual lifecycle fields from the ledger timestamp (Batch 76).
+        op_cfg=await operational_year_service.get_config(db)
+        transaction_year=operational_year_service.current_year(now.date(),op_cfg)
+        current_year=operational_year_service.current_year(date.today(),op_cfg)
+        card=StockCard(medicine_id=batch.medicine_id,stock_batch_id=batch.id,transaction_type=transaction_type,quantity_in=quantity_in,quantity_out=quantity_out,balance_quantity=Decimal(batch.quantity_remaining),reference_type=reference_type,reference_id=reference_id,transaction_datetime=now,created_by=performed_by,remarks=remarks,transaction_year=transaction_year,storage_tier="live",is_current_year=transaction_year==current_year,created_at=now)
         db.add(card)
         if commit:
             try:

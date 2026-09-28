@@ -18,6 +18,9 @@ class StockCardRead(BaseSchema):
     transaction_datetime:datetime
     created_by:int
     remarks:str|None
+    transaction_year:int
+    storage_tier:str
+    is_current_year:bool
     created_at:datetime
 
 class StockAdjustmentCreate(BaseSchema):

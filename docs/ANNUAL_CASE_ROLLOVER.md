@@ -20,8 +20,12 @@ live case that points to an archived case through `renewed_from_case_id` is clea
 live foreign-key reference to a physically removed row; the shared `case_family_id` remains the
 longitudinal linkage and the archived snapshot retains the original predecessor ID.
 
-Patient master data is not removed. Other encounter, billing, pharmacy and administrative rows
-remain live until their own lifecycle metadata and rollover rules are implemented.
+Patient master data is not removed. Since Batches 70-76 the same references-before-delete
+pattern extends to visits, invoices/payments, dispense records, admissions, investigations and
+medical documents, and (Batch 76) purchase orders, goods receipts, stock transactions and
+stock-card ledger entries. Master data (Patient, Supplier, Medicine, InventoryItem) and live
+StockBatch balance rows are never rolled over; only document/ledger rows with completed-year
+lifecycle metadata participate in physical archival.
 
 ## Validation
 
