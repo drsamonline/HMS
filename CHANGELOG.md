@@ -10,6 +10,15 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 72 · Pharmacy Annual Lifecycle & Rollover
+- Dispense lifecycle metadata (`dispense_year`, `storage_tier`, `is_current_year`) derived from the dispense date at creation, honoring the configured operational year.
+- Alembic migration `0023_pharmacy_operational_year_lifecycle` with backfill of existing dispense rows; `DispenseRecord.prescription_item_id` made nullable so archived links detach safely.
+- Permanent `DispenseArchiveReference` records so dispense identity survives physical live-database removal.
+- Annual rollover now physically archives completed-year dispense records alongside cases, visits and billing (references created before deletion, post-rollover validation extended to pharmacy).
+- Historical archived pharmacy read endpoint `/maintenance/archives/{year}/patients/{patient_id}/dispenses` (joined through prescription lineage) and client API wrapper `getHistoricalArchiveDispenses`.
+- `DispenseRead` schema exposes lifecycle fields.
+- Contract test suite `backend/tests/test_pharmacy_archive_rollover.py` (8 tests; full suite 165 passed).
+
 ### Added — Batch 71 · Billing Annual Lifecycle & Rollover
 - Invoice and payment lifecycle metadata (`invoice_year`, `payment_year`, `storage_tier`, `is_current_year`) derived from the billing date at creation, honoring the configured operational year.
 - Alembic migration `0022_billing_operational_year_lifecycle` with backfill of existing invoice/payment rows; `Payment.invoice_id` made nullable so archived links detach safely.
