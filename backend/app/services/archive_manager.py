@@ -26,6 +26,9 @@ from app.models.dispense_record import DispenseRecord
 from app.models.followup import FollowUp
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
+from app.models.investigation import Investigation
+from app.models.investigation_result import InvestigationResult
+from app.models.lab_archive_reference import InvestigationArchiveReference
 from app.models.payment import Payment
 from app.models.pharmacy_archive_reference import DispenseArchiveReference
 from app.models.visit import Visit
@@ -174,6 +177,10 @@ class ArchiveManager:
             select(DispenseRecord.id).where(DispenseRecord.dispense_year == target_year)
         )
         dispense_count = len(dispense_result.scalars().all())
+        investigation_result = await db.execute(
+            select(Investigation.id).where(Investigation.investigation_year == target_year)
+        )
+        investigation_count = len(investigation_result.scalars().all())
         return {
             "current_year": current_year,
             "target_year": target_year,
@@ -184,6 +191,7 @@ class ArchiveManager:
             "invoice_count": invoice_count,
             "payment_count": payment_count,
             "dispense_count": dispense_count,
+            "investigation_count": investigation_count,
         }
 
     async def rollover_case_year(
@@ -257,6 +265,15 @@ class ArchiveManager:
                         select(DispenseRecord)
                         .where(DispenseRecord.dispense_year == year)
                         .order_by(DispenseRecord.id)
+                    )
+                ).scalars().all()
+            )
+            investigations = list(
+                (
+                    await db.execute(
+                        select(Investigation)
+                        .where(Investigation.investigation_year == year)
+                        .order_by(Investigation.id)
                     )
                 ).scalars().all()
             )
@@ -339,6 +356,19 @@ class ArchiveManager:
                     )
                 )
 
+            for investigation in investigations:
+                db.add(
+                    InvestigationArchiveReference(
+                        archive_manifest_id=manifest.id,
+                        original_investigation_id=investigation.id,
+                        patient_id=investigation.patient_id,
+                        visit_id=investigation.visit_id,
+                        admission_id=investigation.admission_id,
+                        investigation_number=investigation.investigation_number,
+                        investigation_year=year,
+                    )
+                )
+
             case_ids = [case.id for case in cases]
             if case_ids:
                 now = datetime.now(timezone.utc)
@@ -396,6 +426,19 @@ class ArchiveManager:
                     delete(DispenseRecord).where(DispenseRecord.id.in_(dispense_ids))
                 )
 
+            investigation_ids = [investigation.id for investigation in investigations]
+            if investigation_ids:
+                # Results belong to their investigation; archive them with the
+                # parent order before removing the investigation rows.
+                await db.execute(
+                    delete(InvestigationResult).where(
+                        InvestigationResult.investigation_id.in_(investigation_ids)
+                    )
+                )
+                await db.execute(
+                    delete(Investigation).where(Investigation.id.in_(investigation_ids))
+                )
+
             await db.flush()
             await db.commit()
         except Exception:
@@ -419,6 +462,9 @@ class ArchiveManager:
         live_dispense_remaining = await db.scalar(
             select(DispenseRecord.id).where(DispenseRecord.dispense_year == year).limit(1)
         )
+        live_investigation_remaining = await db.scalar(
+            select(Investigation.id).where(Investigation.investigation_year == year).limit(1)
+        )
         live_healthy = await asyncio.to_thread(_integrity, database_path())
         if (
             live_remaining is not None
@@ -426,6 +472,7 @@ class ArchiveManager:
             or live_invoice_remaining is not None
             or live_payment_remaining is not None
             or live_dispense_remaining is not None
+            or live_investigation_remaining is not None
             or not live_healthy
         ):
             raise BusinessRuleException(
@@ -441,6 +488,7 @@ class ArchiveManager:
             "invoices_archived": len(invoices),
             "payments_archived": len(payments),
             "dispenses_archived": len(dispenses),
+            "investigations_archived": len(investigations),
             "backup": backup,
             "archive_file": str(target),
             "archive_checksum_sha256": checksum,
@@ -614,6 +662,39 @@ class ArchiveManager:
                     "JOIN Visit v ON pr.visit_id = v.id "
                     "WHERE v.patient_id = ? AND d.dispense_year = ? "
                     "ORDER BY d.dispense_date DESC, d.id DESC",
+                    (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_investigations(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT i.id, i.investigation_number, i.patient_id, i.visit_id, "
+                    "i.admission_id, i.investigation_status, i.requested_datetime, "
+                    "i.investigation_year, i.storage_tier, i.is_current_year "
+                    "FROM Investigation i "
+                    "WHERE i.patient_id = ? AND i.investigation_year = ? "
+                    "ORDER BY i.requested_datetime DESC, i.id DESC",
                     (patient_id, year),
                 )
                 return [dict(row) for row in cur.fetchall()]

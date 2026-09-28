@@ -66,6 +66,7 @@ from .user import User
 from .user_role import UserRole
 from .visit import Visit
 from .visit_archive_reference import VisitArchiveReference
+from .admission_archive_reference import AdmissionArchiveReference
 from .billing_archive_reference import (
     InvoiceArchiveReference,
     PaymentArchiveReference,
@@ -107,6 +108,7 @@ __all__ = [
     "FollowUp",
     "Visit",
     "VisitArchiveReference",
+    "AdmissionArchiveReference",
     "InvoiceArchiveReference",
     "PaymentArchiveReference",
     "DispenseArchiveReference",
