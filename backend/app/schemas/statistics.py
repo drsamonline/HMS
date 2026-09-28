@@ -107,13 +107,13 @@ class HospitalStatistics(BaseModel):
     unspecified_case_activity_count: int = Field(ge=0)
     inhouse_investigation_count: int = Field(ge=0)
     outsourced_investigation_count: int = Field(ge=0)
-    activity_type_breakdown: list[ActivityBreakdown]
-    case_type_breakdown: list[ActivityBreakdown]
-    fulfillment_breakdown: list[ActivityBreakdown]
-    service_type_breakdown: list[ServiceTypeStatistics]
-    departments: list[DepartmentStatistics]
-    services: list[ServiceStatistics]
-    daily: list[DailyStatistics]
+    activity_type_breakdown: list[ActivityBreakdown] = Field(default_factory=list)
+    case_type_breakdown: list[ActivityBreakdown] = Field(default_factory=list)
+    fulfillment_breakdown: list[ActivityBreakdown] = Field(default_factory=list)
+    service_type_breakdown: list[ServiceTypeStatistics] = Field(default_factory=list)
+    departments: list[DepartmentStatistics] = Field(default_factory=list)
+    services: list[ServiceStatistics] = Field(default_factory=list)
+    daily: list[DailyStatistics] = Field(default_factory=list)
 
 
 __all__ = [
