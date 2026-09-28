@@ -7,7 +7,7 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -44,6 +44,7 @@ from app.schemas.billing import (
 )
 
 from app.services.number_sequence import number_sequence_service
+from app.services.operational_year import operational_year_service
 
 
 class BillingService:
@@ -168,6 +169,18 @@ class BillingService:
 
         now = datetime.now(timezone.utc)
 
+        # Derive the annual lifecycle fields from the invoice date so every
+        # invoice carries its operational-year identity from creation onward.
+        invoice_dt = data.invoice_date
+        invoice_local_date = (
+            invoice_dt.astimezone(timezone.utc).date()
+            if invoice_dt.tzinfo is not None
+            else invoice_dt.date()
+        )
+        op_cfg = await operational_year_service.get_config(db)
+        invoice_year = operational_year_service.current_year(invoice_local_date, op_cfg)
+        current_year = operational_year_service.current_year(date.today(), op_cfg)
+
         invoice = Invoice(
             patient_id=data.patient_id,
             visit_id=data.visit_id,
@@ -176,6 +189,9 @@ class BillingService:
             invoice_date=data.invoice_date,
             total_amount=data.total_amount,
             payment_status="unpaid",
+            invoice_year=invoice_year,
+            storage_tier="live",
+            is_current_year=invoice_year == current_year,
             generated_by=generated_by,
             remarks=data.remarks,
             created_at=now,
@@ -353,6 +369,18 @@ class BillingService:
 
         now = datetime.now(timezone.utc)
 
+        # Derive the annual lifecycle fields from the payment timestamp so
+        # every payment carries its operational-year identity from creation.
+        payment_dt = data.payment_datetime
+        payment_local_date = (
+            payment_dt.astimezone(timezone.utc).date()
+            if payment_dt.tzinfo is not None
+            else payment_dt.date()
+        )
+        op_cfg = await operational_year_service.get_config(db)
+        payment_year = operational_year_service.current_year(payment_local_date, op_cfg)
+        current_year = operational_year_service.current_year(date.today(), op_cfg)
+
         payment = Payment(
             invoice_id=invoice.id,
             receipt_number=await number_sequence_service.next_number(db, "receipt_number"),
@@ -360,6 +388,9 @@ class BillingService:
                 data.payment_datetime
             ),
             payment_method=data.payment_method,
+            payment_year=payment_year,
+            storage_tier="live",
+            is_current_year=payment_year == current_year,
             amount_paid=data.amount_paid,
             received_by=received_by,
             transaction_reference=(

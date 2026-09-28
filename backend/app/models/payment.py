@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -26,9 +26,9 @@ class Payment(Base):
         autoincrement=True,
     )
 
-    invoice_id: Mapped[int] = mapped_column(
+    invoice_id: Mapped[int | None] = mapped_column(
         ForeignKey("Invoice.id", name="fk_payment_invoice"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
 
@@ -48,6 +48,27 @@ class Payment(Base):
     payment_method: Mapped[str] = mapped_column(
         String(30),
         nullable=False,
+        index=True,
+    )
+
+    payment_year: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        index=True,
+    )
+
+    storage_tier: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="live",
+        index=True,
+    )
+
+    is_current_year: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
         index=True,
     )
 
