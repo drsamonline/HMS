@@ -10,6 +10,12 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 75 · MRD Annual Lifecycle & Rollover
+- MedicalDocument lifecycle metadata (`document_year`, `storage_tier`, `is_current_year`) derived from the document date at creation; migration `0026_mrd_operational_year_lifecycle` backfills existing rows.
+- Permanent `MedicalDocumentArchiveReference` records so document identity and visit/admission lineage survive physical live-database removal.
+- Annual rollover now physically archives completed-year medical documents (preview count, references-before-delete, post-rollover validation) with result key `documents_archived`.
+- Historical archived MRD read endpoint `/maintenance/archives/{year}/patients/{patient_id}/documents` and client wrapper `getHistoricalArchiveDocuments`; `MedicalDocumentRead` schema exposes lifecycle fields.
+
 ### Added — Batch 73 · IPD Annual Lifecycle & Rollover
 - Admission lifecycle metadata (`admission_year`, `storage_tier`, `is_current_year`) derived from the admission datetime at creation; migration `0024_ipd_operational_year_lifecycle` backfills existing rows.
 - Permanent `AdmissionArchiveReference` records so admission identity survives physical live-database removal.

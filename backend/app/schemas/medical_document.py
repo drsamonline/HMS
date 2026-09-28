@@ -37,6 +37,9 @@ class MedicalDocumentRead(BaseSchema):
     document_date: datetime
     uploaded_by: int
     remarks: str | None
+    document_year: int | None = None
+    storage_tier: str | None = None
+    is_current_year: bool | None = None
     created_at: datetime
     updated_at: datetime
 

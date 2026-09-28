@@ -582,6 +582,7 @@ class ArchiveManager:
             "dispenses_archived": len(dispenses),
             "investigations_archived": len(investigations),
             "admissions_archived": len(admissions),
+            "documents_archived": len(documents),
             "backup": backup,
             "archive_file": str(target),
             "archive_checksum_sha256": checksum,
@@ -820,6 +821,38 @@ class ArchiveManager:
                     "admission_status, admission_year, storage_tier, is_current_year "
                     "FROM Admission WHERE patient_id = ? AND admission_year = ? "
                     "ORDER BY admission_datetime DESC, id DESC",
+                    (patient_id, year),
+                )
+                return [dict(row) for row in cur.fetchall()]
+            finally:
+                con.close()
+
+        return await asyncio.to_thread(query)
+
+    async def read_documents(
+        self,
+        db: AsyncSession,
+        year: int,
+        patient_id: int,
+    ) -> list[dict[str, object]]:
+        rows = await db.execute(
+            select(ArchiveManifest).where(ArchiveManifest.archive_year == year)
+        )
+        manifest = rows.scalar_one_or_none()
+        if manifest is None:
+            raise ResourceNotFoundException(f"Archive for {year} is not available.")
+        path = self.archive_path(manifest)
+
+        def query() -> list[dict[str, object]]:
+            con = sqlite3.connect(path)
+            con.row_factory = sqlite3.Row
+            try:
+                cur = con.execute(
+                    "SELECT id, document_number, patient_id, visit_id, admission_id, "
+                    "document_type, document_title, file_name, document_date, "
+                    "uploaded_by, remarks, document_year, storage_tier, is_current_year "
+                    "FROM MedicalDocument WHERE patient_id = ? AND document_year = ? "
+                    "ORDER BY document_date DESC, id DESC",
                     (patient_id, year),
                 )
                 return [dict(row) for row in cur.fetchall()]

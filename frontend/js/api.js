@@ -212,6 +212,7 @@ export async function getHistoricalArchivePayments(year,patientId){return reques
 export async function getHistoricalArchiveDispenses(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/dispenses`);}
 export async function getHistoricalArchiveInvestigations(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/investigations`);}
 export async function getHistoricalArchiveAdmissions(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/admissions`);}
+export async function getHistoricalArchiveDocuments(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/documents`);}
 
 export async function getOperationalYear(){return apiGet('/operational-year');}
 export async function apiPut(path, body, options = {}) { return request(path, { method: "PUT", body: JSON.stringify(body), ...options }); }
