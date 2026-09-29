@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: latest user-supplied full ZIP (`HMS(5).zip`), superseding all older ZIP baselines.
-- Latest completed functional milestone: Batch 77 — Prescription Annual Lifecycle & Lineage Rollover.
-- Current milestone: Batch 77 (annual lifecycle now complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains).
+- Latest completed functional milestone: Batch 78 — Clinical Cross-Module Workflow Continuity.
+- Current milestone: Batch 78 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -134,3 +134,11 @@
 - Invoice items cannot be added/removed on paid or cancelled invoices.
 - Item add/remove recalculates invoice total and preserves a derived unpaid/partial/paid status.
 - Item deletion is blocked if the resulting invoice total would fall below the amount already paid.
+
+## Batch 78 — Clinical Cross-Module Workflow Continuity
+- Follow-up records validate `previous_prescription_id`/`next_prescription_id` lineage: the prescription must exist and belong to a visit of the same patient (enforced on create and update).
+- Due-follow-up window query: service `list_due(from, to)` plus `GET /followups?due_from=&due_to=` (both-or-neither validation; `case_record_id` remains supported).
+- Case-wide prescription retrieval: repository `get_by_visits`, service `get_by_case`, endpoint `GET /prescriptions/by-case/{case_record_id}` (registered before the id lookup route) spanning the case's primary visit and any visits linked back via `Visit.case_record_id`.
+- Client wrappers `listDueFollowups(fromIso, toIso)` and `listCasePrescriptions(caseRecordId)` in `frontend/js/api.js`.
+- Contract suite `backend/tests/test_clinical_workflow_continuity.py` (5 tests; full suite 210 passed).
+- Environment note: backend venv pytest drifted to 9.x/pytest-asyncio 1.4 which broke plugin loading; reinstalled within the pinned ranges (`pytest>=8.3,<9`, `pytest-asyncio>=0.25,<1`).

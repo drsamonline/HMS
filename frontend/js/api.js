@@ -102,6 +102,7 @@ export async function listDiagnoses(caseId){const q=new URLSearchParams({case_re
 export async function createDiagnosis(payload){return request("/api/v1/diagnoses",{method:"POST",body:JSON.stringify(payload)})}
 export async function updateDiagnosis(id,payload){return request(`/api/v1/diagnoses/${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify(payload)})}
 export async function listFollowups(caseId){const q=new URLSearchParams({case_record_id:String(caseId),skip:"0",limit:"100"});return request(`/api/v1/followups?${q.toString()}`)}
+export async function listDueFollowups(fromIso,toIso,options={}){const q=new URLSearchParams({due_from:fromIso,due_to:toIso,skip:String(options.skip??0),limit:String(options.limit??100)});return request(`/api/v1/followups?${q.toString()}`)}
 export async function createFollowup(payload){return request("/api/v1/followups",{method:"POST",body:JSON.stringify(payload)})}
 export async function searchICD11(q){return request(`/api/v1/icd11/search?q=${encodeURIComponent(q)}&limit=15`)}
 export async function createPrescription(payload){return request("/api/v1/prescriptions",{method:"POST",body:JSON.stringify(payload)})}
@@ -133,6 +134,7 @@ export async function getDispensesForPrescriptionItem(itemId){return request(`/a
 export async function createDispense(payload){return request("/api/v1/dispenses",{method:"POST",body:JSON.stringify(payload)})}
 
 export async function listPrescriptions(visitId){return request(`/api/v1/prescriptions?visit_id=${encodeURIComponent(visitId)}&skip=0&limit=100`)}
+export async function listCasePrescriptions(caseRecordId){return request(`/api/v1/prescriptions/by-case/${encodeURIComponent(caseRecordId)}`)}
 export async function getPrescription(prescriptionId){return request(`/api/v1/prescriptions/${encodeURIComponent(prescriptionId)}`)}
 
 export async function listInventoryItems(search=""){const q=new URLSearchParams({skip:"0",limit:"100",active_only:"true"});if(search.trim())q.set("search",search.trim());return request(`/api/v1/inventory-items?${q.toString()}`)}

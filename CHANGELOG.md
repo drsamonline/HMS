@@ -10,6 +10,14 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 78 · Clinical Cross-Module Workflow Continuity
+- Follow-up prescription lineage validation: `previous_prescription_id`/`next_prescription_id` must exist and belong to a visit of the same patient; enforced on both create and update in `app/services/followup.py` (closes a referential-integrity gap where arbitrary prescription IDs could be linked across patients).
+- Due-follow-up workflow surface: service `FollowUpService.list_due(from, to)` ordered by scheduled datetime, exposed via `GET /followups?due_from=&due_to=` (both parameters required together; `case_record_id` query retained).
+- Case-wide prescription continuity: repository `get_by_visits`, service `get_by_case` (spans the case's primary visit plus visits linked back via `Visit.case_record_id`) and endpoint `GET /prescriptions/by-case/{case_record_id}`, registered before the id lookup route.
+- Client API wrappers `listDueFollowups(fromIso, toIso, options)` and `listCasePrescriptions(caseRecordId)` in `frontend/js/api.js`.
+- Contract test suite `backend/tests/test_clinical_workflow_continuity.py` (5 tests; full suite 210 passed).
+- Fixed development environment drift: reinstalled pytest/pytest-asyncio within the pinned ranges after pytest 9.x broke plugin loading (`Marks cannot be applied to fixtures`).
+
 ### Added — Batch 77 · Prescription Annual Lifecycle & Lineage Rollover
 - Prescription and PrescriptionItem lifecycle metadata (`prescription_year`, `item_year`, `storage_tier`, `is_current_year`) derived from the prescription datetime at creation; migration `0028_prescription_operational_year_lifecycle` backfills existing rows and makes `Prescription.visit_id` nullable so prescriptions survive visit rollover with detached lineage.
 - Permanent `PrescriptionArchiveReference` and `PrescriptionItemArchiveReference` records so prescription identity, visit lineage and dispensing pointers survive physical live-database removal (closes the integrity gap where visits were archived but prescriptions had no lifecycle).

@@ -79,7 +79,10 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 69 — Annual Case Rollover**.
-Comprehensive QA/debugging begins after cross-module integration, packaging, and
-final reporting/printing are complete. See [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
+Functional application build is in progress through **Batch 78 — Clinical Cross-Module Workflow Continuity**
+(follow-up prescription-lineage validation, due-follow-up window queries, case-wide prescription retrieval,
+client API wrappers). Remaining before QA: further cross-module workflow continuity, server/client packaging
+and deployment, and final reporting/printing integration. Comprehensive QA/debugging begins after
+cross-module integration, packaging, and final reporting/printing are complete.
+See [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 for the authoritative per-batch state and [CHANGELOG.md](CHANGELOG.md) for change history.
