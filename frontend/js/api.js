@@ -104,6 +104,7 @@ export async function updateDiagnosis(id,payload){return request(`/api/v1/diagno
 export async function listFollowups(caseId){const q=new URLSearchParams({case_record_id:String(caseId),skip:"0",limit:"100"});return request(`/api/v1/followups?${q.toString()}`)}
 export async function listDueFollowups(fromIso,toIso,options={}){const q=new URLSearchParams({due_from:fromIso,due_to:toIso,skip:String(options.skip??0),limit:String(options.limit??100)});return request(`/api/v1/followups?${q.toString()}`)}
 export async function getDashboardDueFollowups(options={}){const q=new URLSearchParams();if(options.from)q.set("from_datetime",options.from);q.set("days_ahead",String(options.daysAhead??7));q.set("limit",String(options.limit??100));return request(`/api/v1/dashboard/due-followups?${q.toString()}`)}
+export async function getDashboardOutstandingInvoices(options={}){const q=new URLSearchParams({limit:String(options.limit??100)});return request(`/api/v1/dashboard/outstanding-invoices?${q.toString()}`)}
 export async function createFollowup(payload){return request("/api/v1/followups",{method:"POST",body:JSON.stringify(payload)})}
 export async function searchICD11(q){return request(`/api/v1/icd11/search?q=${encodeURIComponent(q)}&limit=15`)}
 export async function createPrescription(payload){return request("/api/v1/prescriptions",{method:"POST",body:JSON.stringify(payload)})}
