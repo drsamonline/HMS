@@ -1,4 +1,4 @@
-import { getServerBaseUrl, getAccessToken, listPatients } from "./api.js";
+import { getServerBaseUrl, getAccessToken, listPatients, getDashboardDueFollowups } from "./api.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>'"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" }[c]));
@@ -24,6 +24,10 @@ export async function openDashboard(host, context = {}) {
       </div>
     </section>
     <section class="content-panel">
+      <h3>Due follow-ups (next 7 days)</h3>
+      <div id="dashboard-due-followups" class="patient-list"><div class="empty-state">Loading…</div></div>
+    </section>
+    <section class="content-panel">
       <h3>Recent patients</h3>
       <div id="dashboard-recent" class="patient-list"></div>
     </section>
@@ -43,6 +47,29 @@ export async function openDashboard(host, context = {}) {
       if (target === "patients") document.querySelector(".nav-item[data-view='patients']")?.click();
     });
   });
+
+  try {
+    const due = await getDashboardDueFollowups({ daysAhead: 7, limit: 20 });
+    const dueHost = $("#dashboard-due-followups", host);
+    const items = due?.items ?? [];
+    if (!items.length) {
+      dueHost.innerHTML = '<div class="empty-state">No follow-ups due in the next 7 days.</div>';
+    } else {
+      dueHost.innerHTML = items.map(f => `
+        <button type="button" class="patient-card" data-followup-patient="${esc(f.patient_id)}">
+          <strong>${esc(f.patient_name)}</strong>
+          <span>${esc(f.case_number || "—")} · ${esc(new Date(f.next_followup_datetime).toLocaleString())}</span>
+        </button>
+      `).join("");
+      dueHost.querySelectorAll("[data-followup-patient]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          window.dispatchEvent(new CustomEvent("hhms:open-patient-clinical", { detail: { patientId: Number(btn.dataset.followupPatient) } }));
+        });
+      });
+    }
+  } catch {
+    $("#dashboard-due-followups", host).innerHTML = '<div class="empty-state">Due follow-ups are unavailable right now.</div>';
+  }
 
   try {
     const recentIds = JSON.parse(sessionStorage.getItem("hhms.recent_patients") || "[]");
