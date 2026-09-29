@@ -1,4 +1,4 @@
-import { getServerBaseUrl, getAccessToken, listPatients, getDashboardDueFollowups } from "./api.js";
+import { getServerBaseUrl, getAccessToken, listPatients, getDashboardDueFollowups, getDashboardOutstandingInvoices } from "./api.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>'"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" }[c]));
@@ -26,6 +26,10 @@ export async function openDashboard(host, context = {}) {
     <section class="content-panel">
       <h3>Due follow-ups (next 7 days)</h3>
       <div id="dashboard-due-followups" class="patient-list"><div class="empty-state">Loading…</div></div>
+    </section>
+    <section class="content-panel">
+      <h3>Outstanding invoices</h3>
+      <div id="dashboard-outstanding-invoices" class="patient-list"><div class="empty-state">Loading…</div></div>
     </section>
     <section class="content-panel">
       <h3>Recent patients</h3>
@@ -69,6 +73,33 @@ export async function openDashboard(host, context = {}) {
     }
   } catch {
     $("#dashboard-due-followups", host).innerHTML = '<div class="empty-state">Due follow-ups are unavailable right now.</div>';
+  }
+
+  try {
+    const outstanding = await getDashboardOutstandingInvoices({ limit: 20 });
+    const outstandingHost = $("#dashboard-outstanding-invoices", host);
+    const invoices = outstanding?.items ?? [];
+    if (!invoices.length) {
+      outstandingHost.innerHTML = '<div class="empty-state">No outstanding invoices.</div>';
+    } else {
+      const money = v => Number(v ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      outstandingHost.innerHTML = `
+        <p class="muted">${esc(invoices.length)} invoice(s) · total outstanding ${money(outstanding?.total_outstanding)}</p>
+      ` + invoices.map(inv => `
+        <button type="button" class="patient-card" data-outstanding-patient="${esc(inv.patient_id)}">
+          <strong>${esc(inv.patient_name)}</strong>
+          <span>${esc(inv.invoice_number)} · balance ${money(inv.balance_due)} of ${money(inv.total_amount)} · ${esc(inv.days_outstanding)} day(s) old</span>
+        </button>
+      `).join("");
+      outstandingHost.querySelectorAll("[data-outstanding-patient]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelector(".nav-item[data-view='patients']")?.click();
+          window.dispatchEvent(new CustomEvent("hhms:open-patient", { detail: { patientId: Number(btn.dataset.outstandingPatient) } }));
+        });
+      });
+    }
+  } catch {
+    $("#dashboard-outstanding-invoices", host).innerHTML = '<div class="empty-state">Outstanding invoices are unavailable right now.</div>';
   }
 
   try {

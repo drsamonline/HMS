@@ -4,21 +4,31 @@ Batch 79 — Due Follow-up Workflow Continuity: turns the Batch 78 due-window
 service query into a workflow-ready dashboard feed by joining each due
 follow-up to its patient and case identity, so clinicians can act on today's
 follow-up list directly from the client dashboard.
+
+Batch 82 — Outstanding Billing Continuity: surfaces the billing service's
+oldest-first outstanding-invoice feed (derived balances over live payments)
+as an administrative receivables panel with patient identity enrichment.
 """
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 
 from fastapi import APIRouter, Query
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.dependencies.auth import CurrentUserDependency
 from app.dependencies.database import DatabaseSession
 from app.models.case_record import CaseRecord
 from app.models.patient import Patient
-from app.schemas.dashboard import DueFollowUpsResponse
+from app.models.payment import Payment
+from app.schemas.dashboard import (
+    DueFollowUpsResponse,
+    OutstandingInvoicesResponse,
+)
+from app.services.billing import billing_service
 from app.services.followup import followup_service
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
@@ -91,6 +101,93 @@ async def due_followups(
         )
 
     return DueFollowUpsResponse(from_datetime=start, to_datetime=end, items=items)
+
+
+def _patient_display_name(patient: Patient | None) -> str:
+    if patient is None:
+        return "Unnamed patient"
+    return " ".join(
+        part
+        for part in (patient.first_name, patient.middle_name, patient.last_name)
+        if part
+    ) or "Unnamed patient"
+
+
+@router.get("/outstanding-invoices", response_model=OutstandingInvoicesResponse)
+async def outstanding_invoices(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=100, ge=1, le=200),
+) -> OutstandingInvoicesResponse:
+    """Oldest-first unpaid/partial invoices with derived balances.
+
+    Built on the Batch 82 ``billing_service.list_outstanding_invoices`` feed:
+    balances are recomputed from live payments (so stale stored statuses and
+    cancelled invoices never surface), and each row is enriched with patient
+    identity plus an age in days so receivables can be chased directly from
+    the dashboard.
+    """
+    invoices, total_balance = await billing_service.list_outstanding_invoices(
+        db, limit=limit
+    )
+
+    as_of = date.today()
+    patient_ids = {invoice.patient_id for invoice in invoices}
+    patients: dict[int, Patient] = {}
+    if patient_ids:
+        result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
+        patients = {p.id: p for p in result.scalars()}
+
+    # Per-row paid totals use the same live-payment derivation as the service,
+    # so balance_due + amount_paid always reconciles to total_amount.
+    paid_by_invoice: dict[int, Decimal] = {}
+    if invoices:
+        invoice_ids = [invoice.id for invoice in invoices]
+        totals_result = await db.execute(
+            select(
+                Payment.invoice_id,
+                func.coalesce(func.sum(Payment.amount_paid), 0),
+            )
+            .where(Payment.invoice_id.in_(invoice_ids))
+            .group_by(Payment.invoice_id)
+        )
+        paid_by_invoice = {row[0]: Decimal(str(row[1])) for row in totals_result}
+
+    items = []
+    for invoice in invoices:
+        patient = patients.get(invoice.patient_id)
+        invoice_local_date = (
+            invoice.invoice_date.astimezone(timezone.utc).date()
+            if invoice.invoice_date.tzinfo is not None
+            else invoice.invoice_date.date()
+        )
+        amount_paid = min(
+            paid_by_invoice.get(invoice.id, Decimal("0")),
+            invoice.total_amount,
+        )
+        balance_due = max(invoice.total_amount - amount_paid, Decimal("0"))
+        items.append(
+            {
+                "invoice_id": invoice.id,
+                "patient_id": invoice.patient_id,
+                "patient_name": _patient_display_name(patient),
+                "patient_number": patient.patient_number if patient else None,
+                "invoice_number": invoice.invoice_number,
+                "invoice_date": invoice.invoice_date,
+                "total_amount": invoice.total_amount,
+                "amount_paid": amount_paid,
+                "balance_due": balance_due,
+                "payment_status": invoice.payment_status,
+                "days_outstanding": max((as_of - invoice_local_date).days, 0),
+            }
+        )
+
+    return OutstandingInvoicesResponse(
+        as_of=as_of,
+        items=items,
+        total_outstanding=total_balance,
+        invoice_count=len(items),
+    )
 
 
 __all__ = ["router"]
