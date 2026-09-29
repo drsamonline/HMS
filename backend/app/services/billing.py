@@ -96,6 +96,65 @@ class BillingService:
             limit=limit,
         )
 
+    async def list_outstanding_invoices(
+        self,
+        db: AsyncSession,
+        *,
+        limit: int = 100,
+    ) -> tuple[list[Invoice], Decimal]:
+        """Oldest-first unpaid/partial invoices with the aggregate balance.
+
+        Batch 82 — outstanding-billing continuity feed. Cancelling an
+        invoice clears its remaining liability (see ``update_invoice``),
+        so paid/cancelled rows are excluded and the balance is derived
+        from live payments rather than the stored status alone.
+        """
+        statement = (
+            select(Invoice)
+            .where(
+                Invoice.payment_status.in_(("unpaid", "partial")),
+            )
+            .order_by(
+                Invoice.invoice_date.asc(),
+                Invoice.id.asc(),
+            )
+        )
+        result = await db.execute(statement)
+        candidates = list(result.scalars().all())
+
+        if not candidates:
+            return [], Decimal("0")
+
+        invoice_ids = [invoice.id for invoice in candidates]
+        totals_result = await db.execute(
+            select(
+                Payment.invoice_id,
+                func.coalesce(func.sum(Payment.amount_paid), 0),
+            )
+            .where(Payment.invoice_id.in_(invoice_ids))
+            .group_by(Payment.invoice_id)
+        )
+        paid_by_invoice = {
+            row[0]: Decimal(str(row[1])) for row in totals_result
+        }
+
+        outstanding: list[Invoice] = []
+        total_balance = Decimal("0")
+        for invoice in candidates:
+            balance = max(
+                invoice.total_amount - paid_by_invoice.get(invoice.id, Decimal("0")),
+                Decimal("0"),
+            )
+            # Derived balance wins over a stale stored status.
+            if balance <= 0:
+                continue
+            outstanding.append(invoice)
+            total_balance += balance
+            if len(outstanding) >= limit:
+                break
+
+        return outstanding, total_balance
+
     async def create_invoice(
         self,
         db: AsyncSession,
