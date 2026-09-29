@@ -64,6 +64,21 @@ class PrescriptionRepository(RepositoryBase[Prescription]):
 
         return list(result.scalars().all())
 
+    async def get_by_visits(
+        self,
+        db: AsyncSession,
+        visit_ids: list[int],
+    ) -> list[Prescription]:
+        """Prescriptions across a set of visits (e.g. one case record's encounters)."""
+        if not visit_ids:
+            return []
+        result = await db.execute(
+            select(Prescription)
+            .where(Prescription.visit_id.in_(visit_ids))
+            .order_by(Prescription.prescription_datetime.desc())
+        )
+        return list(result.scalars().all())
+
 
 prescription_repository = PrescriptionRepository()
 

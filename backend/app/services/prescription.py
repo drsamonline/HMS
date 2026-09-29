@@ -12,13 +12,17 @@ from datetime import date, datetime, timezone
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy import select
+
 from app.core.exceptions import (
     DatabaseException,
     DuplicateResourceException,
     ResourceNotFoundException,
 )
+from app.models.case_record import CaseRecord
 from app.models.prescription import Prescription
 from app.models.prescription_item import PrescriptionItem
+from app.models.visit import Visit
 from app.repositories.prescription import (
     PrescriptionRepository,
     prescription_repository,
@@ -74,6 +78,29 @@ class PrescriptionService:
             db,
             prescription_id,
         )
+
+    async def get_by_case(
+        self,
+        db: AsyncSession,
+        case_record_id: int,
+    ) -> list[Prescription]:
+        """All prescriptions across the encounters belonging to a case record.
+
+        Case continuity: a case's clinical history spans multiple visits (and
+        follow-up encounters); this reads the full prescription lineage for the
+        case via its primary visit and any visits that reference the case.
+        """
+        case = await db.get(CaseRecord, case_record_id)
+        if case is None:
+            raise ResourceNotFoundException("Case record not found.")
+
+        visit_result = await db.execute(
+            select(Visit.id).where(
+                (Visit.id == case.visit_id) | (Visit.case_record_id == case.id)
+            )
+        )
+        visit_ids = [row[0] for row in visit_result.all() if row[0] is not None]
+        return await self.repository.get_by_visits(db, visit_ids)
 
     async def create(
         self,

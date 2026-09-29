@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from fastapi import APIRouter, Query, status
 
+from app.core.exceptions import ValidationException
 from app.dependencies.auth import CurrentUserDependency
 from app.dependencies.database import DatabaseSession
 from app.schemas.followup import FollowUpCreate, FollowUpRead, FollowUpUpdate
@@ -20,10 +23,18 @@ def _user_id(user: CurrentUserDependency) -> int:
 async def list_followups(
     db: DatabaseSession,
     _: CurrentUserDependency,
-    case_record_id: int = Query(gt=0),
+    case_record_id: int | None = Query(default=None, gt=0),
+    due_from: datetime | None = Query(default=None),
+    due_to: datetime | None = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[FollowUpRead]:
+    if due_from is not None or due_to is not None:
+        if due_from is None or due_to is None:
+            raise ValidationException("due_from and due_to must be provided together.")
+        return await followup_service.list_due(db, due_from, due_to, skip, limit)
+    if case_record_id is None:
+        raise ValidationException("case_record_id (or a due window) is required.")
     return await followup_service.list_by_case(db, case_record_id, skip, limit)
 
 

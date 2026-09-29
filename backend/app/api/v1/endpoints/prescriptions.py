@@ -76,6 +76,29 @@ async def create_prescription(
 
 
 @router.get(
+    "/by-case/{case_record_id}",
+    response_model=list[PrescriptionRead],
+)
+async def list_case_prescriptions(
+    case_record_id: int,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> list[PrescriptionRead]:
+    """Case continuity: every prescription across the case's encounters."""
+    prescriptions = await prescription_service.get_by_case(db, case_record_id)
+    result: list[PrescriptionRead] = []
+    for prescription in prescriptions:
+        items = await prescription_service.get_items(db, prescription.id)
+        result.append(
+            PrescriptionRead(
+                **prescription.__dict__,
+                items=items,
+            )
+        )
+    return result
+
+
+@router.get(
     "/{prescription_id}",
     response_model=PrescriptionRead,
 )
