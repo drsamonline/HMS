@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: latest user-supplied full ZIP (`HMS(5).zip`), superseding all older ZIP baselines.
-- Latest completed functional milestone: Batch 82 — Dashboard Outstanding Billing Continuity.
-- Current milestone: Batch 82 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed; due-follow-up workflow feed wired into the client dashboard; outstanding-billing receivables feed wired into the client dashboard).
+- Latest completed functional milestone: Batch 83 — IPD Bed-Occupancy Continuity.
+- Current milestone: Batch 83 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed; due-follow-up workflow feed wired into the client dashboard; outstanding-billing receivables feed wired into the client dashboard; IPD bed-occupancy continuity feed wired into the client dashboard).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -99,6 +99,14 @@
 - Complete server/client packaging and deployment workflow.
 - Complete final reporting/printing integration.
 - Then comprehensive QA/debugging, performance/security testing, recovery testing, clean-machine testing and release validation.
+
+## Batch 83 — IPD Bed-Occupancy Continuity
+- New endpoint `GET /dashboard/bed-occupancy` (`backend/app/api/v1/endpoints/dashboard.py`) reconciles every active bed marked occupied/reserved against its live admission (status pair `admitted`/`active`, mirroring the Batch 61 concurrency guard), ward-ordered, with batched admission/patient enrichment (no N+1) and per-row `length_of_stay_days` (naive-UTC normalised for SQLite, clamped non-negative).
+- Drift visibility: beds whose occupancy flag has no matching active admission are still returned with `has_active_admission=false` and null admission fields so data issues surface instead of silently disappearing.
+- Schemas `BedOccupancyItem`/`BedOccupancyResponse` in `backend/app/schemas/dashboard.py` expose bed identity (number/ward/room/type), admission lineage (id/number/datetime/status), patient name/number and headline `occupied_count`/`total_beds` aggregates with aware-UTC `as_of`.
+- Client wiring: `getDashboardBedOccupancy(options)` wrapper in `frontend/js/api.js`; dashboard "IPD bed occupancy" panel with occupied-of-total summary; reconciled cards navigate to the patients view and dispatch `hhms:open-patient-clinical`; drift rows render a check-IPD-records notice and are disabled; graceful unavailable-state on fetch failure.
+- Documentation: `docs/CLIENT_DASHBOARD_BED_OCCUPANCY.md` added and indexed in `docs/INDEX.md`.
+- Contract suite `backend/tests/test_dashboard_bed_occupancy.py` (5 tests incl. Batch 61 guarantee regression locks; full suite 227 passed).
 
 ## Cleanup policy
 - Transfer baselines always exclude `.git`, `.env`, Python caches/compiled files, test caches and build artifacts.

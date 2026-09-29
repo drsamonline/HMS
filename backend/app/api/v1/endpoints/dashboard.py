@@ -8,6 +8,11 @@ follow-up list directly from the client dashboard.
 Batch 82 — Outstanding Billing Continuity: surfaces the billing service's
 oldest-first outstanding-invoice feed (derived balances over live payments)
 as an administrative receivables panel with patient identity enrichment.
+
+Batch 83 — IPD Bed-Occupancy Continuity: turns bed/admission state into an
+actionable inpatient dashboard feed — every occupied bed is reconciled
+against its active admission so ward staff see who occupies each bed, how
+long the stay has run, and can hand off directly into the patient workspace.
 """
 
 from __future__ import annotations
@@ -21,10 +26,13 @@ from sqlalchemy import func, select
 
 from app.dependencies.auth import CurrentUserDependency
 from app.dependencies.database import DatabaseSession
+from app.models.admission import Admission
+from app.models.bed import Bed
 from app.models.case_record import CaseRecord
 from app.models.patient import Patient
 from app.models.payment import Payment
 from app.schemas.dashboard import (
+    BedOccupancyResponse,
     DueFollowUpsResponse,
     OutstandingInvoicesResponse,
 )
@@ -187,6 +195,110 @@ async def outstanding_invoices(
         items=items,
         total_outstanding=total_balance,
         invoice_count=len(items),
+    )
+
+
+@router.get("/bed-occupancy", response_model=BedOccupancyResponse)
+async def bed_occupancy(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> BedOccupancyResponse:
+    """Occupied beds reconciled against their active admissions.
+
+    Built on the Batch 61 bed-occupancy concurrency guarantees (row locking
+    plus the partial unique index keep at most one active admission per bed):
+    this feed reads ``Bed`` rows marked occupied and joins each to its live
+    admission/patient identity, so ward occupancy is actionable from the
+    dashboard without opening the IPD module. Beds whose occupancy flag has
+    drifted from admission state are still reported (with a null admission)
+    so data issues surface instead of silently disappearing.
+    """
+    beds_result = await db.execute(
+        select(Bed)
+        .where(
+            Bed.is_active.is_(True),
+            func.lower(Bed.occupancy_status).in_(("occupied", "reserved")),
+        )
+        .order_by(Bed.ward.asc(), Bed.bed_number.asc(), Bed.id.desc())
+        .limit(limit)
+    )
+    beds = list(beds_result.scalars().all())
+
+    # Active-admission lookup is batched (no N+1); the Batch 61 partial unique
+    # index means at most one row matches per bed, but we keep the first by
+    # recency defensively.
+    active_statuses = ("admitted", "active")
+    admissions_by_bed: dict[int, Admission] = {}
+    patients_by_id: dict[int, Patient] = {}
+    if beds:
+        bed_ids = [bed.id for bed in beds]
+        adm_result = await db.execute(
+            select(Admission)
+            .where(
+                Admission.bed_id.in_(bed_ids),
+                func.lower(Admission.admission_status).in_(active_statuses),
+            )
+            .order_by(Admission.admission_datetime.desc(), Admission.id.desc())
+        )
+        for admission in adm_result.scalars():
+            admissions_by_bed.setdefault(admission.bed_id, admission)
+
+        patient_ids = {a.patient_id for a in admissions_by_bed.values()}
+        if patient_ids:
+            pat_result = await db.execute(
+                select(Patient).where(Patient.id.in_(patient_ids))
+            )
+            patients_by_id = {p.id: p for p in pat_result.scalars()}
+
+    as_of = datetime.now(timezone.utc).replace(tzinfo=None)
+    items = []
+    occupied_count = 0
+    for bed in beds:
+        admission = admissions_by_bed.get(bed.id)
+        patient = (
+            patients_by_id.get(admission.patient_id) if admission else None
+        )
+        length_of_stay_days = None
+        if admission is not None:
+            occupied_count += 1
+            admitted_at = admission.admission_datetime
+            if admitted_at.tzinfo is not None:
+                admitted_at = admitted_at.astimezone(timezone.utc).replace(
+                    tzinfo=None
+                )
+            length_of_stay_days = max((as_of - admitted_at).days, 0)
+        items.append(
+            {
+                "bed_id": bed.id,
+                "bed_number": bed.bed_number,
+                "ward": bed.ward,
+                "room_number": bed.room_number,
+                "bed_type": bed.bed_type,
+                "occupancy_status": bed.occupancy_status,
+                "has_active_admission": admission is not None,
+                "admission_id": admission.id if admission else None,
+                "admission_number": (
+                    admission.admission_number if admission else None
+                ),
+                "admission_datetime": (
+                    admission.admission_datetime if admission else None
+                ),
+                "admission_status": (
+                    admission.admission_status if admission else None
+                ),
+                "patient_id": admission.patient_id if admission else None,
+                "patient_name": _patient_display_name(patient),
+                "patient_number": patient.patient_number if patient else None,
+                "length_of_stay_days": length_of_stay_days,
+            }
+        )
+
+    return BedOccupancyResponse(
+        as_of=datetime.now(timezone.utc),
+        items=items,
+        occupied_count=occupied_count,
+        total_beds=len(items),
     )
 
 

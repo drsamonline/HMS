@@ -65,6 +65,7 @@ Runs entirely on the local network with a server-owned database — *no internet
 ### ⚙️ Operational
 - ✔ Billing and payments
 - ✔ Dashboard outstanding-billing receivables feed *(Batch 82)*
+- ✔ Dashboard IPD bed-occupancy continuity feed *(Batch 83)*
 - ✔ MRD / patient files / archives
 - ✔ Department and service masters
 - ✔ Clinical activity and statistics
