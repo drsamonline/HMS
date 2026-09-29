@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import sqlite3
 from datetime import date, datetime, timezone
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -131,9 +132,10 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
     await db.flush()
 
     medicine = Medicine(
-        name="Arsenicum Album",
-        potency="30C",
-        generic_name="Arsenicum album",
+        medicine_code="MED-0001",
+        medicine_name="Arsenicum Album",
+        scientific_name="Arsenicum album",
+        medicine_type="single",
         created_at=now,
         updated_at=now,
     )
@@ -171,10 +173,24 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
     db.add(item)
     await db.flush()
 
+    from app.models.stock_batch import StockBatch
+
+    batch = StockBatch(
+        medicine_id=medicine.id,
+        batch_number="B-0001",
+        expiry_date=date(2027, 12, 31),
+        quantity_received=Decimal("100"),
+        quantity_remaining=Decimal("97"),
+        created_at=now,
+        updated_at=now,
+    )
+    db.add(batch)
+    await db.flush()
+
     archived_dispense = DispenseRecord(
         prescription_item_id=item.id,
         medicine_id=medicine.id,
-        stock_batch_id=None,
+        stock_batch_id=batch.id,
         quantity_dispensed=1,
         dispense_date=date(2024, 6, 2),
         dispensed_by=1,
@@ -187,7 +203,7 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
     live_dispense = DispenseRecord(
         prescription_item_id=item.id,
         medicine_id=medicine.id,
-        stock_batch_id=None,
+        stock_batch_id=batch.id,
         quantity_dispensed=2,
         dispense_date=date(2025, 1, 3),
         dispensed_by=1,

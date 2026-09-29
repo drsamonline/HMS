@@ -1,7 +1,7 @@
 """HHMS number-sequence ORM model."""
 from __future__ import annotations
 from datetime import datetime
-from sqlalchemy import Boolean, DateTime, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Integer, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base
 
@@ -16,8 +16,8 @@ class NumberSequence(Base):
     padding_length: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
     reset_frequency: Mapped[str] = mapped_column(String(20), nullable=False, default="never")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default="CURRENT_TIMESTAMP")
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default="CURRENT_TIMESTAMP", onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     last_reset_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 __all__ = ["NumberSequence"]

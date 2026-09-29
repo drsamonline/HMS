@@ -1,7 +1,7 @@
 """HHMS Medical Records Department archive ORM model."""
 from __future__ import annotations
 from datetime import datetime
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base
 
@@ -22,11 +22,11 @@ class ArchiveRecord(Base):
         String(30), nullable=False, default="pending", index=True
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default="CURRENT_TIMESTAMP"
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default="CURRENT_TIMESTAMP",
-        onupdate=datetime.utcnow,
+        DateTime(timezone=True), nullable=False, server_default=func.now(),
+        onupdate=func.now(),
     )
 
 __all__ = ["ArchiveRecord"]
