@@ -13,11 +13,13 @@ from app.models.case_record import CaseRecord
 from app.models.diagnosis import Diagnosis
 from app.models.diet_chart import DietChart
 from app.models.discharge import Discharge
+from app.models.dispense_record import DispenseRecord
 from app.models.followup import FollowUp
 from app.models.investigation import Investigation
 from app.models.invoice import Invoice
 from app.models.payment import Payment
 from app.models.medical_document import MedicalDocument
+from app.models.medicine import Medicine
 from app.models.patient_file import PatientFile
 from app.models.archive_record import ArchiveRecord
 from app.models.ipd_assessment import IPDAssessment
@@ -25,7 +27,10 @@ from app.models.nutritional_assessment import NutritionalAssessment
 from app.models.pain_assessment import PainAssessment
 from app.models.patient import Patient
 from app.models.prescription import Prescription
+from app.models.prescription_item import PrescriptionItem
 from app.models.progress_note import ProgressNote
+from app.models.stock_batch import StockBatch
+from app.models.user import User
 from app.models.visit import Visit
 from app.schemas.reporting import (
     ALL_REPORT_SECTIONS,
@@ -57,10 +62,11 @@ _PRINT_BLOCK_META: dict[str, tuple[str, str, int, bool]] = {
     "diet_charts": ("Diet Charts", "ipd", 11, True),
     "progress_notes": ("Progress Notes", "ipd", 12, True),
     "discharge": ("Discharge Summary", "ipd", 13, True),
-    "billing": ("Billing / Invoices", "billing", 14, True),
-    "payments": ("Payments / Receipts", "billing", 15, True),
-    "medical_documents": ("Medical Documents", "documents", 16, True),
-    "mrd": ("MRD Patient File / Archive", "mrd", 17, True),
+    "dispensations": ("Pharmacy Dispensations", "pharmacy", 14, True),
+    "billing": ("Billing / Invoices", "billing", 15, True),
+    "payments": ("Payments / Receipts", "billing", 16, True),
+    "medical_documents": ("Medical Documents", "documents", 17, True),
+    "mrd": ("MRD Patient File / Archive", "mrd", 18, True),
 }
 
 _REPORT_CATALOG = [
@@ -77,6 +83,7 @@ _REPORT_CATALOG = [
     ReportCatalogItem(key="diet_charts", label="Diet Charts", description="IPD diet chart records.", available_for=["clinical", "ipd"]),
     ReportCatalogItem(key="progress_notes", label="Progress Notes", description="IPD progress notes.", available_for=["clinical", "ipd"]),
     ReportCatalogItem(key="discharge", label="Discharge Summary", description="IPD discharge summary.", available_for=["clinical", "ipd"]),
+    ReportCatalogItem(key="dispensations", label="Pharmacy Dispensations", description="Medicines dispensed against prescriptions in the selected clinical context.", available_for=["clinical", "case"]),
     ReportCatalogItem(key="billing", label="Billing / Invoices", description="Patient invoices linked to the selected clinical context.", available_for=["clinical", "case", "ipd", "billing"]),
     ReportCatalogItem(key="payments", label="Payments / Receipts", description="Payments and receipts linked to patient invoices.", available_for=["clinical", "case", "ipd", "billing"]),
     ReportCatalogItem(key="medical_documents", label="Medical Documents", description="Medical documents registered for the patient/context.", available_for=["clinical", "case", "ipd", "mrd"]),
@@ -181,6 +188,51 @@ class ReportingService:
             stmt = _apply_time_range(stmt, Investigation.investigation_datetime, request)
             rows = await db.execute(stmt)
             data["investigations"] = [_dump_row(row) for row in rows.scalars().all()]
+
+        if "dispensations" in sections:
+            # Scope: all encounters of the selected case (plus any visit directly
+            # linked back to the case), or all patient visits when no case context.
+            visit_scope_stmt = select(Visit.id).where(Visit.patient_id == patient.id)
+            if case_id is not None:
+                visit_scope_stmt = visit_scope_stmt.where(or_(Visit.case_record_id == case_id, Visit.id == visit_id))
+            case_visit_ids = list((await db.execute(visit_scope_stmt)).scalars().all())
+            item_stmt = select(PrescriptionItem.id).join(
+                Prescription, PrescriptionItem.prescription_id == Prescription.id
+            ).where(Prescription.visit_id.in_(case_visit_ids))
+            dispense_stmt = _apply_time_range(
+                select(DispenseRecord)
+                .where(DispenseRecord.prescription_item_id.in_(item_stmt))
+                .order_by(DispenseRecord.dispense_date),
+                DispenseRecord.dispense_date,
+                request,
+            )
+            dispense_rows = await db.execute(dispense_stmt)
+            dispensations = list(dispense_rows.scalars().all())
+            enriched: list[dict[str, Any]] = []
+            if dispensations:
+                medicine_ids = {row.medicine_id for row in dispensations}
+                batch_ids = {row.stock_batch_id for row in dispensations}
+                user_ids = {row.dispensed_by for row in dispensations}
+                medicine_map = {
+                    row.id: row.medicine_name
+                    for row in (await db.execute(select(Medicine.id, Medicine.medicine_name).where(Medicine.id.in_(medicine_ids)))).all()
+                }
+                batch_map = {
+                    row.id: row.batch_no
+                    for row in (await db.execute(select(StockBatch.id, StockBatch.batch_no).where(StockBatch.id.in_(batch_ids)))).all()
+                }
+                user_map = {
+                    row.id: row.full_name
+                    for row in (await db.execute(select(User.id, User.full_name).where(User.id.in_(user_ids)))).all()
+                }
+                for row in dispensations:
+                    payload = _dump_row(row)
+                    payload["quantity_dispensed"] = str(payload.get("quantity_dispensed"))
+                    payload["medicine_name"] = medicine_map.get(row.medicine_id)
+                    payload["stock_batch_no"] = batch_map.get(row.stock_batch_id)
+                    payload["dispensed_by_name"] = user_map.get(row.dispensed_by)
+                    enriched.append(payload)
+            data["dispensations"] = enriched
 
         if "billing" in sections or "payments" in sections:
             invoice_stmt = select(Invoice).where(Invoice.patient_id == patient.id).order_by(Invoice.invoice_date)
