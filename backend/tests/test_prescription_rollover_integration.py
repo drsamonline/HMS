@@ -25,7 +25,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 ROOT = Path(__file__).resolve().parents[2]
 
-ARCHIVE_YEAR = 2024
+# The rollover target year is derived at runtime: with the default calendar
+# operational-year basis and LIVE_DATA_YEARS=1, the completed year eligible
+# for archival is (this calendar year - 1). Deriving it keeps the suite
+# correct as time advances instead of hard-coding a stale literal.
+ARCHIVE_YEAR = date.today().year - 1
+LIVE_YEAR = ARCHIVE_YEAR + 1
 
 
 def _runtime_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -62,7 +67,23 @@ def _runtime_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         am, "cold_archive_directory", lambda: runtime_paths.cold_archive_directory()
     )
     monkeypatch.setattr(bs, "database_path", lambda: db_file)
-    monkeypatch.setattr(bs, "backups_directory", lambda: data_dir / "backups")
+    monkeypatch.setattr(bs, "backups_directory", lambda: _ensure(data_dir / "backups"))
+
+    def _ensure(path: Path) -> Path:
+        # The backup service binds this helper at import time; the replacement
+        # lambda must keep the real runtime_paths contract of creating the
+        # directory before returning it.
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    monkeypatch.setattr(
+        am, "archive_directory", lambda: _ensure(data_dir / "archive")
+    )
+    monkeypatch.setattr(
+        am,
+        "cold_archive_directory",
+        lambda: _ensure(data_dir / "cold-archive"),
+    )
 
     # One cache entry may already hold absolute paths from earlier suites.
     try:
@@ -110,7 +131,7 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
         first_name="Test",
         last_name="Patient",
         gender="male",
-        registration_date=date(2024, 1, 5),
+        registration_date=date(ARCHIVE_YEAR, 1, 5),
         created_at=now,
         updated_at=now,
     )
@@ -119,9 +140,9 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
 
     visit = Visit(
         patient_id=patient.id,
-        visit_number="V-2024-0001",
+        visit_number=f"V-{ARCHIVE_YEAR}-0001",
         visit_type="follow-up",
-        visit_datetime=datetime(2024, 6, 1, tzinfo=timezone.utc),
+        visit_datetime=datetime(ARCHIVE_YEAR, 6, 1, tzinfo=timezone.utc),
         consultation_status="completed",
         consulting_doctor_id=1,
         visit_year=ARCHIVE_YEAR,
@@ -144,9 +165,11 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
 
     prescription = Prescription(
         visit_id=visit.id,
-        prescription_number="RX-2024-0001",
+        prescription_number=f"RX-{ARCHIVE_YEAR}-0001",
         prescribed_by=1,
-        prescription_datetime=datetime(2024, 6, 1, 10, 0, tzinfo=timezone.utc),
+        prescription_datetime=datetime(
+            ARCHIVE_YEAR, 6, 1, 10, 0, tzinfo=timezone.utc
+        ),
         diagnosis="test diagnosis",
         prescription_year=ARCHIVE_YEAR,
         storage_tier="live",
@@ -177,10 +200,12 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
 
     batch = StockBatch(
         medicine_id=medicine.id,
-        batch_number="B-0001",
+        batch_no="B-0001",
         expiry_date=date(2027, 12, 31),
         quantity_received=Decimal("100"),
         quantity_remaining=Decimal("97"),
+        unit_cost=Decimal("10.00"),
+        total_cost=Decimal("1000.00"),
         created_at=now,
         updated_at=now,
     )
@@ -192,7 +217,7 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
         medicine_id=medicine.id,
         stock_batch_id=batch.id,
         quantity_dispensed=1,
-        dispense_date=date(2024, 6, 2),
+        dispense_date=date(ARCHIVE_YEAR, 6, 2),
         dispensed_by=1,
         dispense_year=ARCHIVE_YEAR,
         storage_tier="live",
@@ -205,9 +230,9 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
         medicine_id=medicine.id,
         stock_batch_id=batch.id,
         quantity_dispensed=2,
-        dispense_date=date(2025, 1, 3),
+        dispense_date=date(LIVE_YEAR, 1, 3),
         dispensed_by=1,
-        dispense_year=2025,
+        dispense_year=LIVE_YEAR,
         storage_tier="live",
         is_current_year=True,
         created_at=now,
@@ -277,7 +302,7 @@ def test_rollover_archives_prescription_lineage_end_to_end(session_factory):
             )
             assert pres_ref is not None
             assert pres_ref.visit_id == ids["visit_id"]
-            assert pres_ref.prescription_number == "RX-2024-0001"
+            assert pres_ref.prescription_number == f"RX-{ARCHIVE_YEAR}-0001"
 
             item_ref = await db.scalar(
                 select(PrescriptionItemArchiveReference).where(
@@ -312,7 +337,7 @@ def test_rollover_archives_prescription_lineage_end_to_end(session_factory):
                 db, ARCHIVE_YEAR, ids["patient_id"]
             )
             assert len(rows) == 1
-            assert rows[0]["prescription_number"] == "RX-2024-0001"
+            assert rows[0]["prescription_number"] == f"RX-{ARCHIVE_YEAR}-0001"
 
             item_rows = await archive_manager.read_prescription_items(
                 db, ARCHIVE_YEAR, ids["patient_id"]

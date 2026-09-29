@@ -1101,21 +1101,29 @@ class ArchiveManager:
                 # Prescription lifecycle columns existed (dispense rows present
                 # but parent prescription rows not yet archived), fall back to
                 # a lineage-free read so historical dispenses remain visible.
-                cur = con.execute(
-                    "SELECT d.id, d.prescription_item_id, d.medicine_id, d.stock_batch_id, "
-                    "d.quantity_dispensed, d.dispense_date, d.dispensed_by, "
-                    "d.dispense_year, d.storage_tier, d.is_current_year, d.notes "
-                    "FROM DispenseRecord d "
-                    "JOIN PrescriptionItem pi ON d.prescription_item_id = pi.id "
-                    "JOIN Prescription pr ON pi.prescription_id = pr.id "
-                    "JOIN Visit v ON pr.visit_id = v.id "
-                    "WHERE v.patient_id = ? AND d.dispense_year = ? "
-                    "ORDER BY d.dispense_date DESC, d.id DESC",
-                    (patient_id, year),
-                )
-                rows = [dict(row) for row in cur.fetchall()]
-                if rows:
-                    return rows
+                # The lineage tables may be absent entirely in legacy snapshots,
+                # so probe sqlite_master before attempting the joined read.
+                lineage_present = con.execute(
+                    "SELECT COUNT(*) FROM sqlite_master "
+                    "WHERE type='table' AND name IN "
+                    "('PrescriptionItem','Prescription','Visit')"
+                ).fetchone()[0] == 3
+                if lineage_present:
+                    cur = con.execute(
+                        "SELECT d.id, d.prescription_item_id, d.medicine_id, d.stock_batch_id, "
+                        "d.quantity_dispensed, d.dispense_date, d.dispensed_by, "
+                        "d.dispense_year, d.storage_tier, d.is_current_year, d.notes "
+                        "FROM DispenseRecord d "
+                        "JOIN PrescriptionItem pi ON d.prescription_item_id = pi.id "
+                        "JOIN Prescription pr ON pi.prescription_id = pr.id "
+                        "JOIN Visit v ON pr.visit_id = v.id "
+                        "WHERE v.patient_id = ? AND d.dispense_year = ? "
+                        "ORDER BY d.dispense_date DESC, d.id DESC",
+                        (patient_id, year),
+                    )
+                    rows = [dict(row) for row in cur.fetchall()]
+                    if rows:
+                        return rows
                 # Batch 77 fix: the archive snapshot is a physical copy of the
                 # live database taken *before* deletion, so it never contains
                 # ArchiveManifest/reference rows (those are written to live DB
