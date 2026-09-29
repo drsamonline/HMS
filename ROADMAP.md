@@ -79,9 +79,10 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 79 — Clinician Dashboard Due-Follow-up Continuity**
-(dashboard due-follow-up feed with patient/case enrichment, client dashboard panel wired to the clinical
-workspace, follow-up form capturing next-due datetime). Remaining before QA: further cross-module workflow
+Functional application build is in progress through **Batch 83 — IPD Bed-Occupancy Continuity**
+(dashboard ward-occupancy feed reconciling occupied/reserved beds against live admissions with length-of-stay,
+patient enrichment and clinical-workspace handoff; follows Batch 82's outstanding-billing feed and Batch 79's
+due-follow-up feed). Remaining before QA: further cross-module workflow
 continuity, server/client packaging
 and deployment, and final reporting/printing integration. Comprehensive QA/debugging begins after
 cross-module integration, packaging, and final reporting/printing are complete.

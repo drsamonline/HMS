@@ -1,4 +1,4 @@
-import { getServerBaseUrl, getAccessToken, listPatients, getDashboardDueFollowups, getDashboardOutstandingInvoices } from "./api.js";
+import { getServerBaseUrl, getAccessToken, listPatients, getDashboardDueFollowups, getDashboardOutstandingInvoices, getDashboardBedOccupancy } from "./api.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>'"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" }[c]));
@@ -30,6 +30,10 @@ export async function openDashboard(host, context = {}) {
     <section class="content-panel">
       <h3>Outstanding invoices</h3>
       <div id="dashboard-outstanding-invoices" class="patient-list"><div class="empty-state">Loading…</div></div>
+    </section>
+    <section class="content-panel">
+      <h3>IPD bed occupancy</h3>
+      <div id="dashboard-bed-occupancy" class="patient-list"><div class="empty-state">Loading…</div></div>
     </section>
     <section class="content-panel">
       <h3>Recent patients</h3>
@@ -100,6 +104,34 @@ export async function openDashboard(host, context = {}) {
     }
   } catch {
     $("#dashboard-outstanding-invoices", host).innerHTML = '<div class="empty-state">Outstanding invoices are unavailable right now.</div>';
+  }
+
+  try {
+    const occupancy = await getDashboardBedOccupancy({ limit: 50 });
+    const occupancyHost = $("#dashboard-bed-occupancy", host);
+    const beds = occupancy?.items ?? [];
+    if (!beds.length) {
+      occupancyHost.innerHTML = '<div class="empty-state">No beds are currently occupied.</div>';
+    } else {
+      occupancyHost.innerHTML = `
+        <p class="muted">${esc(occupancy?.occupied_count ?? 0)} of ${esc(occupancy?.total_beds ?? 0)} listed bed(s) occupied</p>
+      ` + beds.map(bed => `
+        <button type="button" class="patient-card" ${bed.patient_id ? `data-occupancy-patient="${esc(bed.patient_id)}"` : "disabled"}>
+          <strong>${esc(bed.bed_number)}${bed.ward ? " · " + esc(bed.ward) : ""}</strong>
+          <span>${bed.has_active_admission
+            ? `${esc(bed.patient_name)} (${esc(bed.patient_number || "—")}) · ${esc(bed.admission_number || "—")} · ${esc(bed.length_of_stay_days)} day(s) admitted`
+            : "Marked occupied but no active admission — check IPD records"}</span>
+        </button>
+      `).join("");
+      occupancyHost.querySelectorAll("[data-occupancy-patient]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelector(".nav-item[data-view='patients']")?.click();
+          window.dispatchEvent(new CustomEvent("hhms:open-patient-clinical", { detail: { patientId: Number(btn.dataset.occupancyPatient) } }));
+        });
+      });
+    }
+  } catch {
+    $("#dashboard-bed-occupancy", host).innerHTML = '<div class="empty-state">Bed occupancy is unavailable right now.</div>';
   }
 
   try {

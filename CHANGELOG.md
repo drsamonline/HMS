@@ -10,6 +10,20 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 83 · IPD Bed-Occupancy Continuity
+- New endpoint `GET /dashboard/bed-occupancy` (`backend/app/api/v1/endpoints/dashboard.py`) reconciling every active bed marked occupied/reserved against its live admission (status pair `admitted`/`active`, mirroring the Batch 61 concurrency guard): ward-ordered feed, batched admission/patient enrichment (no N+1), per-row `length_of_stay_days` from naive-UTC-normalised admission datetime, and drift visibility — beds whose occupancy flag has no matching active admission are still reported with `has_active_admission=false` instead of silently disappearing.
+- Response schemas `BedOccupancyItem`/`BedOccupancyResponse` in `backend/app/schemas/dashboard.py` expose bed identity (number/ward/room/type), admission lineage (id/number/datetime/status), patient name/number and headline `occupied_count`/`total_beds` aggregates with an aware-UTC `as_of`.
+- Client wiring: `getDashboardBedOccupancy(options)` wrapper in `frontend/js/api.js`; dashboard "IPD bed occupancy" panel with occupied-of-total summary whose reconciled cards navigate to the patients view and dispatch `hhms:open-patient-clinical` for direct ward handoff; drift rows render a check-IPD-records notice and are disabled; graceful unavailable-state on fetch failure.
+- Documentation: [docs/CLIENT_DASHBOARD_BED_OCCUPANCY.md](docs/CLIENT_DASHBOARD_BED_OCCUPANCY.md) added and indexed; ROADMAP and project state advanced to Batch 83.
+- Contract test suite `backend/tests/test_dashboard_bed_occupancy.py` (5 tests, incl. Batch 61 guarantee regression locks); full suite 227 passed.
+
+### Added — Batch 82 · Dashboard Outstanding Billing Continuity
+- New endpoint `GET /dashboard/outstanding-invoices` (`backend/app/api/v1/endpoints/dashboard.py`) built on the billing service's oldest-first outstanding feed: unpaid/partial candidates only, balances derived from live payments (stale stored statuses and cancelled invoices never surface), `limit` 1–200 with authenticated access.
+- Response enrichment per row: patient name/number via batched lookup (no N+1), invoice number/date, total/amount-paid/balance-due reconciliation (`balance_due + amount_paid == total_amount`, clamped non-negative), payment status and `days_outstanding`; aggregate `total_outstanding`, `invoice_count` and `as_of` exposed by schemas `OutstandingInvoiceItem`/`OutstandingInvoicesResponse` in `backend/app/schemas/dashboard.py`.
+- Client wiring: `getDashboardOutstandingInvoices(options)` wrapper in `frontend/js/api.js`; dashboard "Outstanding invoices" panel with count/total summary line whose cards navigate to the patients view and dispatch `hhms:open-patient` for direct receivables chase-up, graceful unavailable-state on fetch failure.
+- Documentation: [docs/CLIENT_DASHBOARD_OUTSTANDING_INVOICES.md](docs/CLIENT_DASHBOARD_OUTSTANDING_INVOICES.md) added and indexed; ROADMAP and project state advanced to Batch 82.
+- Contract test suite `backend/tests/test_dashboard_outstanding_invoices.py`; full suite 222 passed.
+
 ### Added — Batch 79 · Clinician Dashboard Due-Follow-up Continuity
 - New endpoint `GET /dashboard/due-followups` turning the Batch 78 due-window service query into an actionable clinician feed: defaults to now → +7 days (`days_ahead` 0–365, `limit` 1–200), explicit `from_datetime` supported to surface overdue follow-ups; naive-UTC normalisation for SQLite comparisons.
 - Response enrichment with patient name/number and case number via batched lookups (schemas `DueFollowUpItem`/`DueFollowUpsResponse` in `backend/app/schemas/dashboard.py`); router registered in `backend/app/api/v1/api.py`.
