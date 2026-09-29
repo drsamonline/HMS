@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: latest user-supplied full ZIP (`HMS(5).zip`), superseding all older ZIP baselines.
-- Latest completed functional milestone: Batch 78 — Clinical Cross-Module Workflow Continuity.
-- Current milestone: Batch 78 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed).
+- Latest completed functional milestone: Batch 79 — Clinician Dashboard Due-Follow-up Continuity.
+- Current milestone: Batch 79 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed; due-follow-up workflow feed wired into the client dashboard).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -142,3 +142,11 @@
 - Client wrappers `listDueFollowups(fromIso, toIso)` and `listCasePrescriptions(caseRecordId)` in `frontend/js/api.js`.
 - Contract suite `backend/tests/test_clinical_workflow_continuity.py` (5 tests; full suite 210 passed).
 - Environment note: backend venv pytest drifted to 9.x/pytest-asyncio 1.4 which broke plugin loading; reinstalled within the pinned ranges (`pytest>=8.3,<9`, `pytest-asyncio>=0.25,<1`).
+
+## Batch 79 — Clinician Dashboard Due-Follow-up Continuity
+- New endpoint `GET /dashboard/due-followups` (`backend/app/api/v1/endpoints/dashboard.py`) built on the Batch 78 `FollowUpService.list_due` window query; defaults to now → +7 days (`days_ahead` 0–365, `limit` 1–200), accepts explicit `from_datetime` to surface overdue items; SQLite naive-UTC normalisation applied to inputs.
+- Each due follow-up is enriched with actionable identity: patient name/number and case number via batched `Patient`/`CaseRecord` lookups (no N+1); response schemas `DueFollowUpItem`/`DueFollowUpsResponse` in `backend/app/schemas/dashboard.py`.
+- Router registered in `backend/app/api/v1/api.py` under the billing section as the clinician dashboard group.
+- Client wiring: `getDashboardDueFollowups(options)` wrapper in `frontend/js/api.js`; dashboard renders a "Due follow-ups (next 7 days)" panel whose cards dispatch `hhms:open-patient-clinical` to hand off into the clinical workspace; graceful unavailable-state on fetch failure.
+- Follow-up form in `frontend/js/clinical.js` now captures `next_followup_datetime` (datetime-local) and saved follow-up cards display the scheduled next visit, so due lists have data end-to-end.
+- Contract suite `backend/tests/test_clinician_dashboard_due_followups.py` (7 tests; full suite 217 passed).

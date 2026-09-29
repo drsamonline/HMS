@@ -16,6 +16,7 @@ from app.api.v1.endpoints.auth import router as auth_router
 from app.api.v1.endpoints.beds import router as beds_router
 from app.api.v1.endpoints.billing import router as billing_router
 from app.api.v1.endpoints.case_records import router as case_records_router
+from app.api.v1.endpoints.dashboard import router as dashboard_router
 from app.api.v1.endpoints.department_services import router as department_services_router
 from app.api.v1.endpoints.designations import router as designations_router
 from app.api.v1.endpoints.diagnoses import router as diagnoses_router
@@ -91,6 +92,9 @@ for router in (
 
 # Billing
 api_router.include_router(billing_router)
+
+# Clinician dashboard (Batch 79 — due follow-up workflow continuity)
+api_router.include_router(dashboard_router)
 
 # Clinical records / MRD / history
 for router in (
