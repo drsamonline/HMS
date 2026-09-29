@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: latest user-supplied full ZIP (`HMS(5).zip`), superseding all older ZIP baselines.
-- Latest completed functional milestone: Batch 79 — Clinician Dashboard Due-Follow-up Continuity.
-- Current milestone: Batch 79 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed; due-follow-up workflow feed wired into the client dashboard).
+- Latest completed functional milestone: Batch 82 — Dashboard Outstanding Billing Continuity.
+- Current milestone: Batch 82 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed; due-follow-up workflow feed wired into the client dashboard; outstanding-billing receivables feed wired into the client dashboard).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -150,3 +150,10 @@
 - Client wiring: `getDashboardDueFollowups(options)` wrapper in `frontend/js/api.js`; dashboard renders a "Due follow-ups (next 7 days)" panel whose cards dispatch `hhms:open-patient-clinical` to hand off into the clinical workspace; graceful unavailable-state on fetch failure.
 - Follow-up form in `frontend/js/clinical.js` now captures `next_followup_datetime` (datetime-local) and saved follow-up cards display the scheduled next visit, so due lists have data end-to-end.
 - Contract suite `backend/tests/test_clinician_dashboard_due_followups.py` (7 tests; full suite 217 passed).
+
+## Batch 82 — Dashboard Outstanding Billing Continuity
+- New endpoint `GET /dashboard/outstanding-invoices` (`backend/app/api/v1/endpoints/dashboard.py`) built on `billing_service.list_outstanding_invoices`: unpaid/partial candidates only, oldest-first, balances derived from live payments so stale stored statuses and cancelled invoices never surface (`limit` 1–200).
+- Per-row enrichment: patient name/number via batched lookup (no N+1), invoice number/date, `amount_paid` clamped to the invoice total, non-negative `balance_due` reconciling to `total_amount`, payment status and `days_outstanding`; aggregates `total_outstanding`, `invoice_count`, `as_of` exposed by `OutstandingInvoiceItem`/`OutstandingInvoicesResponse` in `backend/app/schemas/dashboard.py`.
+- Client wiring: `getDashboardOutstandingInvoices(options)` wrapper in `frontend/js/api.js`; dashboard "Outstanding invoices" panel with count/total summary whose cards navigate to the patients view and dispatch `hhms:open-patient`; graceful unavailable-state on fetch failure.
+- Documentation: `docs/CLIENT_DASHBOARD_OUTSTANDING_INVOICES.md` added and indexed in `docs/INDEX.md`.
+- Contract suite `backend/tests/test_dashboard_outstanding_invoices.py` (full suite 222 passed).
