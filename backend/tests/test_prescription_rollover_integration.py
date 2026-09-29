@@ -110,6 +110,8 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
         last_name="Patient",
         gender="male",
         registration_date=date(2024, 1, 5),
+        created_at=now,
+        updated_at=now,
     )
     db.add(patient)
     await db.flush()
@@ -132,6 +134,8 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
         name="Arsenicum Album",
         potency="30C",
         generic_name="Arsenicum album",
+        created_at=now,
+        updated_at=now,
     )
     db.add(medicine)
     await db.flush()
@@ -177,6 +181,8 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
         dispense_year=ARCHIVE_YEAR,
         storage_tier="live",
         is_current_year=False,
+        created_at=now,
+        updated_at=now,
     )
     live_dispense = DispenseRecord(
         prescription_item_id=item.id,
@@ -188,6 +194,8 @@ async def _seed(db: AsyncSession) -> dict[str, int]:
         dispense_year=2025,
         storage_tier="live",
         is_current_year=True,
+        created_at=now,
+        updated_at=now,
     )
     db.add_all([archived_dispense, live_dispense])
     await db.flush()
