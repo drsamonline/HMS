@@ -55,9 +55,35 @@ class OutstandingInvoicesResponse(BaseSchema):
     invoice_count: int
 
 
+class RecentReceiptItem(BaseSchema):
+    """One payment receipt from the recent-collection window with lineage."""
+
+    payment_id: int
+    receipt_number: str
+    payment_datetime: datetime
+    payment_method: str
+    amount_paid: Decimal
+    invoice_id: int | None = None
+    invoice_number: str | None = None
+    patient_id: int | None = None
+    patient_name: str | None = None
+    patient_number: str | None = None
+
+
+class RecentReceiptsResponse(BaseSchema):
+    """Recent-receipt ledger plus aggregate collection figures."""
+
+    from_datetime: datetime
+    items: list[RecentReceiptItem]
+    total_collected: Decimal
+    receipt_count: int
+
+
 __all__ = [
     "DueFollowUpItem",
     "DueFollowUpsResponse",
     "OutstandingInvoiceItem",
     "OutstandingInvoicesResponse",
+    "RecentReceiptItem",
+    "RecentReceiptsResponse",
 ]

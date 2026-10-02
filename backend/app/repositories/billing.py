@@ -7,6 +7,7 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -142,6 +143,32 @@ class PaymentRepository(
         return list(
             result.scalars().all()
         )
+
+    async def list_recent(
+        self,
+        db: AsyncSession,
+        *,
+        since: datetime,
+        limit: int = 200,
+    ) -> list[Payment]:
+        """Payments recorded at or after ``since``, newest first.
+
+        Batch 83 — receipt-number continuity feed: the service layer joins
+        in invoice/patient identity and drops orphaned rows.
+        """
+        result = await db.execute(
+            select(Payment)
+            .where(
+                Payment.payment_datetime >= since,
+            )
+            .order_by(
+                Payment.payment_datetime.desc(),
+                Payment.id.desc(),
+            )
+            .limit(limit)
+        )
+
+        return list(result.scalars().all())
 
     async def total_paid(
         self,

@@ -8,6 +8,11 @@ follow-up list directly from the client dashboard.
 Batch 82 — Outstanding Billing Continuity: surfaces the billing service's
 oldest-first outstanding-invoice feed (derived balances over live payments)
 as an administrative receivables panel with patient identity enrichment.
+
+Batch 83 — Receipt-Number Continuity: exposes the recent-payment ledger as a
+"recent receipts" panel keyed by the server-minted unique receipt number,
+enriched with invoice and patient lineage so collections are verifiable and
+actionable straight from the dashboard.
 """
 
 from __future__ import annotations
@@ -27,6 +32,7 @@ from app.models.payment import Payment
 from app.schemas.dashboard import (
     DueFollowUpsResponse,
     OutstandingInvoicesResponse,
+    RecentReceiptsResponse,
 )
 from app.services.billing import billing_service
 from app.services.followup import followup_service
@@ -187,6 +193,52 @@ async def outstanding_invoices(
         items=items,
         total_outstanding=total_balance,
         invoice_count=len(items),
+    )
+
+
+@router.get("/recent-receipts", response_model=RecentReceiptsResponse)
+async def recent_receipts(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    days_back: int = Query(default=7, ge=0, le=365),
+    limit: int = Query(default=100, ge=1, le=200),
+) -> RecentReceiptsResponse:
+    """Payments recorded within the last ``days_back`` days, newest first.
+
+    Batch 83 — receipt-number continuity: every payment already carries a
+    server-minted unique ``receipt_number``; this endpoint turns the payment
+    ledger into an actionable collection feed by joining each receipt to its
+    invoice and patient identity (payments whose invoice row is missing are
+    skipped so no orphaned receipts surface).
+    """
+    rows, total_collected = await billing_service.list_recent_payments(
+        db, days_back=days_back, limit=limit
+    )
+
+    from_datetime = datetime.now(timezone.utc) - timedelta(days=days_back)
+
+    items = []
+    for payment, invoice, patient in rows:
+        items.append(
+            {
+                "payment_id": payment.id,
+                "receipt_number": payment.receipt_number,
+                "payment_datetime": payment.payment_datetime,
+                "payment_method": payment.payment_method,
+                "amount_paid": payment.amount_paid,
+                "invoice_id": invoice.id,
+                "invoice_number": invoice.invoice_number,
+                "patient_id": invoice.patient_id,
+                "patient_name": _patient_display_name(patient),
+                "patient_number": patient.patient_number if patient else None,
+            }
+        )
+
+    return RecentReceiptsResponse(
+        from_datetime=from_datetime,
+        items=items,
+        total_collected=total_collected,
+        receipt_count=len(items),
     )
 
 

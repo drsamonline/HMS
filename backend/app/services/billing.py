@@ -7,7 +7,7 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -382,6 +382,70 @@ class BillingService:
             skip=skip,
             limit=limit,
         )
+
+    async def list_recent_payments(
+        self,
+        db: AsyncSession,
+        *,
+        days_back: int = 7,
+        limit: int = 100,
+    ) -> tuple[list[tuple[Payment, Invoice | None, Patient | None]], Decimal]:
+        """Payments recorded within the last ``days_back`` days, newest first.
+
+        Batch 83 — receipt-number continuity feed. Every payment carries a
+        server-minted unique ``receipt_number`` (Batch 68 atomicity keeps the
+        uniqueness guarantee); this turns that ledger into an actionable
+        "recent receipts" view by joining invoice and patient identity.
+        Payments whose invoice row is missing (null ``invoice_id`` or a
+        dangling reference) are skipped rather than shown without lineage.
+        Returns the enriched rows plus the aggregate amount collected.
+        """
+        since = datetime.now(timezone.utc) - timedelta(days=days_back)
+        if since.tzinfo is not None:
+            # SQLite stores naive UTC; normalise before comparison.
+            since = since.astimezone(timezone.utc).replace(tzinfo=None)
+
+        payments = await self.payment_repo.list_recent(
+            db,
+            since=since,
+            limit=max(limit * 2, limit),
+        )
+        if not payments:
+            return [], Decimal("0")
+
+        invoice_ids = {p.invoice_id for p in payments if p.invoice_id is not None}
+        invoices: dict[int, Invoice] = {}
+        if invoice_ids:
+            result = await db.execute(
+                select(Invoice).where(Invoice.id.in_(invoice_ids))
+            )
+            invoices = {inv.id: inv for inv in result.scalars()}
+
+        patient_ids = {inv.patient_id for inv in invoices.values()}
+        patients: dict[int, Patient] = {}
+        if patient_ids:
+            result = await db.execute(
+                select(Patient).where(Patient.id.in_(patient_ids))
+            )
+            patients = {pat.id: pat for pat in result.scalars()}
+
+        rows: list[tuple[Payment, Invoice | None, Patient | None]] = []
+        total_collected = Decimal("0")
+        for payment in payments:
+            invoice = (
+                invoices.get(payment.invoice_id)
+                if payment.invoice_id is not None
+                else None
+            )
+            if invoice is None:
+                continue
+            patient = patients.get(invoice.patient_id)
+            rows.append((payment, invoice, patient))
+            total_collected += Decimal(str(payment.amount_paid))
+            if len(rows) >= limit:
+                break
+
+        return rows, total_collected
 
     async def create_payment(
         self,
