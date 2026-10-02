@@ -10,6 +10,13 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 82 · Outstanding Billing Continuity
+- Service feed `BillingService.list_outstanding_invoices(db, limit)` in `backend/app/services/billing.py`: oldest-first unpaid/partial invoices with balances derived from live `Payment` totals (stale stored statuses never surface; cancelled/paid rows are excluded) plus the aggregate receivable total.
+- New endpoint `GET /dashboard/outstanding-invoices` (`backend/app/api/v1/endpoints/dashboard.py`, `limit` 1–200 default 100) enriching each row with patient name/number, per-row paid/balance reconciliation and `days_outstanding`; schemas `OutstandingInvoiceItem`/`OutstandingInvoicesResponse` in `backend/app/schemas/dashboard.py`.
+- Client wiring: `getDashboardOutstandingInvoices(options)` wrapper in `frontend/js/api.js`; dashboard "Outstanding invoices" panel renders the total outstanding figure and dispatches `hhms:open-patient` for direct handoff into the patient workspace, with graceful unavailable-state on fetch errors.
+- Contract test suite `backend/tests/test_dashboard_outstanding_invoices.py` (5 tests; full suite 222 passed).
+- Housekeeping: `.gitignore` extended (bytecode, env files, IDE directories, logs); previously tracked `__pycache__`/`*.pyc` artifacts restored to HEAD so only intentional changes remain staged.
+
 ### Added — Batch 79 · Clinician Dashboard Due-Follow-up Continuity
 - New endpoint `GET /dashboard/due-followups` turning the Batch 78 due-window service query into an actionable clinician feed: defaults to now → +7 days (`days_ahead` 0–365, `limit` 1–200), explicit `from_datetime` supported to surface overdue follow-ups; naive-UTC normalisation for SQLite comparisons.
 - Response enrichment with patient name/number and case number via batched lookups (schemas `DueFollowUpItem`/`DueFollowUpsResponse` in `backend/app/schemas/dashboard.py`); router registered in `backend/app/api/v1/api.py`.
