@@ -264,6 +264,47 @@ class InvoicePaymentReconciliationResponse(BaseSchema):
     items: list[InvoicePaymentReconciliationItem]
 
 
+class PatientCollectionSummaryItem(BaseSchema):
+    """One patient's collection totals rolled up from the Batch 89 ledger.
+
+    Batch 90 — collection summary by patient. Every figure is derived from
+    the live Payment ledger via the shared reconciliation aggregation (never
+    from stored counters), so printed collection summaries always satisfy
+    ``total_collected + outstanding == total_billed`` per patient, with each
+    invoice's clamped paid amount contributing exactly once.
+    """
+
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    invoice_count: int
+    paid_invoice_count: int
+    partial_invoice_count: int
+    unpaid_invoice_count: int
+    total_billed: Decimal
+    total_collected: Decimal
+    outstanding: Decimal
+    last_payment_date: datetime | None = None
+
+
+class PatientCollectionSummaryResponse(BaseSchema):
+    """Collection summary grouped by patient with headline aggregates.
+
+    ``patients_with_outstanding`` counts patients whose derived outstanding
+    balance is positive; the per-patient rows sum back to the headline
+    totals so printed collection packets reconcile line-by-line.
+    """
+
+    as_of: date
+    invoices_checked: int
+    patients_checked: int
+    patients_with_outstanding: int
+    total_billed: Decimal
+    total_collected: Decimal
+    total_outstanding: Decimal
+    items: list[PatientCollectionSummaryItem]
+
+
 __all__ = [
     "DueFollowUpItem",
     "DueFollowUpsResponse",
@@ -282,4 +323,6 @@ __all__ = [
     "ReceiptNumberingContinuityResponse",
     "InvoicePaymentReconciliationItem",
     "InvoicePaymentReconciliationResponse",
+    "PatientCollectionSummaryItem",
+    "PatientCollectionSummaryResponse",
 ]
