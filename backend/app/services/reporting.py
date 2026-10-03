@@ -1,11 +1,11 @@
 """HHMS reporting and print-data selection service."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import Select, or_, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ResourceNotFoundException
@@ -50,6 +50,11 @@ from app.schemas.reporting import (
     InvoicePrintReceiptLine,
     InvoicePrintRequest,
     PatientCollectionSummaryPrintLine,
+    ReceivablesAgingBucketPrintLine,
+    ReceivablesAgingInvoicePrintLine,
+    ReceivablesAgingPrintData,
+    ReceivablesAgingPrintEnvelope,
+    ReceivablesAgingPrintRequest,
     ReportCatalogItem,
     ReportCatalogRead,
     ReportPrintEnvelope,
@@ -477,6 +482,89 @@ class ReportingService:
                 total_collected=str(summary["total_collected"]),
                 total_outstanding=str(summary["total_outstanding"]),
                 items=items,
+            ),
+        )
+
+    async def build_receivables_aging_print_envelope(
+        self, db: AsyncSession, request: ReceivablesAgingPrintRequest
+    ) -> ReceivablesAgingPrintEnvelope:
+        """Assemble a printable receivables aging packet.
+
+        Batch 91 — reporting/printing integration for the billing domain:
+        reuses the dashboard's shared aging derivation
+        (``build_receivables_aging_result`` over the Batch 82 live-payment
+        outstanding feed), so the printed ledger always satisfies
+        ``amount_paid + balance_due == total_amount`` per row and bucket
+        counts/totals sum back to the headline aggregates exactly as on
+        screen.
+        """
+        from app.api.v1.endpoints.dashboard import build_receivables_aging_result
+        from app.services.billing import billing_service
+
+        invoices, _service_total = await billing_service.list_outstanding_invoices(
+            db, limit=request.limit
+        )
+
+        as_of = date.today()
+        patient_ids = {invoice.patient_id for invoice in invoices}
+        patients: dict[int, Patient] = {}
+        if patient_ids:
+            result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
+            patients = {p.id: p for p in result.scalars()}
+
+        # Live-payment derivation identical to the Batch 82/86 feeds
+        # (single grouped pass, stored counters never trusted).
+        paid_by_invoice: dict[int, Decimal] = {}
+        if invoices:
+            invoice_ids = [invoice.id for invoice in invoices]
+            totals_result = await db.execute(
+                select(
+                    Payment.invoice_id,
+                    func.coalesce(func.sum(Payment.amount_paid), 0),
+                )
+                .where(Payment.invoice_id.in_(invoice_ids))
+                .group_by(Payment.invoice_id)
+            )
+            paid_by_invoice = {row[0]: Decimal(str(row[1])) for row in totals_result}
+
+        aging = build_receivables_aging_result(
+            invoices, patients, paid_by_invoice, as_of
+        )
+
+        return ReceivablesAgingPrintEnvelope(
+            title=request.title or "HHMS Receivables Aging Ledger",
+            generated_at=datetime.utcnow(),
+            data=ReceivablesAgingPrintData(
+                as_of=aging["as_of"],
+                buckets=[
+                    ReceivablesAgingBucketPrintLine(
+                        label=bucket["label"],
+                        lower_days=bucket["lower_days"],
+                        upper_days=bucket["upper_days"],
+                        invoice_count=bucket["invoice_count"],
+                        total_outstanding=str(bucket["total_outstanding"]),
+                    )
+                    for bucket in aging["buckets"]
+                ],
+                items=[
+                    ReceivablesAgingInvoicePrintLine(
+                        invoice_id=item["invoice_id"],
+                        patient_id=item["patient_id"],
+                        patient_name=item["patient_name"],
+                        patient_number=item["patient_number"],
+                        invoice_number=item["invoice_number"],
+                        invoice_date=item["invoice_date"],
+                        total_amount=str(item["total_amount"]),
+                        amount_paid=str(item["amount_paid"]),
+                        balance_due=str(item["balance_due"]),
+                        payment_status=str(item["payment_status"]),
+                        days_outstanding=item["days_outstanding"],
+                        bucket_label=item["bucket_label"],
+                    )
+                    for item in aging["items"]
+                ],
+                invoice_count=aging["invoice_count"],
+                total_outstanding=str(aging["total_outstanding"]),
             ),
         )
 

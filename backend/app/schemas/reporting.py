@@ -241,6 +241,64 @@ class CollectionSummaryPrintEnvelope(BaseSchema):
     data: CollectionSummaryPrintData
 
 
+class ReceivablesAgingPrintRequest(BaseSchema):
+    """Batch 91 — print request for the receivables aging ledger."""
+
+    limit: int = Field(default=200, ge=1, le=500)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class ReceivablesAgingBucketPrintLine(BaseSchema):
+    """One aging band in the printed ledger; always present even when empty."""
+
+    label: str
+    lower_days: int
+    upper_days: int | None = None
+    invoice_count: int
+    total_outstanding: str
+
+
+class ReceivablesAgingInvoicePrintLine(BaseSchema):
+    """One live-derived outstanding invoice placed in an aging bucket."""
+
+    invoice_id: int
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    invoice_number: str
+    invoice_date: datetime
+    total_amount: str
+    amount_paid: str
+    balance_due: str
+    payment_status: str
+    days_outstanding: int
+    bucket_label: str
+
+
+class ReceivablesAgingPrintData(BaseSchema):
+    as_of: date
+    buckets: list[ReceivablesAgingBucketPrintLine]
+    items: list[ReceivablesAgingInvoicePrintLine]
+    invoice_count: int
+    total_outstanding: str
+
+
+class ReceivablesAgingPrintEnvelope(BaseSchema):
+    """Batch 91 — printable receivables aging packet.
+
+    Built through the exact same ``build_receivables_aging_result`` code path
+    as the dashboard feed (single grouped Payment pass, Batch 68 clamp
+    invariant), so printed bucket totals always reconcile with the screen:
+    bucket counts sum to ``invoice_count`` and bucket totals sum to
+    ``total_outstanding``.
+    """
+
+    report_type: Literal["receivables_aging_print"] = "receivables_aging_print"
+    title: str
+    generated_at: datetime
+    data: ReceivablesAgingPrintData
+
+
 __all__ = [
     "ReportSection",
     "ALL_REPORT_SECTIONS",
@@ -265,4 +323,9 @@ __all__ = [
     "PatientCollectionSummaryPrintLine",
     "CollectionSummaryPrintData",
     "CollectionSummaryPrintEnvelope",
+    "ReceivablesAgingPrintRequest",
+    "ReceivablesAgingBucketPrintLine",
+    "ReceivablesAgingInvoicePrintLine",
+    "ReceivablesAgingPrintData",
+    "ReceivablesAgingPrintEnvelope",
 ]

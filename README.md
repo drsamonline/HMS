@@ -83,9 +83,27 @@ Runs entirely on the local network with a server-owned database — *no internet
   audits receipt-book integrity over live payments (missing receipts,
   duplicate receipt numbers, numeric sequence breaks), printable continuity
   audit with headline aggregates in the Reports & Printing workspace *(Batch 87)*
+- ✔ Receipt numbering continuity audit — `GET /dashboard/receipt-numbering-continuity`
+  reconciles the whole receipt book by numeric series (missing numbers,
+  duplicates, `expected == actual + gaps` invariant), printable numbering
+  audit in the Reports & Printing workspace *(Batch 88)*
+- ✔ Invoice payment reconciliation ledger — `GET /dashboard/invoice-payment-reconciliation`
+  checks every scanned invoice against the live Payment ledger with
+  derived-vs-stored status drift detection, printable reconciliation ledger
+  in the Reports & Printing workspace *(Batch 89)*
+- ✔ Collection summary by patient — `GET /dashboard/collection-summary-by-patient`
+  rolls the reconciliation ledger into per-patient billed / collected /
+  outstanding totals (`total_collected + outstanding == total_billed`), with a
+  printable collection summary envelope sharing the same scan/aggregation and
+  a Reports & Printing workspace card *(Batch 90)*
+- ✔ Receivables aging print envelope — `POST /reports/receivables-aging-print-envelope`
+  builds the printable aging packet through the exact shared derivation
+  (`build_receivables_aging_result`) behind `GET /dashboard/receivables-aging`,
+  so printed buckets always reconcile line-for-line with the screen; the
+  Reports & Printing aging card now prepares through the envelope *(Batch 91)*
 
 ### 🧪 Test Suite
-- 254 backend tests passing as of Batch 87 (see [CHANGELOG.md](CHANGELOG.md)).
+- 282 backend tests passing as of Batch 91 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection

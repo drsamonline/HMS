@@ -38,6 +38,11 @@ reconciliation ledger per patient into a printable collection summary
 (billed / collected / outstanding with derived paid/partial/unpaid counts).
 The shared aggregation lives in ``build_collection_summary_by_patient`` so
 the dashboard endpoint and the reporting print envelope stay in lockstep.
+
+Batch 91 — Receivables Aging Print Envelope: extracts the Batch 86 bucketing
+into ``build_receivables_aging_result`` so the reporting print envelope reuses
+the exact same aging derivation as the dashboard feed (one implementation,
+two surfaces).
 """
 
 from __future__ import annotations
@@ -433,48 +438,20 @@ _RECEIVABLES_BUCKETS = (
 )
 
 
-@router.get("/receivables-aging", response_model=ReceivablesAgingResponse)
-async def receivables_aging(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> ReceivablesAgingResponse:
-    """Financial-style receivables aging ledger over live outstanding invoices.
+def build_receivables_aging_result(
+    invoices: list[Invoice],
+    patients: dict[int, Patient],
+    paid_by_invoice: dict[int, Decimal],
+    as_of: date,
+) -> dict:
+    """Bucket live-derived outstanding invoices into the standard aging bands.
 
-    Batch 86 — reporting/printing integration feed. Built on the same
-    Batch 82 ``billing_service.list_outstanding_invoices`` derivation so
-    balances always reconcile (``amount_paid + balance_due == total_amount``,
-    stale stored statuses and cancelled invoices never surface). Each invoice
-    is placed into a standard 0-30/31-60/61-90/90+ aging bucket by its age in
-    days; every bucket is reported even when empty so printed ledgers keep a
-    stable shape, and bucket counts/totals sum back to the headline aggregates.
-    Patient enrichment is batched (no N+1).
+    Shared by the Batch 86 dashboard feed and the Batch 91 reporting print
+    envelope so the printed packet can never drift from the screen: balances
+    satisfy ``amount_paid + balance_due == total_amount`` (Batch 68 parity),
+    every bucket is present even when empty so printed ledgers keep a stable
+    shape, and bucket counts/totals sum back to the headline aggregates.
     """
-    invoices, _service_total = await billing_service.list_outstanding_invoices(
-        db, limit=limit
-    )
-
-    as_of = date.today()
-    patient_ids = {invoice.patient_id for invoice in invoices}
-    patients: dict[int, Patient] = {}
-    if patient_ids:
-        result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
-        patients = {p.id: p for p in result.scalars()}
-
-    # Live-payment derivation identical to the Batch 82 outstanding feed.
-    paid_by_invoice: dict[int, Decimal] = {}
-    if invoices:
-        invoice_ids = [invoice.id for invoice in invoices]
-        totals_result = await db.execute(
-            select(
-                Payment.invoice_id,
-                func.coalesce(func.sum(Payment.amount_paid), 0),
-            )
-            .where(Payment.invoice_id.in_(invoice_ids))
-            .group_by(Payment.invoice_id)
-        )
-        paid_by_invoice = {row[0]: Decimal(str(row[1])) for row in totals_result}
-
     bucket_stats = {label: {"count": 0, "total": Decimal("0")} for label, _, _ in _RECEIVABLES_BUCKETS}
     items = []
     total_outstanding = Decimal("0")
@@ -490,6 +467,8 @@ async def receivables_aging(
             invoice.total_amount,
         )
         balance_due = max(invoice.total_amount - amount_paid, Decimal("0"))
+        if balance_due <= 0:
+            continue
         days_outstanding = max((as_of - invoice_local_date).days, 0)
         bucket_label = _RECEIVABLES_BUCKETS[-1][0]
         for label, lower, upper in _RECEIVABLES_BUCKETS:
@@ -527,12 +506,61 @@ async def receivables_aging(
         for label, lower, upper in _RECEIVABLES_BUCKETS
     ]
 
+    return {
+        "as_of": as_of,
+        "buckets": buckets,
+        "items": items,
+        "invoice_count": len(items),
+        "total_outstanding": total_outstanding,
+    }
+
+
+@router.get("/receivables-aging", response_model=ReceivablesAgingResponse)
+async def receivables_aging(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> ReceivablesAgingResponse:
+    """Financial-style receivables aging ledger over live outstanding invoices.
+
+    Batch 86 — reporting/printing integration feed. Built on the same
+    Batch 82 ``billing_service.list_outstanding_invoices`` derivation so
+    balances always reconcile (``amount_paid + balance_due == total_amount``,
+    stale stored statuses and cancelled invoices never surface). Each invoice
+    is placed into a standard 0-30/31-60/61-90/90+ aging bucket by its age in
+    days; every bucket is reported even when empty so printed ledgers keep a
+    stable shape, and bucket counts/totals sum back to the headline aggregates.
+    Patient enrichment is batched (no N+1). Batch 91 extracted the bucketing
+    into ``build_receivables_aging_result`` so the print envelope reuses the
+    exact same code path.
+    """
+    invoices, _service_total = await billing_service.list_outstanding_invoices(
+        db, limit=limit
+    )
+
+    as_of = date.today()
+    patient_ids = {invoice.patient_id for invoice in invoices}
+    patients: dict[int, Patient] = {}
+    if patient_ids:
+        result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
+        patients = {p.id: p for p in result.scalars()}
+
+    # Live-payment derivation identical to the Batch 82 outstanding feed.
+    paid_by_invoice: dict[int, Decimal] = {}
+    if invoices:
+        invoice_ids = [invoice.id for invoice in invoices]
+        totals_result = await db.execute(
+            select(
+                Payment.invoice_id,
+                func.coalesce(func.sum(Payment.amount_paid), 0),
+            )
+            .where(Payment.invoice_id.in_(invoice_ids))
+            .group_by(Payment.invoice_id)
+        )
+        paid_by_invoice = {row[0]: Decimal(str(row[1])) for row in totals_result}
+
     return ReceivablesAgingResponse(
-        as_of=as_of,
-        buckets=buckets,
-        items=items,
-        invoice_count=len(items),
-        total_outstanding=total_outstanding,
+        **build_receivables_aging_result(invoices, patients, paid_by_invoice, as_of)
     )
 
 
@@ -1038,5 +1066,6 @@ async def collection_summary_by_patient(
 
 __all__ = [
     "build_collection_summary_by_patient",
+    "build_receivables_aging_result",
     "router",
 ]
