@@ -79,12 +79,15 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 95 — Collection Summary Print Envelope**
-(`POST /reports/collection-summary-print-envelope` builds the printable per-patient collection packet through the
+Functional application build is in progress through **Batch 96 — Payment Method Collection Summary**
+(`GET /dashboard/payment-method-summary` + `POST /reports/payment-method-summary-print-envelope` roll the live
+payment scan into per-method receipt counts, gross received vs collected (Batch 68 clamp parity) and percentage
+shares through one shared derivation (`build_payment_method_summary_result`) behind both surfaces, so printed
+packets always satisfy `sum(per-method collected) == total_collected` and match the screen; a Reports & Printing
+workspace card prepares through the envelope. Follows Batch 95's collection summary print envelope
+(`POST /reports/collection-summary-print-envelope` building the printable per-patient collection packet through the
 exact shared scan/aggregation pair (`_build_reconciliation_rows` + `build_collection_summary_by_patient`) behind
-`GET /dashboard/collection-summary-by-patient` — one implementation, two surfaces, so printed headlines always
-satisfy `total_billed == total_collected + total_outstanding`; the Reports & Printing collection summary card now
-prepares through the envelope. Follows Batch 94's invoice payment reconciliation print envelope
+`GET /dashboard/collection-summary-by-patient`), follows Batch 94's invoice payment reconciliation print envelope
 (`POST /reports/invoice-payment-reconciliation-print-envelope` sharing `build_invoice_payment_reconciliation_ledger`
 with the dashboard), follows Batch 93's receipt numbering continuity print envelope
 (`POST /reports/receipt-numbering-continuity-print-envelope` sharing `build_receipt_numbering_continuity_result` with the dashboard),
