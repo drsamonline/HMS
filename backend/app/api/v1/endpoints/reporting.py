@@ -13,6 +13,8 @@ from app.schemas.reporting import (
     CollectionSummaryPrintRequest,
     InvoicePrintEnvelope,
     InvoicePrintRequest,
+    InvoicePaymentReconciliationPrintEnvelope,
+    InvoicePaymentReconciliationPrintRequest,
     InvoiceReceiptContinuityPrintEnvelope,
     InvoiceReceiptContinuityPrintRequest,
     ReceivablesAgingPrintEnvelope,
@@ -156,6 +158,29 @@ async def build_receipt_numbering_continuity_print_envelope(
     ``GET /dashboard/receipt-numbering-continuity``.
     """
     return await reporting_service.build_receipt_numbering_continuity_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/invoice-payment-reconciliation-print-envelope",
+    response_model=InvoicePaymentReconciliationPrintEnvelope,
+)
+async def build_invoice_payment_reconciliation_print_envelope(
+    report_in: InvoicePaymentReconciliationPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvoicePaymentReconciliationPrintEnvelope:
+    """Batch 94 — printable invoice payment reconciliation packet.
+
+    Shares the dashboard's live-payment scan and aggregation
+    (``build_invoice_payment_reconciliation_ledger``), so printed headline
+    aggregates always satisfy ``paid_invoices + partially_paid_invoices +
+    unpaid_invoices == invoices_checked`` and ``total_billed == total_paid +
+    total_outstanding``, reconciling line-for-line with
+    ``GET /dashboard/invoice-payment-reconciliation``.
+    """
+    return await reporting_service.build_invoice_payment_reconciliation_print_envelope(
         db, report_in
     )
 

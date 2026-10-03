@@ -408,6 +408,69 @@ class ReceiptNumberingContinuityPrintEnvelope(BaseSchema):
     data: ReceiptNumberingContinuityPrintData
 
 
+class InvoicePaymentReconciliationPrintRequest(BaseSchema):
+    """Batch 94 — print request for the invoice payment reconciliation ledger."""
+
+    limit: int = Field(default=200, ge=1, le=500)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class InvoicePaymentReconciliationPrintLine(BaseSchema):
+    """One reconciled invoice as printed on paper.
+
+    Mirrors ``InvoicePaymentReconciliationItem`` from the dashboard feed;
+    amounts are stringified decimals per the print-schema convention and
+    the Batch 68 clamp invariant ``amount_paid + balance_due ==
+    total_amount`` holds on every printed row.
+    """
+
+    invoice_id: int
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    invoice_number: str
+    invoice_date: datetime
+    total_amount: str
+    amount_paid: str
+    balance_due: str
+    stored_payment_status: str
+    derived_payment_status: str
+    receipt_count: int
+    is_reconciled: bool
+
+
+class InvoicePaymentReconciliationPrintData(BaseSchema):
+    as_of: date
+    invoices_checked: int
+    paid_invoices: int
+    partially_paid_invoices: int
+    unpaid_invoices: int
+    total_billed: str
+    total_paid: str
+    total_outstanding: str
+    items: list[InvoicePaymentReconciliationPrintLine]
+
+
+class InvoicePaymentReconciliationPrintEnvelope(BaseSchema):
+    """Batch 94 — printable invoice payment reconciliation packet.
+
+    Built through the exact same live-payment scan and aggregation as
+    ``GET /dashboard/invoice-payment-reconciliation``
+    (``build_invoice_payment_reconciliation_ledger``, single grouped Payment
+    pass, stored status never trusted), so printed headline aggregates always
+    satisfy ``paid_invoices + partially_paid_invoices + unpaid_invoices ==
+    invoices_checked`` and ``total_billed == total_paid + total_outstanding``,
+    matching the screen line-for-line for the same scan window.
+    """
+
+    report_type: Literal["invoice_payment_reconciliation_print"] = (
+        "invoice_payment_reconciliation_print"
+    )
+    title: str
+    generated_at: datetime
+    data: InvoicePaymentReconciliationPrintData
+
+
 __all__ = [
     "ReportSection",
     "ALL_REPORT_SECTIONS",
@@ -445,4 +508,8 @@ __all__ = [
     "ReceiptSeriesPrintLine",
     "ReceiptNumberingContinuityPrintData",
     "ReceiptNumberingContinuityPrintEnvelope",
+    "InvoicePaymentReconciliationPrintRequest",
+    "InvoicePaymentReconciliationPrintLine",
+    "InvoicePaymentReconciliationPrintData",
+    "InvoicePaymentReconciliationPrintEnvelope",
 ]
