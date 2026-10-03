@@ -10,6 +10,13 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 87 · Invoice Receipt Continuity Report
+- Endpoint `GET /dashboard/invoice-receipt-continuity` (`backend/app/api/v1/endpoints/dashboard.py`) audits receipt-book integrity over live billing data: scans the most recent non-cancelled invoices and checks each invoice's receipts (read in a single grouped pass over the `Payment` ledger, ordered by payment time then id — stored counters are never trusted) for three stable defect classes — `missing` (payments recorded or partial/paid status but zero linked receipts, using the Batch 82 live-payment derivation), `duplicate` (same receipt number twice within an invoice), and `sequence_break` (numeric-suffix span analysis via `_receipt_numeric_suffix` detects skipped numbers).
+- Response schemas `InvoiceReceiptGapItem` / `InvoiceReceiptContinuityResponse` in `backend/app/schemas/dashboard.py` expose headline aggregates (checked / with receipts / missing / duplicates / sequence breaks) plus per-invoice issue rows with expected/actual/missing counts and first/last/duplicate receipt numbers so printed audits reconcile line-by-line.
+- Client wiring: `getDashboardInvoiceReceiptContinuity(options)` wrapper in `frontend/js/api.js`; `createInvoiceReceiptContinuityPrintPreview()` renderer (five-row continuity summary table plus a full issues page with a clean-book fallback message) in `frontend/js/print.js`; "Invoice receipt continuity report" card with limit control integrated into the Reports & Printing workspace (`frontend/js/reports.js`).
+- Documentation: [docs/CLIENT_INVOICE_RECEIPT_CONTINUITY_REPORT.md](docs/CLIENT_INVOICE_RECEIPT_CONTINUITY_REPORT.md) added and indexed in [docs/INDEX.md](docs/INDEX.md); ROADMAP and project state advanced to Batch 87.
+- Contract test suite `backend/tests/test_invoice_receipt_continuity_report.py` (8 tests covering endpoint wiring and bounded limit, live-scan semantics, gap taxonomy and span math, Batch 82 parity, schema fields and exports, and frontend integration points); full suite 254 passed.
+
 ### Added — Batch 86 · Receivables Aging Ledger
 - Endpoint `GET /dashboard/receivables-aging` (`backend/app/api/v1/endpoints/dashboard.py`) derives outstanding balances from the Batch 82 live-payment reconciliation (payments clamped to invoice totals, non-negative balances) and classifies each open invoice into stable aging buckets — 0–30, 31–60, 61–90, Over-90 days — measured from the invoice date against an aware-UTC `as_of`.
 - Response schemas in `backend/app/schemas/dashboard.py` expose per-bucket totals/counts plus the full invoice-level ledger rows (invoice number, patient, date, total, paid, balance, days outstanding, bucket).

@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: current repository state on `master` (commit 8123205), reconstructed from the latest user-supplied full ZIP (`HMS(5).zip`) plus every committed batch since. The ZIP is no longer used as a reconstruction source; this repo tree is authoritative going forward (rule 9 checkpoint satisfied at Batch 85).
-- Latest completed functional milestone: Batch 86 — Receivables Aging Ledger.
-- Current milestone: Batch 86 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed; due-follow-up workflow feed wired into the client dashboard; outstanding-billing receivables feed wired into the client dashboard; IPD bed-occupancy continuity feed wired into the client dashboard; laboratory pending-investigation backlog feed wired into the client dashboard; invoice print envelope landed as the first reporting/printing integration step beyond the clinical print batches; receivables aging ledger landed with bucketed endpoint, API wrapper, printable aging preview in the Reports & Printing workspace, contract tests and documentation).
+- Latest completed functional milestone: Batch 87 — Invoice Receipt Continuity Report.
+- Current milestone: Batch 87 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed; due-follow-up workflow feed wired into the client dashboard; outstanding-billing receivables feed wired into the client dashboard; IPD bed-occupancy continuity feed wired into the client dashboard; laboratory pending-investigation backlog feed wired into the client dashboard; invoice print envelope landed as the first reporting/printing integration step beyond the clinical print batches; receivables aging ledger landed with bucketed endpoint, API wrapper, printable aging preview in the Reports & Printing workspace, contract tests and documentation; invoice receipt continuity report landed with missing/duplicate/sequence-break audit over live payments, API wrapper, printable continuity audit in the Reports & Printing workspace, 8 contract tests and documentation).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -128,6 +128,14 @@
 - Client wiring: `getDashboardReceivablesAging(options)` wrapper in `frontend/js/api.js`; `createReceivablesAgingPrintPreview()` renderer (bucket summary + per-invoice ledger) in `frontend/js/print.js`; "Receivables aging ledger" card in the Reports & Printing workspace (`frontend/js/reports.js`).
 - Documentation: `docs/CLIENT_RECEIVABLES_AGING_LEDGER.md` added and indexed in `docs/INDEX.md`.
 - Contract suite `backend/tests/test_receivables_aging_ledger.py` (8 tests incl. clamping parity with Batches 82/85); full suite 246 passed.
+
+## Batch 87 — Invoice Receipt Continuity Report
+- Endpoint `GET /dashboard/invoice-receipt-continuity` (`backend/app/api/v1/endpoints/dashboard.py`) audits receipt-book integrity over live billing data: recent non-cancelled invoices scanned most-recent-first, receipts read in a single grouped pass over the `Payment` ledger (ordered by payment time then id; stored counters never trusted).
+- Stable gap taxonomy: `missing` (live payments > 0 or partial/paid status but zero linked receipts — Batch 82 derivation parity), `duplicate` (same receipt number twice within an invoice), `sequence_break` (numeric-suffix span analysis via `_receipt_numeric_suffix`).
+- Schemas `InvoiceReceiptGapItem` / `InvoiceReceiptContinuityResponse` in `backend/app/schemas/dashboard.py` expose headline aggregates (checked / with receipts / missing / duplicates / sequence breaks) plus per-invoice issue rows with expected/actual/missing counts and first/last/duplicate receipt numbers.
+- Client wiring: `getDashboardInvoiceReceiptContinuity(options)` wrapper in `frontend/js/api.js`; `createInvoiceReceiptContinuityPrintPreview()` renderer (summary table + issues page with clean-book fallback) in `frontend/js/print.js`; "Invoice receipt continuity report" card in the Reports & Printing workspace (`frontend/js/reports.js`).
+- Documentation: `docs/CLIENT_INVOICE_RECEIPT_CONTINUITY_REPORT.md` added and indexed in `docs/INDEX.md`.
+- Contract suite `backend/tests/test_invoice_receipt_continuity_report.py` (8 tests covering endpoint wiring, live-scan semantics, gap taxonomy and span math, Batch 82 parity, schemas and frontend integration points); full suite 254 passed.
 
 ## Cleanup policy
 - Transfer baselines always exclude `.git`, `.env`, Python caches/compiled files, test caches and build artifacts.

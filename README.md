@@ -79,9 +79,13 @@ Runs entirely on the local network with a server-owned database — *no internet
   standard 0–30 / 31–60 / 61–90 / Over-90 buckets over the Batch 82
   outstanding-invoice (live-payment) derivation, printable aging preview in
   the Reports & Printing workspace *(Batch 86)*
+- ✔ Invoice receipt continuity report — `GET /dashboard/invoice-receipt-continuity`
+  audits receipt-book integrity over live payments (missing receipts,
+  duplicate receipt numbers, numeric sequence breaks), printable continuity
+  audit with headline aggregates in the Reports & Printing workspace *(Batch 87)*
 
 ### 🧪 Test Suite
-- 246 backend tests passing as of Batch 86 (see [CHANGELOG.md](CHANGELOG.md)).
+- 254 backend tests passing as of Batch 87 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection
