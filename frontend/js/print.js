@@ -127,3 +127,27 @@ export function createReceivablesAgingPrintPreview(host,{data,title="Receivables
   $("#aging-print-now",shell).addEventListener("click",()=>window.print());
   return {data};
 }
+
+export function createInvoiceReceiptContinuityPrintPreview(host,{data,title="Invoice Receipt Continuity Report"}){
+  host.innerHTML="";
+  const issues=data?.issues||[];
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Continuity Print Preview</strong><span class="print-count">${esc(String(data?.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="continuity-print-now">Print Report</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(title)}</h1><p class="print-generated">Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Continuity Summary</h2></div>`
+    +`<table class="print-table"><tbody>`
+    +`<tr><td>Invoices checked</td><td>${esc(data?.invoices_checked??0)}</td></tr>`
+    +`<tr><td>Invoices with receipts</td><td>${esc(data?.invoices_with_receipts??0)}</td></tr>`
+    +`<tr><td>Invoices missing receipts</td><td>${esc(data?.invoices_missing_receipts??0)}</td></tr>`
+    +`<tr><td>Duplicate receipt numbers</td><td>${esc(data?.duplicate_receipt_count??0)}</td></tr>`
+    +`<tr><td>Sequence breaks</td><td>${esc(data?.sequence_break_count??0)}</td></tr>`
+    +`</tbody></table></section>`
+    +`<section class="print-section print-page-break" data-print-section="issues"><div class="print-section-heading"><h2>Continuity Issues</h2></div>`
+    +(issues.length?`<table class="print-table"><thead><tr><th>Invoice</th><th>Patient</th><th>Issue</th><th>Expected</th><th>Actual</th><th>Missing</th><th>First Receipt</th><th>Last Receipt</th><th>Duplicates</th></tr></thead><tbody>`
+      +issues.map(it=>`<tr><td>${esc(it.invoice_number)}</td><td>${esc(it.patient_name)}${it.patient_number?` — ${esc(it.patient_number)}`:""}</td><td>${esc(human(it.gap_type))}</td><td>${esc(it.expected_count)}</td><td>${esc(it.actual_count)}</td><td>${esc(it.missing_count)}</td><td>${esc(it.first_receipt_number??"—")}</td><td>${esc(it.last_receipt_number??"—")}</td><td>${esc((it.duplicate_receipt_numbers||[]).join(", ")||"—")}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No continuity issues detected — the receipt book is consistent</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#continuity-print-now",shell).addEventListener("click",()=>window.print());
+  return {data};
+}
