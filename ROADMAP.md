@@ -79,13 +79,16 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 89 — Invoice Payment Reconciliation Ledger**
-(`GET /dashboard/invoice-payment-reconciliation` reconciles every scanned invoice against the live Payment
+Functional application build is in progress through **Batch 90 — Collection Summary by Patient**
+(`GET /dashboard/collection-summary-by-patient` rolls the Batch 89 reconciliation ledger into per-patient
+billed/collected/outstanding totals via a shared scan/aggregation helper, with a printable collection
+summary envelope (`POST /reports/collection-summary-print-envelope`) that reuses the exact same code path;
+the Batch 89 ledger remains at `GET /dashboard/invoice-payment-reconciliation` reconciles every scanned invoice against the live Payment
 ledger — payments summed in a single grouped pass, `amount_paid`/`balance_due` clamped so the Batch 68
 invariant holds per row, derived-vs-stored payment status drift flagged per invoice — and a printable
 reconciliation ledger in the client Reports & Printing workspace; this batch also fixed a reports.js
 attribute-quoting regression that had silently disabled the four newer ledger cards' Prepare buttons;
-follows Batch 88's whole-book receipt numbering continuity audit, Batch 87's invoice-scoped receipt
+follows Batch 89's invoice payment reconciliation ledger, Batch 88's whole-book receipt numbering continuity audit, Batch 87's invoice-scoped receipt
 continuity report, Batch 86's receivables aging ledger, Batch 85's invoice print envelope, Batch 84's
 laboratory pending-investigation feed, Batch 83's IPD bed-occupancy feed and Batch 82's outstanding-billing
 feed). Remaining before QA: further cross-module workflow
