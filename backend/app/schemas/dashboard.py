@@ -219,6 +219,51 @@ class ReceiptNumberingContinuityResponse(BaseSchema):
     series: list[ReceiptSeriesGap]
 
 
+class InvoicePaymentReconciliationItem(BaseSchema):
+    """One invoice reconciled against the live Payment ledger.
+
+    Batch 89 — billing reconciliation feed. ``total_paid`` is summed from
+    live payments and clamped to ``total_amount``, so the invariant
+    ``amount_paid + balance_due == total_amount`` always holds (Batch 68
+    atomic-consistency parity). ``receipt_count`` counts the receipts in the
+    same single grouped payment pass, and ``is_reconciled`` marks rows whose
+    derived status agrees with the stored ``payment_status`` column.
+    """
+
+    invoice_id: int
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    invoice_number: str
+    invoice_date: datetime
+    total_amount: Decimal
+    amount_paid: Decimal
+    balance_due: Decimal
+    stored_payment_status: str
+    derived_payment_status: str
+    receipt_count: int
+    is_reconciled: bool
+
+
+class InvoicePaymentReconciliationResponse(BaseSchema):
+    """Invoice-payment reconciliation ledger with headline aggregates.
+
+    ``paid_invoices + partially_paid_invoices + unpaid_invoices`` always sums
+    back to ``invoices_checked`` so printed reconciliation ledgers reconcile
+    line-by-line.
+    """
+
+    as_of: date
+    invoices_checked: int
+    paid_invoices: int
+    partially_paid_invoices: int
+    unpaid_invoices: int
+    total_billed: Decimal
+    total_paid: Decimal
+    total_outstanding: Decimal
+    items: list[InvoicePaymentReconciliationItem]
+
+
 __all__ = [
     "DueFollowUpItem",
     "DueFollowUpsResponse",
@@ -235,4 +280,6 @@ __all__ = [
     "InvoiceReceiptContinuityResponse",
     "ReceiptSeriesGap",
     "ReceiptNumberingContinuityResponse",
+    "InvoicePaymentReconciliationItem",
+    "InvoicePaymentReconciliationResponse",
 ]

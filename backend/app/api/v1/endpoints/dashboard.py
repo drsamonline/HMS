@@ -27,6 +27,11 @@ Batch 87 — Invoice Receipt Continuity Report: audits invoice-to-receipt
 numbering continuity (missing receipts, duplicate receipt numbers, numeric
 sequence breaks) so billing staff can spot receipt-book gaps before they turn
 into reconciliation problems.
+
+Batch 89 — Invoice Payment Reconciliation Ledger: reconciles every scanned
+invoice against the live Payment ledger (paid clamped to totals, derived
+status vs stored status) so printed ledgers prove each invoice's balance
+reconciles line-by-line.
 """
 
 from __future__ import annotations
@@ -50,6 +55,7 @@ from app.models.payment import Payment
 from app.schemas.dashboard import (
     BedOccupancyResponse,
     DueFollowUpsResponse,
+    InvoicePaymentReconciliationResponse,
     InvoiceReceiptContinuityResponse,
     OutstandingInvoicesResponse,
     PendingInvestigationsResponse,
@@ -778,6 +784,131 @@ async def receipt_numbering_continuity(
         clean_series_count=clean_series_count,
         total_gap_count=total_gap_count,
         series=series_items,
+    )
+
+
+def _derive_payment_status(total_amount: Decimal, amount_paid: Decimal) -> str:
+    """Derive an invoice payment status from live-payment figures.
+
+    Mirrors the Batch 68 atomic-consistency derivation (unpaid / partial /
+    paid) so reconciliation rows never trust a stale stored status column.
+    """
+    if amount_paid <= 0:
+        return "unpaid"
+    if amount_paid >= total_amount:
+        return "paid"
+    return "partial"
+
+
+@router.get("/invoice-payment-reconciliation", response_model=InvoicePaymentReconciliationResponse)
+async def invoice_payment_reconciliation(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> InvoicePaymentReconciliationResponse:
+    """Reconcile recent invoices against the live Payment ledger.
+
+    Batch 89 — reporting/printing integration feed. Where Batch 82/86 only
+    surfaced *outstanding* invoices, this ledger reconciles **every** scanned
+    invoice (most recent ``limit`` non-cancelled invoices): payments are
+    summed in a single grouped pass over the ``Payment`` table (no N+1,
+    stored counters and status columns are never trusted), ``amount_paid`` is
+    clamped to the invoice total and ``balance_due`` kept non-negative so the
+    invariant ``amount_paid + balance_due == total_amount`` holds on every
+    printed row (Batch 68 parity).
+
+    Each row also carries the derived payment status next to the stored one
+    (``is_reconciled`` flags drift between the two) plus the number of
+    receipts recorded against the invoice, so billing staff can prove
+    collection state line-by-line before printing. Headline aggregates sum
+    back to ``invoices_checked`` and the totals satisfy
+    ``total_billed == total_paid + total_outstanding``.
+    """
+    invoices_result = await db.execute(
+        select(Invoice)
+        .where(Invoice.payment_status != "cancelled")
+        .order_by(Invoice.invoice_date.desc(), Invoice.id.desc())
+        .limit(limit)
+    )
+    invoices = list(invoices_result.scalars())
+
+    patient_ids = {invoice.patient_id for invoice in invoices}
+    patients: dict[int, Patient] = {}
+    if patient_ids:
+        result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
+        patients = {p.id: p for p in result.scalars()}
+
+    # Single grouped pass over the live Payment ledger for all scanned
+    # invoices (no N+1): per-invoice paid totals and receipt counts.
+    paid_by_invoice: dict[int, Decimal] = {}
+    receipts_by_invoice: dict[int, int] = {}
+    if invoices:
+        invoice_ids = [invoice.id for invoice in invoices]
+        payments_result = await db.execute(
+            select(
+                Payment.invoice_id,
+                Payment.receipt_number,
+                Payment.amount_paid,
+            ).where(Payment.invoice_id.in_(invoice_ids))
+        )
+        for invoice_id, _receipt_number, amount_paid in payments_result:
+            paid_by_invoice[invoice_id] = paid_by_invoice.get(
+                invoice_id, Decimal("0")
+            ) + Decimal(str(amount_paid))
+            receipts_by_invoice[invoice_id] = receipts_by_invoice.get(invoice_id, 0) + 1
+
+    items = []
+    paid_invoices = 0
+    partially_paid_invoices = 0
+    unpaid_invoices = 0
+    total_billed = Decimal("0")
+    total_paid = Decimal("0")
+    total_outstanding = Decimal("0")
+    for invoice in invoices:
+        patient = patients.get(invoice.patient_id)
+        amount_paid = min(
+            paid_by_invoice.get(invoice.id, Decimal("0")),
+            invoice.total_amount,
+        )
+        balance_due = max(invoice.total_amount - amount_paid, Decimal("0"))
+        derived_status = _derive_payment_status(invoice.total_amount, amount_paid)
+        if derived_status == "paid":
+            paid_invoices += 1
+        elif derived_status == "partial":
+            partially_paid_invoices += 1
+        else:
+            unpaid_invoices += 1
+        total_billed += invoice.total_amount
+        total_paid += amount_paid
+        total_outstanding += balance_due
+        items.append(
+            {
+                "invoice_id": invoice.id,
+                "patient_id": invoice.patient_id,
+                "patient_name": _patient_display_name(patient),
+                "patient_number": patient.patient_number if patient else None,
+                "invoice_number": invoice.invoice_number,
+                "invoice_date": invoice.invoice_date,
+                "total_amount": invoice.total_amount,
+                "amount_paid": amount_paid,
+                "balance_due": balance_due,
+                "stored_payment_status": invoice.payment_status,
+                "derived_payment_status": derived_status,
+                "receipt_count": receipts_by_invoice.get(invoice.id, 0),
+                "is_reconciled": derived_status == str(invoice.payment_status),
+            }
+        )
+
+    return InvoicePaymentReconciliationResponse(
+        as_of=date.today(),
+        invoices_checked=len(items),
+        paid_invoices=paid_invoices,
+        partially_paid_invoices=partially_paid_invoices,
+        unpaid_invoices=unpaid_invoices,
+        total_billed=total_billed,
+        total_paid=total_paid,
+        total_outstanding=total_outstanding,
+        items=items,
     )
 
 

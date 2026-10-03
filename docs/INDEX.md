@@ -158,6 +158,8 @@
 | [CLIENT_INVOICE_PRINT_ENVELOPE.md](CLIENT_INVOICE_PRINT_ENVELOPE.md) | Invoice print envelope for reporting integration (Batch 85) |
 | [CLIENT_RECEIVABLES_AGING_LEDGER.md](CLIENT_RECEIVABLES_AGING_LEDGER.md) | Receivables aging ledger print feed (Batch 86) |
 | [CLIENT_INVOICE_RECEIPT_CONTINUITY_REPORT.md](CLIENT_INVOICE_RECEIPT_CONTINUITY_REPORT.md) | Invoice receipt continuity audit report (Batch 87) |
+| [CLIENT_RECEIPT_NUMBERING_CONTINUITY_AUDIT.md](CLIENT_RECEIPT_NUMBERING_CONTINUITY_AUDIT.md) | Receipt numbering continuity audit (Batch 88) |
+| [CLIENT_INVOICE_PAYMENT_RECONCILIATION_LEDGER.md](CLIENT_INVOICE_PAYMENT_RECONCILIATION_LEDGER.md) | Invoice payment reconciliation ledger (Batch 89) |
 | [CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md](CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md) | Client operational workspace integration |
 | [CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md](CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md) | Client operational navigation convergence |
 | [CLIENT_RBAC_NAVIGATION.md](CLIENT_RBAC_NAVIGATION.md) | Client RBAC-aware navigation |
@@ -265,4 +267,4 @@ Specification → Review → Implementation → Code Review → Testing → Git 
 
 ---
 
-*101 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
+*102 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
