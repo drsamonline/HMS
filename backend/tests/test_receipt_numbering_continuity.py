@@ -89,8 +89,8 @@ def test_reports_workspace_wires_receipt_numbering_card():
     assert "getDashboardReceiptNumberingContinuity" in src
     assert "createReceiptNumberingContinuityPrintPreview" in src
     assert "Receipt numbering continuity" in src
-    assert 'id:"receipt-numbering-limit"' in src
-    assert 'id:"receipt-numbering-prepare"' in src
+    assert 'id="receipt-numbering-limit"' in src
+    assert 'id="receipt-numbering-prepare"' in src
 
 
 def test_receipt_numbering_documented_and_indexed():
