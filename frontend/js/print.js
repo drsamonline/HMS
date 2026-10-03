@@ -184,3 +184,35 @@ export function createReceiptNumberingContinuityPrintPreview(host,{data,title="R
   $("#receipt-numbering-print-now",shell).addEventListener("click",()=>window.print());
   return {data};
 }
+
+export function createInvoicePaymentReconciliationPrintPreview(host,{data,title="Invoice Payment Reconciliation Ledger"}){
+  host.innerHTML="";
+  const items=data?.items||[];
+  const drift=items.filter(it=>it.is_reconciled===false);
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Reconciliation Print Preview</strong><span class="print-count">${esc(String(data?.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="reconciliation-print-now">Print Ledger</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(title)}</h1><p class="print-generated">As of: ${esc(String(data?.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Reconciliation Summary</h2></div>`
+    +`<table class="print-table"><tbody>`
+    +`<tr><td>Invoices checked</td><td>${esc(data?.invoices_checked??0)}</td></tr>`
+    +`<tr><td>Paid invoices</td><td>${esc(data?.paid_invoices??0)}</td></tr>`
+    +`<tr><td>Partially paid invoices</td><td>${esc(data?.partially_paid_invoices??0)}</td></tr>`
+    +`<tr><td>Unpaid invoices</td><td>${esc(data?.unpaid_invoices??0)}</td></tr>`
+    +`<tr><td>Total billed</td><td>${money(data?.total_billed)}</td></tr>`
+    +`<tr><td>Total paid</td><td>${money(data?.total_paid)}</td></tr>`
+    +`<tr><td>Total outstanding</td><td>${money(data?.total_outstanding)}</td></tr>`
+    +`</tbody></table></section>`
+    +`<section class="print-section print-page-break" data-print-section="ledger"><div class="print-section-heading"><h2>Reconciliation Ledger</h2></div>`
+    +(items.length?`<table class="print-table"><thead><tr><th>Invoice</th><th>Patient</th><th>Date</th><th>Total</th><th>Paid</th><th>Balance Due</th><th>Stored Status</th><th>Derived Status</th><th>Receipts</th><th>Reconciled</th></tr></thead><tbody>`
+      +items.map(it=>`<tr><td>${esc(it.invoice_number)}</td><td>${esc(it.patient_name)}${it.patient_number?` — ${esc(it.patient_number)}`:""}</td><td>${esc(String(it.invoice_date||"").slice(0,10))}</td><td>${money(it.total_amount)}</td><td>${money(it.amount_paid)}</td><td>${money(it.balance_due)}</td><td>${esc(human(it.stored_payment_status))}</td><td>${esc(human(it.derived_payment_status))}</td><td>${esc(it.receipt_count)}</td><td>${it.is_reconciled?"✓":"✗ drift"}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No invoices to reconcile</div>')
+    +`</section>`
+    +`<section class="print-section" data-print-section="drift"><div class="print-section-heading"><h2>Status Drift Detail</h2></div>`
+    +(drift.length?`<table class="print-table"><thead><tr><th>Invoice</th><th>Patient</th><th>Stored Status</th><th>Derived Status</th><th>Total</th><th>Paid</th><th>Balance Due</th></tr></thead><tbody>`
+      +drift.map(it=>`<tr><td>${esc(it.invoice_number)}</td><td>${esc(it.patient_name)}</td><td>${esc(human(it.stored_payment_status))}</td><td>${esc(human(it.derived_payment_status))}</td><td>${money(it.total_amount)}</td><td>${money(it.amount_paid)}</td><td>${money(it.balance_due)}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No status drift detected — every invoice reconciles with the payment ledger.</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#reconciliation-print-now",shell).addEventListener("click",()=>window.print());
+  return {data};
+}
