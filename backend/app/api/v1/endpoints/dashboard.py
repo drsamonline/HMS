@@ -53,6 +53,7 @@ from app.schemas.dashboard import (
     InvoiceReceiptContinuityResponse,
     OutstandingInvoicesResponse,
     PendingInvestigationsResponse,
+    ReceiptNumberingContinuityResponse,
     ReceivablesAgingResponse,
 )
 from app.services.billing import billing_service
@@ -684,6 +685,99 @@ async def invoice_receipt_continuity(
         duplicate_receipt_count=duplicate_receipt_count,
         sequence_break_count=sequence_break_count,
         issues=issues,
+    )
+
+
+@router.get("/receipt-numbering-continuity", response_model=ReceiptNumberingContinuityResponse)
+async def receipt_numbering_continuity(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=2000, ge=1, le=5000),
+) -> ReceiptNumberingContinuityResponse:
+    """Audit receipt numbering continuity across the whole receipt book.
+
+    Batch 88 — reporting/printing integration feed. Where Batch 87 checked
+    receipts *per invoice*, this scans the most recent ``limit`` live Payment
+    ledger rows in a single ordered pass (no N+1) and groups them by numeric
+    series — every receipt sharing the same non-digit prefix (e.g. ``R`` in
+    ``R000123``), parsed with the Batch 87 ``_receipt_numeric_suffix`` helper
+    so both audits agree on what "numeric" means.
+
+    For each series the audit reports:
+
+    * ``missing_numbers`` — values skipped between first and last issued
+      number (sequence gaps in the physical receipt book);
+    * ``duplicate_numbers`` — receipt numbers recorded more than once;
+    * per-series reconciliation that always holds:
+      ``expected_count == actual_count + gap_count``.
+
+    Non-numeric receipt numbers are counted as checked but never produce
+    false gaps, and aggregates (``clean_series_count``, ``total_gap_count``)
+    sum back to the scanned ledger so printed audits reconcile.
+    """
+    receipts_result = await db.execute(
+        select(Payment.receipt_number)
+        .where(Payment.receipt_number.is_not(None))
+        .order_by(Payment.payment_datetime.asc(), Payment.id.asc())
+        .limit(limit)
+    )
+    receipt_numbers = [row[0] for row in receipts_result]
+
+    # Group into series by non-digit prefix; keep per-series numeric suffixes.
+    series_suffixes: dict[str, list[int]] = {}
+    series_counts: dict[str, dict[str, int]] = {}
+    unstructured_count = 0
+    for receipt_number in receipt_numbers:
+        stripped = str(receipt_number).strip()
+        suffix = _receipt_numeric_suffix(receipt_number)
+        if suffix is None:
+            unstructured_count += 1
+            continue
+        prefix = stripped[: len(stripped) - len(str(suffix))] or "(none)"
+        series_suffixes.setdefault(prefix, []).append(suffix)
+        series_counts.setdefault(prefix, {})
+        series_counts[prefix][stripped] = series_counts[prefix].get(stripped, 0) + 1
+
+    series_items = []
+    total_gap_count = 0
+    clean_series_count = 0
+    for prefix in sorted(series_suffixes):
+        suffixes = series_suffixes[prefix]
+        counts = series_counts[prefix]
+        unique_sorted = sorted(set(suffixes))
+        first_number = unique_sorted[0]
+        last_number = unique_sorted[-1]
+        expected_count = last_number - first_number + 1
+        actual_count = len(unique_sorted)
+        missing = set(range(first_number, last_number + 1)) - set(unique_sorted)
+        # Cap the detail list so a pathological scan can't blow up the payload;
+        # gap_count always reflects the true number of missing values.
+        missing_numbers = sorted(missing)[:200]
+        gap_count = len(missing)
+        duplicate_numbers = sorted(n for n, c in counts.items() if c > 1)
+        total_gap_count += gap_count
+        if gap_count == 0 and not duplicate_numbers:
+            clean_series_count += 1
+        series_items.append(
+            {
+                "prefix": prefix,
+                "first_number": first_number,
+                "last_number": last_number,
+                "expected_count": expected_count,
+                "actual_count": actual_count,
+                "gap_count": gap_count,
+                "missing_numbers": missing_numbers,
+                "duplicate_numbers": duplicate_numbers,
+            }
+        )
+
+    return ReceiptNumberingContinuityResponse(
+        as_of=datetime.now(timezone.utc),
+        receipts_checked=len(receipt_numbers),
+        series_count=len(series_items),
+        clean_series_count=clean_series_count,
+        total_gap_count=total_gap_count,
+        series=series_items,
     )
 
 

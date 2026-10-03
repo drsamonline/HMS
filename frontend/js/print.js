@@ -151,3 +151,36 @@ export function createInvoiceReceiptContinuityPrintPreview(host,{data,title="Inv
   $("#continuity-print-now",shell).addEventListener("click",()=>window.print());
   return {data};
 }
+
+export function createReceiptNumberingContinuityPrintPreview(host,{data,title="Receipt Numbering Continuity Audit"}){
+  host.innerHTML="";
+  const series=data?.series||[];
+  const gapped=series.filter(s=>(s.gap_count??0)>0);
+  const dupes=series.filter(s=>(s.duplicate_numbers||[]).length>0);
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Receipt Numbering Print Preview</strong><span class="print-count">${esc(String(data?.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="receipt-numbering-print-now">Print Audit</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(title)}</h1><p class="print-generated">Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Audit Summary</h2></div>`
+    +`<table class="print-table"><tbody>`
+    +`<tr><td>Receipts checked</td><td>${esc(data?.receipts_checked??0)}</td></tr>`
+    +`<tr><td>Number series</td><td>${esc(data?.series_count??0)}</td></tr>`
+    +`<tr><td>Clean series</td><td>${esc(data?.clean_series_count??0)}</td></tr>`
+    +`<tr><td>Total missing numbers</td><td>${esc(data?.total_gap_count??0)}</td></tr>`
+    +`</tbody></table></section>`
+    +`<section class="print-section" data-print-section="series"><div class="print-section-heading"><h2>Receipt Series Summary</h2></div>`
+    +(series.length?`<table class="print-table"><thead><tr><th>Series Prefix</th><th>First</th><th>Last</th><th>Expected</th><th>Actual</th><th>Gaps</th><th>Duplicates</th></tr></thead><tbody>`
+      +series.map(s=>`<tr><td>${esc(s.prefix)}</td><td>${esc(s.first_number)}</td><td>${esc(s.last_number)}</td><td>${esc(s.expected_count)}</td><td>${esc(s.actual_count)}</td><td>${esc(s.gap_count)}</td><td>${esc((s.duplicate_numbers||[]).join(", ")||"—")}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No receipt numbers recorded yet</div>')
+    +`</section>`
+    +`<section class="print-section print-page-break" data-print-section="missing"><div class="print-section-heading"><h2>Missing Numbers Detail</h2></div>`
+    +(gapped.length?gapped.map(s=>`<h3>Series ${esc(s.prefix)} (${esc(s.gap_count)} missing)</h3><p class="print-generated">${esc((s.missing_numbers||[]).join(", "))}</p>`).join(""):'<div class="print-empty">No numbering gaps detected.</div>')
+    +`</section>`
+    +`<section class="print-section" data-print-section="duplicates"><div class="print-section-heading"><h2>Duplicate Receipt Numbers</h2></div>`
+    +(dupes.length?`<table class="print-table"><thead><tr><th>Series Prefix</th><th>Duplicated Numbers</th></tr></thead><tbody>`
+      +dupes.map(s=>`<tr><td>${esc(s.prefix)}</td><td>${esc((s.duplicate_numbers||[]).join(", "))}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No duplicate receipt numbers detected.</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#receipt-numbering-print-now",shell).addEventListener("click",()=>window.print());
+  return {data};
+}

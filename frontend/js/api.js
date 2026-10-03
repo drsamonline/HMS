@@ -111,6 +111,7 @@ export async function getDashboardPendingInvestigations(options={}){const q=new 
 export async function getDashboardReceivablesAging(options={}){const q=new URLSearchParams({limit:String(options.limit??200)});return request(`/api/v1/dashboard/receivables-aging?${q.toString()}`)}
 
 export async function getDashboardInvoiceReceiptContinuity(options={}){const q=new URLSearchParams({limit:String(options.limit??200)});return request(`/api/v1/dashboard/invoice-receipt-continuity?${q.toString()}`)}
+export async function getDashboardReceiptNumberingContinuity(options={}){const q=new URLSearchParams({limit:String(options.limit??2000)});return request(`/api/v1/dashboard/receipt-numbering-continuity?${q.toString()}`)}
 export async function createFollowup(payload){return request("/api/v1/followups",{method:"POST",body:JSON.stringify(payload)})}
 export async function searchICD11(q){return request(`/api/v1/icd11/search?q=${encodeURIComponent(q)}&limit=15`)}
 export async function createPrescription(payload){return request("/api/v1/prescriptions",{method:"POST",body:JSON.stringify(payload)})}

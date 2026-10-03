@@ -189,6 +189,36 @@ class InvoiceReceiptContinuityResponse(BaseSchema):
     issues: list[InvoiceReceiptGapItem]
 
 
+class ReceiptSeriesGap(BaseSchema):
+    """Numbering-continuity state of one receipt-number series.
+
+    Batch 88 — whole-receipt-book audit. A *series* is every receipt sharing
+    the same non-digit prefix (e.g. ``R`` in ``R000123``). ``expected_count``
+    spans first..last numeric value inclusive, so per-series reconciliation
+    always holds: ``expected_count == actual_count + gap_count``.
+    """
+
+    prefix: str
+    first_number: int
+    last_number: int
+    expected_count: int
+    actual_count: int
+    gap_count: int
+    missing_numbers: list[int]
+    duplicate_numbers: list[str]
+
+
+class ReceiptNumberingContinuityResponse(BaseSchema):
+    """Whole-book receipt numbering continuity audit with aggregates."""
+
+    as_of: datetime
+    receipts_checked: int
+    series_count: int
+    clean_series_count: int
+    total_gap_count: int
+    series: list[ReceiptSeriesGap]
+
+
 __all__ = [
     "DueFollowUpItem",
     "DueFollowUpsResponse",
@@ -203,4 +233,6 @@ __all__ = [
     "ReceivablesAgingResponse",
     "InvoiceReceiptGapItem",
     "InvoiceReceiptContinuityResponse",
+    "ReceiptSeriesGap",
+    "ReceiptNumberingContinuityResponse",
 ]
