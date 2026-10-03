@@ -93,7 +93,9 @@ def test_print_renderer_builds_aging_ledger_preview():
 
 def test_reports_workspace_wires_aging_card():
     rep = _read("frontend/js/reports.js")
-    assert "getDashboardReceivablesAging" in rep
+    # Batch 91 — the Reports workspace now prepares the aging ledger through
+    # the print envelope endpoint (one shared derivation for screen + paper).
+    assert "buildReceivablesAgingPrintEnvelope" in rep
     assert "createReceivablesAgingPrintPreview" in rep
     assert "aging-prepare" in rep
     assert "Receivables aging ledger" in rep

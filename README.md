@@ -96,9 +96,14 @@ Runs entirely on the local network with a server-owned database — *no internet
   outstanding totals (`total_collected + outstanding == total_billed`), with a
   printable collection summary envelope sharing the same scan/aggregation and
   a Reports & Printing workspace card *(Batch 90)*
+- ✔ Receivables aging print envelope — `POST /reports/receivables-aging-print-envelope`
+  builds the printable aging packet through the exact shared derivation
+  (`build_receivables_aging_result`) behind `GET /dashboard/receivables-aging`,
+  so printed buckets always reconcile line-for-line with the screen; the
+  Reports & Printing aging card now prepares through the envelope *(Batch 91)*
 
 ### 🧪 Test Suite
-- 275 backend tests passing as of Batch 90 (see [CHANGELOG.md](CHANGELOG.md)).
+- 282 backend tests passing as of Batch 91 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection

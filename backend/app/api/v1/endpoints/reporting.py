@@ -13,6 +13,8 @@ from app.schemas.reporting import (
     CollectionSummaryPrintRequest,
     InvoicePrintEnvelope,
     InvoicePrintRequest,
+    ReceivablesAgingPrintEnvelope,
+    ReceivablesAgingPrintRequest,
     ReportPrintEnvelope,
     ReportPrintManifestRead,
     ReportPrintManifestRequest,
@@ -86,6 +88,27 @@ async def build_collection_summary_print_envelope(
     ``total_collected + total_outstanding == total_billed``.
     """
     return await reporting_service.build_collection_summary_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/receivables-aging-print-envelope",
+    response_model=ReceivablesAgingPrintEnvelope,
+)
+async def build_receivables_aging_print_envelope(
+    report_in: ReceivablesAgingPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> ReceivablesAgingPrintEnvelope:
+    """Batch 91 — printable receivables aging packet.
+
+    Shares the dashboard's live-payment aging derivation
+    (``build_receivables_aging_result``), so printed bucket counts/totals
+    always sum back to the headline aggregates and reconcile line-for-line
+    with ``GET /dashboard/receivables-aging``.
+    """
+    return await reporting_service.build_receivables_aging_print_envelope(
         db, report_in
     )
 
