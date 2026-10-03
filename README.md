@@ -107,9 +107,15 @@ Runs entirely on the local network with a server-owned database — *no internet
   behind `GET /dashboard/invoice-receipt-continuity`, so printed headline
   aggregates always sum back to `invoices_checked` and match the screen; the
   Reports & Printing continuity card now prepares through the envelope *(Batch 92)*
+- ✔ Receipt numbering continuity print envelope — `POST /reports/receipt-numbering-continuity-print-envelope`
+  builds the printable numbering audit through the exact shared whole-book
+  derivation (`build_receipt_numbering_continuity_result`) behind
+  `GET /dashboard/receipt-numbering-continuity`, so printed series lines and
+  headline aggregates (`expected == actual + gaps`) always match the screen;
+  the Reports & Printing numbering card now prepares through the envelope *(Batch 93)*
 
 ### 🧪 Test Suite
-- 289 backend tests passing as of Batch 92 (see [CHANGELOG.md](CHANGELOG.md)).
+- 289 backend tests passing as of Batch 93 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection
