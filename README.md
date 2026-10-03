@@ -126,9 +126,15 @@ Runs entirely on the local network with a server-owned database — *no internet
   behind `GET /dashboard/collection-summary-by-patient`, so printed headlines always
   satisfy `total_billed == total_collected + total_outstanding`; the Reports & Printing
   collection summary card now prepares through the envelope *(Batch 95)*
+- ✔ Payment method collection summary — `GET /dashboard/payment-method-summary` +
+  `POST /reports/payment-method-summary-print-envelope` roll the live payment scan
+  into per-method receipt counts, gross received vs collected (Batch 68 clamp
+  parity) and percentage shares (`sum(per-method collected) == total_collected`),
+  through one shared derivation (`build_payment_method_summary_result`) behind both
+  surfaces; a Reports & Printing workspace card prepares through the envelope *(Batch 96)*
 
 ### 🧪 Test Suite
-- 314 backend tests passing as of Batch 95 (see [CHANGELOG.md](CHANGELOG.md)).
+- 323 backend tests passing as of Batch 96 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection
