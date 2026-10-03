@@ -115,7 +115,7 @@ Runs entirely on the local network with a server-owned database — *no internet
   the Reports & Printing numbering card now prepares through the envelope *(Batch 93)*
 
 ### 🧪 Test Suite
-- 289 backend tests passing as of Batch 93 (see [CHANGELOG.md](CHANGELOG.md)).
+- 297 backend tests passing as of Batch 93 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection
