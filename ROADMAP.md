@@ -79,13 +79,16 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 88 — Receipt Numbering Continuity Audit**
-(`GET /dashboard/receipt-numbering-continuity` audits receipt numbering across the whole receipt book —
-live Payment rows grouped into numeric series by prefix, with per-series missing-number and duplicate
-findings that always reconcile (`expected_count == actual_count + gap_count`) — and a printable numbering
-audit in the client Reports & Printing workspace; follows Batch 87's invoice-scoped receipt continuity
-report, Batch 86's receivables aging ledger, Batch 85's invoice print envelope, Batch 84's laboratory
-pending-investigation feed, Batch 83's IPD bed-occupancy feed and Batch 82's outstanding-billing feed). Remaining before QA: further cross-module workflow
+Functional application build is in progress through **Batch 89 — Invoice Payment Reconciliation Ledger**
+(`GET /dashboard/invoice-payment-reconciliation` reconciles every scanned invoice against the live Payment
+ledger — payments summed in a single grouped pass, `amount_paid`/`balance_due` clamped so the Batch 68
+invariant holds per row, derived-vs-stored payment status drift flagged per invoice — and a printable
+reconciliation ledger in the client Reports & Printing workspace; this batch also fixed a reports.js
+attribute-quoting regression that had silently disabled the four newer ledger cards' Prepare buttons;
+follows Batch 88's whole-book receipt numbering continuity audit, Batch 87's invoice-scoped receipt
+continuity report, Batch 86's receivables aging ledger, Batch 85's invoice print envelope, Batch 84's
+laboratory pending-investigation feed, Batch 83's IPD bed-occupancy feed and Batch 82's outstanding-billing
+feed). Remaining before QA: further cross-module workflow
 continuity, server/client packaging
 and deployment, and completion of final reporting/printing integration. Comprehensive QA/debugging begins after
 cross-module integration, packaging, and final reporting/printing are complete.

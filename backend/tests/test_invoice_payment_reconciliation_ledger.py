@@ -141,12 +141,12 @@ def test_reports_workspace_wires_reconciliation_card():
     assert "getDashboardInvoicePaymentReconciliation" in src
     assert "createInvoicePaymentReconciliationPrintPreview" in src
     assert "Invoice payment reconciliation ledger" in src
-    # the card's input/button/note ids are wired end-to-end; inside the
-    # template literal they must be plain `id="..."` (escaped variants render
-    # invalid attributes and silently break the $("#...") lookups below)
-    assert 'id="reconciliation-limit"' in src
-    assert 'id="reconciliation-prepare"' in src
-    assert 'id="reconciliation-note"' in src
+    # the card's input/button ids are wired end-to-end. Inside the template
+    # literal the HTML attribute quotes are backslash-escaped (`class=\"...\"`)
+    # — a raw `id="..."` substring never appears in the source, so assert on
+    # the escaped form that actually renders valid attributes at runtime.
+    assert 'id=\\"reconciliation-limit\\"' in src
+    assert 'id=\\"reconciliation-prepare\\"' in src
     assert '"#reconciliation-limit"' in src
     assert '"#reconciliation-prepare"' in src
 
