@@ -125,11 +125,13 @@ def test_print_preview_renders_continuity_summary_and_issues():
 
 def test_reports_workspace_wires_continuity_card_end_to_end():
     reports = _read("frontend/js/reports.js")
-    assert "getDashboardInvoiceReceiptContinuity" in reports
+    # Batch 92 — the card now goes through the print envelope, not the raw
+    # dashboard feed (same parity switch as the aging card in Batch 91).
+    assert "buildInvoiceReceiptContinuityPrintEnvelope" in reports
     assert "createInvoiceReceiptContinuityPrintPreview" in reports
     assert "Invoice receipt continuity report" in reports
     assert "continuity-limit" in reports
     assert "continuity-prepare" in reports
     # status line reports checks and issue count for operator confidence
     assert "invoices_checked" in reports
-    assert "issues.length" in reports
+    assert "issue_count" in reports

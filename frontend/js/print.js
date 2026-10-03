@@ -134,19 +134,25 @@ export function createReceivablesAgingPrintPreview(host,{envelope=null,data=null
   return {envelope,src};
 }
 
-export function createInvoiceReceiptContinuityPrintPreview(host,{data,title="Invoice Receipt Continuity Report"}){
+export function createInvoiceReceiptContinuityPrintPreview(host,{envelope=null,data=null,title="Invoice Receipt Continuity Report"}){
   host.innerHTML="";
-  const issues=data?.issues||[];
+  // Batch 92 — the Reports workspace feeds this renderer the print envelope
+  // from POST /api/v1/reports/invoice-receipt-continuity-print-envelope (same
+  // shape as the dashboard feed under envelope.data); the dashboard payload
+  // stays supported for backward compatibility.
+  const src=envelope?.data??data??{};
+  const issues=src?.issues||[];
+  const docTitle=envelope?.title||title;
   const shell=document.createElement("div"); shell.className="print-preview-shell";
-  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Continuity Print Preview</strong><span class="print-count">${esc(String(data?.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="continuity-print-now">Print Report</button></div></div>`
-    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(title)}</h1><p class="print-generated">Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Continuity Print Preview</strong><span class="print-count">${esc(String(src?.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="continuity-print-now">Print Report</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(docTitle)}</h1><p class="print-generated">Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
     +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Continuity Summary</h2></div>`
     +`<table class="print-table"><tbody>`
-    +`<tr><td>Invoices checked</td><td>${esc(data?.invoices_checked??0)}</td></tr>`
-    +`<tr><td>Invoices with receipts</td><td>${esc(data?.invoices_with_receipts??0)}</td></tr>`
-    +`<tr><td>Invoices missing receipts</td><td>${esc(data?.invoices_missing_receipts??0)}</td></tr>`
-    +`<tr><td>Duplicate receipt numbers</td><td>${esc(data?.duplicate_receipt_count??0)}</td></tr>`
-    +`<tr><td>Sequence breaks</td><td>${esc(data?.sequence_break_count??0)}</td></tr>`
+    +`<tr><td>Invoices checked</td><td>${esc(src?.invoices_checked??0)}</td></tr>`
+    +`<tr><td>Invoices with receipts</td><td>${esc(src?.invoices_with_receipts??0)}</td></tr>`
+    +`<tr><td>Invoices missing receipts</td><td>${esc(src?.invoices_missing_receipts??0)}</td></tr>`
+    +`<tr><td>Duplicate receipt numbers</td><td>${esc(src?.duplicate_receipt_count??0)}</td></tr>`
+    +`<tr><td>Sequence breaks</td><td>${esc(src?.sequence_break_count??0)}</td></tr>`
     +`</tbody></table></section>`
     +`<section class="print-section print-page-break" data-print-section="issues"><div class="print-section-heading"><h2>Continuity Issues</h2></div>`
     +(issues.length?`<table class="print-table"><thead><tr><th>Invoice</th><th>Patient</th><th>Issue</th><th>Expected</th><th>Actual</th><th>Missing</th><th>First Receipt</th><th>Last Receipt</th><th>Duplicates</th></tr></thead><tbody>`
@@ -155,7 +161,7 @@ export function createInvoiceReceiptContinuityPrintPreview(host,{data,title="Inv
     +`</section></main></article>`;
   host.appendChild(shell);
   $("#continuity-print-now",shell).addEventListener("click",()=>window.print());
-  return {data};
+  return {envelope,src};
 }
 
 export function createReceiptNumberingContinuityPrintPreview(host,{data,title="Receipt Numbering Continuity Audit"}){
