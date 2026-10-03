@@ -41,11 +41,15 @@ from app.schemas.reporting import (
     ClinicalReportBatchRequest,
     ClinicalReportRead,
     ClinicalReportRequest,
+    CollectionSummaryPrintData,
+    CollectionSummaryPrintEnvelope,
+    CollectionSummaryPrintRequest,
     InvoicePrintData,
     InvoicePrintEnvelope,
     InvoicePrintItemLine,
     InvoicePrintReceiptLine,
     InvoicePrintRequest,
+    PatientCollectionSummaryPrintLine,
     ReportCatalogItem,
     ReportCatalogRead,
     ReportPrintEnvelope,
@@ -416,6 +420,63 @@ class ReportingService:
                 balance_due=str(balance_due),
                 payment_status=payment_status,
                 generated_at=generated_at,
+            ),
+        )
+
+    async def build_collection_summary_print_envelope(
+        self, db: AsyncSession, request: CollectionSummaryPrintRequest
+    ) -> CollectionSummaryPrintEnvelope:
+        """Assemble a printable per-patient collection summary packet.
+
+        Batch 90 — reporting/printing integration for the billing domain:
+        reuses the dashboard's shared reconciliation scan and aggregation
+        (single grouped Payment pass, live-payment clamping, stored counters
+        never trusted), so the printed packet always satisfies
+        ``total_collected + total_outstanding == total_billed`` and matches
+        the on-screen collection summary line-for-line.
+        """
+        from app.api.v1.endpoints.dashboard import (
+            _build_reconciliation_rows,
+            build_collection_summary_by_patient,
+        )
+
+        rows = await _build_reconciliation_rows(db, request.limit)
+        summary = build_collection_summary_by_patient(rows)
+
+        items = [
+            PatientCollectionSummaryPrintLine(
+                patient_id=item["patient_id"],
+                patient_name=item["patient_name"],
+                patient_number=item["patient_number"],
+                invoice_count=item["invoice_count"],
+                paid_invoice_count=item["paid_invoice_count"],
+                partial_invoice_count=item["partial_invoice_count"],
+                unpaid_invoice_count=item["unpaid_invoice_count"],
+                total_billed=str(item["total_billed"]),
+                total_collected=str(item["total_collected"]),
+                outstanding=str(item["outstanding"]),
+                last_payment_date=(
+                    item["last_payment_date"].isoformat()
+                    if item["last_payment_date"] is not None
+                    else None
+                ),
+            )
+            for item in summary["items"]
+        ]
+
+        generated_at = datetime.utcnow()
+        return CollectionSummaryPrintEnvelope(
+            title=request.title or "HHMS Collection Summary by Patient",
+            generated_at=generated_at,
+            data=CollectionSummaryPrintData(
+                as_of=summary["as_of"],
+                invoices_checked=summary["invoices_checked"],
+                patients_checked=summary["patients_checked"],
+                patients_with_outstanding=summary["patients_with_outstanding"],
+                total_billed=str(summary["total_billed"]),
+                total_collected=str(summary["total_collected"]),
+                total_outstanding=str(summary["total_outstanding"]),
+                items=items,
             ),
         )
 

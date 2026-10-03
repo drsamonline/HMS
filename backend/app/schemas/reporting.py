@@ -1,7 +1,7 @@
 """HHMS reporting and print-selection schemas."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import Field, model_validator
@@ -197,6 +197,50 @@ class InvoicePrintEnvelope(BaseSchema):
     data: InvoicePrintData
 
 
+class CollectionSummaryPrintRequest(BaseSchema):
+    limit: int = Field(default=200, ge=1, le=500)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class PatientCollectionSummaryPrintLine(BaseSchema):
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    invoice_count: int
+    paid_invoice_count: int
+    partial_invoice_count: int
+    unpaid_invoice_count: int
+    total_billed: str
+    total_collected: str
+    outstanding: str
+    last_payment_date: str | None = None
+
+
+class CollectionSummaryPrintData(BaseSchema):
+    as_of: date
+    invoices_checked: int
+    patients_checked: int
+    patients_with_outstanding: int
+    total_billed: str
+    total_collected: str
+    total_outstanding: str
+    items: list[PatientCollectionSummaryPrintLine]
+
+
+class CollectionSummaryPrintEnvelope(BaseSchema):
+    """Batch 90 — printable per-patient collection summary packet.
+
+    Built from the same live-payment reconciliation scan as the dashboard
+    feed (shared aggregation), so printed figures always satisfy
+    ``total_collected + total_outstanding == total_billed``.
+    """
+
+    report_type: Literal["collection_summary_print"] = "collection_summary_print"
+    title: str
+    generated_at: datetime
+    data: CollectionSummaryPrintData
+
+
 __all__ = [
     "ReportSection",
     "ALL_REPORT_SECTIONS",
@@ -217,4 +261,8 @@ __all__ = [
     "InvoicePrintReceiptLine",
     "InvoicePrintData",
     "InvoicePrintEnvelope",
+    "CollectionSummaryPrintRequest",
+    "PatientCollectionSummaryPrintLine",
+    "CollectionSummaryPrintData",
+    "CollectionSummaryPrintEnvelope",
 ]

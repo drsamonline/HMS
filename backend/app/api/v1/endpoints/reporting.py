@@ -9,6 +9,8 @@ from app.schemas.reporting import (
     ClinicalReportBatchRead,
     ClinicalReportBatchRequest,
     ClinicalReportRead,
+    CollectionSummaryPrintEnvelope,
+    CollectionSummaryPrintRequest,
     InvoicePrintEnvelope,
     InvoicePrintRequest,
     ReportPrintEnvelope,
@@ -66,5 +68,26 @@ async def build_invoice_print_envelope(
 ) -> InvoicePrintEnvelope:
     """Batch 85 — printable invoice packet (header, line items, receipts)."""
     return await reporting_service.build_invoice_print_envelope(db, report_in)
+
+
+@router.post(
+    "/collection-summary-print-envelope",
+    response_model=CollectionSummaryPrintEnvelope,
+)
+async def build_collection_summary_print_envelope(
+    report_in: CollectionSummaryPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> CollectionSummaryPrintEnvelope:
+    """Batch 90 — printable per-patient collection summary packet.
+
+    Shares the dashboard's live-payment reconciliation scan and aggregation,
+    so printed totals always satisfy
+    ``total_collected + total_outstanding == total_billed``.
+    """
+    return await reporting_service.build_collection_summary_print_envelope(
+        db, report_in
+    )
+
 
 __all__ = ["router"]

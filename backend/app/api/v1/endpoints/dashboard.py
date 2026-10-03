@@ -32,6 +32,12 @@ Batch 89 — Invoice Payment Reconciliation Ledger: reconciles every scanned
 invoice against the live Payment ledger (paid clamped to totals, derived
 status vs stored status) so printed ledgers prove each invoice's balance
 reconciles line-by-line.
+
+Batch 90 — Collection Summary by Patient: aggregates the Batch 89
+reconciliation ledger per patient into a printable collection summary
+(billed / collected / outstanding with derived paid/partial/unpaid counts).
+The shared aggregation lives in ``build_collection_summary_by_patient`` so
+the dashboard endpoint and the reporting print envelope stay in lockstep.
 """
 
 from __future__ import annotations
@@ -58,6 +64,7 @@ from app.schemas.dashboard import (
     InvoicePaymentReconciliationResponse,
     InvoiceReceiptContinuityResponse,
     OutstandingInvoicesResponse,
+    PatientCollectionSummaryResponse,
     PendingInvestigationsResponse,
     ReceiptNumberingContinuityResponse,
     ReceivablesAgingResponse,
@@ -800,29 +807,16 @@ def _derive_payment_status(total_amount: Decimal, amount_paid: Decimal) -> str:
     return "partial"
 
 
-@router.get("/invoice-payment-reconciliation", response_model=InvoicePaymentReconciliationResponse)
-async def invoice_payment_reconciliation(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> InvoicePaymentReconciliationResponse:
-    """Reconcile recent invoices against the live Payment ledger.
+async def _build_reconciliation_rows(db, limit: int) -> list[dict]:
+    """Scan recent invoices and reconcile each against the live payments.
 
-    Batch 89 — reporting/printing integration feed. Where Batch 82/86 only
-    surfaced *outstanding* invoices, this ledger reconciles **every** scanned
-    invoice (most recent ``limit`` non-cancelled invoices): payments are
-    summed in a single grouped pass over the ``Payment`` table (no N+1,
-    stored counters and status columns are never trusted), ``amount_paid`` is
-    clamped to the invoice total and ``balance_due`` kept non-negative so the
-    invariant ``amount_paid + balance_due == total_amount`` holds on every
-    printed row (Batch 68 parity).
-
-    Each row also carries the derived payment status next to the stored one
-    (``is_reconciled`` flags drift between the two) plus the number of
-    receipts recorded against the invoice, so billing staff can prove
-    collection state line-by-line before printing. Headline aggregates sum
-    back to ``invoices_checked`` and the totals satisfy
-    ``total_billed == total_paid + total_outstanding``.
+    Shared by the Batch 89 reconciliation endpoint and the Batch 90
+    collection summary (dashboard feed and reporting print envelope).
+    Payments are summed in a single grouped pass over the ``Payment`` table
+    (no N+1; stored counters and status columns are never trusted),
+    ``amount_paid`` is clamped to the invoice total and ``balance_due`` kept
+    non-negative so ``amount_paid + balance_due == total_amount`` holds on
+    every row (Batch 68 parity).
     """
     invoices_result = await db.execute(
         select(Invoice)
@@ -839,9 +833,11 @@ async def invoice_payment_reconciliation(
         patients = {p.id: p for p in result.scalars()}
 
     # Single grouped pass over the live Payment ledger for all scanned
-    # invoices (no N+1): per-invoice paid totals and receipt counts.
+    # invoices (no N+1): per-invoice paid totals, receipt counts and the
+    # latest payment timestamp (Batch 90 last-payment column).
     paid_by_invoice: dict[int, Decimal] = {}
     receipts_by_invoice: dict[int, int] = {}
+    last_payment_by_invoice: dict[int, datetime] = {}
     if invoices:
         invoice_ids = [invoice.id for invoice in invoices]
         payments_result = await db.execute(
@@ -849,21 +845,20 @@ async def invoice_payment_reconciliation(
                 Payment.invoice_id,
                 Payment.receipt_number,
                 Payment.amount_paid,
+                Payment.payment_datetime,
             ).where(Payment.invoice_id.in_(invoice_ids))
         )
-        for invoice_id, _receipt_number, amount_paid in payments_result:
+        for invoice_id, _receipt_number, amount_paid, payment_datetime in payments_result:
             paid_by_invoice[invoice_id] = paid_by_invoice.get(
                 invoice_id, Decimal("0")
             ) + Decimal(str(amount_paid))
             receipts_by_invoice[invoice_id] = receipts_by_invoice.get(invoice_id, 0) + 1
+            if payment_datetime is not None:
+                previous = last_payment_by_invoice.get(invoice_id)
+                if previous is None or payment_datetime > previous:
+                    last_payment_by_invoice[invoice_id] = payment_datetime
 
-    items = []
-    paid_invoices = 0
-    partially_paid_invoices = 0
-    unpaid_invoices = 0
-    total_billed = Decimal("0")
-    total_paid = Decimal("0")
-    total_outstanding = Decimal("0")
+    rows = []
     for invoice in invoices:
         patient = patients.get(invoice.patient_id)
         amount_paid = min(
@@ -871,17 +866,7 @@ async def invoice_payment_reconciliation(
             invoice.total_amount,
         )
         balance_due = max(invoice.total_amount - amount_paid, Decimal("0"))
-        derived_status = _derive_payment_status(invoice.total_amount, amount_paid)
-        if derived_status == "paid":
-            paid_invoices += 1
-        elif derived_status == "partial":
-            partially_paid_invoices += 1
-        else:
-            unpaid_invoices += 1
-        total_billed += invoice.total_amount
-        total_paid += amount_paid
-        total_outstanding += balance_due
-        items.append(
+        rows.append(
             {
                 "invoice_id": invoice.id,
                 "patient_id": invoice.patient_id,
@@ -893,11 +878,61 @@ async def invoice_payment_reconciliation(
                 "amount_paid": amount_paid,
                 "balance_due": balance_due,
                 "stored_payment_status": invoice.payment_status,
-                "derived_payment_status": derived_status,
+                "derived_payment_status": _derive_payment_status(
+                    invoice.total_amount, amount_paid
+                ),
                 "receipt_count": receipts_by_invoice.get(invoice.id, 0),
-                "is_reconciled": derived_status == str(invoice.payment_status),
+                "last_payment_datetime": last_payment_by_invoice.get(invoice.id),
             }
         )
+    for row in rows:
+        row["is_reconciled"] = row["derived_payment_status"] == str(
+            row["stored_payment_status"]
+        )
+    return rows
+
+
+@router.get("/invoice-payment-reconciliation", response_model=InvoicePaymentReconciliationResponse)
+async def invoice_payment_reconciliation(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> InvoicePaymentReconciliationResponse:
+    """Reconcile recent invoices against the live Payment ledger.
+
+    Batch 89 — reporting/printing integration feed. Where Batch 82/86 only
+    surfaced *outstanding* invoices, this ledger reconciles **every** scanned
+    invoice (most recent ``limit`` non-cancelled invoices), keeping the
+    Batch 68 clamp invariant on every printed row.
+
+    Each row also carries the derived payment status next to the stored one
+    (``is_reconciled`` flags drift between the two) plus the number of
+    receipts recorded against the invoice, so billing staff can prove
+    collection state line-by-line before printing. Headline aggregates sum
+    back to ``invoices_checked`` and the totals satisfy
+    ``total_billed == total_paid + total_outstanding``.
+    """
+    rows = await _build_reconciliation_rows(db, limit)
+
+    items = []
+    paid_invoices = 0
+    partially_paid_invoices = 0
+    unpaid_invoices = 0
+    total_billed = Decimal("0")
+    total_paid = Decimal("0")
+    total_outstanding = Decimal("0")
+    for row in rows:
+        derived_status = row["derived_payment_status"]
+        if derived_status == "paid":
+            paid_invoices += 1
+        elif derived_status == "partial":
+            partially_paid_invoices += 1
+        else:
+            unpaid_invoices += 1
+        total_billed += row["total_amount"]
+        total_paid += row["amount_paid"]
+        total_outstanding += row["balance_due"]
+        items.append({key: value for key, value in row.items() if key != "last_payment_datetime"})
 
     return InvoicePaymentReconciliationResponse(
         as_of=date.today(),
@@ -912,4 +947,96 @@ async def invoice_payment_reconciliation(
     )
 
 
-__all__ = ["router"]
+def build_collection_summary_by_patient(rows: list[dict]) -> dict:
+    """Roll reconciliation rows up into per-patient collection totals.
+
+    Batch 90 — shared aggregation used by both the dashboard feed and the
+    reporting print envelope so the two surfaces can never drift. Patients
+    keep their first appearance order (the ledger scan order); per-patient
+    figures satisfy ``total_collected + outstanding == total_billed`` because
+    each row's clamped amounts contribute exactly once.
+    """
+    grouped: dict[int, dict] = {}
+    for row in rows:
+        summary = grouped.get(row["patient_id"])
+        if summary is None:
+            summary = {
+                "patient_id": row["patient_id"],
+                "patient_name": row["patient_name"],
+                "patient_number": row["patient_number"],
+                "invoice_count": 0,
+                "paid_invoice_count": 0,
+                "partial_invoice_count": 0,
+                "unpaid_invoice_count": 0,
+                "total_billed": Decimal("0"),
+                "total_collected": Decimal("0"),
+                "outstanding": Decimal("0"),
+                "last_payment_date": None,
+            }
+            grouped[row["patient_id"]] = summary
+        summary["invoice_count"] += 1
+        derived_status = row["derived_payment_status"]
+        if derived_status == "paid":
+            summary["paid_invoice_count"] += 1
+        elif derived_status == "partial":
+            summary["partial_invoice_count"] += 1
+        else:
+            summary["unpaid_invoice_count"] += 1
+        summary["total_billed"] += row["total_amount"]
+        summary["total_collected"] += row["amount_paid"]
+        summary["outstanding"] += row["balance_due"]
+        last_payment = row.get("last_payment_datetime")
+        if last_payment is not None:
+            current = summary["last_payment_date"]
+            if current is None or last_payment > current:
+                summary["last_payment_date"] = last_payment
+
+    items = list(grouped.values())
+    return {
+        "as_of": date.today(),
+        "invoices_checked": len(rows),
+        "patients_checked": len(items),
+        "patients_with_outstanding": sum(
+            1 for item in items if item["outstanding"] > 0
+        ),
+        "total_billed": sum(
+            (item["total_billed"] for item in items), Decimal("0")
+        ),
+        "total_collected": sum(
+            (item["total_collected"] for item in items), Decimal("0")
+        ),
+        "total_outstanding": sum(
+            (item["outstanding"] for item in items), Decimal("0")
+        ),
+        "items": items,
+    }
+
+
+@router.get(
+    "/collection-summary-by-patient",
+    response_model=PatientCollectionSummaryResponse,
+)
+async def collection_summary_by_patient(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> PatientCollectionSummaryResponse:
+    """Group the Batch 89 reconciliation ledger into per-patient collections.
+
+    Batch 90 — printable collection summary: every figure derives from the
+    same live-payment scan as the reconciliation ledger (single grouped
+    Payment pass, no N+1, stored counters never trusted), rolled up per
+    patient with billed / collected / outstanding totals, derived
+    paid/partial/unpaid invoice counts and the latest payment timestamp.
+    Headline aggregates sum back to ``invoices_checked`` /
+    ``patients_checked`` and the totals satisfy
+    ``total_billed == total_collected + total_outstanding``.
+    """
+    rows = await _build_reconciliation_rows(db, limit)
+    return PatientCollectionSummaryResponse(**build_collection_summary_by_patient(rows))
+
+
+__all__ = [
+    "build_collection_summary_by_patient",
+    "router",
+]
