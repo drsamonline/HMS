@@ -58,6 +58,10 @@ from app.schemas.reporting import (
     InvoicePaymentReconciliationPrintEnvelope,
     InvoicePaymentReconciliationPrintLine,
     InvoicePaymentReconciliationPrintRequest,
+    PaymentMethodSummaryPrintData,
+    PaymentMethodSummaryPrintEnvelope,
+    PaymentMethodSummaryPrintLine,
+    PaymentMethodSummaryPrintRequest,
     ReceiptNumberingContinuityPrintData,
     ReceiptNumberingContinuityPrintEnvelope,
     ReceiptNumberingContinuityPrintRequest,
@@ -703,6 +707,50 @@ class ReportingService:
                         }
                     )
                     for item in ledger["items"]
+                ],
+            ),
+        )
+
+    async def build_payment_method_summary_print_envelope(
+        self, db: AsyncSession, request: PaymentMethodSummaryPrintRequest
+    ) -> PaymentMethodSummaryPrintEnvelope:
+        """Assemble a printable payment-method collection summary packet.
+
+        Batch 96 — reporting/printing integration for the billing domain:
+        reuses the dashboard's shared live-payment scan and per-method
+        aggregation (``build_payment_method_summary_result``, single pass
+        over the Payment ledger joined to non-cancelled invoices, stored
+        counters never trusted, Batch 68 clamp parity), so the printed
+        summary always satisfies ``sum(per-method collected) ==
+        total_collected`` and matches
+        ``GET /dashboard/payment-method-summary`` line-for-line for the
+        same scan window.
+        """
+        from app.api.v1.endpoints.dashboard import (
+            build_payment_method_summary_result,
+        )
+
+        summary = await build_payment_method_summary_result(db, request.limit)
+
+        return PaymentMethodSummaryPrintEnvelope(
+            title=request.title or "HHMS Payment Method Collection Summary",
+            generated_at=datetime.utcnow(),
+            data=PaymentMethodSummaryPrintData(
+                as_of=summary["as_of"],
+                invoices_checked=summary["invoices_checked"],
+                receipts_scanned=summary["receipts_scanned"],
+                methods_reported=summary["methods_reported"],
+                total_collected=str(summary["total_collected"]),
+                items=[
+                    PaymentMethodSummaryPrintLine(
+                        payment_method=item["payment_method"],
+                        receipt_count=item["receipt_count"],
+                        invoice_count=item["invoice_count"],
+                        gross_received=str(item["gross_received"]),
+                        collected=str(item["collected"]),
+                        share_of_total=str(item["share_of_total"]),
+                    )
+                    for item in summary["items"]
                 ],
             ),
         )

@@ -17,6 +17,8 @@ from app.schemas.reporting import (
     InvoicePaymentReconciliationPrintRequest,
     InvoiceReceiptContinuityPrintEnvelope,
     InvoiceReceiptContinuityPrintRequest,
+    PaymentMethodSummaryPrintEnvelope,
+    PaymentMethodSummaryPrintRequest,
     ReceivablesAgingPrintEnvelope,
     ReceivablesAgingPrintRequest,
     ReceiptNumberingContinuityPrintEnvelope,
@@ -181,6 +183,28 @@ async def build_invoice_payment_reconciliation_print_envelope(
     ``GET /dashboard/invoice-payment-reconciliation``.
     """
     return await reporting_service.build_invoice_payment_reconciliation_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/payment-method-summary-print-envelope",
+    response_model=PaymentMethodSummaryPrintEnvelope,
+)
+async def build_payment_method_summary_print_envelope(
+    report_in: PaymentMethodSummaryPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> PaymentMethodSummaryPrintEnvelope:
+    """Batch 96 — printable payment-method collection summary packet.
+
+    Shares the dashboard's live-payment scan and per-method aggregation
+    (``build_payment_method_summary_result``), so printed figures always
+    satisfy ``sum(per-method collected) == total_collected`` and reconcile
+    line-for-line with ``GET /dashboard/payment-method-summary`` for the
+    same scan window.
+    """
+    return await reporting_service.build_payment_method_summary_print_envelope(
         db, report_in
     )
 

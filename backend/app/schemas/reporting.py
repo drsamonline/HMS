@@ -451,6 +451,60 @@ class InvoicePaymentReconciliationPrintData(BaseSchema):
     items: list[InvoicePaymentReconciliationPrintLine]
 
 
+class PaymentMethodSummaryPrintRequest(BaseSchema):
+    """Batch 96 — print request for the payment-method collection summary."""
+
+    limit: int = Field(default=200, ge=1, le=500)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class PaymentMethodSummaryPrintLine(BaseSchema):
+    """One payment method as printed on paper.
+
+    Batch 96 — every figure derives from live ``Payment`` rows joined to
+    non-cancelled invoices; ``share_of_total`` is a percentage (0-100) of
+    the scanned-window collected total, and per-invoice amounts keep the
+    Batch 68 clamp invariant, so ``total_collected`` sums back exactly to
+    the sum of the per-method ``collected`` figures.
+    """
+
+    payment_method: str
+    receipt_count: int
+    invoice_count: int
+    gross_received: str
+    collected: str
+    share_of_total: str
+
+
+class PaymentMethodSummaryPrintData(BaseSchema):
+    as_of: date
+    invoices_checked: int
+    receipts_scanned: int
+    methods_reported: int
+    total_collected: str
+    items: list[PaymentMethodSummaryPrintLine]
+
+
+class PaymentMethodSummaryPrintEnvelope(BaseSchema):
+    """Batch 96 — printable payment-method collection summary packet.
+
+    Built through the shared dashboard scan
+    (``build_payment_method_collection_summary``, single grouped Payment
+    pass over non-cancelled invoices, stored counters never trusted), so
+    printed headline aggregates always satisfy
+    ``sum(per-method collected) == total_collected`` and match
+    ``GET /dashboard/payment-method-summary`` line-for-line for the same
+    scan window.
+    """
+
+    report_type: Literal["payment_method_summary_print"] = (
+        "payment_method_summary_print"
+    )
+    title: str
+    generated_at: datetime
+    data: PaymentMethodSummaryPrintData
+
+
 class InvoicePaymentReconciliationPrintEnvelope(BaseSchema):
     """Batch 94 — printable invoice payment reconciliation packet.
 
@@ -512,4 +566,8 @@ __all__ = [
     "InvoicePaymentReconciliationPrintLine",
     "InvoicePaymentReconciliationPrintData",
     "InvoicePaymentReconciliationPrintEnvelope",
+    "PaymentMethodSummaryPrintRequest",
+    "PaymentMethodSummaryPrintLine",
+    "PaymentMethodSummaryPrintData",
+    "PaymentMethodSummaryPrintEnvelope",
 ]

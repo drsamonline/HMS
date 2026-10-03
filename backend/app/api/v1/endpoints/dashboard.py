@@ -64,6 +64,15 @@ ledger scan/aggregation into ``build_invoice_payment_reconciliation_ledger``
 (and the pure rollup ``build_invoice_payment_reconciliation_result``) so the
 reporting print envelope reuses the exact same live-payment reconciliation
 code path as the dashboard feed.
+
+Batch 96 — Payment Method Collection Summary: adds a new live-derived
+dashboard feed (``GET /dashboard/payment-method-summary``) grouping every
+payment in the scan window by ``payment_method``, with per-invoice clamped
+collected amounts (Batch 68 parity), gross-vs-collected separation and each
+method's share of the window total; the shared derivation
+(``build_payment_method_collection_summary`` /
+``build_payment_method_summary_result``) also backs the reporting print
+envelope so screen and paper can never drift.
 """
 
 from __future__ import annotations
@@ -91,6 +100,7 @@ from app.schemas.dashboard import (
     InvoiceReceiptContinuityResponse,
     OutstandingInvoicesResponse,
     PatientCollectionSummaryResponse,
+    PaymentMethodSummaryResponse,
     PendingInvestigationsResponse,
     ReceiptNumberingContinuityResponse,
     ReceivablesAgingResponse,
@@ -1171,8 +1181,143 @@ async def collection_summary_by_patient(
     return PatientCollectionSummaryResponse(**build_collection_summary_by_patient(rows))
 
 
+def build_payment_method_collection_summary(
+    receipts: list[dict], invoice_totals: dict[int, Decimal], invoices_checked: int
+) -> dict:
+    """Roll raw receipt rows up into per-method collection totals.
+
+    Batch 96 — shared aggregation used by both the dashboard feed and the
+    reporting print envelope so the two surfaces can never drift. Each
+    receipt's *collected* contribution is clamped against its invoice's
+    remaining total (Batch 68 parity): receipts are charged to their
+    invoice in chronological order (ties broken by receipt number), any
+    amount beyond the invoice total counts as gross received but not as
+    collected, and payments against invoices outside the scan window
+    contribute nothing. Per-method ``collected`` figures therefore sum
+    back exactly to the headline ``total_collected``.
+    """
+    ordered = sorted(
+        receipts,
+        key=lambda r: (r["payment_datetime"] or datetime.max, r["receipt_number"]),
+    )
+    remaining = dict(invoice_totals)
+    grouped: dict[str, dict] = {}
+    for receipt in ordered:
+        method = receipt["payment_method"] or "unknown"
+        summary = grouped.get(method)
+        if summary is None:
+            summary = {
+                "payment_method": method,
+                "receipt_count": 0,
+                "invoice_count": 0,
+                "gross_received": Decimal("0"),
+                "collected": Decimal("0"),
+                "share_of_total": Decimal("0"),
+            }
+            grouped[method] = summary
+        summary["receipt_count"] += 1
+        gross = Decimal(str(receipt["amount_paid"]))
+        summary["gross_received"] += gross
+        left = remaining.get(receipt["invoice_id"])
+        if left is not None:
+            applied = min(gross, left)
+            if applied > 0:
+                remaining[receipt["invoice_id"]] = left - applied
+                summary["collected"] += applied
+                summary["invoice_count"] += 1
+
+    items = list(grouped.values())
+    total_collected = sum((item["collected"] for item in items), Decimal("0"))
+    for item in items:
+        share = (
+            (item["collected"] * 100 / total_collected).quantize(Decimal("0.01"))
+            if total_collected > 0
+            else Decimal("0.00")
+        )
+        item["share_of_total"] = share
+    # Largest collectors first; ties broken alphabetically for stability.
+    items.sort(key=lambda item: (-item["collected"], item["payment_method"]))
+    return {
+        "as_of": date.today(),
+        "invoices_checked": invoices_checked,
+        "receipts_scanned": len(receipts),
+        "methods_reported": len(items),
+        "total_collected": total_collected,
+        "items": items,
+    }
+
+
+async def build_payment_method_summary_result(db, limit: int) -> dict:
+    """Scan-and-aggregate entry point shared with the reporting service.
+
+    Batch 96 — single implementation behind both
+    ``GET /dashboard/payment-method-summary`` and
+    ``POST /reports/payment-method-summary-print-envelope``. Scans the most
+    recent ``limit`` non-cancelled invoices (same window as the Batch 89/90
+    ledger), then sums every linked payment in one pass over the live
+    Payment ledger joined to Invoice (no N+1; stored counters and status
+    columns are never trusted).
+    """
+    invoices_result = await db.execute(
+        select(Invoice.id, Invoice.total_amount)
+        .where(Invoice.payment_status != "cancelled")
+        .order_by(Invoice.invoice_date.desc(), Invoice.id.desc())
+        .limit(limit)
+    )
+    invoice_rows = list(invoices_result)
+    invoice_totals = {row[0]: row[1] for row in invoice_rows}
+
+    receipts: list[dict] = []
+    if invoice_totals:
+        payments_result = await db.execute(
+            select(
+                Payment.invoice_id,
+                Payment.receipt_number,
+                Payment.payment_method,
+                Payment.amount_paid,
+                Payment.payment_datetime,
+            ).join(Invoice, Invoice.id == Payment.invoice_id).where(
+                Invoice.payment_status != "cancelled"
+            )
+        )
+        receipts = [
+            {
+                "invoice_id": invoice_id,
+                "receipt_number": receipt_number,
+                "payment_method": payment_method,
+                "amount_paid": amount_paid,
+                "payment_datetime": payment_datetime,
+            }
+            for invoice_id, receipt_number, payment_method, amount_paid, payment_datetime in payments_result
+        ]
+    return build_payment_method_collection_summary(
+        receipts, invoice_totals, len(invoice_totals)
+    )
+
+
+@router.get("/payment-method-summary", response_model=PaymentMethodSummaryResponse)
+async def payment_method_summary(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> PaymentMethodSummaryResponse:
+    """Group live collections by payment method for the scan window.
+
+    Batch 96 — reporting/printing integration feed. Where Batch 90 answered
+    *who still owes*, this answers *how the money arrived*: per-method
+    receipt counts, distinct invoices touched, gross received versus
+    collected (clamped per invoice, Batch 68 parity) and each method's
+    percentage share of the window's collected total. Headline aggregates
+    always satisfy ``sum(per-method collected) == total_collected``.
+    """
+    result = await build_payment_method_summary_result(db, limit)
+    return PaymentMethodSummaryResponse(**result)
+
+
 __all__ = [
     "build_collection_summary_by_patient",
+    "build_payment_method_collection_summary",
+    "build_payment_method_summary_result",
     "build_receivables_aging_result",
     "router",
 ]

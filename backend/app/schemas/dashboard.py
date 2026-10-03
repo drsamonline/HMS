@@ -305,6 +305,42 @@ class PatientCollectionSummaryResponse(BaseSchema):
     items: list[PatientCollectionSummaryItem]
 
 
+class PaymentMethodSummaryItem(BaseSchema):
+    """One payment method's collection totals within the scan window.
+
+    Batch 96 — payment-method collection summary. Derived from live
+    ``Payment`` rows joined to non-cancelled invoices (stored counters
+    never trusted); per-invoice amounts keep the Batch 68 clamp invariant,
+    so each receipt's collected contribution is counted exactly once and
+    the per-method figures sum back to the headline ``total_collected``.
+    ``share_of_total`` is a percentage (0-100) of the scanned-window
+    collected total.
+    """
+
+    payment_method: str
+    receipt_count: int
+    invoice_count: int
+    gross_received: Decimal
+    collected: Decimal
+    share_of_total: Decimal
+
+
+class PaymentMethodSummaryResponse(BaseSchema):
+    """Collection summary grouped by payment method with headlines.
+
+    Headline aggregates always satisfy
+    ``sum(per-method collected) == total_collected`` so printed payment
+    packets reconcile line-by-line for the same scan window.
+    """
+
+    as_of: date
+    invoices_checked: int
+    receipts_scanned: int
+    methods_reported: int
+    total_collected: Decimal
+    items: list[PaymentMethodSummaryItem]
+
+
 __all__ = [
     "DueFollowUpItem",
     "DueFollowUpsResponse",
@@ -325,4 +361,6 @@ __all__ = [
     "InvoicePaymentReconciliationResponse",
     "PatientCollectionSummaryItem",
     "PatientCollectionSummaryResponse",
+    "PaymentMethodSummaryItem",
+    "PaymentMethodSummaryResponse",
 ]
