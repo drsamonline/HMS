@@ -17,6 +17,8 @@ from app.schemas.reporting import (
     InvoiceReceiptContinuityPrintRequest,
     ReceivablesAgingPrintEnvelope,
     ReceivablesAgingPrintRequest,
+    ReceiptNumberingContinuityPrintEnvelope,
+    ReceiptNumberingContinuityPrintRequest,
     ReportPrintEnvelope,
     ReportPrintManifestRead,
     ReportPrintManifestRequest,
@@ -132,6 +134,28 @@ async def build_invoice_receipt_continuity_print_envelope(
     line-for-line with ``GET /dashboard/invoice-receipt-continuity``.
     """
     return await reporting_service.build_invoice_receipt_continuity_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/receipt-numbering-continuity-print-envelope",
+    response_model=ReceiptNumberingContinuityPrintEnvelope,
+)
+async def build_receipt_numbering_continuity_print_envelope(
+    report_in: ReceiptNumberingContinuityPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> ReceiptNumberingContinuityPrintEnvelope:
+    """Batch 93 — printable whole-receipt-book numbering audit packet.
+
+    Shares the dashboard's whole-book scan and series derivation
+    (``build_receipt_numbering_continuity_result``), so printed per-series
+    figures always satisfy ``expected_count == actual_count + gap_count``
+    and reconcile line-for-line with
+    ``GET /dashboard/receipt-numbering-continuity``.
+    """
+    return await reporting_service.build_receipt_numbering_continuity_print_envelope(
         db, report_in
     )
 

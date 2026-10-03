@@ -54,6 +54,10 @@ from app.schemas.reporting import (
     InvoiceReceiptContinuityPrintRequest,
     InvoiceReceiptGapPrintLine,
     PatientCollectionSummaryPrintLine,
+    ReceiptNumberingContinuityPrintData,
+    ReceiptNumberingContinuityPrintEnvelope,
+    ReceiptNumberingContinuityPrintRequest,
+    ReceiptSeriesPrintLine,
     ReceivablesAgingBucketPrintLine,
     ReceivablesAgingInvoicePrintLine,
     ReceivablesAgingPrintData,
@@ -613,6 +617,41 @@ class ReportingService:
                 issue_count=len(audit["issues"]),
                 issues=[
                     InvoiceReceiptGapPrintLine(**issue) for issue in audit["issues"]
+                ],
+            ),
+        )
+
+    async def build_receipt_numbering_continuity_print_envelope(
+        self, db: AsyncSession, request: ReceiptNumberingContinuityPrintRequest
+    ) -> ReceiptNumberingContinuityPrintEnvelope:
+        """Assemble a printable whole-receipt-book numbering audit packet.
+
+        Batch 93 — reporting/printing integration for the billing domain:
+        reuses the dashboard's shared scan and series derivation
+        (``build_receipt_numbering_continuity_result``, single ordered
+        Payment pass, shared ``_receipt_numeric_suffix`` parsing), so the
+        printed audit always satisfies per-series reconciliation
+        ``expected_count == actual_count + gap_count`` and matches
+        ``GET /dashboard/receipt-numbering-continuity`` line-for-line for
+        the same scan window.
+        """
+        from app.api.v1.endpoints.dashboard import (
+            build_receipt_numbering_continuity_result,
+        )
+
+        audit = await build_receipt_numbering_continuity_result(db, request.limit)
+
+        return ReceiptNumberingContinuityPrintEnvelope(
+            title=request.title or "HHMS Receipt Numbering Continuity Audit",
+            generated_at=datetime.utcnow(),
+            data=ReceiptNumberingContinuityPrintData(
+                as_of=audit["as_of"],
+                receipts_checked=audit["receipts_checked"],
+                series_count=audit["series_count"],
+                clean_series_count=audit["clean_series_count"],
+                total_gap_count=audit["total_gap_count"],
+                series=[
+                    ReceiptSeriesPrintLine(**item) for item in audit["series"]
                 ],
             ),
         )
