@@ -341,6 +341,53 @@ class PaymentMethodSummaryResponse(BaseSchema):
     items: list[PaymentMethodSummaryItem]
 
 
+class InvoiceOverpaymentItem(BaseSchema):
+    """One invoice whose live payment ledger exceeds the billed amount.
+
+    Batch 97 — overpayment detection feed. ``total_paid_raw`` is summed from
+    the live Payment ledger *without* the Batch 68 clamp, so the invariant
+    ``overpaid_amount == total_paid_raw - total_amount`` holds on every row
+    and ``balance_due`` is always zero for an overpaid invoice. ``amount_paid``
+    keeps the clamped value used by the reconciliation ledger (Batch 89) so
+    both surfaces agree line-for-line; ``stored_payment_status`` /
+    ``derived_payment_status`` / ``receipt_count`` are carried along for
+    context.
+    """
+
+    invoice_id: int
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    invoice_number: str
+    invoice_date: datetime
+    total_amount: Decimal
+    amount_paid: Decimal
+    balance_due: Decimal
+    total_paid_raw: Decimal
+    overpaid_amount: Decimal
+    stored_payment_status: str
+    derived_payment_status: str
+    receipt_count: int
+    is_reconciled: bool
+
+
+class InvoiceOverpaymentResponse(BaseSchema):
+    """Invoice overpayment ledger with headline aggregates.
+
+    Batch 97 — only invoices with ``overpaid_amount > 0`` appear, so
+    ``invoices_checked == invoices_overpaid == len(items)`` and
+    ``total_paid_raw == total_billed + total_overpaid`` by construction.
+    """
+
+    as_of: date
+    invoices_checked: int
+    invoices_overpaid: int
+    total_billed: Decimal
+    total_paid_raw: Decimal
+    total_overpaid: Decimal
+    items: list[InvoiceOverpaymentItem]
+
+
 __all__ = [
     "DueFollowUpItem",
     "DueFollowUpsResponse",
@@ -359,6 +406,8 @@ __all__ = [
     "ReceiptNumberingContinuityResponse",
     "InvoicePaymentReconciliationItem",
     "InvoicePaymentReconciliationResponse",
+    "InvoiceOverpaymentItem",
+    "InvoiceOverpaymentResponse",
     "PatientCollectionSummaryItem",
     "PatientCollectionSummaryResponse",
     "PaymentMethodSummaryItem",
