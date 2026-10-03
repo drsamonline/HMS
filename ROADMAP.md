@@ -79,12 +79,14 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 93 — Receipt Numbering Continuity Print Envelope**
-(`POST /reports/receipt-numbering-continuity-print-envelope` builds the printable numbering packet through the
-exact shared whole-book derivation (`build_receipt_numbering_continuity_result`) behind
-`GET /dashboard/receipt-numbering-continuity` — one implementation, two surfaces, so printed series lines and
-headline aggregates (`expected == actual + gaps`) always reconcile line-for-line with the screen; the Reports &
-Printing numbering card now prepares through the envelope. Follows Batch 92's invoice receipt continuity print envelope
+Functional application build is in progress through **Batch 94 — Invoice Payment Reconciliation Print Envelope**
+(`POST /reports/invoice-payment-reconciliation-print-envelope` builds the printable reconciliation packet through the
+exact shared live-scan derivation (`build_invoice_payment_reconciliation_ledger` on top of `_build_reconciliation_rows`) behind
+`GET /dashboard/invoice-payment-reconciliation` — one implementation, two surfaces, so printed headline aggregates always
+satisfy `paid + partial + unpaid == invoices_checked` and `total_billed == total_paid + total_outstanding`; the Reports &
+Printing reconciliation card now prepares through the envelope. Follows Batch 93's receipt numbering continuity print envelope
+(`POST /reports/receipt-numbering-continuity-print-envelope` sharing `build_receipt_numbering_continuity_result` with the dashboard),
+follows Batch 92's invoice receipt continuity print envelope
 (`POST /reports/invoice-receipt-continuity-print-envelope` sharing `_load_continuity_scan_inputs` /
 `build_invoice_receipt_continuity_result` with the dashboard),
 follows Batch 91's receivables aging print envelope
