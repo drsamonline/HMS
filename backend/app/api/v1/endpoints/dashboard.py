@@ -42,6 +42,7 @@ from app.schemas.dashboard import (
     DueFollowUpsResponse,
     OutstandingInvoicesResponse,
     PendingInvestigationsResponse,
+    ReceivablesAgingResponse,
 )
 from app.services.billing import billing_service
 from app.services.followup import followup_service
@@ -394,6 +395,119 @@ async def pending_investigations(
         items=items,
         pending_count=pending_count,
         in_progress_count=in_progress_count,
+    )
+
+
+# Standard receivables aging buckets (days outstanding, inclusive lower /
+# exclusive upper; the last bucket is open-ended).
+_RECEIVABLES_BUCKETS = (
+    ("0-30 days", 0, 30),
+    ("31-60 days", 30, 60),
+    ("61-90 days", 60, 90),
+    ("Over 90 days", 90, None),
+)
+
+
+@router.get("/receivables-aging", response_model=ReceivablesAgingResponse)
+async def receivables_aging(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> ReceivablesAgingResponse:
+    """Financial-style receivables aging ledger over live outstanding invoices.
+
+    Batch 86 — reporting/printing integration feed. Built on the same
+    Batch 82 ``billing_service.list_outstanding_invoices`` derivation so
+    balances always reconcile (``amount_paid + balance_due == total_amount``,
+    stale stored statuses and cancelled invoices never surface). Each invoice
+    is placed into a standard 0-30/31-60/61-90/90+ aging bucket by its age in
+    days; every bucket is reported even when empty so printed ledgers keep a
+    stable shape, and bucket counts/totals sum back to the headline aggregates.
+    Patient enrichment is batched (no N+1).
+    """
+    invoices, _service_total = await billing_service.list_outstanding_invoices(
+        db, limit=limit
+    )
+
+    as_of = date.today()
+    patient_ids = {invoice.patient_id for invoice in invoices}
+    patients: dict[int, Patient] = {}
+    if patient_ids:
+        result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
+        patients = {p.id: p for p in result.scalars()}
+
+    # Live-payment derivation identical to the Batch 82 outstanding feed.
+    paid_by_invoice: dict[int, Decimal] = {}
+    if invoices:
+        invoice_ids = [invoice.id for invoice in invoices]
+        totals_result = await db.execute(
+            select(
+                Payment.invoice_id,
+                func.coalesce(func.sum(Payment.amount_paid), 0),
+            )
+            .where(Payment.invoice_id.in_(invoice_ids))
+            .group_by(Payment.invoice_id)
+        )
+        paid_by_invoice = {row[0]: Decimal(str(row[1])) for row in totals_result}
+
+    bucket_stats = {label: {"count": 0, "total": Decimal("0")} for label, _, _ in _RECEIVABLES_BUCKETS}
+    items = []
+    total_outstanding = Decimal("0")
+    for invoice in invoices:
+        patient = patients.get(invoice.patient_id)
+        invoice_local_date = (
+            invoice.invoice_date.astimezone(timezone.utc).date()
+            if invoice.invoice_date.tzinfo is not None
+            else invoice.invoice_date.date()
+        )
+        amount_paid = min(
+            paid_by_invoice.get(invoice.id, Decimal("0")),
+            invoice.total_amount,
+        )
+        balance_due = max(invoice.total_amount - amount_paid, Decimal("0"))
+        days_outstanding = max((as_of - invoice_local_date).days, 0)
+        bucket_label = _RECEIVABLES_BUCKETS[-1][0]
+        for label, lower, upper in _RECEIVABLES_BUCKETS:
+            if days_outstanding >= lower and (upper is None or days_outstanding < upper):
+                bucket_label = label
+                break
+        bucket_stats[bucket_label]["count"] += 1
+        bucket_stats[bucket_label]["total"] += balance_due
+        total_outstanding += balance_due
+        items.append(
+            {
+                "invoice_id": invoice.id,
+                "patient_id": invoice.patient_id,
+                "patient_name": _patient_display_name(patient),
+                "patient_number": patient.patient_number if patient else None,
+                "invoice_number": invoice.invoice_number,
+                "invoice_date": invoice.invoice_date,
+                "total_amount": invoice.total_amount,
+                "amount_paid": amount_paid,
+                "balance_due": balance_due,
+                "payment_status": invoice.payment_status,
+                "days_outstanding": days_outstanding,
+                "bucket_label": bucket_label,
+            }
+        )
+
+    buckets = [
+        {
+            "label": label,
+            "lower_days": lower,
+            "upper_days": upper,
+            "invoice_count": bucket_stats[label]["count"],
+            "total_outstanding": bucket_stats[label]["total"],
+        }
+        for label, lower, upper in _RECEIVABLES_BUCKETS
+    ]
+
+    return ReceivablesAgingResponse(
+        as_of=as_of,
+        buckets=buckets,
+        items=items,
+        invoice_count=len(items),
+        total_outstanding=total_outstanding,
     )
 
 

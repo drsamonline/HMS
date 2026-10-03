@@ -111,6 +111,49 @@ class PendingInvestigationsResponse(BaseSchema):
     in_progress_count: int
 
 
+class ReceivablesAgingBucket(BaseSchema):
+    """One age bucket of the outstanding receivables ledger.
+
+    ``lower_days``/``upper_days`` describe the invoice-age window (days from
+    ``invoice_date`` to today, inclusive-exclusive); a negative upper bound
+    marks the open-ended oldest bucket.
+    """
+
+    label: str
+    lower_days: int
+    upper_days: int | None
+    invoice_count: int
+    total_outstanding: Decimal
+
+
+class ReceivablesAgingItem(BaseSchema):
+    """One outstanding invoice placed into an aging bucket."""
+
+    invoice_id: int
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    invoice_number: str
+    invoice_date: datetime
+    total_amount: Decimal
+    amount_paid: Decimal
+    balance_due: Decimal
+    payment_status: str
+    days_outstanding: int
+    bucket_label: str
+
+
+class ReceivablesAgingResponse(BaseSchema):
+    """Receivables aging ledger with per-bucket and headline aggregates."""
+
+    as_of: date
+    currency_note: str | None = None
+    buckets: list[ReceivablesAgingBucket]
+    items: list[ReceivablesAgingItem]
+    invoice_count: int
+    total_outstanding: Decimal
+
+
 __all__ = [
     "DueFollowUpItem",
     "DueFollowUpsResponse",
@@ -120,4 +163,7 @@ __all__ = [
     "BedOccupancyResponse",
     "PendingInvestigationItem",
     "PendingInvestigationsResponse",
+    "ReceivablesAgingBucket",
+    "ReceivablesAgingItem",
+    "ReceivablesAgingResponse",
 ]

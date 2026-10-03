@@ -1,15 +1,1 @@
-# Compiled/Binary files
-__pycache__/
-*.pyc
-# IDE
-.vscode/
-.idea/
-# Env
-.env
-*.env
-!backend/.env.example
-# Test/build caches
-.pytest_cache/
-.mypy_cache/
-build/
-dist/
+(empty)
