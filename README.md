@@ -75,13 +75,13 @@ Runs entirely on the local network with a server-owned database — *no internet
 - ✔ Reporting and print manifests
 - ✔ Client-side report rendering and batch printing
 - ✔ Invoice print envelope with live payment-derived balances *(Batch 85)*
-- ✔ Receivables aging ledger endpoint — `GET /dashboard/receivables-aging` with
+- ✔ Receivables aging ledger — `GET /dashboard/receivables-aging` with
   standard 0–30 / 31–60 / 61–90 / Over-90 buckets over the Batch 82
-  outstanding-invoice (live-payment) derivation
-  *(Batch 86, backend landed; client wiring, tests and documentation pending)*
+  outstanding-invoice (live-payment) derivation, printable aging preview in
+  the Reports & Printing workspace *(Batch 86)*
 
 ### 🧪 Test Suite
-- 238 backend tests passing as of Batch 85 (see [CHANGELOG.md](CHANGELOG.md)).
+- 246 backend tests passing as of Batch 86 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection

@@ -10,6 +10,13 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 86 · Receivables Aging Ledger
+- Endpoint `GET /dashboard/receivables-aging` (`backend/app/api/v1/endpoints/dashboard.py`) derives outstanding balances from the Batch 82 live-payment reconciliation (payments clamped to invoice totals, non-negative balances) and classifies each open invoice into stable aging buckets — 0–30, 31–60, 61–90, Over-90 days — measured from the invoice date against an aware-UTC `as_of`.
+- Response schemas in `backend/app/schemas/dashboard.py` expose per-bucket totals/counts plus the full invoice-level ledger rows (invoice number, patient, date, total, paid, balance, days outstanding, bucket).
+- Client wiring: `getDashboardReceivablesAging(options)` wrapper in `frontend/js/api.js`; `createReceivablesAgingPrintPreview()` structured HTML renderer (bucket-summary table with grand-total row and a per-invoice aging ledger page) in `frontend/js/print.js`; "Receivables aging ledger" card with limit control integrated into the Reports & Printing workspace (`frontend/js/reports.js`).
+- Documentation: [docs/CLIENT_RECEIVABLES_AGING_LEDGER.md](docs/CLIENT_RECEIVABLES_AGING_LEDGER.md) added and indexed in [docs/INDEX.md](docs/INDEX.md); ROADMAP and project state advanced to Batch 86.
+- Contract test suite `backend/tests/test_receivables_aging_ledger.py` (8 tests covering endpoint wiring, bucket stability, live-payment clamping parity with Batches 82/85, schema fields and frontend integration points); full suite 246 passed.
+
 ### Added — Batch 85 · Invoice Print Envelope for Reporting Integration
 - Service `ReportingService.build_invoice_print_envelope` (`backend/app/services/reporting.py`) assembles a printable invoice packet: header identity, line items and totals with live payment-derived balances — `amount_paid` clamped to the invoice total, non-negative `balance_due`, reconciliation `paid + balance == total` mirroring the Batch 68 atomic-consistency invariants.
 - New endpoint `POST /reports/invoice-print-envelope` (`backend/app/api/v1/endpoints/reporting.py`) with authenticated access; schemas `InvoicePrintRequest`/`InvoicePrintEnvelope` and supporting item models in `backend/app/schemas/reporting.py`.

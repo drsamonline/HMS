@@ -2,8 +2,8 @@
 
 ## Authoritative baseline
 - Baseline: current repository state on `master` (commit 8123205), reconstructed from the latest user-supplied full ZIP (`HMS(5).zip`) plus every committed batch since. The ZIP is no longer used as a reconstruction source; this repo tree is authoritative going forward (rule 9 checkpoint satisfied at Batch 85).
-- Latest completed functional milestone: Batch 85 — Invoice Print Envelope for Reporting Integration.
-- Current milestone: Batch 85 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed; due-follow-up workflow feed wired into the client dashboard; outstanding-billing receivables feed wired into the client dashboard; IPD bed-occupancy continuity feed wired into the client dashboard; laboratory pending-investigation backlog feed wired into the client dashboard; invoice print envelope landed as the first reporting/printing integration step beyond the clinical print batches).
+- Latest completed functional milestone: Batch 86 — Receivables Aging Ledger.
+- Current milestone: Batch 86 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed; due-follow-up workflow feed wired into the client dashboard; outstanding-billing receivables feed wired into the client dashboard; IPD bed-occupancy continuity feed wired into the client dashboard; laboratory pending-investigation backlog feed wired into the client dashboard; invoice print envelope landed as the first reporting/printing integration step beyond the clinical print batches; receivables aging ledger landed with bucketed endpoint, API wrapper, printable aging preview in the Reports & Printing workspace, contract tests and documentation).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -121,6 +121,13 @@
 - Client wiring: `buildInvoicePrintEnvelope` wrapper in `frontend/js/api.js`; `createInvoicePrintPreview` structured HTML renderer in `frontend/js/print.js`; UI controls integrated into the Reports & Printing workspace (`frontend/js/reports.js`).
 - Contract suite `backend/tests/test_invoice_print_envelope.py` (5 tests covering service logic, endpoint registration, schema validation and frontend integration points).
 - Follows reporting/print batches 02–05 (clinical/administrative/statistical report data and print manifest); continues the "final reporting/printing integration" remaining-work item.
+
+## Batch 86 — Receivables Aging Ledger
+- Endpoint `GET /dashboard/receivables-aging` (`backend/app/api/v1/endpoints/dashboard.py`) derives outstanding balances from the Batch 82 live-payment reconciliation and classifies open invoices into stable aging buckets: 0–30, 31–60, 61–90, Over-90 days (invoice date vs aware-UTC `as_of`).
+- Schemas in `backend/app/schemas/dashboard.py` expose per-bucket totals/counts plus invoice-level ledger rows (invoice number, patient, date, total, paid, balance, days outstanding, bucket).
+- Client wiring: `getDashboardReceivablesAging(options)` wrapper in `frontend/js/api.js`; `createReceivablesAgingPrintPreview()` renderer (bucket summary + per-invoice ledger) in `frontend/js/print.js`; "Receivables aging ledger" card in the Reports & Printing workspace (`frontend/js/reports.js`).
+- Documentation: `docs/CLIENT_RECEIVABLES_AGING_LEDGER.md` added and indexed in `docs/INDEX.md`.
+- Contract suite `backend/tests/test_receivables_aging_ledger.py` (8 tests incl. clamping parity with Batches 82/85); full suite 246 passed.
 
 ## Cleanup policy
 - Transfer baselines always exclude `.git`, `.env`, Python caches/compiled files, test caches and build artifacts.
