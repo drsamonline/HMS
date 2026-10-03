@@ -280,3 +280,26 @@ export function createPaymentMethodSummaryPrintPreview(host,{envelope=null,data=
   $("#payment-method-summary-print-now",shell).addEventListener("click",()=>window.print());
   return {envelope,data:payload};
 }
+export function createInvoiceOverpaymentPrintPreview(host,{envelope=null,data=null,title="Invoice Overpayment Ledger"}={}){
+  host.innerHTML="";
+  const payload=envelope?.data??data??{};
+  const items=payload.items||[];
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Overpayment Print Preview</strong><span class="print-count">${esc(String(payload.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="overpayment-print-now">Print Ledger</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(envelope?.title||title)}</h1><p class="print-generated">As of: ${esc(String(payload.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Overpayment Summary</h2></div>`
+    +`<table class="print-table"><tbody>`
+    +`<tr><td>Invoices overpaid</td><td>${esc(payload.invoices_overpaid??0)}</td></tr>`
+    +`<tr><td>Total billed (overpaid invoices)</td><td>${money(payload.total_billed)}</td></tr>`
+    +`<tr><td>Total paid (unclamped)</td><td>${money(payload.total_paid_raw)}</td></tr>`
+    +`<tr><td>Total overpaid</td><td>${money(payload.total_overpaid)}</td></tr>`
+    +`</tbody></table></section>`
+    +`<section class="print-section print-page-break" data-print-section="ledger"><div class="print-section-heading"><h2>Overpayment Ledger</h2></div>`
+    +(items.length?`<table class="print-table"><thead><tr><th>Invoice</th><th>Patient</th><th>Date</th><th>Total Billed</th><th>Paid (Unclamped)</th><th>Overpaid</th><th>Receipts</th><th>Stored Status</th><th>Derived Status</th></tr></thead><tbody>`
+      +items.map(it=>`<tr><td>${esc(it.invoice_number)}</td><td>${esc(it.patient_name)}${it.patient_number?` — ${esc(it.patient_number)}`:""}</td><td>${esc(String(it.invoice_date||"").slice(0,10))}</td><td>${money(it.total_amount)}</td><td>${money(it.total_paid_raw)}</td><td>${money(it.overpaid_amount)}</td><td>${esc(it.receipt_count)}</td><td>${esc(human(it.stored_payment_status))}</td><td>${esc(human(it.derived_payment_status))}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No overpaid invoices detected in this scan window.</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#overpayment-print-now",shell).addEventListener("click",()=>window.print());
+  return {envelope,data:payload};
+}

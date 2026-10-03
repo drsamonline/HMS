@@ -58,6 +58,10 @@ from app.schemas.reporting import (
     InvoicePaymentReconciliationPrintEnvelope,
     InvoicePaymentReconciliationPrintLine,
     InvoicePaymentReconciliationPrintRequest,
+    InvoiceOverpaymentPrintData,
+    InvoiceOverpaymentPrintEnvelope,
+    InvoiceOverpaymentPrintLine,
+    InvoiceOverpaymentPrintRequest,
     PaymentMethodSummaryPrintData,
     PaymentMethodSummaryPrintEnvelope,
     PaymentMethodSummaryPrintLine,
@@ -751,6 +755,46 @@ class ReportingService:
                         share_of_total=str(item["share_of_total"]),
                     )
                     for item in summary["items"]
+                ],
+            ),
+        )
+
+    async def build_invoice_overpayment_print_envelope(
+        self, db: AsyncSession, request: InvoiceOverpaymentPrintRequest
+    ) -> InvoiceOverpaymentPrintEnvelope:
+        """Assemble a printable invoice overpayment ledger packet.
+
+        Batch 97 — reporting/printing integration for the billing domain:
+        reuses the dashboard's shared live-payment scan
+        (``build_overpayment_ledger``, built on the same
+        ``_build_reconciliation_rows`` row builder as the Batch 89/94
+        reconciliation ledger, stored counters never trusted), so printed
+        rows always satisfy ``overpaid_amount == total_paid_raw -
+        total_amount`` and match ``GET /dashboard/invoice-overpayments``
+        line-for-line for the same scan window.
+        """
+        from app.api.v1.endpoints.dashboard import build_overpayment_ledger
+
+        ledger = await build_overpayment_ledger(db, request.limit)
+
+        return InvoiceOverpaymentPrintEnvelope(
+            title=request.title or "HHMS Invoice Overpayment Ledger",
+            generated_at=datetime.utcnow(),
+            data=InvoiceOverpaymentPrintData(
+                as_of=ledger["as_of"],
+                invoices_checked=ledger["invoices_checked"],
+                invoices_overpaid=ledger["invoices_overpaid"],
+                total_billed=str(ledger["total_billed"]),
+                total_paid_raw=str(ledger["total_paid_raw"]),
+                total_overpaid=str(ledger["total_overpaid"]),
+                items=[
+                    InvoiceOverpaymentPrintLine(
+                        **{
+                            key: (str(value) if isinstance(value, Decimal) else value)
+                            for key, value in item.items()
+                        }
+                    )
+                    for item in ledger["items"]
                 ],
             ),
         )

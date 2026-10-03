@@ -96,6 +96,7 @@ from app.models.payment import Payment
 from app.schemas.dashboard import (
     BedOccupancyResponse,
     DueFollowUpsResponse,
+    InvoiceOverpaymentResponse,
     InvoicePaymentReconciliationResponse,
     InvoiceReceiptContinuityResponse,
     OutstandingInvoicesResponse,
@@ -1314,8 +1315,104 @@ async def payment_method_summary(
     return PaymentMethodSummaryResponse(**result)
 
 
+def build_overpayment_ledger_result(rows: list[dict], as_of: date) -> dict:
+    """Roll raw overpayment rows up into ledger items and headlines.
+
+    Batch 97 — shared aggregation used by both the dashboard feed and the
+    reporting print envelope so the two surfaces can never drift. Only
+    invoices whose live payment total exceeds their billed amount appear;
+    every row satisfies ``overpaid_amount == total_paid_raw - total_amount``
+    by construction, and the headline sums roll back to
+    ``invoices_overpaid == len(items)``.
+    """
+    items = []
+    total_billed = Decimal("0")
+    total_paid_raw = Decimal("0")
+    total_overpaid = Decimal("0")
+    for row in rows:
+        total_billed += row["total_amount"]
+        total_paid_raw += row["total_paid_raw"]
+        total_overpaid += row["overpaid_amount"]
+        items.append(dict(row))
+    return {
+        "as_of": as_of,
+        "invoices_checked": len(items),
+        "invoices_overpaid": len(items),
+        "total_billed": total_billed,
+        "total_paid_raw": total_paid_raw,
+        "total_overpaid": total_overpaid,
+        "items": items,
+    }
+
+
+async def build_overpayment_ledger(db, limit: int) -> dict:
+    """Scan-and-aggregate entry point shared with the reporting service.
+
+    Batch 97 — single implementation behind both
+    ``GET /dashboard/invoice-overpayments`` and
+    ``POST /reports/invoice-overpayment-print-envelope``. Reuses the exact
+    same live-scan row builder as the Batch 89/90/94 reconciliation ledger
+    (one grouped pass over the Payment table joined to non-cancelled
+    invoices, stored counters/status never trusted), then keeps only the
+    rows where payments exceed the billed amount. Because the reconciliation
+    scan clamps ``amount_paid`` to the invoice total, the un-clamped paid
+    total is re-summed per flagged invoice from the same ledger rows.
+    """
+    rows = await _build_reconciliation_rows(db, limit)
+    overpaid_rows = []
+    candidates = [row for row in rows if row["balance_due"] == Decimal("0")]
+    # Only fully-paid invoices can be overpaid under the clamp; re-check
+    # against the un-clamped ledger to find genuine excess receipts.
+    if candidates:
+        candidate_ids = [row["invoice_id"] for row in candidates]
+        payments_result = await db.execute(
+            select(Payment.invoice_id, func.sum(Payment.amount_paid))
+            .where(Payment.invoice_id.in_(candidate_ids))
+            .group_by(Payment.invoice_id)
+        )
+        raw_paid_by_invoice = {
+            invoice_id: Decimal(str(total))
+            for invoice_id, total in payments_result
+        }
+        for row in candidates:
+            total_paid_raw = raw_paid_by_invoice.get(
+                row["invoice_id"], Decimal("0")
+            )
+            if total_paid_raw > row["total_amount"]:
+                item = dict(row)
+                item["total_paid_raw"] = total_paid_raw
+                item["overpaid_amount"] = total_paid_raw - row["total_amount"]
+                item.pop("last_payment_datetime", None)
+                overpaid_rows.append(item)
+    return build_overpayment_ledger_result(overpaid_rows, date.today())
+
+
+@router.get("/invoice-overpayments", response_model=InvoiceOverpaymentResponse)
+async def invoice_overpayments(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> InvoiceOverpaymentResponse:
+    """List invoices whose live payment ledger exceeds the billed amount.
+
+    Batch 97 — reporting/printing integration feed. The Batch 89/94
+    reconciliation ledger clamps ``amount_paid`` to ``total_amount``, which
+    deliberately hides over-collection; this feed surfaces exactly what the
+    clamp conceals: for the most recent ``limit`` non-cancelled invoices,
+    every invoice where the summed Payment rows exceed ``total_amount``,
+    with the un-clamped paid total and the resulting ``overpaid_amount``.
+    Semantics are derived from the live ledger only (stored counters and
+    status columns are never trusted), and the invariant
+    ``overpaid_amount == total_paid_raw - total_amount`` holds on every row.
+    """
+    ledger = await build_overpayment_ledger(db, limit)
+    return InvoiceOverpaymentResponse(**ledger)
+
+
 __all__ = [
     "build_collection_summary_by_patient",
+    "build_overpayment_ledger",
+    "build_overpayment_ledger_result",
     "build_payment_method_collection_summary",
     "build_payment_method_summary_result",
     "build_receivables_aging_result",

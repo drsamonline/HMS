@@ -15,6 +15,8 @@ from app.schemas.reporting import (
     InvoicePrintRequest,
     InvoicePaymentReconciliationPrintEnvelope,
     InvoicePaymentReconciliationPrintRequest,
+    InvoiceOverpaymentPrintEnvelope,
+    InvoiceOverpaymentPrintRequest,
     InvoiceReceiptContinuityPrintEnvelope,
     InvoiceReceiptContinuityPrintRequest,
     PaymentMethodSummaryPrintEnvelope,
@@ -205,6 +207,29 @@ async def build_payment_method_summary_print_envelope(
     same scan window.
     """
     return await reporting_service.build_payment_method_summary_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/invoice-overpayment-print-envelope",
+    response_model=InvoiceOverpaymentPrintEnvelope,
+)
+async def build_invoice_overpayment_print_envelope(
+    report_in: InvoiceOverpaymentPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvoiceOverpaymentPrintEnvelope:
+    """Batch 97 — printable invoice overpayment ledger packet.
+
+    Shares the dashboard's live-payment scan
+    (``build_overpayment_ledger``, built on the same reconciliation row
+    builder as ``GET /dashboard/invoice-payment-reconciliation``), so
+    printed rows always satisfy ``overpaid_amount == total_paid_raw -
+    total_amount`` and reconcile line-for-line with
+    ``GET /dashboard/invoice-overpayments`` for the same scan window.
+    """
+    return await reporting_service.build_invoice_overpayment_print_envelope(
         db, report_in
     )
 

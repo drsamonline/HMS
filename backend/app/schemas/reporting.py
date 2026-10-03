@@ -525,6 +525,69 @@ class InvoicePaymentReconciliationPrintEnvelope(BaseSchema):
     data: InvoicePaymentReconciliationPrintData
 
 
+class InvoiceOverpaymentPrintRequest(BaseSchema):
+    """Batch 97 — print request for the invoice overpayment ledger."""
+
+    limit: int = Field(default=200, ge=1, le=500)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class InvoiceOverpaymentPrintLine(BaseSchema):
+    """One overpaid invoice as printed on paper.
+
+    Mirrors ``InvoiceOverpaymentItem`` from the dashboard feed; amounts are
+    stringified decimals per the print-schema convention. ``total_paid_raw``
+    is summed from the live Payment ledger *without* the Batch 68 clamp, so
+    the invariant ``overpaid_amount == total_paid_raw - total_amount`` holds
+    on every printed row and ``balance_due`` is always zero.
+    """
+
+    invoice_id: int
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    invoice_number: str
+    invoice_date: datetime
+    total_amount: str
+    amount_paid: str
+    balance_due: str
+    total_paid_raw: str
+    overpaid_amount: str
+    stored_payment_status: str
+    derived_payment_status: str
+    receipt_count: int
+    is_reconciled: bool
+
+
+class InvoiceOverpaymentPrintData(BaseSchema):
+    as_of: date
+    invoices_checked: int
+    invoices_overpaid: int
+    total_billed: str
+    total_paid_raw: str
+    total_overpaid: str
+    items: list[InvoiceOverpaymentPrintLine]
+
+
+class InvoiceOverpaymentPrintEnvelope(BaseSchema):
+    """Batch 97 — printable invoice overpayment ledger packet.
+
+    Built through the exact same live-payment scan as the reconciliation
+    ledger (``build_overpayment_ledger``, single grouped Payment pass over
+    non-cancelled invoices, stored status never trusted), so printed rows
+    satisfy ``overpaid_amount == total_paid_raw - total_amount`` and match
+    ``GET /dashboard/invoice-overpayments`` line-for-line for the same scan
+    window.
+    """
+
+    report_type: Literal["invoice_overpayment_print"] = (
+        "invoice_overpayment_print"
+    )
+    title: str
+    generated_at: datetime
+    data: InvoiceOverpaymentPrintData
+
+
 __all__ = [
     "ReportSection",
     "ALL_REPORT_SECTIONS",
@@ -570,4 +633,8 @@ __all__ = [
     "PaymentMethodSummaryPrintLine",
     "PaymentMethodSummaryPrintData",
     "PaymentMethodSummaryPrintEnvelope",
+    "InvoiceOverpaymentPrintRequest",
+    "InvoiceOverpaymentPrintLine",
+    "InvoiceOverpaymentPrintData",
+    "InvoiceOverpaymentPrintEnvelope",
 ]
