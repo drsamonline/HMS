@@ -154,6 +154,8 @@
 | [CLIENT_CLINICIAN_DASHBOARD_DUE_FOLLOWUPS.md](CLIENT_CLINICIAN_DASHBOARD_DUE_FOLLOWUPS.md) | Clinician dashboard due-follow-up continuity (Batch 79) |
 | [CLIENT_DASHBOARD_OUTSTANDING_INVOICES.md](CLIENT_DASHBOARD_OUTSTANDING_INVOICES.md) | Dashboard outstanding billing continuity (Batch 82) |
 | [CLIENT_DASHBOARD_BED_OCCUPANCY.md](CLIENT_DASHBOARD_BED_OCCUPANCY.md) | Dashboard IPD bed-occupancy continuity feed (Batch 83) |
+| [CLIENT_DASHBOARD_PENDING_INVESTIGATIONS.md](CLIENT_DASHBOARD_PENDING_INVESTIGATIONS.md) | Dashboard laboratory pending-investigation feed (Batch 84) |
+| [CLIENT_INVOICE_PRINT_ENVELOPE.md](CLIENT_INVOICE_PRINT_ENVELOPE.md) | Invoice print envelope for reporting integration (Batch 85) |
 | [CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md](CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md) | Client operational workspace integration |
 | [CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md](CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md) | Client operational navigation convergence |
 | [CLIENT_RBAC_NAVIGATION.md](CLIENT_RBAC_NAVIGATION.md) | Client RBAC-aware navigation |

@@ -83,6 +83,7 @@ export async function buildClinicalReport(payload){return request("/api/v1/repor
 export async function buildPrintManifest(payload){return request("/api/v1/reports/clinical-data/print-manifest",{method:"POST",body:JSON.stringify(payload)});}
 export async function buildPrintEnvelope(payload){return request("/api/v1/reports/clinical-data/print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 export async function buildClinicalBatch(payload){return request("/api/v1/reports/clinical-data/batch",{method:"POST",body:JSON.stringify(payload)});}
+export async function buildInvoicePrintEnvelope(payload){return request("/api/v1/reports/invoice-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 
 export async function listVisits(patientId){const q=new URLSearchParams({patient_id:String(patientId),skip:"0",limit:"100"});return request(`/api/v1/visits?${q.toString()}`)}
 export async function listAdmissions(patientId){const q=new URLSearchParams({patient_id:String(patientId),skip:"0",limit:"100"});return request(`/api/v1/admissions?${q.toString()}`)}
@@ -106,6 +107,7 @@ export async function listDueFollowups(fromIso,toIso,options={}){const q=new URL
 export async function getDashboardDueFollowups(options={}){const q=new URLSearchParams();if(options.from)q.set("from_datetime",options.from);q.set("days_ahead",String(options.daysAhead??7));q.set("limit",String(options.limit??100));return request(`/api/v1/dashboard/due-followups?${q.toString()}`)}
 export async function getDashboardOutstandingInvoices(options={}){const q=new URLSearchParams({limit:String(options.limit??100)});return request(`/api/v1/dashboard/outstanding-invoices?${q.toString()}`)}
 export async function getDashboardBedOccupancy(options={}){const q=new URLSearchParams({limit:String(options.limit??200)});return request(`/api/v1/dashboard/bed-occupancy?${q.toString()}`)}
+export async function getDashboardPendingInvestigations(options={}){const q=new URLSearchParams({limit:String(options.limit??100)});return request(`/api/v1/dashboard/pending-investigations?${q.toString()}`)}
 export async function createFollowup(payload){return request("/api/v1/followups",{method:"POST",body:JSON.stringify(payload)})}
 export async function searchICD11(q){return request(`/api/v1/icd11/search?q=${encodeURIComponent(q)}&limit=15`)}
 export async function createPrescription(payload){return request("/api/v1/prescriptions",{method:"POST",body:JSON.stringify(payload)})}

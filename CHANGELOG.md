@@ -10,6 +10,20 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 85 · Invoice Print Envelope for Reporting Integration
+- Service `ReportingService.build_invoice_print_envelope` (`backend/app/services/reporting.py`) assembles a printable invoice packet: header identity, line items and totals with live payment-derived balances — `amount_paid` clamped to the invoice total, non-negative `balance_due`, reconciliation `paid + balance == total` mirroring the Batch 68 atomic-consistency invariants.
+- New endpoint `POST /reports/invoice-print-envelope` (`backend/app/api/v1/endpoints/reporting.py`) with authenticated access; schemas `InvoicePrintRequest`/`InvoicePrintEnvelope` and supporting item models in `backend/app/schemas/reporting.py`.
+- Client wiring: `buildInvoicePrintEnvelope` wrapper in `frontend/js/api.js`; `createInvoicePrintPreview` structured HTML renderer (invoice details, line items, totals and receipts) in `frontend/js/print.js`; UI controls integrated into the Reports & Printing workspace (`frontend/js/reports.js`).
+- Continues the final reporting/printing integration track after print batches 02–05 (report data, catalog and print manifest).
+- Contract test suite `backend/tests/test_invoice_print_envelope.py` (5 tests covering service logic, endpoint registration, schema validation and frontend integration points); full suite 238 passed.
+
+### Added — Batch 84 · Laboratory Pending-Investigation Dashboard Feed
+- New endpoint `GET /dashboard/pending-investigations` (`backend/app/api/v1/endpoints/dashboard.py`) surfacing the live laboratory backlog: `Investigation` rows with `is_current_year=true` and status `pending`/`in_progress` (the exact open-order pair of the Batch 66 result workflow — released reports become `completed`, cancellations never surface), ordered oldest-first by `requested_datetime` so ageing orders rise to the top.
+- Per-row enrichment: patient name/number via batched lookup (no N+1), investigation number/name/status, OPD/IPD encounter lineage (`case_type`/`visit_id`/`admission_id`), requester and naive-UTC-normalised `age_hours` clamped non-negative; headline `pending_count`/`in_progress_count` aggregates and aware-UTC `as_of` exposed by schemas `PendingInvestigationItem`/`PendingInvestigationsResponse` in `backend/app/schemas/dashboard.py`.
+- Client wiring: `getDashboardPendingInvestigations(options)` wrapper in `frontend/js/api.js`; dashboard "Pending investigations" panel with pending/in-progress summary whose cards navigate to the patients view and dispatch `hhms:open-patient-clinical` for direct clinical-workspace handoff; empty state and graceful unavailable-state on fetch failure mirroring the sibling panels.
+- Documentation: [docs/CLIENT_DASHBOARD_PENDING_INVESTIGATIONS.md](docs/CLIENT_DASHBOARD_PENDING_INVESTIGATIONS.md) added and indexed; ROADMAP and project state advanced to Batch 84.
+- Contract test suite `backend/tests/test_dashboard_pending_investigations.py` (6 tests incl. Batch 66 workflow regression lock and route-registration check); full suite 233 passed.
+
 ### Added — Batch 83 · IPD Bed-Occupancy Continuity
 - New endpoint `GET /dashboard/bed-occupancy` (`backend/app/api/v1/endpoints/dashboard.py`) reconciling every active bed marked occupied/reserved against its live admission (status pair `admitted`/`active`, mirroring the Batch 61 concurrency guard): ward-ordered feed, batched admission/patient enrichment (no N+1), per-row `length_of_stay_days` from naive-UTC-normalised admission datetime, and drift visibility — beds whose occupancy flag has no matching active admission are still reported with `has_active_admission=false` instead of silently disappearing.
 - Response schemas `BedOccupancyItem`/`BedOccupancyResponse` in `backend/app/schemas/dashboard.py` expose bed identity (number/ward/room/type), admission lineage (id/number/datetime/status), patient name/number and headline `occupied_count`/`total_beds` aggregates with an aware-UTC `as_of`.

@@ -1,4 +1,4 @@
-import { getServerBaseUrl, getAccessToken, listPatients, getDashboardDueFollowups, getDashboardOutstandingInvoices, getDashboardBedOccupancy } from "./api.js";
+import { getServerBaseUrl, getAccessToken, listPatients, getDashboardDueFollowups, getDashboardOutstandingInvoices, getDashboardBedOccupancy, getDashboardPendingInvestigations } from "./api.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>'"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" }[c]));
@@ -34,6 +34,10 @@ export async function openDashboard(host, context = {}) {
     <section class="content-panel">
       <h3>IPD bed occupancy</h3>
       <div id="dashboard-bed-occupancy" class="patient-list"><div class="empty-state">Loading…</div></div>
+    </section>
+    <section class="content-panel">
+      <h3>Pending investigations</h3>
+      <div id="dashboard-pending-investigations" class="patient-list"><div class="empty-state">Loading…</div></div>
     </section>
     <section class="content-panel">
       <h3>Recent patients</h3>
@@ -132,6 +136,32 @@ export async function openDashboard(host, context = {}) {
     }
   } catch {
     $("#dashboard-bed-occupancy", host).innerHTML = '<div class="empty-state">Bed occupancy is unavailable right now.</div>';
+  }
+
+  try {
+    const pending = await getDashboardPendingInvestigations({ limit: 20 });
+    const pendingHost = $("#dashboard-pending-investigations", host);
+    const orders = pending?.items ?? [];
+    if (!orders.length) {
+      pendingHost.innerHTML = '<div class="empty-state">No investigations are awaiting results.</div>';
+    } else {
+      pendingHost.innerHTML = `
+        <p class="muted">${esc(pending?.pending_count ?? 0)} pending · ${esc(pending?.in_progress_count ?? 0)} in progress</p>
+      ` + orders.map(inv => `
+        <button type="button" class="patient-card" data-pending-patient="${esc(inv.patient_id)}">
+          <strong>${esc(inv.investigation_name)}</strong>
+          <span>${esc(inv.patient_name)} (${esc(inv.patient_number || "—")}) · ${esc(inv.investigation_number)} · ${esc(inv.investigation_status)} · ${esc(inv.age_hours)} hour(s) old</span>
+        </button>
+      `).join("");
+      pendingHost.querySelectorAll("[data-pending-patient]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelector(".nav-item[data-view='patients']")?.click();
+          window.dispatchEvent(new CustomEvent("hhms:open-patient-clinical", { detail: { patientId: Number(btn.dataset.pendingPatient) } }));
+        });
+      });
+    }
+  } catch {
+    $("#dashboard-pending-investigations", host).innerHTML = '<div class="empty-state">Pending investigations are unavailable right now.</div>';
   }
 
   try {

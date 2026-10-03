@@ -13,6 +13,11 @@ Batch 83 — IPD Bed-Occupancy Continuity: turns bed/admission state into an
 actionable inpatient dashboard feed — every occupied bed is reconciled
 against its active admission so ward staff see who occupies each bed, how
 long the stay has run, and can hand off directly into the patient workspace.
+
+Batch 84 — Laboratory Pending-Investigation Dashboard Feed: surfaces live
+investigation orders still awaiting results (pending/in_progress) oldest-first
+with per-order age in hours, so laboratory workload is actionable from the
+dashboard without opening the Investigations module.
 """
 
 from __future__ import annotations
@@ -29,12 +34,15 @@ from app.dependencies.database import DatabaseSession
 from app.models.admission import Admission
 from app.models.bed import Bed
 from app.models.case_record import CaseRecord
+from app.models.investigation import Investigation
 from app.models.patient import Patient
 from app.models.payment import Payment
 from app.schemas.dashboard import (
     BedOccupancyResponse,
     DueFollowUpsResponse,
     OutstandingInvoicesResponse,
+    PendingInvestigationsResponse,
+    ReceivablesAgingResponse,
 )
 from app.services.billing import billing_service
 from app.services.followup import followup_service
@@ -299,6 +307,207 @@ async def bed_occupancy(
         items=items,
         occupied_count=occupied_count,
         total_beds=len(items),
+    )
+
+
+@router.get("/pending-investigations", response_model=PendingInvestigationsResponse)
+async def pending_investigations(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=100, ge=1, le=500),
+) -> PendingInvestigationsResponse:
+    """Oldest-first live investigation orders still awaiting results.
+
+    Built on the Batch 66 laboratory result workflow: an order leaves the
+    backlog only when its report is released (status ``completed``) or it is
+    cancelled, so ``pending``/``in_progress`` rows are exactly the orders the
+    laboratory still owes results for. Archived-year rows never surface
+    (``is_current_year`` mirrors the annual lifecycle), each row carries its
+    OPD/IPD lineage (visit/admission/case type) plus an age in hours so
+    ageing orders can be chased directly from the dashboard, and patient
+    enrichment is batched (no N+1).
+    """
+    open_statuses = ("pending", "in_progress")
+    result = await db.execute(
+        select(Investigation)
+        .where(
+            Investigation.is_current_year.is_(True),
+            func.lower(Investigation.investigation_status).in_(open_statuses),
+        )
+        .order_by(
+            Investigation.requested_datetime.asc(),
+            Investigation.id.asc(),
+        )
+        .limit(limit)
+    )
+    investigations = list(result.scalars().all())
+
+    patients_by_id: dict[int, Patient] = {}
+    patient_ids = {inv.patient_id for inv in investigations}
+    if patient_ids:
+        pat_result = await db.execute(
+            select(Patient).where(Patient.id.in_(patient_ids))
+        )
+        patients_by_id = {p.id: p for p in pat_result.scalars()}
+
+    as_of = datetime.now(timezone.utc).replace(tzinfo=None)
+    items = []
+    pending_count = 0
+    in_progress_count = 0
+    for inv in investigations:
+        status = (inv.investigation_status or "").lower()
+        if status == "pending":
+            pending_count += 1
+        elif status == "in_progress":
+            in_progress_count += 1
+        requested_at = inv.requested_datetime
+        if requested_at.tzinfo is not None:
+            requested_at = requested_at.astimezone(timezone.utc).replace(
+                tzinfo=None
+            )
+        age_hours = max(int((as_of - requested_at).total_seconds() // 3600), 0)
+        items.append(
+            {
+                "investigation_id": inv.id,
+                "patient_id": inv.patient_id,
+                "patient_name": _patient_display_name(
+                    patients_by_id.get(inv.patient_id)
+                ),
+                "patient_number": (
+                    patients_by_id[inv.patient_id].patient_number
+                    if inv.patient_id in patients_by_id
+                    else None
+                ),
+                "case_type": inv.case_type,
+                "visit_id": inv.visit_id,
+                "admission_id": inv.admission_id,
+                "investigation_number": inv.investigation_number,
+                "investigation_name": inv.investigation_name,
+                "investigation_status": inv.investigation_status,
+                "requested_datetime": inv.requested_datetime,
+                "requested_by": inv.requested_by,
+                "age_hours": age_hours,
+            }
+        )
+
+    return PendingInvestigationsResponse(
+        as_of=datetime.now(timezone.utc),
+        items=items,
+        pending_count=pending_count,
+        in_progress_count=in_progress_count,
+    )
+
+
+# Standard receivables aging buckets (days outstanding, inclusive lower /
+# exclusive upper; the last bucket is open-ended).
+_RECEIVABLES_BUCKETS = (
+    ("0-30 days", 0, 30),
+    ("31-60 days", 30, 60),
+    ("61-90 days", 60, 90),
+    ("Over 90 days", 90, None),
+)
+
+
+@router.get("/receivables-aging", response_model=ReceivablesAgingResponse)
+async def receivables_aging(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> ReceivablesAgingResponse:
+    """Financial-style receivables aging ledger over live outstanding invoices.
+
+    Batch 86 — reporting/printing integration feed. Built on the same
+    Batch 82 ``billing_service.list_outstanding_invoices`` derivation so
+    balances always reconcile (``amount_paid + balance_due == total_amount``,
+    stale stored statuses and cancelled invoices never surface). Each invoice
+    is placed into a standard 0-30/31-60/61-90/90+ aging bucket by its age in
+    days; every bucket is reported even when empty so printed ledgers keep a
+    stable shape, and bucket counts/totals sum back to the headline aggregates.
+    Patient enrichment is batched (no N+1).
+    """
+    invoices, _service_total = await billing_service.list_outstanding_invoices(
+        db, limit=limit
+    )
+
+    as_of = date.today()
+    patient_ids = {invoice.patient_id for invoice in invoices}
+    patients: dict[int, Patient] = {}
+    if patient_ids:
+        result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
+        patients = {p.id: p for p in result.scalars()}
+
+    # Live-payment derivation identical to the Batch 82 outstanding feed.
+    paid_by_invoice: dict[int, Decimal] = {}
+    if invoices:
+        invoice_ids = [invoice.id for invoice in invoices]
+        totals_result = await db.execute(
+            select(
+                Payment.invoice_id,
+                func.coalesce(func.sum(Payment.amount_paid), 0),
+            )
+            .where(Payment.invoice_id.in_(invoice_ids))
+            .group_by(Payment.invoice_id)
+        )
+        paid_by_invoice = {row[0]: Decimal(str(row[1])) for row in totals_result}
+
+    bucket_stats = {label: {"count": 0, "total": Decimal("0")} for label, _, _ in _RECEIVABLES_BUCKETS}
+    items = []
+    total_outstanding = Decimal("0")
+    for invoice in invoices:
+        patient = patients.get(invoice.patient_id)
+        invoice_local_date = (
+            invoice.invoice_date.astimezone(timezone.utc).date()
+            if invoice.invoice_date.tzinfo is not None
+            else invoice.invoice_date.date()
+        )
+        amount_paid = min(
+            paid_by_invoice.get(invoice.id, Decimal("0")),
+            invoice.total_amount,
+        )
+        balance_due = max(invoice.total_amount - amount_paid, Decimal("0"))
+        days_outstanding = max((as_of - invoice_local_date).days, 0)
+        bucket_label = _RECEIVABLES_BUCKETS[-1][0]
+        for label, lower, upper in _RECEIVABLES_BUCKETS:
+            if days_outstanding >= lower and (upper is None or days_outstanding < upper):
+                bucket_label = label
+                break
+        bucket_stats[bucket_label]["count"] += 1
+        bucket_stats[bucket_label]["total"] += balance_due
+        total_outstanding += balance_due
+        items.append(
+            {
+                "invoice_id": invoice.id,
+                "patient_id": invoice.patient_id,
+                "patient_name": _patient_display_name(patient),
+                "patient_number": patient.patient_number if patient else None,
+                "invoice_number": invoice.invoice_number,
+                "invoice_date": invoice.invoice_date,
+                "total_amount": invoice.total_amount,
+                "amount_paid": amount_paid,
+                "balance_due": balance_due,
+                "payment_status": invoice.payment_status,
+                "days_outstanding": days_outstanding,
+                "bucket_label": bucket_label,
+            }
+        )
+
+    buckets = [
+        {
+            "label": label,
+            "lower_days": lower,
+            "upper_days": upper,
+            "invoice_count": bucket_stats[label]["count"],
+            "total_outstanding": bucket_stats[label]["total"],
+        }
+        for label, lower, upper in _RECEIVABLES_BUCKETS
+    ]
+
+    return ReceivablesAgingResponse(
+        as_of=as_of,
+        buckets=buckets,
+        items=items,
+        invoice_count=len(items),
+        total_outstanding=total_outstanding,
     )
 
 

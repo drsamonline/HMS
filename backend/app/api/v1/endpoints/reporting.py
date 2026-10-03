@@ -9,6 +9,8 @@ from app.schemas.reporting import (
     ClinicalReportBatchRead,
     ClinicalReportBatchRequest,
     ClinicalReportRead,
+    InvoicePrintEnvelope,
+    InvoicePrintRequest,
     ReportPrintEnvelope,
     ReportPrintManifestRead,
     ReportPrintManifestRequest,
@@ -55,5 +57,14 @@ async def build_clinical_report_batch(
     _: CurrentUserDependency,
 ) -> ClinicalReportBatchRead:
     return await reporting_service.build_case_batch(db, report_in)
+
+@router.post("/invoice-print-envelope", response_model=InvoicePrintEnvelope)
+async def build_invoice_print_envelope(
+    report_in: InvoicePrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvoicePrintEnvelope:
+    """Batch 85 — printable invoice packet (header, line items, receipts)."""
+    return await reporting_service.build_invoice_print_envelope(db, report_in)
 
 __all__ = ["router"]

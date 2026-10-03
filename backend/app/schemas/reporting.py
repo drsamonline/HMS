@@ -149,6 +149,54 @@ class ReportPrintEnvelope(BaseSchema):
 class ReportPrintEnvelopeRequest(ClinicalReportRequest):
     title: str | None = Field(default=None, max_length=200)
 
+
+class InvoicePrintRequest(BaseSchema):
+    invoice_id: int = Field(gt=0)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class InvoicePrintItemLine(BaseSchema):
+    id: int
+    item_type: str
+    description: str
+    quantity: str
+    unit_price: str
+    line_total: str
+    remarks: str | None = None
+
+
+class InvoicePrintReceiptLine(BaseSchema):
+    id: int
+    receipt_number: str
+    payment_datetime: str
+    payment_method: str
+    amount_paid: str
+    transaction_reference: str | None = None
+    remarks: str | None = None
+
+
+class InvoicePrintData(BaseSchema):
+    invoice: dict
+    items: list[InvoicePrintItemLine]
+    receipts: list[InvoicePrintReceiptLine]
+    patient: dict
+    total_amount: str
+    amount_paid: str
+    balance_due: str
+    payment_status: str
+    generated_at: datetime
+
+
+class InvoicePrintEnvelope(BaseSchema):
+    report_type: Literal["invoice_print"] = "invoice_print"
+    title: str
+    generated_at: datetime
+    invoice_id: int
+    invoice_number: str
+    patient_id: int
+    data: InvoicePrintData
+
+
 __all__ = [
     "ReportSection",
     "ALL_REPORT_SECTIONS",
@@ -164,4 +212,9 @@ __all__ = [
     "ReportPrintManifestRead",
     "ReportPrintEnvelope",
     "ReportPrintEnvelopeRequest",
+    "InvoicePrintRequest",
+    "InvoicePrintItemLine",
+    "InvoicePrintReceiptLine",
+    "InvoicePrintData",
+    "InvoicePrintEnvelope",
 ]
