@@ -105,3 +105,25 @@ export function createInvoicePrintPreview(host,{envelope,title=""}){
   $("#invoice-print-now",shell).addEventListener("click",()=>window.print());
   return {envelope};
 }
+
+export function createReceivablesAgingPrintPreview(host,{data,title="Receivables Aging Ledger"}){
+  host.innerHTML="";
+  const buckets=data?.buckets||[], items=data?.items||[];
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Aging Print Preview</strong><span class="print-count">${esc(String(data?.as_of??""))}</span></div><div class="button-row"><button id="aging-print-now">Print Ledger</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(title)}</h1><p class="print-generated">As of: ${esc(String(data?.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="buckets"><div class="print-section-heading"><h2>Aging Buckets</h2></div>`
+    +(buckets.length?`<table class="print-table"><thead><tr><th>Bucket</th><th>Invoices</th><th>Outstanding</th></tr></thead><tbody>`
+      +buckets.map(b=>`<tr><td>${esc(b.label)}</td><td>${esc(b.invoice_count)}</td><td>${money(b.total_outstanding)}</td></tr>`).join("")
+      +`<tr><td><strong>Total</strong></td><td><strong>${esc(data?.invoice_count??0)}</strong></td><td><strong>${money(data?.total_outstanding)}</strong></td></tr>`
+      +`</tbody></table>`:'<div class="print-empty">No outstanding invoices</div>')
+    +`</section>`
+    +`<section class="print-section print-page-break" data-print-section="ledger"><div class="print-section-heading"><h2>Aging Ledger</h2></div>`
+    +(items.length?`<table class="print-table"><thead><tr><th>Invoice</th><th>Patient</th><th>Invoice Date</th><th>Total</th><th>Paid</th><th>Balance Due</th><th>Age (days)</th><th>Bucket</th></tr></thead><tbody>`
+      +items.map(it=>`<tr><td>${esc(it.invoice_number)}</td><td>${esc(it.patient_name)}${it.patient_number?` — ${esc(it.patient_number)}`:""}</td><td>${esc(String(it.invoice_date||"").slice(0,10))}</td><td>${money(it.total_amount)}</td><td>${money(it.amount_paid)}</td><td>${money(it.balance_due)}</td><td>${esc(it.days_outstanding)}</td><td>${esc(it.bucket_label)}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">Nothing outstanding — the ledger is clear</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#aging-print-now",shell).addEventListener("click",()=>window.print());
+  return {data};
+}

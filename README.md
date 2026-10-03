@@ -66,6 +66,7 @@ Runs entirely on the local network with a server-owned database — *no internet
 - ✔ Billing and payments
 - ✔ Dashboard outstanding-billing receivables feed *(Batch 82)*
 - ✔ Dashboard IPD bed-occupancy continuity feed *(Batch 83)*
+- ✔ Dashboard laboratory pending-investigation backlog feed *(Batch 84)*
 - ✔ MRD / patient files / archives
 - ✔ Department and service masters
 - ✔ Clinical activity and statistics
@@ -73,6 +74,14 @@ Runs entirely on the local network with a server-owned database — *no internet
 ### 🖨️ Reporting & Printing
 - ✔ Reporting and print manifests
 - ✔ Client-side report rendering and batch printing
+- ✔ Invoice print envelope with live payment-derived balances *(Batch 85)*
+- ✔ Receivables aging ledger endpoint — `GET /dashboard/receivables-aging` with
+  standard 0–30 / 31–60 / 61–90 / Over-90 buckets over the Batch 82
+  outstanding-invoice (live-payment) derivation
+  *(Batch 86, backend landed; client wiring, tests and documentation pending)*
+
+### 🧪 Test Suite
+- 238 backend tests passing as of Batch 85 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection
