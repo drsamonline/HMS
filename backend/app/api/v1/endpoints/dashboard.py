@@ -43,6 +43,12 @@ Batch 91 — Receivables Aging Print Envelope: extracts the Batch 86 bucketing
 into ``build_receivables_aging_result`` so the reporting print envelope reuses
 the exact same aging derivation as the dashboard feed (one implementation,
 two surfaces).
+
+Batch 92 — Invoice Receipt Continuity Print Envelope: extracts the Batch 87
+audit into ``build_invoice_receipt_continuity_result`` plus the shared
+``_load_continuity_scan_inputs`` scan so the reporting print envelope reuses
+the exact same missing/duplicate/sequence-break derivation as the dashboard
+feed.
 """
 
 from __future__ import annotations
@@ -581,16 +587,17 @@ def _receipt_numeric_suffix(receipt_number: str) -> int | None:
     return int(tail) if tail else None
 
 
-@router.get("/invoice-receipt-continuity", response_model=InvoiceReceiptContinuityResponse)
-async def invoice_receipt_continuity(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> InvoiceReceiptContinuityResponse:
-    """Audit invoice-to-receipt numbering continuity on live billing data.
+def build_invoice_receipt_continuity_result(
+    invoices: list[Invoice],
+    patients: dict[int, Patient],
+    receipts_by_invoice: dict[int, list[str]],
+    paid_by_invoice: dict[int, Decimal],
+    as_of: datetime,
+) -> dict:
+    """Shared invoice-to-receipt continuity derivation (dashboard + print).
 
-    Batch 87 — reporting/printing integration feed. Scans the most recent
-    invoices and, for each, checks the receipts recorded against it:
+    Batch 87 — reporting/printing integration feed. For every scanned
+    invoice, the receipts recorded against it are checked for:
 
     * ``missing`` — an invoice carries payments whose receipt rows no longer
       link back (or, with amount paid but no receipt, the receipt book is
@@ -600,45 +607,15 @@ async def invoice_receipt_continuity(
     * ``sequence_break`` — the numeric suffixes of an invoice's receipts skip
       at least one value between first and last.
 
-    The audit never trusts stored counters: receipt counts come from a single
-    grouped query over the Payment table (no N+1), and every aggregate sums
-    back to ``invoices_checked`` so printed continuity reports reconcile.
+    The audit never trusts stored counters: receipt counts and per-invoice
+    paid totals arrive pre-aggregated from a single grouped query over the
+    Payment table (no N+1), and every aggregate sums back to
+    ``invoices_checked`` so printed continuity reports reconcile.
+
+    Batch 92 — extracted verbatim from the dashboard endpoint so the
+    printable envelope (``build_invoice_receipt_continuity_print_envelope``)
+    runs through the exact same code path; screen and paper can never drift.
     """
-    invoices_result = await db.execute(
-        select(Invoice)
-        .where(Invoice.payment_status != "cancelled")
-        .order_by(Invoice.invoice_date.desc(), Invoice.id.desc())
-        .limit(limit)
-    )
-    invoices = list(invoices_result.scalars())
-
-    patient_ids = {invoice.patient_id for invoice in invoices}
-    patients: dict[int, Patient] = {}
-    if patient_ids:
-        result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
-        patients = {p.id: p for p in result.scalars()}
-
-    # Single grouped pass over receipts for all scanned invoices (no N+1).
-    # ``paid_by_invoice`` uses the same live-payment derivation as Batch 82.
-    receipts_by_invoice: dict[int, list[tuple[str,]]] = {}
-    paid_by_invoice: dict[int, Decimal] = {}
-    if invoices:
-        invoice_ids = [invoice.id for invoice in invoices]
-        receipts_result = await db.execute(
-            select(
-                Payment.invoice_id,
-                Payment.receipt_number,
-                Payment.amount_paid,
-            )
-            .where(Payment.invoice_id.in_(invoice_ids))
-            .order_by(Payment.payment_datetime.asc(), Payment.id.asc())
-        )
-        for invoice_id, receipt_number, amount_paid in receipts_result:
-            receipts_by_invoice.setdefault(invoice_id, []).append(receipt_number)
-            paid_by_invoice[invoice_id] = paid_by_invoice.get(
-                invoice_id, Decimal("0")
-            ) + Decimal(str(amount_paid))
-
     issues = []
     invoices_with_receipts = 0
     invoices_missing_receipts = 0
@@ -718,14 +695,85 @@ async def invoice_receipt_continuity(
                     }
                 )
 
+    return {
+        "as_of": as_of,
+        "invoices_checked": len(invoices),
+        "invoices_with_receipts": invoices_with_receipts,
+        "invoices_missing_receipts": invoices_missing_receipts,
+        "duplicate_receipt_count": duplicate_receipt_count,
+        "sequence_break_count": sequence_break_count,
+        "issues": issues,
+    }
+
+
+async def _load_continuity_scan_inputs(
+    db, limit: int
+) -> tuple[list[Invoice], dict[int, Patient], dict[int, list[str]], dict[int, Decimal]]:
+    """Scan invoices + single grouped Payment pass for the continuity audit.
+
+    Shared by the Batch 87 dashboard feed and the Batch 92 print envelope so
+    both consume identical live-derived inputs (no N+1, stored counters never
+    trusted).
+    """
+    invoices_result = await db.execute(
+        select(Invoice)
+        .where(Invoice.payment_status != "cancelled")
+        .order_by(Invoice.invoice_date.desc(), Invoice.id.desc())
+        .limit(limit)
+    )
+    invoices = list(invoices_result.scalars())
+
+    patient_ids = {invoice.patient_id for invoice in invoices}
+    patients: dict[int, Patient] = {}
+    if patient_ids:
+        result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
+        patients = {p.id: p for p in result.scalars()}
+
+    receipts_by_invoice: dict[int, list[str]] = {}
+    paid_by_invoice: dict[int, Decimal] = {}
+    if invoices:
+        invoice_ids = [invoice.id for invoice in invoices]
+        receipts_result = await db.execute(
+            select(
+                Payment.invoice_id,
+                Payment.receipt_number,
+                Payment.amount_paid,
+            )
+            .where(Payment.invoice_id.in_(invoice_ids))
+            .order_by(Payment.payment_datetime.asc(), Payment.id.asc())
+        )
+        for invoice_id, receipt_number, amount_paid in receipts_result:
+            receipts_by_invoice.setdefault(invoice_id, []).append(receipt_number)
+            paid_by_invoice[invoice_id] = paid_by_invoice.get(
+                invoice_id, Decimal("0")
+            ) + Decimal(str(amount_paid))
+
+    return invoices, patients, receipts_by_invoice, paid_by_invoice
+
+
+@router.get("/invoice-receipt-continuity", response_model=InvoiceReceiptContinuityResponse)
+async def invoice_receipt_continuity(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> InvoiceReceiptContinuityResponse:
+    """Audit invoice-to-receipt numbering continuity on live billing data.
+
+    Batch 87 — reporting/printing integration feed; Batch 92 moved the
+    derivation into the shared ``build_invoice_receipt_continuity_result``
+    helper so the printable envelope can never drift from this screen feed.
+    """
+    invoices, patients, receipts_by_invoice, paid_by_invoice = (
+        await _load_continuity_scan_inputs(db, limit)
+    )
     return InvoiceReceiptContinuityResponse(
-        as_of=datetime.now(timezone.utc),
-        invoices_checked=len(invoices),
-        invoices_with_receipts=invoices_with_receipts,
-        invoices_missing_receipts=invoices_missing_receipts,
-        duplicate_receipt_count=duplicate_receipt_count,
-        sequence_break_count=sequence_break_count,
-        issues=issues,
+        **build_invoice_receipt_continuity_result(
+            invoices,
+            patients,
+            receipts_by_invoice,
+            paid_by_invoice,
+            datetime.now(timezone.utc),
+        )
     )
 
 

@@ -13,6 +13,8 @@ from app.schemas.reporting import (
     CollectionSummaryPrintRequest,
     InvoicePrintEnvelope,
     InvoicePrintRequest,
+    InvoiceReceiptContinuityPrintEnvelope,
+    InvoiceReceiptContinuityPrintRequest,
     ReceivablesAgingPrintEnvelope,
     ReceivablesAgingPrintRequest,
     ReportPrintEnvelope,
@@ -109,6 +111,27 @@ async def build_receivables_aging_print_envelope(
     with ``GET /dashboard/receivables-aging``.
     """
     return await reporting_service.build_receivables_aging_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/invoice-receipt-continuity-print-envelope",
+    response_model=InvoiceReceiptContinuityPrintEnvelope,
+)
+async def build_invoice_receipt_continuity_print_envelope(
+    report_in: InvoiceReceiptContinuityPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvoiceReceiptContinuityPrintEnvelope:
+    """Batch 92 — printable invoice receipt continuity packet.
+
+    Shares the dashboard's live scan and audit derivation
+    (``build_invoice_receipt_continuity_result``), so printed headline
+    aggregates always sum back to ``invoices_checked`` and reconcile
+    line-for-line with ``GET /dashboard/invoice-receipt-continuity``.
+    """
+    return await reporting_service.build_invoice_receipt_continuity_print_envelope(
         db, report_in
     )
 

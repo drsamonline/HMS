@@ -101,9 +101,15 @@ Runs entirely on the local network with a server-owned database — *no internet
   (`build_receivables_aging_result`) behind `GET /dashboard/receivables-aging`,
   so printed buckets always reconcile line-for-line with the screen; the
   Reports & Printing aging card now prepares through the envelope *(Batch 91)*
+- ✔ Invoice receipt continuity print envelope — `POST /reports/invoice-receipt-continuity-print-envelope`
+  builds the printable continuity audit through the exact shared scan +
+  derivation (`_load_continuity_scan_inputs` / `build_invoice_receipt_continuity_result`)
+  behind `GET /dashboard/invoice-receipt-continuity`, so printed headline
+  aggregates always sum back to `invoices_checked` and match the screen; the
+  Reports & Printing continuity card now prepares through the envelope *(Batch 92)*
 
 ### 🧪 Test Suite
-- 282 backend tests passing as of Batch 91 (see [CHANGELOG.md](CHANGELOG.md)).
+- 289 backend tests passing as of Batch 92 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection

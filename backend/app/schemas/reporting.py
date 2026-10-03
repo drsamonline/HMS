@@ -299,6 +299,63 @@ class ReceivablesAgingPrintEnvelope(BaseSchema):
     data: ReceivablesAgingPrintData
 
 
+class InvoiceReceiptContinuityPrintRequest(BaseSchema):
+    """Batch 92 — print request for the invoice receipt continuity audit."""
+
+    limit: int = Field(default=200, ge=1, le=500)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class InvoiceReceiptGapPrintLine(BaseSchema):
+    """One continuity defect row in the printed audit.
+
+    Mirrors the dashboard ``InvoiceReceiptGapItem`` fields exactly so the
+    printed packet is a faithful snapshot of the screen feed; amounts are
+    stringified decimals per the print-schema convention.
+    """
+
+    invoice_id: int
+    invoice_number: str
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    gap_type: str
+    expected_count: int
+    actual_count: int
+    missing_count: int
+    first_receipt_number: str | None = None
+    last_receipt_number: str | None = None
+    duplicate_receipt_numbers: list[str] = []
+
+
+class InvoiceReceiptContinuityPrintData(BaseSchema):
+    as_of: datetime
+    invoices_checked: int
+    invoices_with_receipts: int
+    invoices_missing_receipts: int
+    duplicate_receipt_count: int
+    sequence_break_count: int
+    issue_count: int
+    issues: list[InvoiceReceiptGapPrintLine]
+
+
+class InvoiceReceiptContinuityPrintEnvelope(BaseSchema):
+    """Batch 92 — printable invoice receipt continuity packet.
+
+    Built through the exact same ``build_invoice_receipt_continuity_result``
+    code path as the dashboard feed (single grouped Payment pass, live
+    derivation), so headline aggregates on paper always sum back to
+    ``invoices_checked`` and match the screen for the same scan window.
+    """
+
+    report_type: Literal["invoice_receipt_continuity_print"] = (
+        "invoice_receipt_continuity_print"
+    )
+    title: str
+    generated_at: datetime
+    data: InvoiceReceiptContinuityPrintData
+
+
 __all__ = [
     "ReportSection",
     "ALL_REPORT_SECTIONS",
@@ -328,4 +385,8 @@ __all__ = [
     "ReceivablesAgingInvoicePrintLine",
     "ReceivablesAgingPrintData",
     "ReceivablesAgingPrintEnvelope",
+    "InvoiceReceiptContinuityPrintRequest",
+    "InvoiceReceiptGapPrintLine",
+    "InvoiceReceiptContinuityPrintData",
+    "InvoiceReceiptContinuityPrintEnvelope",
 ]

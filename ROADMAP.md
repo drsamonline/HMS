@@ -79,11 +79,14 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 91 — Receivables Aging Print Envelope**
-(`POST /reports/receivables-aging-print-envelope` builds the printable aging packet through the exact shared
-derivation `build_receivables_aging_result` behind `GET /dashboard/receivables-aging` — one implementation, two
-surfaces, so printed buckets always reconcile line-for-line with the screen; the Reports & Printing aging card now
-prepares through the envelope. Follows Batch 90's collection summary by patient (`GET
+Functional application build is in progress through **Batch 92 — Invoice Receipt Continuity Print Envelope**
+(`POST /reports/invoice-receipt-continuity-print-envelope` builds the printable continuity packet through the
+exact shared scan + audit derivation (`_load_continuity_scan_inputs` / `build_invoice_receipt_continuity_result`)
+behind `GET /dashboard/invoice-receipt-continuity` — one implementation, two surfaces, so printed headline
+aggregates always sum back to `invoices_checked` and reconcile line-for-line with the screen; the Reports &
+Printing continuity card now prepares through the envelope. Follows Batch 91's receivables aging print envelope
+(`POST /reports/receivables-aging-print-envelope` sharing `build_receivables_aging_result` with the dashboard),
+Batch 90's collection summary by patient (`GET
 /dashboard/collection-summary-by-patient` + `POST /reports/collection-summary-print-envelope` rolling the
 reconciliation ledger into per-patient totals via a shared scan/aggregation), Batch 89's invoice payment
 reconciliation ledger (live per-invoice payment scan with derived-vs-stored status drift detection and a

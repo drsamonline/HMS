@@ -49,6 +49,10 @@ from app.schemas.reporting import (
     InvoicePrintItemLine,
     InvoicePrintReceiptLine,
     InvoicePrintRequest,
+    InvoiceReceiptContinuityPrintData,
+    InvoiceReceiptContinuityPrintEnvelope,
+    InvoiceReceiptContinuityPrintRequest,
+    InvoiceReceiptGapPrintLine,
     PatientCollectionSummaryPrintLine,
     ReceivablesAgingBucketPrintLine,
     ReceivablesAgingInvoicePrintLine,
@@ -565,6 +569,51 @@ class ReportingService:
                 ],
                 invoice_count=aging["invoice_count"],
                 total_outstanding=str(aging["total_outstanding"]),
+            ),
+        )
+
+    async def build_invoice_receipt_continuity_print_envelope(
+        self, db: AsyncSession, request: InvoiceReceiptContinuityPrintRequest
+    ) -> InvoiceReceiptContinuityPrintEnvelope:
+        """Assemble a printable invoice receipt continuity packet.
+
+        Batch 92 — reporting/printing integration for the billing domain:
+        reuses the dashboard's shared scan (``_load_continuity_scan_inputs``,
+        single grouped Payment pass, no N+1) and the extracted
+        ``build_invoice_receipt_continuity_result`` derivation, so the
+        printed audit's headline aggregates always sum back to
+        ``invoices_checked`` exactly as on screen for the same scan window.
+        """
+        from app.api.v1.endpoints.dashboard import (
+            _load_continuity_scan_inputs,
+            build_invoice_receipt_continuity_result,
+        )
+
+        invoices, patients, receipts_by_invoice, paid_by_invoice = (
+            await _load_continuity_scan_inputs(db, request.limit)
+        )
+        audit = build_invoice_receipt_continuity_result(
+            invoices,
+            patients,
+            receipts_by_invoice,
+            paid_by_invoice,
+            datetime.utcnow(),
+        )
+
+        return InvoiceReceiptContinuityPrintEnvelope(
+            title=request.title or "HHMS Invoice Receipt Continuity Report",
+            generated_at=datetime.utcnow(),
+            data=InvoiceReceiptContinuityPrintData(
+                as_of=audit["as_of"],
+                invoices_checked=audit["invoices_checked"],
+                invoices_with_receipts=audit["invoices_with_receipts"],
+                invoices_missing_receipts=audit["invoices_missing_receipts"],
+                duplicate_receipt_count=audit["duplicate_receipt_count"],
+                sequence_break_count=audit["sequence_break_count"],
+                issue_count=len(audit["issues"]),
+                issues=[
+                    InvoiceReceiptGapPrintLine(**issue) for issue in audit["issues"]
+                ],
             ),
         )
 
