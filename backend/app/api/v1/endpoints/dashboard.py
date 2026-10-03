@@ -38,6 +38,9 @@ reconciliation ledger per patient into a printable collection summary
 (billed / collected / outstanding with derived paid/partial/unpaid counts).
 The shared aggregation lives in ``build_collection_summary_by_patient`` so
 the dashboard endpoint and the reporting print envelope stay in lockstep.
+(Batch 95 wired the Reports workspace card through
+``POST /reports/collection-summary-print-envelope``, which runs this exact
+aggregation — one implementation, two surfaces.)
 
 Batch 91 — Receivables Aging Print Envelope: extracts the Batch 86 bucketing
 into ``build_receivables_aging_result`` so the reporting print envelope reuses

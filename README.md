@@ -120,9 +120,15 @@ Runs entirely on the local network with a server-owned database — *no internet
   satisfy `paid + partial + unpaid == invoices_checked` and
   `total_billed == total_paid + total_outstanding`; the Reports & Printing
   reconciliation card now prepares through the envelope *(Batch 94)*
+- ✔ Collection summary print envelope — `POST /reports/collection-summary-print-envelope`
+  builds the printable per-patient collection packet through the exact shared
+  scan/aggregation (`_build_reconciliation_rows` + `build_collection_summary_by_patient`)
+  behind `GET /dashboard/collection-summary-by-patient`, so printed headlines always
+  satisfy `total_billed == total_collected + total_outstanding`; the Reports & Printing
+  collection summary card now prepares through the envelope *(Batch 95)*
 
 ### 🧪 Test Suite
-- 306 backend tests passing as of Batch 94 (see [CHANGELOG.md](CHANGELOG.md)).
+- 314 backend tests passing as of Batch 95 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection
