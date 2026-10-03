@@ -79,9 +79,11 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 85 — Invoice Print Envelope for Reporting Integration**
-(printable invoice packets with live payment-derived balances, exposed via `POST /reports/invoice-print-envelope`
-and rendered in the client Reports & Printing workspace; follows Batch 84's laboratory pending-investigation feed,
+Functional application build is in progress through **Batch 87 — Invoice Receipt Continuity Report**
+(`GET /dashboard/invoice-receipt-continuity` audits receipt-book integrity over live billing data — missing
+receipts, duplicate receipt numbers and numeric sequence breaks per invoice — with headline aggregates and a
+printable continuity audit in the client Reports & Printing workspace; follows Batch 86's receivables aging
+ledger, Batch 85's invoice print envelope, Batch 84's laboratory pending-investigation feed,
 Batch 83's IPD bed-occupancy feed and Batch 82's outstanding-billing feed). Remaining before QA: further cross-module workflow
 continuity, server/client packaging
 and deployment, and completion of final reporting/printing integration. Comprehensive QA/debugging begins after

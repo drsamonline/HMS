@@ -157,6 +157,7 @@
 | [CLIENT_DASHBOARD_PENDING_INVESTIGATIONS.md](CLIENT_DASHBOARD_PENDING_INVESTIGATIONS.md) | Dashboard laboratory pending-investigation feed (Batch 84) |
 | [CLIENT_INVOICE_PRINT_ENVELOPE.md](CLIENT_INVOICE_PRINT_ENVELOPE.md) | Invoice print envelope for reporting integration (Batch 85) |
 | [CLIENT_RECEIVABLES_AGING_LEDGER.md](CLIENT_RECEIVABLES_AGING_LEDGER.md) | Receivables aging ledger print feed (Batch 86) |
+| [CLIENT_INVOICE_RECEIPT_CONTINUITY_REPORT.md](CLIENT_INVOICE_RECEIPT_CONTINUITY_REPORT.md) | Invoice receipt continuity audit report (Batch 87) |
 | [CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md](CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md) | Client operational workspace integration |
 | [CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md](CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md) | Client operational navigation convergence |
 | [CLIENT_RBAC_NAVIGATION.md](CLIENT_RBAC_NAVIGATION.md) | Client RBAC-aware navigation |

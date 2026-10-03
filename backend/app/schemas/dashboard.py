@@ -154,6 +154,71 @@ class ReceivablesAgingResponse(BaseSchema):
     total_outstanding: Decimal
 
 
+class InvoiceReceiptGapItem(BaseSchema):
+    """One invoice whose receipt numbering has a continuity defect.
+
+    ``gap_type`` is one of ``missing`` (no receipts recorded against the
+    invoice), ``duplicate`` (the same receipt number appears more than once)
+    or ``sequence_break`` (a numeric receipt series skips at least one
+    number between its first and last receipt for this invoice).
+    """
+
+    invoice_id: int
+    invoice_number: str
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    gap_type: str
+    expected_count: int
+    actual_count: int
+    missing_count: int
+    first_receipt_number: str | None = None
+    last_receipt_number: str | None = None
+    duplicate_receipt_numbers: list[str] = []
+
+
+class InvoiceReceiptContinuityResponse(BaseSchema):
+    """Invoice-to-receipt continuity audit with headline aggregates."""
+
+    as_of: datetime
+    invoices_checked: int
+    invoices_with_receipts: int
+    invoices_missing_receipts: int
+    duplicate_receipt_count: int
+    sequence_break_count: int
+    issues: list[InvoiceReceiptGapItem]
+
+
+class ReceiptSeriesGap(BaseSchema):
+    """Numbering-continuity state of one receipt-number series.
+
+    Batch 88 — whole-receipt-book audit. A *series* is every receipt sharing
+    the same non-digit prefix (e.g. ``R`` in ``R000123``). ``expected_count``
+    spans first..last numeric value inclusive, so per-series reconciliation
+    always holds: ``expected_count == actual_count + gap_count``.
+    """
+
+    prefix: str
+    first_number: int
+    last_number: int
+    expected_count: int
+    actual_count: int
+    gap_count: int
+    missing_numbers: list[int]
+    duplicate_numbers: list[str]
+
+
+class ReceiptNumberingContinuityResponse(BaseSchema):
+    """Whole-book receipt numbering continuity audit with aggregates."""
+
+    as_of: datetime
+    receipts_checked: int
+    series_count: int
+    clean_series_count: int
+    total_gap_count: int
+    series: list[ReceiptSeriesGap]
+
+
 __all__ = [
     "DueFollowUpItem",
     "DueFollowUpsResponse",
@@ -166,4 +231,8 @@ __all__ = [
     "ReceivablesAgingBucket",
     "ReceivablesAgingItem",
     "ReceivablesAgingResponse",
+    "InvoiceReceiptGapItem",
+    "InvoiceReceiptContinuityResponse",
+    "ReceiptSeriesGap",
+    "ReceiptNumberingContinuityResponse",
 ]
