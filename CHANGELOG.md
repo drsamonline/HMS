@@ -10,6 +10,13 @@ functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 
 ## [Unreleased]
 
+### Added — Batch 85 · Invoice Print Envelope for Reporting Integration
+- Service `ReportingService.build_invoice_print_envelope` (`backend/app/services/reporting.py`) assembles a printable invoice packet: header identity, line items and totals with live payment-derived balances — `amount_paid` clamped to the invoice total, non-negative `balance_due`, reconciliation `paid + balance == total` mirroring the Batch 68 atomic-consistency invariants.
+- New endpoint `POST /reports/invoice-print-envelope` (`backend/app/api/v1/endpoints/reporting.py`) with authenticated access; schemas `InvoicePrintRequest`/`InvoicePrintEnvelope` and supporting item models in `backend/app/schemas/reporting.py`.
+- Client wiring: `buildInvoicePrintEnvelope` wrapper in `frontend/js/api.js`; `createInvoicePrintPreview` structured HTML renderer (invoice details, line items, totals and receipts) in `frontend/js/print.js`; UI controls integrated into the Reports & Printing workspace (`frontend/js/reports.js`).
+- Continues the final reporting/printing integration track after print batches 02–05 (report data, catalog and print manifest).
+- Contract test suite `backend/tests/test_invoice_print_envelope.py` (5 tests covering service logic, endpoint registration, schema validation and frontend integration points); full suite 238 passed.
+
 ### Added — Batch 84 · Laboratory Pending-Investigation Dashboard Feed
 - New endpoint `GET /dashboard/pending-investigations` (`backend/app/api/v1/endpoints/dashboard.py`) surfacing the live laboratory backlog: `Investigation` rows with `is_current_year=true` and status `pending`/`in_progress` (the exact open-order pair of the Batch 66 result workflow — released reports become `completed`, cancellations never surface), ordered oldest-first by `requested_datetime` so ageing orders rise to the top.
 - Per-row enrichment: patient name/number via batched lookup (no N+1), investigation number/name/status, OPD/IPD encounter lineage (`case_type`/`visit_id`/`admission_id`), requester and naive-UTC-normalised `age_hours` clamped non-negative; headline `pending_count`/`in_progress_count` aggregates and aware-UTC `as_of` exposed by schemas `PendingInvestigationItem`/`PendingInvestigationsResponse` in `backend/app/schemas/dashboard.py`.

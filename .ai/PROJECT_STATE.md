@@ -1,9 +1,9 @@
 # HHMS Project State
 
 ## Authoritative baseline
-- Baseline: latest user-supplied full ZIP (`HMS(5).zip`), superseding all older ZIP baselines.
-- Latest completed functional milestone: Batch 84 — Laboratory Pending-Investigation Dashboard Feed.
-- Current milestone: Batch 84 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed; due-follow-up workflow feed wired into the client dashboard; outstanding-billing receivables feed wired into the client dashboard; IPD bed-occupancy continuity feed wired into the client dashboard; laboratory pending-investigation backlog feed wired into the client dashboard).
+- Baseline: current repository state on `master` (commit 8123205), reconstructed from the latest user-supplied full ZIP (`HMS(5).zip`) plus every committed batch since. The ZIP is no longer used as a reconstruction source; this repo tree is authoritative going forward (rule 9 checkpoint satisfied at Batch 85).
+- Latest completed functional milestone: Batch 85 — Invoice Print Envelope for Reporting Integration.
+- Current milestone: Batch 85 (annual lifecycle complete for case, visit, billing, pharmacy, prescription lineage, IPD, laboratory, MRD, procurement and inventory domains; follow-up/prescription continuity surfaces landed; due-follow-up workflow feed wired into the client dashboard; outstanding-billing receivables feed wired into the client dashboard; IPD bed-occupancy continuity feed wired into the client dashboard; laboratory pending-investigation backlog feed wired into the client dashboard; invoice print envelope landed as the first reporting/printing integration step beyond the clinical print batches).
 - Current project phase: Functional application build and cross-module integration.
 - Comprehensive QA/debugging has NOT started as the primary phase.
 
@@ -107,6 +107,20 @@
 - Client wiring: `getDashboardBedOccupancy(options)` wrapper in `frontend/js/api.js`; dashboard "IPD bed occupancy" panel with occupied-of-total summary; reconciled cards navigate to the patients view and dispatch `hhms:open-patient-clinical`; drift rows render a check-IPD-records notice and are disabled; graceful unavailable-state on fetch failure.
 - Documentation: `docs/CLIENT_DASHBOARD_BED_OCCUPANCY.md` added and indexed in `docs/INDEX.md`.
 - Contract suite `backend/tests/test_dashboard_bed_occupancy.py` (5 tests incl. Batch 61 guarantee regression locks; full suite 227 passed).
+
+## Batch 84 — Laboratory Pending-Investigation Dashboard Feed
+- New endpoint `GET /dashboard/pending-investigations` (`backend/app/api/v1/endpoints/dashboard.py`) surfacing the live laboratory backlog: `Investigation` rows with `is_current_year=true` and status `pending`/`in_progress` (the exact open-order pair of the Batch 66 result workflow), oldest-first by `requested_datetime`.
+- Per-row enrichment: patient name/number via batched lookup (no N+1), investigation number/name/status, encounter lineage, requester and naive-UTC-normalised `age_hours` clamped non-negative; `pending_count`/`in_progress_count` aggregates and aware-UTC `as_of` exposed by `PendingInvestigationItem`/`PendingInvestigationsResponse` in `backend/app/schemas/dashboard.py`.
+- Client wiring: `getDashboardPendingInvestigations(options)` wrapper in `frontend/js/api.js`; dashboard "Pending investigations" panel whose cards dispatch `hhms:open-patient-clinical` for clinical-workspace handoff; empty/unavailable states mirror sibling panels.
+- Documentation: `docs/CLIENT_DASHBOARD_PENDING_INVESTIGATIONS.md` added and indexed in `docs/INDEX.md`.
+- Contract suite `backend/tests/test_dashboard_pending_investigations.py` (6 tests incl. Batch 66 regression lock); full suite 233 passed.
+
+## Batch 85 — Invoice Print Envelope for Reporting Integration
+- Service `ReportingService.build_invoice_print_envelope` (`backend/app/services/reporting.py`) assembles a printable invoice packet: header identity, line items, totals with live payment-derived balances (`amount_paid` clamped to total, non-negative `balance_due`, reconciliation `paid + balance == total`).
+- New endpoint `POST /reports/invoice-print-envelope` (`backend/app/api/v1/endpoints/reporting.py`) with authenticated access; schemas `InvoicePrintRequest`/`InvoicePrintEnvelope` in `backend/app/schemas/reporting.py`.
+- Client wiring: `buildInvoicePrintEnvelope` wrapper in `frontend/js/api.js`; `createInvoicePrintPreview` structured HTML renderer in `frontend/js/print.js`; UI controls integrated into the Reports & Printing workspace (`frontend/js/reports.js`).
+- Contract suite `backend/tests/test_invoice_print_envelope.py` (5 tests covering service logic, endpoint registration, schema validation and frontend integration points).
+- Follows reporting/print batches 02–05 (clinical/administrative/statistical report data and print manifest); continues the "final reporting/printing integration" remaining-work item.
 
 ## Cleanup policy
 - Transfer baselines always exclude `.git`, `.env`, Python caches/compiled files, test caches and build artifacts.
