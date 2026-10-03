@@ -164,6 +164,8 @@
 | [CLIENT_RECEIVABLES_AGING_PRINT_ENVELOPE.md](CLIENT_RECEIVABLES_AGING_PRINT_ENVELOPE.md) | Receivables aging print envelope (Batch 91) |
 | [CLIENT_INVOICE_RECEIPT_CONTINUITY_PRINT_ENVELOPE.md](CLIENT_INVOICE_RECEIPT_CONTINUITY_PRINT_ENVELOPE.md) | Invoice receipt continuity print envelope (Batch 92) |
 | [CLIENT_RECEIPT_NUMBERING_CONTINUITY_PRINT_ENVELOPE.md](CLIENT_RECEIPT_NUMBERING_CONTINUITY_PRINT_ENVELOPE.md) | Receipt numbering continuity print envelope (Batch 93) |
+| [CLIENT_INVOICE_PAYMENT_RECONCILIATION_PRINT_ENVELOPE.md](CLIENT_INVOICE_PAYMENT_RECONCILIATION_PRINT_ENVELOPE.md) | Invoice payment reconciliation print envelope (Batch 94) |
+| [CLIENT_COLLECTION_SUMMARY_PRINT_ENVELOPE.md](CLIENT_COLLECTION_SUMMARY_PRINT_ENVELOPE.md) | Collection summary print envelope (Batch 95) |
 | [CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md](CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md) | Client operational workspace integration |
 | [CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md](CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md) | Client operational navigation convergence |
 | [CLIENT_RBAC_NAVIGATION.md](CLIENT_RBAC_NAVIGATION.md) | Client RBAC-aware navigation |
@@ -271,4 +273,4 @@ Specification → Review → Implementation → Code Review → Testing → Git 
 
 ---
 
-*106 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
+*108 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*

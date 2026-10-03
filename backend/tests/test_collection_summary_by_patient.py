@@ -111,7 +111,8 @@ def test_print_preview_renders_collection_sections():
 
 def test_reports_workspace_wires_collection_summary_card():
     src = _read("frontend/js/reports.js")
-    assert "getDashboardCollectionSummaryByPatient" in src
+    # Batch 95: the card prepares through the print envelope, not the raw feed
+    assert "buildCollectionSummaryPrintEnvelope" in src
     assert "createCollectionSummaryPrintPreview" in src
     assert "Collection summary by patient" in src
     # template-literal attributes are stored double-escaped and render as

@@ -230,27 +230,30 @@ export function createInvoicePaymentReconciliationPrintPreview(host,{envelope=nu
   $("#reconciliation-print-now",shell).addEventListener("click",()=>window.print());
   return {envelope,data:payload};
 }
-export function createCollectionSummaryPrintPreview(host,{data,title="Collection Summary by Patient"}){
+export function createCollectionSummaryPrintPreview(host,{envelope=null,data=null,title=""}={}){
+  const payload=envelope?.data??data??{};
+  const heading=title||envelope?.title||"Collection Summary by Patient";
   host.innerHTML="";
-  const items=data?.items||[];
+  const items=payload?.items||[];
   const shell=document.createElement("div"); shell.className="print-preview-shell";
-  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Collection Summary Print Preview</strong><span class="print-count">${esc(String(data?.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="collection-summary-print-now">Print Summary</button></div></div>`
-    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(title)}</h1><p class="print-generated">As of: ${esc(String(data?.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Collection Summary Print Preview</strong><span class="print-count">${esc(String(payload?.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="collection-summary-print-now">Print Summary</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(heading)}</h1><p class="print-generated">As of: ${esc(String(payload?.as_of??"\u2014"))} \u00b7 Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
     +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Collection Summary Headlines</h2></div>`
     +`<table class="print-table"><tbody>`
-    +`<tr><td>Invoices checked</td><td>${esc(data?.invoices_checked??0)}</td></tr>`
-    +`<tr><td>Patients checked</td><td>${esc(data?.patients_checked??0)}</td></tr>`
-    +`<tr><td>Patients with outstanding</td><td>${esc(data?.patients_with_outstanding??0)}</td></tr>`
-    +`<tr><td>Total billed</td><td>${money(data?.total_billed)}</td></tr>`
-    +`<tr><td>Total collected</td><td>${money(data?.total_collected)}</td></tr>`
-    +`<tr><td>Total outstanding</td><td>${money(data?.total_outstanding)}</td></tr>`
+    +`<tr><td>Invoices checked</td><td>${esc(payload?.invoices_checked??0)}</td></tr>`
+    +`<tr><td>Patients checked</td><td>${esc(payload?.patients_checked??0)}</td></tr>`
+    +`<tr><td>Patients with outstanding</td><td>${esc(payload?.patients_with_outstanding??0)}</td></tr>`
+    +`<tr><td>Total billed</td><td>${money(payload?.total_billed)}</td></tr>`
+    +`<tr><td>Total collected</td><td>${money(payload?.total_collected)}</td></tr>`
+    +`<tr><td>Total outstanding</td><td>${money(payload?.total_outstanding)}</td></tr>`
     +`</tbody></table></section>`
     +`<section class="print-section print-page-break" data-print-section="patients"><div class="print-section-heading"><h2>Per-Patient Collection Ledger</h2></div>`
     +(items.length?`<table class="print-table"><thead><tr><th>Patient</th><th>Invoices</th><th>Paid</th><th>Partial</th><th>Unpaid</th><th>Billed</th><th>Collected</th><th>Outstanding</th><th>Last Payment</th></tr></thead><tbody>`
-      +items.map(it=>`<tr><td>${esc(it.patient_name)}${it.patient_number?` — ${esc(it.patient_number)}`:""}</td><td>${esc(it.invoice_count)}</td><td>${esc(it.paid_invoice_count)}</td><td>${esc(it.partial_invoice_count)}</td><td>${esc(it.unpaid_invoice_count)}</td><td>${money(it.total_billed)}</td><td>${money(it.total_collected)}</td><td>${money(it.outstanding)}</td><td>${esc(String(it.last_payment_date||"").slice(0,10)||"—")}</td></tr>`).join("")
+      +items.map(it=>`<tr><td>${esc(it.patient_name)}${it.patient_number?` \u2014 ${esc(it.patient_number)}`:""}</td><td>${esc(it.invoice_count)}</td><td>${esc(it.paid_invoice_count)}</td><td>${esc(it.partial_invoice_count)}</td><td>${esc(it.unpaid_invoice_count)}</td><td>${money(it.total_billed)}</td><td>${money(it.total_collected)}</td><td>${money(it.outstanding)}</td><td>${esc(String(it.last_payment_date||"").slice(0,10)||"\u2014")}</td></tr>`).join("")
       +`</tbody></table>`:'<div class="print-empty">No patient collections to summarise</div>')
     +`</section></main></article>`;
   host.appendChild(shell);
   $("#collection-summary-print-now",shell).addEventListener("click",()=>window.print());
-  return {data};
+  return {envelope,data:payload};
+}
 }

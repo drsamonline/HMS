@@ -113,9 +113,22 @@ Runs entirely on the local network with a server-owned database — *no internet
   `GET /dashboard/receipt-numbering-continuity`, so printed series lines and
   headline aggregates (`expected == actual + gaps`) always match the screen;
   the Reports & Printing numbering card now prepares through the envelope *(Batch 93)*
+- ✔ Invoice payment reconciliation print envelope — `POST /reports/invoice-payment-reconciliation-print-envelope`
+  builds the printable reconciliation packet through the exact shared live-scan
+  derivation (`build_invoice_payment_reconciliation_ledger`) behind
+  `GET /dashboard/invoice-payment-reconciliation`, so printed headlines always
+  satisfy `paid + partial + unpaid == invoices_checked` and
+  `total_billed == total_paid + total_outstanding`; the Reports & Printing
+  reconciliation card now prepares through the envelope *(Batch 94)*
+- ✔ Collection summary print envelope — `POST /reports/collection-summary-print-envelope`
+  builds the printable per-patient collection packet through the exact shared
+  scan/aggregation (`_build_reconciliation_rows` + `build_collection_summary_by_patient`)
+  behind `GET /dashboard/collection-summary-by-patient`, so printed headlines always
+  satisfy `total_billed == total_collected + total_outstanding`; the Reports & Printing
+  collection summary card now prepares through the envelope *(Batch 95)*
 
 ### 🧪 Test Suite
-- 297 backend tests passing as of Batch 93 (see [CHANGELOG.md](CHANGELOG.md)).
+- 314 backend tests passing as of Batch 95 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection
