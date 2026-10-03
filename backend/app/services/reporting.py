@@ -54,6 +54,10 @@ from app.schemas.reporting import (
     InvoiceReceiptContinuityPrintRequest,
     InvoiceReceiptGapPrintLine,
     PatientCollectionSummaryPrintLine,
+    InvoicePaymentReconciliationPrintData,
+    InvoicePaymentReconciliationPrintEnvelope,
+    InvoicePaymentReconciliationPrintLine,
+    InvoicePaymentReconciliationPrintRequest,
     ReceiptNumberingContinuityPrintData,
     ReceiptNumberingContinuityPrintEnvelope,
     ReceiptNumberingContinuityPrintRequest,
@@ -652,6 +656,53 @@ class ReportingService:
                 total_gap_count=audit["total_gap_count"],
                 series=[
                     ReceiptSeriesPrintLine(**item) for item in audit["series"]
+                ],
+            ),
+        )
+
+    async def build_invoice_payment_reconciliation_print_envelope(
+        self, db: AsyncSession, request: InvoicePaymentReconciliationPrintRequest
+    ) -> InvoicePaymentReconciliationPrintEnvelope:
+        """Assemble a printable invoice payment reconciliation packet.
+
+        Batch 94 — reporting/printing integration for the billing domain:
+        reuses the dashboard's shared live-payment scan and aggregation
+        (``build_invoice_payment_reconciliation_ledger``, single grouped
+        Payment pass, Batch 68 clamp invariant), so the printed ledger
+        always satisfies ``paid_invoices + partially_paid_invoices +
+        unpaid_invoices == invoices_checked`` and ``total_billed ==
+        total_paid + total_outstanding``, matching
+        ``GET /dashboard/invoice-payment-reconciliation`` line-for-line for
+        the same scan window.
+        """
+        from app.api.v1.endpoints.dashboard import (
+            build_invoice_payment_reconciliation_ledger,
+        )
+
+        ledger = await build_invoice_payment_reconciliation_ledger(
+            db, request.limit
+        )
+
+        return InvoicePaymentReconciliationPrintEnvelope(
+            title=request.title or "HHMS Invoice Payment Reconciliation Ledger",
+            generated_at=datetime.utcnow(),
+            data=InvoicePaymentReconciliationPrintData(
+                as_of=ledger["as_of"],
+                invoices_checked=ledger["invoices_checked"],
+                paid_invoices=ledger["paid_invoices"],
+                partially_paid_invoices=ledger["partially_paid_invoices"],
+                unpaid_invoices=ledger["unpaid_invoices"],
+                total_billed=str(ledger["total_billed"]),
+                total_paid=str(ledger["total_paid"]),
+                total_outstanding=str(ledger["total_outstanding"]),
+                items=[
+                    InvoicePaymentReconciliationPrintLine(
+                        **{
+                            key: (str(value) if isinstance(value, Decimal) else value)
+                            for key, value in item.items()
+                        }
+                    )
+                    for item in ledger["items"]
                 ],
             ),
         )

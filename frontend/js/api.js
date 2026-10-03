@@ -118,6 +118,7 @@ export async function buildCollectionSummaryPrintEnvelope(payload){return reques
 export async function buildReceivablesAgingPrintEnvelope(payload){return request("/api/v1/reports/receivables-aging-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 export async function buildInvoiceReceiptContinuityPrintEnvelope(payload){return request("/api/v1/reports/invoice-receipt-continuity-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 export async function buildReceiptNumberingContinuityPrintEnvelope(payload){return request("/api/v1/reports/receipt-numbering-continuity-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
+export async function buildInvoicePaymentReconciliationPrintEnvelope(payload){return request("/api/v1/reports/invoice-payment-reconciliation-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 export async function createFollowup(payload){return request("/api/v1/followups",{method:"POST",body:JSON.stringify(payload)})}
 export async function searchICD11(q){return request(`/api/v1/icd11/search?q=${encodeURIComponent(q)}&limit=15`)}
 export async function createPrescription(payload){return request("/api/v1/prescriptions",{method:"POST",body:JSON.stringify(payload)})}

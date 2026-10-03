@@ -55,6 +55,12 @@ whole-receipt-book numbering audit into
 ``build_receipt_numbering_continuity_result`` so the reporting print envelope
 reuses the exact same single ordered Payment pass and series gap/duplicate
 derivation as the dashboard feed.
+
+Batch 94 — Invoice Payment Reconciliation Print Envelope: extracts the Batch 89
+ledger scan/aggregation into ``build_invoice_payment_reconciliation_ledger``
+(and the pure rollup ``build_invoice_payment_reconciliation_result``) so the
+reporting print envelope reuses the exact same live-payment reconciliation
+code path as the dashboard feed.
 """
 
 from __future__ import annotations
@@ -903,6 +909,63 @@ def _derive_payment_status(total_amount: Decimal, amount_paid: Decimal) -> str:
     return "partial"
 
 
+def build_invoice_payment_reconciliation_result(
+    rows: list[dict], as_of: date
+) -> dict:
+    """Roll raw reconciliation rows up into ledger items and headlines.
+
+    Batch 94 — extracted verbatim from the Batch 89 dashboard endpoint so
+    the reporting print envelope reuses the exact same aggregation code
+    path; screen feed and printed packet always agree line-for-line for the
+    same scan window. ``paid_invoices + partially_paid_invoices +
+    unpaid_invoices`` sums back to ``invoices_checked`` and
+    ``total_billed == total_paid + total_outstanding`` holds by construction.
+    """
+    items = []
+    paid_invoices = 0
+    partially_paid_invoices = 0
+    unpaid_invoices = 0
+    total_billed = Decimal("0")
+    total_paid = Decimal("0")
+    total_outstanding = Decimal("0")
+    for row in rows:
+        derived_status = row["derived_payment_status"]
+        if derived_status == "paid":
+            paid_invoices += 1
+        elif derived_status == "partial":
+            partially_paid_invoices += 1
+        else:
+            unpaid_invoices += 1
+        total_billed += row["total_amount"]
+        total_paid += row["amount_paid"]
+        total_outstanding += row["balance_due"]
+        items.append(
+            {key: value for key, value in row.items() if key != "last_payment_datetime"}
+        )
+    return {
+        "as_of": as_of,
+        "invoices_checked": len(items),
+        "paid_invoices": paid_invoices,
+        "partially_paid_invoices": partially_paid_invoices,
+        "unpaid_invoices": unpaid_invoices,
+        "total_billed": total_billed,
+        "total_paid": total_paid,
+        "total_outstanding": total_outstanding,
+        "items": items,
+    }
+
+
+async def build_invoice_payment_reconciliation_ledger(db, limit: int) -> dict:
+    """Scan-and-aggregate entry point shared with the reporting service.
+
+    Batch 94 — single implementation behind both
+    ``GET /dashboard/invoice-payment-reconciliation`` and
+    ``POST /reports/invoice-payment-reconciliation-print-envelope``.
+    """
+    rows = await _build_reconciliation_rows(db, limit)
+    return build_invoice_payment_reconciliation_result(rows, date.today())
+
+
 async def _build_reconciliation_rows(db, limit: int) -> list[dict]:
     """Scan recent invoices and reconcile each against the live payments.
 
@@ -1007,40 +1070,13 @@ async def invoice_payment_reconciliation(
     collection state line-by-line before printing. Headline aggregates sum
     back to ``invoices_checked`` and the totals satisfy
     ``total_billed == total_paid + total_outstanding``.
+
+    Batch 94 — extracted the scan/aggregation into
+    ``build_invoice_payment_reconciliation_ledger`` so the reporting print
+    envelope reuses this exact code path.
     """
-    rows = await _build_reconciliation_rows(db, limit)
-
-    items = []
-    paid_invoices = 0
-    partially_paid_invoices = 0
-    unpaid_invoices = 0
-    total_billed = Decimal("0")
-    total_paid = Decimal("0")
-    total_outstanding = Decimal("0")
-    for row in rows:
-        derived_status = row["derived_payment_status"]
-        if derived_status == "paid":
-            paid_invoices += 1
-        elif derived_status == "partial":
-            partially_paid_invoices += 1
-        else:
-            unpaid_invoices += 1
-        total_billed += row["total_amount"]
-        total_paid += row["amount_paid"]
-        total_outstanding += row["balance_due"]
-        items.append({key: value for key, value in row.items() if key != "last_payment_datetime"})
-
-    return InvoicePaymentReconciliationResponse(
-        as_of=date.today(),
-        invoices_checked=len(items),
-        paid_invoices=paid_invoices,
-        partially_paid_invoices=partially_paid_invoices,
-        unpaid_invoices=unpaid_invoices,
-        total_billed=total_billed,
-        total_paid=total_paid,
-        total_outstanding=total_outstanding,
-        items=items,
-    )
+    ledger = await build_invoice_payment_reconciliation_ledger(db, limit)
+    return InvoicePaymentReconciliationResponse(**ledger)
 
 
 def build_collection_summary_by_patient(rows: list[dict]) -> dict:

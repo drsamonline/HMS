@@ -198,22 +198,23 @@ export function createReceiptNumberingContinuityPrintPreview(host,{envelope=null
   return {envelope,data:payload};
 }
 
-export function createInvoicePaymentReconciliationPrintPreview(host,{data,title="Invoice Payment Reconciliation Ledger"}){
+export function createInvoicePaymentReconciliationPrintPreview(host,{envelope=null,data=null,title="Invoice Payment Reconciliation Ledger"}){
   host.innerHTML="";
-  const items=data?.items||[];
+  const payload=envelope?.data??data??{};
+  const items=payload.items||[];
   const drift=items.filter(it=>it.is_reconciled===false);
   const shell=document.createElement("div"); shell.className="print-preview-shell";
-  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Reconciliation Print Preview</strong><span class="print-count">${esc(String(data?.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="reconciliation-print-now">Print Ledger</button></div></div>`
-    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(title)}</h1><p class="print-generated">As of: ${esc(String(data?.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Reconciliation Print Preview</strong><span class="print-count">${esc(String(payload.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="reconciliation-print-now">Print Ledger</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(envelope?.title||title)}</h1><p class="print-generated">As of: ${esc(String(payload.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
     +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Reconciliation Summary</h2></div>`
     +`<table class="print-table"><tbody>`
-    +`<tr><td>Invoices checked</td><td>${esc(data?.invoices_checked??0)}</td></tr>`
-    +`<tr><td>Paid invoices</td><td>${esc(data?.paid_invoices??0)}</td></tr>`
-    +`<tr><td>Partially paid invoices</td><td>${esc(data?.partially_paid_invoices??0)}</td></tr>`
-    +`<tr><td>Unpaid invoices</td><td>${esc(data?.unpaid_invoices??0)}</td></tr>`
-    +`<tr><td>Total billed</td><td>${money(data?.total_billed)}</td></tr>`
-    +`<tr><td>Total paid</td><td>${money(data?.total_paid)}</td></tr>`
-    +`<tr><td>Total outstanding</td><td>${money(data?.total_outstanding)}</td></tr>`
+    +`<tr><td>Invoices checked</td><td>${esc(payload.invoices_checked??0)}</td></tr>`
+    +`<tr><td>Paid invoices</td><td>${esc(payload.paid_invoices??0)}</td></tr>`
+    +`<tr><td>Partially paid invoices</td><td>${esc(payload.partially_paid_invoices??0)}</td></tr>`
+    +`<tr><td>Unpaid invoices</td><td>${esc(payload.unpaid_invoices??0)}</td></tr>`
+    +`<tr><td>Total billed</td><td>${money(payload.total_billed)}</td></tr>`
+    +`<tr><td>Total paid</td><td>${money(payload.total_paid)}</td></tr>`
+    +`<tr><td>Total outstanding</td><td>${money(payload.total_outstanding)}</td></tr>`
     +`</tbody></table></section>`
     +`<section class="print-section print-page-break" data-print-section="ledger"><div class="print-section-heading"><h2>Reconciliation Ledger</h2></div>`
     +(items.length?`<table class="print-table"><thead><tr><th>Invoice</th><th>Patient</th><th>Date</th><th>Total</th><th>Paid</th><th>Balance Due</th><th>Stored Status</th><th>Derived Status</th><th>Receipts</th><th>Reconciled</th></tr></thead><tbody>`
@@ -227,7 +228,7 @@ export function createInvoicePaymentReconciliationPrintPreview(host,{data,title=
     +`</section></main></article>`;
   host.appendChild(shell);
   $("#reconciliation-print-now",shell).addEventListener("click",()=>window.print());
-  return {data};
+  return {envelope,data:payload};
 }
 export function createCollectionSummaryPrintPreview(host,{data,title="Collection Summary by Patient"}){
   host.innerHTML="";
