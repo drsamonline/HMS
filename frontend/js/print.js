@@ -164,20 +164,21 @@ export function createInvoiceReceiptContinuityPrintPreview(host,{envelope=null,d
   return {envelope,src};
 }
 
-export function createReceiptNumberingContinuityPrintPreview(host,{data,title="Receipt Numbering Continuity Audit"}){
+export function createReceiptNumberingContinuityPrintPreview(host,{envelope=null,data=null,title="Receipt Numbering Continuity Audit"}){
   host.innerHTML="";
-  const series=data?.series||[];
+  const payload=envelope?.data??data??{};
+  const series=payload.series||[];
   const gapped=series.filter(s=>(s.gap_count??0)>0);
   const dupes=series.filter(s=>(s.duplicate_numbers||[]).length>0);
   const shell=document.createElement("div"); shell.className="print-preview-shell";
-  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Receipt Numbering Print Preview</strong><span class="print-count">${esc(String(data?.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="receipt-numbering-print-now">Print Audit</button></div></div>`
-    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(title)}</h1><p class="print-generated">Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Receipt Numbering Print Preview</strong><span class="print-count">${esc(String(payload.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="receipt-numbering-print-now">Print Audit</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(envelope?.title||title)}</h1><p class="print-generated">Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
     +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Audit Summary</h2></div>`
     +`<table class="print-table"><tbody>`
-    +`<tr><td>Receipts checked</td><td>${esc(data?.receipts_checked??0)}</td></tr>`
-    +`<tr><td>Number series</td><td>${esc(data?.series_count??0)}</td></tr>`
-    +`<tr><td>Clean series</td><td>${esc(data?.clean_series_count??0)}</td></tr>`
-    +`<tr><td>Total missing numbers</td><td>${esc(data?.total_gap_count??0)}</td></tr>`
+    +`<tr><td>Receipts checked</td><td>${esc(payload.receipts_checked??0)}</td></tr>`
+    +`<tr><td>Number series</td><td>${esc(payload.series_count??0)}</td></tr>`
+    +`<tr><td>Clean series</td><td>${esc(payload.clean_series_count??0)}</td></tr>`
+    +`<tr><td>Total missing numbers</td><td>${esc(payload.total_gap_count??0)}</td></tr>`
     +`</tbody></table></section>`
     +`<section class="print-section" data-print-section="series"><div class="print-section-heading"><h2>Receipt Series Summary</h2></div>`
     +(series.length?`<table class="print-table"><thead><tr><th>Series Prefix</th><th>First</th><th>Last</th><th>Expected</th><th>Actual</th><th>Gaps</th><th>Duplicates</th></tr></thead><tbody>`
@@ -194,7 +195,7 @@ export function createReceiptNumberingContinuityPrintPreview(host,{data,title="R
     +`</section></main></article>`;
   host.appendChild(shell);
   $("#receipt-numbering-print-now",shell).addEventListener("click",()=>window.print());
-  return {data};
+  return {envelope,data:payload};
 }
 
 export function createInvoicePaymentReconciliationPrintPreview(host,{data,title="Invoice Payment Reconciliation Ledger"}){

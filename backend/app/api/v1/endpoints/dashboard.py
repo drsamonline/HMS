@@ -49,6 +49,12 @@ audit into ``build_invoice_receipt_continuity_result`` plus the shared
 ``_load_continuity_scan_inputs`` scan so the reporting print envelope reuses
 the exact same missing/duplicate/sequence-break derivation as the dashboard
 feed.
+
+Batch 93 — Receipt Numbering Continuity Print Envelope: extracts the Batch 88
+whole-receipt-book numbering audit into
+``build_receipt_numbering_continuity_result`` so the reporting print envelope
+reuses the exact same single ordered Payment pass and series gap/duplicate
+derivation as the dashboard feed.
 """
 
 from __future__ import annotations
@@ -804,6 +810,20 @@ async def receipt_numbering_continuity(
     false gaps, and aggregates (``clean_series_count``, ``total_gap_count``)
     sum back to the scanned ledger so printed audits reconcile.
     """
+    audit = await build_receipt_numbering_continuity_result(db, limit)
+    return ReceiptNumberingContinuityResponse(**audit)
+
+
+async def build_receipt_numbering_continuity_result(db, limit: int) -> dict:
+    """Whole-book receipt numbering audit shared by screen and paper.
+
+    Batch 93 — extracted from the Batch 88 dashboard endpoint so the
+    reporting print envelope runs through the *exact same* single ordered
+    Payment pass and series derivation (no N+1; shared
+    ``_receipt_numeric_suffix`` parsing keeps this audit consistent with
+    the per-invoice Batch 87 continuity report). Returns a plain dict
+    matching ``ReceiptNumberingContinuityResponse`` fields.
+    """
     receipts_result = await db.execute(
         select(Payment.receipt_number)
         .where(Payment.receipt_number.is_not(None))
@@ -860,14 +880,14 @@ async def receipt_numbering_continuity(
             }
         )
 
-    return ReceiptNumberingContinuityResponse(
-        as_of=datetime.now(timezone.utc),
-        receipts_checked=len(receipt_numbers),
-        series_count=len(series_items),
-        clean_series_count=clean_series_count,
-        total_gap_count=total_gap_count,
-        series=series_items,
-    )
+    return {
+        "as_of": datetime.now(timezone.utc),
+        "receipts_checked": len(receipt_numbers),
+        "series_count": len(series_items),
+        "clean_series_count": clean_series_count,
+        "total_gap_count": total_gap_count,
+        "series": series_items,
+    }
 
 
 def _derive_payment_status(total_amount: Decimal, amount_paid: Decimal) -> str:

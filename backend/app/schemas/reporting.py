@@ -356,6 +356,58 @@ class InvoiceReceiptContinuityPrintEnvelope(BaseSchema):
     data: InvoiceReceiptContinuityPrintData
 
 
+class ReceiptNumberingContinuityPrintRequest(BaseSchema):
+    """Batch 93 — print request for the whole-receipt-book numbering audit."""
+
+    limit: int = Field(default=2000, ge=1, le=5000)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class ReceiptSeriesPrintLine(BaseSchema):
+    """One receipt-number series as printed on paper.
+
+    Mirrors ``ReceiptSeriesGap`` from the dashboard feed; per-series
+    reconciliation always holds: ``expected_count == actual_count + gap_count``.
+    """
+
+    prefix: str
+    first_number: int
+    last_number: int
+    expected_count: int
+    actual_count: int
+    gap_count: int
+    missing_numbers: list[int]
+    duplicate_numbers: list[str]
+
+
+class ReceiptNumberingContinuityPrintData(BaseSchema):
+    as_of: datetime
+    receipts_checked: int
+    series_count: int
+    clean_series_count: int
+    total_gap_count: int
+    series: list[ReceiptSeriesPrintLine]
+
+
+class ReceiptNumberingContinuityPrintEnvelope(BaseSchema):
+    """Batch 93 — printable receipt numbering continuity packet.
+
+    Built through the exact same whole-book scan and series derivation as
+    ``GET /dashboard/receipt-numbering-continuity`` (single ordered Payment
+    pass, shared ``_receipt_numeric_suffix`` parsing), so printed aggregates
+    always satisfy ``clean_series_count <= series_count`` and
+    ``expected_count == actual_count + gap_count`` per series, matching the
+    screen line-for-line for the same scan window.
+    """
+
+    report_type: Literal["receipt_numbering_continuity_print"] = (
+        "receipt_numbering_continuity_print"
+    )
+    title: str
+    generated_at: datetime
+    data: ReceiptNumberingContinuityPrintData
+
+
 __all__ = [
     "ReportSection",
     "ALL_REPORT_SECTIONS",
@@ -389,4 +441,8 @@ __all__ = [
     "InvoiceReceiptGapPrintLine",
     "InvoiceReceiptContinuityPrintData",
     "InvoiceReceiptContinuityPrintEnvelope",
+    "ReceiptNumberingContinuityPrintRequest",
+    "ReceiptSeriesPrintLine",
+    "ReceiptNumberingContinuityPrintData",
+    "ReceiptNumberingContinuityPrintEnvelope",
 ]

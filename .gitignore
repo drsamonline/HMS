@@ -1,2 +1,7 @@
+# Python bytecode
 __pycache__/
 *.pyc
+
+# Environment files (common for backend projects)
+.env
+.env.local
