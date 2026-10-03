@@ -70,3 +70,38 @@ export function createBatchPrintPreview(host,{reports=[],title="HHMS Batch Clini
 }
 
 export function clearPrintPreview(host){ if(host) host.innerHTML=""; }
+
+const money=v=>{const n=Number(v);return Number.isFinite(n)?n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):esc(v??"—")};
+
+export function createInvoicePrintPreview(host,{envelope,title=""}){
+  host.innerHTML="";
+  const data=envelope?.data||{};
+  const inv=data.invoice||{}, patient=data.patient||{};
+  const items=data.items||[], receipts=data.receipts||[];
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Invoice Print Preview</strong><span class="print-count">${esc(envelope?.invoice_number||"")}</span></div><div class="button-row"><button id="invoice-print-now">Print Invoice</button></div></div><article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(title||envelope?.title||"Invoice")}</h1><p>${esc([patient.first_name,patient.last_name].filter(Boolean).join(" ")||"")}${patient.patient_number?` — ${esc(patient.patient_number)}`:""}</p><p class="print-generated">Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="invoice"><div class="print-section-heading"><h2>Invoice Details</h2></div><dl class="print-fields">`
+    +`<div class="print-field"><dt>Invoice Number</dt><dd>${esc(inv.invoice_number??"")}</dd></div>`
+    +`<div class="print-field"><dt>Invoice Date</dt><dd>${esc(inv.invoice_date?String(inv.invoice_date).slice(0,10):"")}</dd></div>`
+    +`<div class="print-field"><dt>Payment Status</dt><dd>${esc(human(data.payment_status))}</dd></div>`
+    +`<div class="print-field"><dt>Remarks</dt><dd>${valueMarkup(inv.remarks)}</dd></div>`
+    +`</dl></section>`
+    +`<section class="print-section" data-print-section="items"><div class="print-section-heading"><h2>Line Items</h2></div>`
+    +(items.length?`<table class="print-table"><thead><tr><th>#</th><th>Type</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Line Total</th></tr></thead><tbody>`
+      +items.map((it,i)=>`<tr><td>${i+1}</td><td>${esc(human(it.item_type))}</td><td>${esc(it.description)}</td><td>${esc(it.quantity)}</td><td>${money(it.unit_price)}</td><td>${money(it.line_total)}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No line items</div>')
+    +`</section>`
+    +`<section class="print-section" data-print-section="totals"><div class="print-section-heading"><h2>Totals</h2></div><dl class="print-fields">`
+    +`<div class="print-field"><dt>Total Amount</dt><dd>${money(data.total_amount)}</dd></div>`
+    +`<div class="print-field"><dt>Amount Paid</dt><dd>${money(data.amount_paid)}</dd></div>`
+    +`<div class="print-field"><dt>Balance Due</dt><dd>${money(data.balance_due)}</dd></div>`
+    +`</dl></section>`
+    +`<section class="print-section print-page-break" data-print-section="receipts"><div class="print-section-heading"><h2>Receipts</h2></div>`
+    +(receipts.length?`<table class="print-table"><thead><tr><th>Receipt</th><th>Date</th><th>Method</th><th>Reference</th><th>Amount</th></tr></thead><tbody>`
+      +receipts.map(r=>`<tr><td>${esc(r.receipt_number)}</td><td>${esc(String(r.payment_datetime||"").slice(0,10))}</td><td>${esc(human(r.payment_method))}</td><td>${esc(r.transaction_reference??"—")}</td><td>${money(r.amount_paid)}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No payments recorded</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#invoice-print-now",shell).addEventListener("click",()=>window.print());
+  return {envelope};
+}

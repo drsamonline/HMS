@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import Select, or_, select
@@ -17,6 +18,7 @@ from app.models.dispense_record import DispenseRecord
 from app.models.followup import FollowUp
 from app.models.investigation import Investigation
 from app.models.invoice import Invoice
+from app.models.invoice_item import InvoiceItem
 from app.models.payment import Payment
 from app.models.medical_document import MedicalDocument
 from app.models.medicine import Medicine
@@ -39,6 +41,11 @@ from app.schemas.reporting import (
     ClinicalReportBatchRequest,
     ClinicalReportRead,
     ClinicalReportRequest,
+    InvoicePrintData,
+    InvoicePrintEnvelope,
+    InvoicePrintItemLine,
+    InvoicePrintReceiptLine,
+    InvoicePrintRequest,
     ReportCatalogItem,
     ReportCatalogRead,
     ReportPrintEnvelope,
@@ -327,6 +334,89 @@ class ReportingService:
             selected_sections=report.sections,
             available_sections=list(ALL_REPORT_SECTIONS),
             report=report,
+        )
+
+    async def build_invoice_print_envelope(
+        self, db: AsyncSession, request: InvoicePrintRequest
+    ) -> InvoicePrintEnvelope:
+        """Assemble a complete, self-contained printable invoice packet.
+
+        Batch 85 — final reporting/printing integration for the billing
+        domain: the envelope carries the invoice header, its line items and
+        all live receipts, with balances derived from payments (never the
+        stored status alone) so the printed document always reconciles:
+        ``total_amount == amount_paid + balance_due``.
+        """
+        invoice = await db.get(Invoice, request.invoice_id)
+        if invoice is None:
+            raise ResourceNotFoundException("Invoice not found.")
+        patient = await db.get(Patient, invoice.patient_id)
+        if patient is None:
+            raise ResourceNotFoundException("Patient for invoice not found.")
+
+        item_rows = await db.execute(
+            select(InvoiceItem).where(InvoiceItem.invoice_id == invoice.id).order_by(InvoiceItem.id)
+        )
+        items = [
+            InvoicePrintItemLine(
+                id=row.id,
+                item_type=row.item_type,
+                description=row.description,
+                quantity=str(row.quantity),
+                unit_price=str(row.unit_price),
+                line_total=str(row.line_total),
+                remarks=row.remarks,
+            )
+            for row in item_rows.scalars().all()
+        ]
+
+        receipt_rows = await db.execute(
+            select(Payment).where(Payment.invoice_id == invoice.id).order_by(Payment.payment_datetime, Payment.id)
+        )
+        receipts = [
+            InvoicePrintReceiptLine(
+                id=row.id,
+                receipt_number=row.receipt_number,
+                payment_datetime=row.payment_datetime.isoformat(),
+                payment_method=row.payment_method,
+                amount_paid=str(row.amount_paid),
+                transaction_reference=row.transaction_reference,
+                remarks=row.remarks,
+            )
+            for row in receipt_rows.scalars().all()
+        ]
+
+        # Derived reconciliation (Batch 68 semantics): payments are the
+        # source of truth; clamp both sides so one bad row never produces
+        # a negative figure on the printed document.
+        paid_total = sum((Decimal(str(row.amount_paid)) for row in receipts), Decimal("0"))
+        total_amount = Decimal(invoice.total_amount)
+        amount_paid = min(paid_total, total_amount)
+        balance_due = max(total_amount - amount_paid, Decimal("0"))
+        payment_status = invoice.payment_status
+
+        generated_at = datetime.utcnow()
+        invoice_payload = _dump_row(invoice)
+        for key in ("total_amount",):
+            if key in invoice_payload:
+                invoice_payload[key] = str(invoice_payload[key])
+        return InvoicePrintEnvelope(
+            title=request.title or f"HHMS Invoice {invoice.invoice_number}",
+            generated_at=generated_at,
+            invoice_id=invoice.id,
+            invoice_number=invoice.invoice_number,
+            patient_id=patient.id,
+            data=InvoicePrintData(
+                invoice=invoice_payload,
+                items=items,
+                receipts=receipts,
+                patient=_dump_row(patient),
+                total_amount=str(total_amount),
+                amount_paid=str(amount_paid),
+                balance_due=str(balance_due),
+                payment_status=payment_status,
+                generated_at=generated_at,
+            ),
         )
 
     async def build_case_batch(self, db: AsyncSession, request: ClinicalReportBatchRequest) -> ClinicalReportBatchRead:
