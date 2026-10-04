@@ -156,9 +156,11 @@ This reduces operational database growth, keeps normal queries focused on curren
 HHMS full-project transfer ZIPs must exclude repository metadata (`.git`), local secrets/configuration (`.env`), generated Python caches/compiled files, test caches, coverage output and build artifacts. Functional source, tests, migrations, documentation and required project configuration are retained.
 
 ## D-008: Large Coherent Functional Batches
-**Status:** LOCKED
+**Status:** LOCKED (amended 2026-10-04 — mega-batch threshold)
 
 Related functionality must be combined whenever technically safe and logically coherent. Batch count is not a project goal. Splitting is permitted only when dependencies, rollback safety, testing boundaries or scope make one batch unsafe.
+
+Amendment: from Batch 99 onward, batches default to MEGA-BATCHES bundling 3–5 thematically-coherent features per commit (e.g. all remaining payment-analysis surfaces, or the whole IPD-reporting cluster, in a single batch), replacing the recent one-endpoint-plus-print-envelope-per-batch cadence which inflated batch numbers without adding safety. Each feature inside a mega-batch still ships with its own docs entry, contract tests and CHANGELOG sub-entry; verification remains one full pytest run plus one combined staging sequence per batch. Continue splitting only when the combined diff would no longer stay reviewable or a shared-dependency risk appears.
 
 ## D-009: Functional Build Before Comprehensive QA
 **Status:** LOCKED

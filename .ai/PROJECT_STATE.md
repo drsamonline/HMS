@@ -40,7 +40,7 @@
 
 ## Locked workflow
 1. Build functional application code first.
-2. Combine logically related work into the largest safe batch whenever technically coherent.
+2. Combine logically related work into the largest safe batch whenever technically coherent (batch-size policy, updated 2026-10-04 after Batch 98): prefer MEGA-BATCHES that bundle 3-5 thematically-coherent features per commit (e.g. all remaining payment-analysis surfaces in one batch) rather than one endpoint+envelope pair per batch; each feature inside a mega-batch still gets its own docs entry, contract tests and CHANGELOG sub-entry so traceability is preserved; the only constraints are that the combined diff must stay reviewable and verifiable with a single full pytest run.
 3. Audit the actual generated ZIP against the intended change set before issuing any `git add` command.
 4. Use one combined verification/staging command sequence per batch.
 5. Keep commit/push separate until GREEN.
