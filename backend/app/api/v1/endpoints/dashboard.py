@@ -73,6 +73,23 @@ method's share of the window total; the shared derivation
 (``build_payment_method_collection_summary`` /
 ``build_payment_method_summary_result``) also backs the reporting print
 envelope so screen and paper can never drift.
+
+Batch 97 — Invoice Overpayment Ledger: surfaces what the Batch 68 clamp
+conceals (``GET /dashboard/invoice-overpayments``); the un-clamped paid
+total is now summed for *every* scanned invoice in one grouped pass inside
+the shared ``_build_reconciliation_rows`` scan, so the overpayment ledger
+and its print envelope reuse the exact same reconciliation rows (one
+implementation, no second scan).
+
+Batch 98 — Payment Method Overpayment Breakdown: answers *which methods*
+produce the excess (``GET /dashboard/payment-method-overpayments``); the
+chronological clamp already built into
+``build_payment_method_collection_summary`` is reused verbatim, with the
+un-clamped receipt totals rolled up per method alongside collected and
+overpaid figures (invariant ``gross_received == collected + overpaid``).
+The shared derivation (``build_payment_method_overpayment_breakdown`` /
+``build_payment_method_overpayment_result``) also backs the reporting
+print envelope so screen and paper can never drift.
 """
 
 from __future__ import annotations
@@ -101,6 +118,7 @@ from app.schemas.dashboard import (
     InvoiceReceiptContinuityResponse,
     OutstandingInvoicesResponse,
     PatientCollectionSummaryResponse,
+    PaymentMethodOverpaymentResponse,
     PaymentMethodSummaryResponse,
     PendingInvestigationsResponse,
     ReceiptNumberingContinuityResponse,
@@ -1007,8 +1025,11 @@ async def _build_reconciliation_rows(db, limit: int) -> list[dict]:
 
     # Single grouped pass over the live Payment ledger for all scanned
     # invoices (no N+1): per-invoice paid totals, receipt counts and the
-    # latest payment timestamp (Batch 90 last-payment column).
+    # latest payment timestamp (Batch 90 last-payment column). Batch 97 —
+    # the same pass also captures the *un-clamped* paid total so the
+    # overpayment ledger never needs a second scan.
     paid_by_invoice: dict[int, Decimal] = {}
+    raw_paid_by_invoice: dict[int, Decimal] = {}
     receipts_by_invoice: dict[int, int] = {}
     last_payment_by_invoice: dict[int, datetime] = {}
     if invoices:
@@ -1016,20 +1037,23 @@ async def _build_reconciliation_rows(db, limit: int) -> list[dict]:
         payments_result = await db.execute(
             select(
                 Payment.invoice_id,
-                Payment.receipt_number,
-                Payment.amount_paid,
-                Payment.payment_datetime,
-            ).where(Payment.invoice_id.in_(invoice_ids))
+                func.sum(Payment.amount_paid),
+                func.count(Payment.id),
+                func.max(Payment.payment_datetime),
+            )
+            .where(Payment.invoice_id.in_(invoice_ids))
+            .group_by(Payment.invoice_id)
         )
-        for invoice_id, _receipt_number, amount_paid, payment_datetime in payments_result:
-            paid_by_invoice[invoice_id] = paid_by_invoice.get(
-                invoice_id, Decimal("0")
-            ) + Decimal(str(amount_paid))
-            receipts_by_invoice[invoice_id] = receipts_by_invoice.get(invoice_id, 0) + 1
-            if payment_datetime is not None:
-                previous = last_payment_by_invoice.get(invoice_id)
-                if previous is None or payment_datetime > previous:
-                    last_payment_by_invoice[invoice_id] = payment_datetime
+        for (
+            invoice_id,
+            paid_total,
+            receipt_count,
+            last_payment,
+        ) in payments_result:
+            paid_by_invoice[invoice_id] = Decimal(str(paid_total or 0))
+            raw_paid_by_invoice[invoice_id] = Decimal(str(paid_total or 0))
+            receipts_by_invoice[invoice_id] = int(receipt_count or 0)
+            last_payment_by_invoice[invoice_id] = last_payment
 
     rows = []
     for invoice in invoices:
@@ -1050,6 +1074,11 @@ async def _build_reconciliation_rows(db, limit: int) -> list[dict]:
                 "total_amount": invoice.total_amount,
                 "amount_paid": amount_paid,
                 "balance_due": balance_due,
+                # Batch 97: un-clamped live paid total, carried on every row
+                # so ``overpaid == max(total_paid_raw - total_amount, 0)``.
+                "total_paid_raw": raw_paid_by_invoice.get(
+                    invoice.id, Decimal("0")
+                ),
                 "stored_payment_status": invoice.payment_status,
                 "derived_payment_status": _derive_payment_status(
                     invoice.total_amount, amount_paid
@@ -1354,36 +1383,23 @@ async def build_overpayment_ledger(db, limit: int) -> dict:
     same live-scan row builder as the Batch 89/90/94 reconciliation ledger
     (one grouped pass over the Payment table joined to non-cancelled
     invoices, stored counters/status never trusted), then keeps only the
-    rows where payments exceed the billed amount. Because the reconciliation
-    scan clamps ``amount_paid`` to the invoice total, the un-clamped paid
-    total is re-summed per flagged invoice from the same ledger rows.
+    rows where payments exceed the billed amount. Batch 97 — the
+    un-clamped paid total is now carried on every reconciliation row by
+    the shared scan itself, so this ledger runs one grouped Payment pass
+    for the whole window (no second re-sum per flagged invoice).
     """
     rows = await _build_reconciliation_rows(db, limit)
     overpaid_rows = []
+    # Only fully-paid invoices can be overpaid under the clamp; the
+    # un-clamped ledger total rides on every row, so no extra scan needed.
     candidates = [row for row in rows if row["balance_due"] == Decimal("0")]
-    # Only fully-paid invoices can be overpaid under the clamp; re-check
-    # against the un-clamped ledger to find genuine excess receipts.
-    if candidates:
-        candidate_ids = [row["invoice_id"] for row in candidates]
-        payments_result = await db.execute(
-            select(Payment.invoice_id, func.sum(Payment.amount_paid))
-            .where(Payment.invoice_id.in_(candidate_ids))
-            .group_by(Payment.invoice_id)
-        )
-        raw_paid_by_invoice = {
-            invoice_id: Decimal(str(total))
-            for invoice_id, total in payments_result
-        }
-        for row in candidates:
-            total_paid_raw = raw_paid_by_invoice.get(
-                row["invoice_id"], Decimal("0")
-            )
-            if total_paid_raw > row["total_amount"]:
-                item = dict(row)
-                item["total_paid_raw"] = total_paid_raw
-                item["overpaid_amount"] = total_paid_raw - row["total_amount"]
-                item.pop("last_payment_datetime", None)
-                overpaid_rows.append(item)
+    for row in candidates:
+        total_paid_raw = row["total_paid_raw"]
+        if total_paid_raw > row["total_amount"]:
+            item = dict(row)
+            item["overpaid_amount"] = total_paid_raw - row["total_amount"]
+            item.pop("last_payment_datetime", None)
+            overpaid_rows.append(item)
     return build_overpayment_ledger_result(overpaid_rows, date.today())
 
 
@@ -1409,11 +1425,153 @@ async def invoice_overpayments(
     return InvoiceOverpaymentResponse(**ledger)
 
 
+def build_payment_method_overpayment_breakdown(
+    receipts: list[dict], invoice_totals: dict[int, Decimal], invoices_checked: int
+) -> dict:
+    """Roll raw receipt rows up into per-method overpayment totals.
+
+    Batch 98 — shared aggregation used by both the dashboard feed and the
+    reporting print envelope so the two surfaces can never drift. The
+    chronological clamp is reused verbatim from the Batch 96 collection
+    summary (``build_payment_method_collection_summary``): receipts are
+    charged to their invoice in payment order (ties broken by receipt
+    number), amounts beyond the invoice total count as *overpaid* (not
+    collected), and payments against invoices outside the scan window
+    contribute neither. Per method the invariant
+    ``gross_received == collected + overpaid`` therefore holds on every
+    row, and the headline sums satisfy ``total_gross == total_collected +
+    total_overpaid`` with ``sum(per-method overpaid) == total_overpaid``.
+    Methods carrying no excess still appear (with ``overpaid == 0``) so
+    printed breakdowns reconcile line-for-line against the Batch 96
+    collection summary for the same scan window; largest overpayers first,
+    alphabetical tie-break for stability.
+    """
+    summary = build_payment_method_collection_summary(
+        receipts, invoice_totals, invoices_checked
+    )
+    ordered = sorted(
+        receipts,
+        key=lambda r: (r["payment_datetime"] or datetime.max, r["receipt_number"]),
+    )
+    remaining = dict(invoice_totals)
+    overpaid_by_method: dict[str, Decimal] = {}
+    for receipt in ordered:
+        method = receipt["payment_method"] or "unknown"
+        gross = Decimal(str(receipt["amount_paid"]))
+        left = remaining.get(receipt["invoice_id"])
+        if left is None:
+            applied = Decimal("0")
+        else:
+            applied = min(gross, left)
+            if applied > 0:
+                remaining[receipt["invoice_id"]] = left - applied
+        excess = gross - applied
+        overpaid_by_method[method] = overpaid_by_method.get(
+            method, Decimal("0")
+        ) + excess
+
+    items = []
+    for entry in summary["items"]:
+        item = dict(entry)
+        item["overpaid"] = overpaid_by_method.get(item["payment_method"], Decimal("0"))
+        items.append(item)
+    items.sort(key=lambda item: (-item["overpaid"], item["payment_method"]))
+    total_collected = summary["total_collected"]
+    total_overpaid = sum(overpaid_by_method.values(), Decimal("0"))
+    return {
+        "as_of": date.today(),
+        "invoices_checked": invoices_checked,
+        "receipts_scanned": len(receipts),
+        "methods_reported": len(items),
+        "methods_with_overpayment": sum(
+            1 for item in items if item["overpaid"] > 0
+        ),
+        "total_gross": total_collected + total_overpaid,
+        "total_collected": total_collected,
+        "total_overpaid": total_overpaid,
+        "items": items,
+    }
+
+
+async def build_payment_method_overpayment_result(db, limit: int) -> dict:
+    """Scan-and-aggregate entry point shared with the reporting service.
+
+    Batch 98 — single implementation behind both
+    ``GET /dashboard/payment-method-overpayments`` and
+    ``POST /reports/payment-method-overpayment-print-envelope``. Scans the
+    most recent ``limit`` non-cancelled invoices (same window as the Batch
+    89/90 ledger and the Batch 96 method summary), then reads every linked
+    receipt in one pass over the live Payment ledger joined to Invoice
+    (no N+1; stored counters and status columns are never trusted).
+    """
+    invoices_result = await db.execute(
+        select(Invoice.id, Invoice.total_amount)
+        .where(Invoice.payment_status != "cancelled")
+        .order_by(Invoice.invoice_date.desc(), Invoice.id.desc())
+        .limit(limit)
+    )
+    invoice_rows = list(invoices_result)
+    invoice_totals = {row[0]: row[1] for row in invoice_rows}
+
+    receipts: list[dict] = []
+    if invoice_totals:
+        payments_result = await db.execute(
+            select(
+                Payment.invoice_id,
+                Payment.receipt_number,
+                Payment.payment_method,
+                Payment.amount_paid,
+                Payment.payment_datetime,
+            ).join(Invoice, Invoice.id == Payment.invoice_id).where(
+                Invoice.payment_status != "cancelled"
+            )
+        )
+        receipts = [
+            {
+                "invoice_id": invoice_id,
+                "receipt_number": receipt_number,
+                "payment_method": payment_method,
+                "amount_paid": amount_paid,
+                "payment_datetime": payment_datetime,
+            }
+            for invoice_id, receipt_number, payment_method, amount_paid, payment_datetime in payments_result
+        ]
+    return build_payment_method_overpayment_breakdown(
+        receipts, invoice_totals, len(invoice_totals)
+    )
+
+
+@router.get(
+    "/payment-method-overpayments",
+    response_model=PaymentMethodOverpaymentResponse,
+)
+async def payment_method_overpayments(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> PaymentMethodOverpaymentResponse:
+    """Split the window's over-collection across payment methods.
+
+    Batch 98 — reporting/printing integration feed. Where Batch 97 answers
+    *which invoices* were paid beyond their billed amount, this answers
+    *which methods* produced the excess: per-method gross received,
+    collected (Batch 68 clamp parity via the shared Batch 96 rollup) and
+    overpaid figures, with each method's share of the window's collected
+    total. Headline aggregates always satisfy ``total_gross ==
+    total_collected + total_overpaid`` and ``sum(per-method overpaid) ==
+    total_overpaid``.
+    """
+    result = await build_payment_method_overpayment_result(db, limit)
+    return PaymentMethodOverpaymentResponse(**result)
+
+
 __all__ = [
     "build_collection_summary_by_patient",
     "build_overpayment_ledger",
     "build_overpayment_ledger_result",
     "build_payment_method_collection_summary",
+    "build_payment_method_overpayment_breakdown",
+    "build_payment_method_overpayment_result",
     "build_payment_method_summary_result",
     "build_receivables_aging_result",
     "router",

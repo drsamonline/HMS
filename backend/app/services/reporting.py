@@ -66,6 +66,10 @@ from app.schemas.reporting import (
     PaymentMethodSummaryPrintEnvelope,
     PaymentMethodSummaryPrintLine,
     PaymentMethodSummaryPrintRequest,
+    PaymentMethodOverpaymentPrintData,
+    PaymentMethodOverpaymentPrintEnvelope,
+    PaymentMethodOverpaymentPrintLine,
+    PaymentMethodOverpaymentPrintRequest,
     ReceiptNumberingContinuityPrintData,
     ReceiptNumberingContinuityPrintEnvelope,
     ReceiptNumberingContinuityPrintRequest,
@@ -795,6 +799,52 @@ class ReportingService:
                         }
                     )
                     for item in ledger["items"]
+                ],
+            ),
+        )
+
+    async def build_payment_method_overpayment_print_envelope(
+        self, db: AsyncSession, request: PaymentMethodOverpaymentPrintRequest
+    ) -> PaymentMethodOverpaymentPrintEnvelope:
+        """Assemble a printable payment-method overpayment breakdown packet.
+
+        Batch 98 — reporting/printing integration for the billing domain:
+        reuses the dashboard's shared live-payment scan and per-method
+        overpayment rollup (``build_payment_method_overpayment_result``,
+        one Payment pass over non-cancelled invoices with the Batch 68
+        clamp of the Batch 96 collection summary reused verbatim), so
+        printed rows always satisfy ``gross_received == collected +
+        overpaid``, headlines satisfy ``total_gross == total_collected +
+        total_overpaid`` and match
+        ``GET /dashboard/payment-method-overpayments`` line-for-line for
+        the same scan window.
+        """
+        from app.api.v1.endpoints.dashboard import (
+            build_payment_method_overpayment_result,
+        )
+
+        breakdown = await build_payment_method_overpayment_result(db, request.limit)
+
+        return PaymentMethodOverpaymentPrintEnvelope(
+            title=request.title or "HHMS Payment Method Overpayment Breakdown",
+            generated_at=datetime.utcnow(),
+            data=PaymentMethodOverpaymentPrintData(
+                as_of=breakdown["as_of"],
+                invoices_checked=breakdown["invoices_checked"],
+                receipts_scanned=breakdown["receipts_scanned"],
+                methods_reported=breakdown["methods_reported"],
+                methods_with_overpayment=breakdown["methods_with_overpayment"],
+                total_gross=str(breakdown["total_gross"]),
+                total_collected=str(breakdown["total_collected"]),
+                total_overpaid=str(breakdown["total_overpaid"]),
+                items=[
+                    PaymentMethodOverpaymentPrintLine(
+                        **{
+                            key: (str(value) if isinstance(value, Decimal) else value)
+                            for key, value in item.items()
+                        }
+                    )
+                    for item in breakdown["items"]
                 ],
             ),
         )

@@ -388,6 +388,48 @@ class InvoiceOverpaymentResponse(BaseSchema):
     items: list[InvoiceOverpaymentItem]
 
 
+class PaymentMethodOverpaymentItem(BaseSchema):
+    """One payment method's over-collection split within the scan window.
+
+    Batch 98 — payment-method overpayment breakdown. Reuses the exact
+    chronological clamp of the Batch 96 collection summary: ``collected``
+    is the amount absorbed by in-window invoice balances (Batch 68 clamp
+    parity) and ``overpaid`` is the remainder of ``gross_received`` that
+    exceeded those balances, so ``gross_received == collected + overpaid``
+    holds on every row. ``share_of_total`` stays a percentage (0-100) of
+    the scanned-window *collected* total for line-for-line parity with the
+    Batch 96 summary.
+    """
+
+    payment_method: str
+    receipt_count: int
+    invoice_count: int
+    gross_received: Decimal
+    collected: Decimal
+    share_of_total: Decimal
+    overpaid: Decimal
+
+
+class PaymentMethodOverpaymentResponse(BaseSchema):
+    """Per-method overpayment breakdown with headline aggregates.
+
+    Batch 98 — headline aggregates always satisfy
+    ``total_gross == total_collected + total_overpaid`` and
+    ``sum(per-method overpaid) == total_overpaid`` so printed breakdowns
+    reconcile line-by-line for the same scan window.
+    """
+
+    as_of: date
+    invoices_checked: int
+    receipts_scanned: int
+    methods_reported: int
+    methods_with_overpayment: int
+    total_gross: Decimal
+    total_collected: Decimal
+    total_overpaid: Decimal
+    items: list[PaymentMethodOverpaymentItem]
+
+
 __all__ = [
     "DueFollowUpItem",
     "DueFollowUpsResponse",
@@ -412,4 +454,6 @@ __all__ = [
     "PatientCollectionSummaryResponse",
     "PaymentMethodSummaryItem",
     "PaymentMethodSummaryResponse",
+    "PaymentMethodOverpaymentItem",
+    "PaymentMethodOverpaymentResponse",
 ]

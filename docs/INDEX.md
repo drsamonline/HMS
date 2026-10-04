@@ -167,6 +167,7 @@
 | [CLIENT_INVOICE_PAYMENT_RECONCILIATION_PRINT_ENVELOPE.md](CLIENT_INVOICE_PAYMENT_RECONCILIATION_PRINT_ENVELOPE.md) | Invoice payment reconciliation print envelope (Batch 94) |
 | [CLIENT_COLLECTION_SUMMARY_PRINT_ENVELOPE.md](CLIENT_COLLECTION_SUMMARY_PRINT_ENVELOPE.md) | Collection summary print envelope (Batch 95) |
 | [CLIENT_PAYMENT_METHOD_COLLECTION_SUMMARY.md](CLIENT_PAYMENT_METHOD_COLLECTION_SUMMARY.md) | Payment method collection summary + print envelope (Batch 96) |
+| [CLIENT_PAYMENT_METHOD_OVERPAYMENT_BREAKDOWN.md](CLIENT_PAYMENT_METHOD_OVERPAYMENT_BREAKDOWN.md) | Payment method overpayment breakdown + print envelope (Batch 98) |
 | [CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md](CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md) | Client operational workspace integration |
 | [CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md](CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md) | Client operational navigation convergence |
 | [CLIENT_RBAC_NAVIGATION.md](CLIENT_RBAC_NAVIGATION.md) | Client RBAC-aware navigation |
@@ -274,4 +275,4 @@ Specification → Review → Implementation → Code Review → Testing → Git 
 
 ---
 
-*109 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
+*110 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
