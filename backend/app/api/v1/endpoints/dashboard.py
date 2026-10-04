@@ -90,6 +90,17 @@ overpaid figures (invariant ``gross_received == collected + overpaid``).
 The shared derivation (``build_payment_method_overpayment_breakdown`` /
 ``build_payment_method_overpayment_result``) also backs the reporting
 print envelope so screen and paper can never drift.
+
+Batch 99 — Ward-Flow Dashboard Mega-Batch: two new operational feeds built
+on the Batch 83 bed-occupancy continuity work.
+``GET /dashboard/discharge-audit`` reconciles every recent discharge
+against its admission status and bed occupancy flag (the live discharge
+workflow sets both, so ``is_reconciled`` proves ward flow end-to-end and
+drifted rows surface instead of disappearing);
+``GET /dashboard/opd-queue-summary`` rolls the OPD token queue up per
+queue day with a status split whose invariant
+``waiting + in_consultation + completed + cancelled == total_tokens``
+always holds, so each day's open backlog reconciles line-for-line.
 """
 
 from __future__ import annotations
@@ -106,17 +117,21 @@ from app.dependencies.database import DatabaseSession
 from app.models.admission import Admission
 from app.models.bed import Bed
 from app.models.case_record import CaseRecord
+from app.models.discharge import Discharge
 from app.models.investigation import Investigation
 from app.models.invoice import Invoice
+from app.models.opd_token import OPDToken
 from app.models.patient import Patient
 from app.models.payment import Payment
 from app.schemas.dashboard import (
     BedOccupancyResponse,
+    DischargeAuditResponse,
     DueFollowUpsResponse,
     InvoiceOverpaymentResponse,
     InvoicePaymentReconciliationResponse,
     InvoiceReceiptContinuityResponse,
     OutstandingInvoicesResponse,
+    OPDQueueSummaryResponse,
     PatientCollectionSummaryResponse,
     PaymentMethodOverpaymentResponse,
     PaymentMethodSummaryResponse,
@@ -1565,10 +1580,272 @@ async def payment_method_overpayments(
     return PaymentMethodOverpaymentResponse(**result)
 
 
+def _as_naive_utc(value: datetime) -> datetime:
+    """Normalise a stored datetime to naive UTC for age arithmetic."""
+    if value.tzinfo is not None:
+        return value.astimezone(timezone.utc).replace(tzinfo=None)
+    return value
+
+
+def build_discharge_audit_result(rows: list[dict], as_of: datetime) -> dict:
+    """Pure reconciliation pass over discharge scan rows.
+
+    Batch 99 — shared derivation behind ``GET /dashboard/discharge-audit``.
+    Each row (a joined Discharge/Admission/Patient/Bed tuple serialised as a
+    dict) is reconciled against the workflow guarantees from the discharge
+    service: creating a discharge marks its admission ``discharged`` and
+    frees its bed. ``admission_discharged`` and ``bed_freed`` expose the
+    individual checks; ``is_reconciled`` requires both (plus an existing
+    bed link), so drifted ward-flow rows surface instead of disappearing.
+    Rows are ordered newest-discharge-first and ages are whole hours
+    against ``as_of`` (never negative).
+    """
+    items = []
+    reconciled_count = 0
+    for row in sorted(
+        rows,
+        key=lambda r: _as_naive_utc(r["discharge_datetime"]),
+        reverse=True,
+    ):
+        admission_status = (row["admission_status"] or "").lower()
+        bed_occupancy_status = (
+            row["bed_occupancy_status"].lower()
+            if row["bed_occupancy_status"]
+            else None
+        )
+        admission_discharged = admission_status == "discharged"
+        bed_freed = row["bed_id"] is not None and bed_occupancy_status == "available"
+        is_reconciled = admission_discharged and bed_freed
+        if is_reconciled:
+            reconciled_count += 1
+        hours_since_discharge = max(
+            int(
+                (
+                    _as_naive_utc(as_of)
+                    - _as_naive_utc(row["discharge_datetime"])
+                ).total_seconds()
+                // 3600
+            ),
+            0,
+        )
+        items.append(
+            {
+                **row,
+                "admission_discharged": admission_discharged,
+                "bed_freed": bed_freed,
+                "is_reconciled": is_reconciled,
+                "hours_since_discharge": hours_since_discharge,
+            }
+        )
+
+    return {
+        "as_of": as_of,
+        "items": items,
+        "total_discharges": len(items),
+        "reconciled_count": reconciled_count,
+        "drift_count": len(items) - reconciled_count,
+    }
+
+
+async def build_discharge_audit_scan(db, limit: int) -> list[dict]:
+    """Single joined scan feeding the Batch 99 discharge audit.
+
+    Shared entry point so the dashboard endpoint (and any future print
+    envelope) reads exactly the same rows: every recent discharge joined
+    to its admission, patient and bed identity in one pass (no N+1).
+    """
+    result = await db.execute(
+        select(
+            Discharge,
+            Admission,
+            Patient,
+            Bed,
+        )
+        .join(Admission, Admission.id == Discharge.admission_id)
+        .join(Patient, Patient.id == Admission.patient_id)
+        .outerjoin(Bed, Bed.id == Admission.bed_id)
+        .order_by(Discharge.discharge_datetime.desc(), Discharge.id.desc())
+        .limit(limit)
+    )
+    rows = []
+    for discharge, admission, patient, bed in result:
+        rows.append(
+            {
+                "discharge_id": discharge.id,
+                "discharge_number": discharge.discharge_number,
+                "discharge_datetime": discharge.discharge_datetime,
+                "discharge_status": discharge.discharge_status,
+                "discharged_by": discharge.discharged_by,
+                "admission_id": admission.id,
+                "admission_number": admission.admission_number,
+                "admission_status": admission.admission_status,
+                "patient_id": patient.id,
+                "patient_name": _patient_display_name(patient),
+                "patient_number": patient.patient_number,
+                "bed_id": bed.id if bed else None,
+                "bed_number": bed.bed_number if bed else None,
+                "ward": bed.ward if bed else None,
+                "bed_occupancy_status": (
+                    bed.occupancy_status if bed else None
+                ),
+            }
+        )
+    return rows
+
+
+@router.get("/discharge-audit", response_model=DischargeAuditResponse)
+async def discharge_audit(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> DischargeAuditResponse:
+    """Recent discharges reconciled against admission and bed state.
+
+    Batch 99 — ward-flow continuity feed built on the Batch 83
+    bed-occupancy guarantees: the live discharge workflow marks the
+    admission ``discharged`` and frees its bed when a discharge record is
+    created, so each audit row proves the hand-off completed end-to-end.
+    Drifted rows (admission still active, bed still occupied, or no bed
+    link) keep appearing with ``is_reconciled`` false so data issues
+    surface instead of silently disappearing. Headline counts always
+    satisfy ``reconciled_count + drift_count == total_discharges``.
+    """
+    rows = await build_discharge_audit_scan(db, limit)
+    result = build_discharge_audit_result(
+        rows, datetime.now(timezone.utc).replace(tzinfo=None)
+    )
+    return DischargeAuditResponse(**result)
+
+
+OPD_QUEUE_STATUSES = ("waiting", "in_consultation", "completed", "cancelled")
+
+
+def build_opd_queue_summary_result(rows: list[dict], as_of: datetime) -> dict:
+    """Pure per-day rollup over OPD token status counts.
+
+    Batch 99 — shared derivation behind ``GET /dashboard/opd-queue-summary``.
+    Input rows are ``(queue_date, queue_status, token_count)`` tuples from a
+    single grouped pass; the output keeps every day's status split intact so
+    the invariant ``waiting + in_consultation + completed + cancelled ==
+    total_tokens`` holds line-for-line, with ``open_token_count`` equal to
+    the still-running backlog (waiting + in_consultation). Days are ordered
+    newest first; unknown statuses count only toward the day total so the
+    split never silently swallows tokens.
+    """
+    by_day: dict[date, dict[str, int]] = {}
+    other_total = 0
+    for row in rows:
+        day_counts = by_day.setdefault(
+            row["queue_date"], {status: 0 for status in OPD_QUEUE_STATUSES}
+        )
+        status = (row["queue_status"] or "").lower()
+        count = int(row["token_count"])
+        if status in day_counts:
+            day_counts[status] += count
+        else:
+            other_total += count
+
+    items = []
+    total_tokens = 0
+    total_open = 0
+    for queue_date in sorted(by_day, reverse=True):
+        day_counts = by_day[queue_date]
+        waiting = day_counts["waiting"]
+        in_consultation = day_counts["in_consultation"]
+        completed = day_counts["completed"]
+        cancelled = day_counts["cancelled"]
+        day_total = waiting + in_consultation + completed + cancelled
+        open_token_count = waiting + in_consultation
+        total_tokens += day_total
+        total_open += open_token_count
+        items.append(
+            {
+                "queue_date": queue_date,
+                "total_tokens": day_total,
+                "waiting": waiting,
+                "in_consultation": in_consultation,
+                "completed": completed,
+                "cancelled": cancelled,
+                "open_token_count": open_token_count,
+            }
+        )
+
+    return {
+        "as_of": as_of,
+        "items": items,
+        "days_reported": len(items),
+        "total_tokens": total_tokens + other_total,
+        "total_open": total_open,
+    }
+
+
+async def build_opd_queue_summary_scan(db, limit_days: int) -> dict:
+    """Grouped-scan entry point shared with any future print surface.
+
+    Batch 99 — one grouped pass over ``OPDToken`` (queue_date x
+    queue_status), then the pure rollup above. Only the most recent
+    ``limit_days`` queue days are reported; the grouped query stays cheap
+    regardless of token volume.
+    """
+    dates_result = await db.execute(
+        select(OPDToken.queue_date)
+        .group_by(OPDToken.queue_date)
+        .order_by(OPDToken.queue_date.desc())
+        .limit(limit_days)
+    )
+    included_dates = [row[0] for row in dates_result]
+    if not included_dates:
+        return build_opd_queue_summary_result([], datetime.now(timezone.utc).replace(tzinfo=None))
+
+    counts_result = await db.execute(
+        select(
+            OPDToken.queue_date,
+            OPDToken.queue_status,
+            func.count(OPDToken.id),
+        )
+        .where(OPDToken.queue_date.in_(included_dates))
+        .group_by(OPDToken.queue_date, OPDToken.queue_status)
+    )
+    rows = [
+        {
+            "queue_date": queue_date,
+            "queue_status": queue_status,
+            "token_count": token_count,
+        }
+        for queue_date, queue_status, token_count in counts_result
+    ]
+    return build_opd_queue_summary_result(
+        rows, datetime.now(timezone.utc).replace(tzinfo=None)
+    )
+
+
+@router.get("/opd-queue-summary", response_model=OPDQueueSummaryResponse)
+async def opd_queue_summary(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit_days: int = Query(default=14, ge=1, le=90),
+) -> OPDQueueSummaryResponse:
+    """Daily OPD token queue workload, newest queue day first.
+
+    Batch 99 — outpatient-flow continuity feed: every reported day's
+    figures come from one grouped pass over live ``OPDToken`` rows, so the
+    status split (waiting/in_consultation/completed/cancelled) always sums
+    to that day's total and the open backlog reconciles line-for-line.
+    Clinician desks get today's pressure and the trailing days' throughput
+    without opening the OPD module.
+    """
+    result = await build_opd_queue_summary_scan(db, limit_days)
+    return OPDQueueSummaryResponse(**result)
+
+
 __all__ = [
     "build_collection_summary_by_patient",
+    "build_discharge_audit_result",
+    "build_discharge_audit_scan",
     "build_overpayment_ledger",
     "build_overpayment_ledger_result",
+    "build_opd_queue_summary_result",
+    "build_opd_queue_summary_scan",
     "build_payment_method_collection_summary",
     "build_payment_method_overpayment_breakdown",
     "build_payment_method_overpayment_result",

@@ -1,4 +1,4 @@
-import { getServerBaseUrl, getAccessToken, listPatients, getDashboardDueFollowups, getDashboardOutstandingInvoices, getDashboardBedOccupancy, getDashboardPendingInvestigations } from "./api.js";
+import { getServerBaseUrl, getAccessToken, listPatients, getDashboardDueFollowups, getDashboardOutstandingInvoices, getDashboardBedOccupancy, getDashboardPendingInvestigations, getDashboardDischargeAudit, getDashboardOPDQueueSummary } from "./api.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>'"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" }[c]));
@@ -38,6 +38,14 @@ export async function openDashboard(host, context = {}) {
     <section class="content-panel">
       <h3>Pending investigations</h3>
       <div id="dashboard-pending-investigations" class="patient-list"><div class="empty-state">Loading…</div></div>
+    </section>
+    <section class="content-panel">
+      <h3>Discharge audit</h3>
+      <div id="dashboard-discharge-audit" class="patient-list"><div class="empty-state">Loading…</div></div>
+    </section>
+    <section class="content-panel">
+      <h3>OPD queue daily summary</h3>
+      <div id="dashboard-opd-queue-summary" class="patient-list"><div class="empty-state">Loading…</div></div>
     </section>
     <section class="content-panel">
       <h3>Recent patients</h3>
@@ -162,6 +170,58 @@ export async function openDashboard(host, context = {}) {
     }
   } catch {
     $("#dashboard-pending-investigations", host).innerHTML = '<div class="empty-state">Pending investigations are unavailable right now.</div>';
+  }
+
+  try {
+    const audit = await getDashboardDischargeAudit({ limit: 50 });
+    const auditHost = $("#dashboard-discharge-audit", host);
+    const discharges = audit?.items ?? [];
+    if (!discharges.length) {
+      auditHost.innerHTML = '<div class="empty-state">No recent discharges to audit.</div>';
+    } else {
+      auditHost.innerHTML = `
+        <p class="muted">${esc(audit?.total_discharges ?? 0)} discharge(s) · ${esc(audit?.reconciled_count ?? 0)} reconciled · ${esc(audit?.drift_count ?? 0)} drifted</p>
+      ` + discharges.map(d => `
+        <button type="button" class="patient-card" data-audit-patient="${esc(d.patient_id)}">
+          <strong>${esc(d.patient_name)}${d.bed_number ? " · " + esc(d.bed_number) : ""}</strong>
+          <span>${esc(d.discharge_number)} · ${esc(d.admission_number)} · ${d.is_reconciled
+            ? `discharged ${esc(d.hours_since_discharge)} hour(s) ago`
+            : !d.admission_discharged
+              ? "Admission still active — check IPD records"
+              : d.bed_id === null || d.bed_id === undefined
+                ? "No bed link — check admission record"
+                : "Bed still occupied — release it in IPD"}</span>
+        </button>
+      `).join("");
+      auditHost.querySelectorAll("[data-audit-patient]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelector(".nav-item[data-view='patients']")?.click();
+          window.dispatchEvent(new CustomEvent("hhms:open-patient-clinical", { detail: { patientId: Number(btn.dataset.auditPatient) } }));
+        });
+      });
+    }
+  } catch {
+    $("#dashboard-discharge-audit", host).innerHTML = '<div class="empty-state">Discharge audit is unavailable right now.</div>';
+  }
+
+  try {
+    const queue = await getDashboardOPDQueueSummary({ limitDays: 14 });
+    const queueHost = $("#dashboard-opd-queue-summary", host);
+    const days = queue?.items ?? [];
+    if (!days.length) {
+      queueHost.innerHTML = '<div class="empty-state">No OPD queue activity in the reporting window.</div>';
+    } else {
+      queueHost.innerHTML = `
+        <p class="muted">${esc(queue?.days_reported ?? 0)} day(s) · ${esc(queue?.total_tokens ?? 0)} token(s) · ${esc(queue?.total_open ?? 0)} open</p>
+      ` + days.map(day => `
+        <div class="patient-card">
+          <strong>${esc(day.queue_date)}</strong>
+          <span>${esc(day.total_tokens)} token(s) · waiting ${esc(day.waiting)} · in consultation ${esc(day.in_consultation)} · completed ${esc(day.completed)} · cancelled ${esc(day.cancelled)} · open ${esc(day.open_token_count)}</span>
+        </div>
+      `).join("");
+    }
+  } catch {
+    $("#dashboard-opd-queue-summary", host).innerHTML = '<div class="empty-state">OPD queue summary is unavailable right now.</div>';
   }
 
   try {

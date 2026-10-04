@@ -79,12 +79,17 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 96 — Payment Method Collection Summary**
-(`GET /dashboard/payment-method-summary` + `POST /reports/payment-method-summary-print-envelope` roll the live
-payment scan into per-method receipt counts, gross received vs collected (Batch 68 clamp parity) and percentage
-shares through one shared derivation (`build_payment_method_summary_result`) behind both surfaces, so printed
-packets always satisfy `sum(per-method collected) == total_collected` and match the screen; a Reports & Printing
-workspace card prepares through the envelope. Follows Batch 95's collection summary print envelope
+Functional application build is in progress through **Batch 99 — Discharge Audit & OPD Queue Daily Summary**
+(the first mega-batch under the amended D-008 policy: `GET /dashboard/discharge-audit` reconciles every recent
+discharge against admission status and bed occupancy through the shared `build_discharge_audit_result` /
+`build_discharge_audit_scan` pair, while `GET /dashboard/opd-queue-summary` rolls live OPD token rows up per queue
+day through `build_opd_queue_summary_result` / `build_opd_queue_summary_scan`, both surfaced as new dashboard panels
+with API wrappers). Follows Batch 98's Payment Method Overpayment Breakdown
+(`GET /dashboard/payment-method-overpayments` + `POST /reports/payment-method-overpayment-print-envelope` split
+the scan window's over-collection across payment methods — per-method gross received, collected (Batch 68 clamp
+parity) and overpaid remainder — through one shared derivation (`build_payment_method_overpayment_breakdown` /
+`build_payment_method_overpayment_result`) behind both surfaces). Follows Batch 96's payment method collection
+summary, Batch 95's collection summary print envelope
 (`POST /reports/collection-summary-print-envelope` building the printable per-patient collection packet through the
 exact shared scan/aggregation pair (`_build_reconciliation_rows` + `build_collection_summary_by_patient`) behind
 `GET /dashboard/collection-summary-by-patient`), follows Batch 94's invoice payment reconciliation print envelope
@@ -108,5 +113,9 @@ outstanding-billing feed). Remaining before QA: further cross-module workflow
 continuity, server/client packaging
 and deployment, and completion of final reporting/printing integration. Comprehensive QA/debugging begins after
 cross-module integration, packaging, and final reporting/printing are complete.
+**Batch-size policy (amended 2026-10-04, see D-008):** from Batch 99 onward the remaining surfaces are delivered
+as mega-batches bundling 3–5 thematically-coherent features per commit (e.g. one payment-analysis batch, one
+IPD/clinical-reporting batch) instead of one endpoint+envelope pair per batch, reducing total batch count while
+keeping per-feature docs, tests and CHANGELOG sub-entries.
 See [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md)
 for the authoritative per-batch state and [CHANGELOG.md](CHANGELOG.md) for change history.
