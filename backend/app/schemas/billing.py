@@ -92,8 +92,11 @@ class PaymentCreate(BaseSchema):
 
     payment_method: PaymentMethod
 
+    # Batch 100 — negative amounts record refunds/adjustments against a
+    # live invoice. Zero is never meaningful; the service layer guards
+    # that refunds cannot exceed the amount collected.
     amount_paid: Decimal = Field(
-        gt=0,
+        ne=0,
     )
 
     transaction_reference: str | None = Field(

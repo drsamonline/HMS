@@ -646,6 +646,117 @@ class PaymentMethodOverpaymentPrintEnvelope(BaseSchema):
     data: PaymentMethodOverpaymentPrintData
 
 
+class InvoiceSettlementAuditPrintRequest(BaseSchema):
+    """Batch 100 — print request for the cleared/unsettled audit ledger."""
+
+    limit: int = Field(default=200, ge=1, le=500)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class InvoiceSettlementAuditPrintLine(BaseSchema):
+    """One invoice's settlement split as printed on paper.
+
+    Mirrors ``InvoiceSettlementAuditItem`` from the dashboard feed;
+    amounts are stringified decimals per the print-schema convention.
+    ``settled_amount + outstanding_amount == total_amount`` holds on every
+    printed row because both sides derive from the same clamped totals.
+    """
+
+    invoice_id: int
+    invoice_number: str
+    invoice_date: datetime
+    patient_name: str
+    total_amount: str
+    settled_amount: str
+    outstanding_amount: str
+    overpayment_amount: str
+    payment_count: int
+    refund_count: int
+    derived_payment_status: str
+    is_cleared: bool
+
+
+class InvoiceSettlementAuditPrintData(BaseSchema):
+    as_of: date
+    items: list[InvoiceSettlementAuditPrintLine]
+    total_invoices: int
+    cleared_count: int
+    unsettled_count: int
+    total_billed: str
+    total_collected: str
+    total_outstanding: str
+
+
+class InvoiceSettlementAuditPrintEnvelope(BaseSchema):
+    """Batch 100 — printable cleared/unsettled audit packet.
+
+    Built through the exact same live-payment scan and Batch 68 clamp as
+    ``GET /dashboard/invoice-settlement-audit``, so printed rows satisfy
+    ``settled_amount + outstanding_amount == total_amount`` line-for-line
+    and match the dashboard feed for the same scan window.
+    """
+
+    report_type: Literal["invoice_settlement_audit_print"] = (
+        "invoice_settlement_audit_print"
+    )
+    title: str
+    generated_at: datetime
+    data: InvoiceSettlementAuditPrintData
+
+
+class RefundAuditPrintRequest(BaseSchema):
+    """Batch 100 — print request for the refund processing audit ledger."""
+
+    limit: int = Field(default=200, ge=1, le=500)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class RefundAuditPrintLine(BaseSchema):
+    """One refund ledger entry's processing state as printed on paper.
+
+    Mirrors ``RefundAuditItem`` from the dashboard feed; amounts are
+    stringified decimals per the print-schema convention.
+    ``processing_complete`` requires the invoice link, remarks note and
+    non-negative net collections to all hold.
+    """
+
+    payment_id: int
+    receipt_number: str
+    payment_datetime: datetime
+    payment_method: str
+    refund_amount: str
+    invoice_number: str | None
+    invoice_net_paid: str | None
+    has_remarks: bool
+    invoice_exists: bool
+    net_non_negative: bool
+    processing_complete: bool
+
+
+class RefundAuditPrintData(BaseSchema):
+    as_of: date
+    items: list[RefundAuditPrintLine]
+    total_refunds: int
+    processed_count: int
+    drifted_count: int
+    total_refunded: str
+
+
+class RefundAuditPrintEnvelope(BaseSchema):
+    """Batch 100 — printable refund processing audit packet.
+
+    Built through the exact same negative-Payment scan as
+    ``GET /dashboard/refund-audit``, so printed rows match the dashboard
+    feed line-for-line and headlines satisfy
+    ``processed_count + drifted_count == total_refunds``.
+    """
+
+    report_type: Literal["refund_audit_print"] = "refund_audit_print"
+    title: str
+    generated_at: datetime
+    data: RefundAuditPrintData
+
+
 __all__ = [
     "ReportSection",
     "ALL_REPORT_SECTIONS",
@@ -699,4 +810,12 @@ __all__ = [
     "PaymentMethodOverpaymentPrintLine",
     "PaymentMethodOverpaymentPrintData",
     "PaymentMethodOverpaymentPrintEnvelope",
+    "InvoiceSettlementAuditPrintRequest",
+    "InvoiceSettlementAuditPrintLine",
+    "InvoiceSettlementAuditPrintData",
+    "InvoiceSettlementAuditPrintEnvelope",
+    "RefundAuditPrintRequest",
+    "RefundAuditPrintLine",
+    "RefundAuditPrintData",
+    "RefundAuditPrintEnvelope",
 ]

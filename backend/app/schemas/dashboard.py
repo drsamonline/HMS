@@ -504,6 +504,89 @@ class OPDQueueSummaryResponse(BaseSchema):
     total_open: int
 
 
+class InvoiceSettlementAuditItem(BaseSchema):
+    """One invoice reconciled against its live payment ledger.
+
+    Batch 100 — settlement continuity feed. ``total_paid`` is derived from
+    the live Payment rows only (stored counters and status columns are
+    never trusted), clamped to the invoice total per the Batch 68 rule, so
+    every row satisfies ``settled_amount + outstanding_amount ==
+    total_amount`` line-for-line. ``is_cleared`` marks invoices whose
+    collected amount covers the billed total; everything else is unsettled
+    and carries a positive ``outstanding_amount``.
+    """
+
+    invoice_id: int
+    invoice_number: str
+    invoice_date: datetime
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    total_amount: Decimal
+    total_paid: Decimal
+    settled_amount: Decimal
+    outstanding_amount: Decimal
+    overpayment_amount: Decimal
+    payment_count: int
+    refund_count: int
+    stored_payment_status: str
+    derived_payment_status: str
+    status_matches: bool
+    is_cleared: bool
+
+
+class InvoiceSettlementAuditResponse(BaseSchema):
+    """Settlement audit rows plus headline cleared/unsettled counts."""
+
+    as_of: date
+    items: list[InvoiceSettlementAuditItem]
+    total_invoices: int
+    cleared_count: int
+    unsettled_count: int
+    total_billed: Decimal
+    total_collected: Decimal
+    total_outstanding: Decimal
+
+
+class RefundAuditItem(BaseSchema):
+    """One negative Payment ledger entry inspected for processing drift.
+
+    Batch 100 — refund processing audit. Negative ``amount_paid`` entries
+    are refunds/adjustments against a live invoice. A refund is
+    ``processing_complete`` when it links to an existing invoice, carries
+    a non-empty remarks note explaining the adjustment, and leaves the
+    invoice's net collections non-negative (the service guard from the
+    refund posting rules). Drifted rows keep appearing with the individual
+    flags false instead of silently disappearing.
+    """
+
+    payment_id: int
+    receipt_number: str
+    payment_datetime: datetime
+    payment_method: str
+    refund_amount: Decimal
+    invoice_id: int | None
+    invoice_number: str | None
+    invoice_total_amount: Decimal | None
+    invoice_net_paid: Decimal | None
+    received_by: int
+    has_remarks: bool
+    invoice_exists: bool
+    net_non_negative: bool
+    processing_complete: bool
+
+
+class RefundAuditResponse(BaseSchema):
+    """Refund audit rows plus headline processed/drifted counts."""
+
+    as_of: date
+    items: list[RefundAuditItem]
+    total_refunds: int
+    processed_count: int
+    drifted_count: int
+    total_refunded: Decimal
+
+
 __all__ = [
     "DueFollowUpItem",
     "DueFollowUpsResponse",
@@ -534,4 +617,8 @@ __all__ = [
     "DischargeAuditResponse",
     "OPDQueueSummaryItem",
     "OPDQueueSummaryResponse",
+    "InvoiceSettlementAuditItem",
+    "InvoiceSettlementAuditResponse",
+    "RefundAuditItem",
+    "RefundAuditResponse",
 ]

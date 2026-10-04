@@ -404,7 +404,12 @@ class BillingService:
                 "a cancelled invoice."
             )
 
-        if invoice.payment_status == "paid":
+        # Batch 100 — negative amounts are refunds/adjustments against a
+        # live (non-cancelled) invoice. Fully-paid invoices can still be
+        # refunded, so the "already fully paid" guard applies only to
+        # positive payments; the overpayment clamp below stays the single
+        # guard for positive receipts.
+        if data.amount_paid > 0 and invoice.payment_status == "paid":
             raise BusinessRuleException(
                 "Invoice is already fully paid."
             )
@@ -424,6 +429,11 @@ class BillingService:
             raise BusinessRuleException(
                 "Payment amount cannot exceed "
                 "the outstanding invoice balance."
+            )
+
+        if total_paid + data.amount_paid < 0:
+            raise BusinessRuleException(
+                "Refund cannot exceed the amount collected on this invoice."
             )
 
         now = datetime.now(timezone.utc)
