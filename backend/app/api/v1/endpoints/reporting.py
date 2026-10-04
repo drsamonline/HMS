@@ -17,6 +17,8 @@ from app.schemas.reporting import (
     InvoicePaymentReconciliationPrintRequest,
     InvoiceOverpaymentPrintEnvelope,
     InvoiceOverpaymentPrintRequest,
+    PaymentMethodOverpaymentPrintEnvelope,
+    PaymentMethodOverpaymentPrintRequest,
     InvoiceReceiptContinuityPrintEnvelope,
     InvoiceReceiptContinuityPrintRequest,
     PaymentMethodSummaryPrintEnvelope,
@@ -230,6 +232,30 @@ async def build_invoice_overpayment_print_envelope(
     ``GET /dashboard/invoice-overpayments`` for the same scan window.
     """
     return await reporting_service.build_invoice_overpayment_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/payment-method-overpayment-print-envelope",
+    response_model=PaymentMethodOverpaymentPrintEnvelope,
+)
+async def build_payment_method_overpayment_print_envelope(
+    report_in: PaymentMethodOverpaymentPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> PaymentMethodOverpaymentPrintEnvelope:
+    """Batch 98 — printable payment-method overpayment breakdown packet.
+
+    Shares the dashboard's live-payment scan and per-method rollup
+    (``build_payment_method_overpayment_result``, built on the same
+    Batch 68 clamp as ``GET /dashboard/payment-method-summary``), so
+    printed rows always satisfy ``gross_received == collected +
+    overpaid`` and reconcile line-for-line with
+    ``GET /dashboard/payment-method-overpayments`` for the same scan
+    window.
+    """
+    return await reporting_service.build_payment_method_overpayment_print_envelope(
         db, report_in
     )
 

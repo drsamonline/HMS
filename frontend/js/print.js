@@ -303,3 +303,30 @@ export function createInvoiceOverpaymentPrintPreview(host,{envelope=null,data=nu
   $("#overpayment-print-now",shell).addEventListener("click",()=>window.print());
   return {envelope,data:payload};
 }
+
+export function createPaymentMethodOverpaymentPrintPreview(host,{envelope=null,data=null,title="Payment Method Overpayment Breakdown"}={}){
+  host.innerHTML="";
+  const payload=envelope?.data??data??{};
+  const items=payload.items||[];
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Method Overpayment Print Preview</strong><span class="print-count">${esc(String(payload.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="method-overpayment-print-now">Print Breakdown</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(envelope?.title||title)}</h1><p class="print-generated">As of: ${esc(String(payload.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Overpayment Breakdown Summary</h2></div>`
+    +`<table class="print-table"><tbody>`
+    +`<tr><td>Invoices checked</td><td>${esc(payload.invoices_checked??0)}</td></tr>`
+    +`<tr><td>Receipts scanned</td><td>${esc(payload.receipts_scanned??0)}</td></tr>`
+    +`<tr><td>Methods reported</td><td>${esc(payload.methods_reported??0)}</td></tr>`
+    +`<tr><td>Methods with overpayment</td><td>${esc(payload.methods_with_overpayment??0)}</td></tr>`
+    +`<tr><td>Total gross received</td><td>${money(payload.total_gross)}</td></tr>`
+    +`<tr><td>Total collected</td><td>${money(payload.total_collected)}</td></tr>`
+    +`<tr><td>Total overpaid</td><td>${money(payload.total_overpaid)}</td></tr>`
+    +`</tbody></table></section>`
+    +`<section class="print-section print-page-break" data-print-section="methods"><div class="print-section-heading"><h2>Per-Method Overpayment Ledger</h2></div>`
+    +(items.length?`<table class="print-table"><thead><tr><th>Method</th><th>Receipts</th><th>Invoices</th><th>Gross Received</th><th>Collected</th><th>Share %</th><th>Overpaid</th></tr></thead><tbody>`
+      +items.map(it=>`<tr><td>${esc(human(it.payment_method))}</td><td>${esc(it.receipt_count)}</td><td>${esc(it.invoice_count)}</td><td>${money(it.gross_received)}</td><td>${money(it.collected)}</td><td>${esc(it.share_of_total)}%</td><td>${money(it.overpaid)}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No payments recorded in this scan window</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#method-overpayment-print-now",shell).addEventListener("click",()=>window.print());
+  return {envelope,data:payload};
+}
