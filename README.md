@@ -132,9 +132,20 @@ Runs entirely on the local network with a server-owned database — *no internet
   parity) and percentage shares (`sum(per-method collected) == total_collected`),
   through one shared derivation (`build_payment_method_summary_result`) behind both
   surfaces; a Reports & Printing workspace card prepares through the envelope *(Batch 96)*
+- ✔ Discharge audit — `GET /dashboard/discharge-audit` reconciles every recent
+  discharge against its admission status and bed occupancy (`admission_discharged`,
+  `bed_freed`, `is_reconciled`; `reconciled_count + drift_count == total_discharges`)
+  through one shared derivation (`build_discharge_audit_result` /
+  `build_discharge_audit_scan`); drifted rows stay visible with actionable cards on
+  the dashboard *(Batch 99)*
+- ✔ OPD queue daily summary — `GET /dashboard/opd-queue-summary` rolls live OPD
+  token rows up per queue day (newest first) with a status split that always sums
+  to the day total (`waiting + in_consultation + completed + cancelled ==
+  total_tokens`), derived by the shared `build_opd_queue_summary_result` /
+  `build_opd_queue_summary_scan` pair behind a single grouped pass *(Batch 99)*
 
 ### 🧪 Test Suite
-- 323 backend tests passing as of Batch 96 (see [CHANGELOG.md](CHANGELOG.md)).
+- 337 backend tests passing as of Batch 99 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection

@@ -430,6 +430,80 @@ class PaymentMethodOverpaymentResponse(BaseSchema):
     items: list[PaymentMethodOverpaymentItem]
 
 
+class DischargeAuditItem(BaseSchema):
+    """One recent discharge reconciled against its admission and bed state.
+
+    Batch 99 — surfaces what the bed-occupancy feed cannot: the ward's
+    discharge flow itself. The live workflow marks an admission
+    ``discharged`` and frees its bed when the discharge record is created,
+    so this audit proves each discharge reconciles line-for-line:
+    ``admission_status`` should read ``discharged`` and
+    ``bed_occupancy_status`` should read ``available``. Every row carries
+    ``is_reconciled`` plus the individual flags, and
+    ``hours_since_discharge`` measures how long ago the order was placed so
+    stale or drifted rows surface instead of silently disappearing.
+    """
+
+    discharge_id: int
+    discharge_number: str
+    discharge_datetime: datetime
+    discharge_status: str
+    discharged_by: int
+    admission_id: int
+    admission_number: str
+    admission_status: str
+    admission_discharged: bool
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    bed_id: int | None = None
+    bed_number: str | None = None
+    ward: str | None = None
+    bed_occupancy_status: str | None = None
+    bed_freed: bool
+    hours_since_discharge: int
+    is_reconciled: bool
+
+
+class DischargeAuditResponse(BaseSchema):
+    """Discharge audit rows plus headline reconciliation counts."""
+
+    as_of: datetime
+    items: list[DischargeAuditItem]
+    total_discharges: int
+    reconciled_count: int
+    drift_count: int
+
+
+class OPDQueueSummaryItem(BaseSchema):
+    """One day's OPD token queue as an operational summary row.
+
+    Batch 99 — one row per ``queue_date`` (newest first). Every figure is
+    derived from live ``OPDToken`` rows in a single grouped pass; the
+    invariant ``waiting + in_consultation + completed + cancelled ==
+    total_tokens`` always holds, so the open backlog
+    (``open_token_count``) reconciles line-for-line with the status split.
+    """
+
+    queue_date: date
+    total_tokens: int
+    waiting: int
+    in_consultation: int
+    completed: int
+    cancelled: int
+    open_token_count: int
+
+
+class OPDQueueSummaryResponse(BaseSchema):
+    """Queue-day summaries plus aggregate workload figures."""
+
+    as_of: datetime
+    items: list[OPDQueueSummaryItem]
+    days_reported: int
+    total_tokens: int
+    total_open: int
+
+
 __all__ = [
     "DueFollowUpItem",
     "DueFollowUpsResponse",
@@ -456,4 +530,8 @@ __all__ = [
     "PaymentMethodSummaryResponse",
     "PaymentMethodOverpaymentItem",
     "PaymentMethodOverpaymentResponse",
+    "DischargeAuditItem",
+    "DischargeAuditResponse",
+    "OPDQueueSummaryItem",
+    "OPDQueueSummaryResponse",
 ]

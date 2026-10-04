@@ -79,7 +79,12 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 98 — Payment Method Overpayment Breakdown**
+Functional application build is in progress through **Batch 99 — Discharge Audit & OPD Queue Daily Summary**
+(the first mega-batch under the amended D-008 policy: `GET /dashboard/discharge-audit` reconciles every recent
+discharge against admission status and bed occupancy through the shared `build_discharge_audit_result` /
+`build_discharge_audit_scan` pair, while `GET /dashboard/opd-queue-summary` rolls live OPD token rows up per queue
+day through `build_opd_queue_summary_result` / `build_opd_queue_summary_scan`, both surfaced as new dashboard panels
+with API wrappers). Follows Batch 98's Payment Method Overpayment Breakdown
 (`GET /dashboard/payment-method-overpayments` + `POST /reports/payment-method-overpayment-print-envelope` split
 the scan window's over-collection across payment methods — per-method gross received, collected (Batch 68 clamp
 parity) and overpaid remainder — through one shared derivation (`build_payment_method_overpayment_breakdown` /
