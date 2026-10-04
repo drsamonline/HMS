@@ -70,6 +70,14 @@ from app.schemas.reporting import (
     PaymentMethodOverpaymentPrintEnvelope,
     PaymentMethodOverpaymentPrintLine,
     PaymentMethodOverpaymentPrintRequest,
+    InvoiceSettlementAuditPrintData,
+    InvoiceSettlementAuditPrintEnvelope,
+    InvoiceSettlementAuditPrintLine,
+    InvoiceSettlementAuditPrintRequest,
+    RefundAuditPrintData,
+    RefundAuditPrintEnvelope,
+    RefundAuditPrintLine,
+    RefundAuditPrintRequest,
     ReceiptNumberingContinuityPrintData,
     ReceiptNumberingContinuityPrintEnvelope,
     ReceiptNumberingContinuityPrintRequest,
@@ -846,6 +854,97 @@ class ReportingService:
                     )
                     for item in breakdown["items"]
                 ],
+            ),
+        )
+
+    async def build_invoice_settlement_audit_print_envelope(
+        self, db: AsyncSession, request: InvoiceSettlementAuditPrintRequest
+    ) -> InvoiceSettlementAuditPrintEnvelope:
+        """Assemble a printable cleared/unsettled settlement audit packet.
+
+        Batch 100 — reporting/printing integration for the billing domain:
+        reuses the dashboard's shared reconciliation scan
+        (``build_invoice_settlement_audit_result_from_db``, built on the
+        same ``_build_reconciliation_rows`` row builder as the Batch 94
+        reconciliation ledger, stored counters/status never trusted), so
+        printed rows always satisfy ``settled_amount + outstanding_amount
+        == total_amount`` and match
+        ``GET /dashboard/invoice-settlement-audit`` line-for-line for the
+        same scan window.
+        """
+        from app.api.v1.endpoints.dashboard import (
+            build_invoice_settlement_audit_result_from_db,
+        )
+
+        audit = await build_invoice_settlement_audit_result_from_db(
+            db, request.limit
+        )
+
+        return InvoiceSettlementAuditPrintEnvelope(
+            title=request.title or "HHMS Invoice Settlement Audit",
+            generated_at=datetime.utcnow(),
+            data=InvoiceSettlementAuditPrintData(
+                as_of=audit["as_of"],
+                items=[
+                    InvoiceSettlementAuditPrintLine(
+                        **{
+                            key: (
+                                str(value) if isinstance(value, Decimal) else value
+                            )
+                            for key, value in item.items()
+                            if key
+                            in InvoiceSettlementAuditPrintLine.model_fields
+                        }
+                    )
+                    for item in audit["items"]
+                ],
+                total_invoices=audit["total_invoices"],
+                cleared_count=audit["cleared_count"],
+                unsettled_count=audit["unsettled_count"],
+                total_billed=str(audit["total_billed"]),
+                total_collected=str(audit["total_collected"]),
+                total_outstanding=str(audit["total_outstanding"]),
+            ),
+        )
+
+    async def build_refund_audit_print_envelope(
+        self, db: AsyncSession, request: RefundAuditPrintRequest
+    ) -> RefundAuditPrintEnvelope:
+        """Assemble a printable refund processing audit packet.
+
+        Batch 100 — reporting/printing integration for the billing domain:
+        reuses the dashboard's shared negative-Payment scan
+        (``build_refund_audit_scan``, one ordered pass over refund
+        receipts plus a single grouped net-collections pass, stored
+        counters never trusted), so printed rows match
+        ``GET /dashboard/refund-audit`` line-for-line and headlines
+        satisfy ``processed_count + drifted_count == total_refunds``.
+        """
+        from app.api.v1.endpoints.dashboard import build_refund_audit_scan
+
+        audit = await build_refund_audit_scan(db, request.limit)
+
+        return RefundAuditPrintEnvelope(
+            title=request.title or "HHMS Refund Processing Audit",
+            generated_at=datetime.utcnow(),
+            data=RefundAuditPrintData(
+                as_of=audit["as_of"],
+                items=[
+                    RefundAuditPrintLine(
+                        **{
+                            key: (
+                                str(value) if isinstance(value, Decimal) else value
+                            )
+                            for key, value in item.items()
+                            if key in RefundAuditPrintLine.model_fields
+                        }
+                    )
+                    for item in audit["items"]
+                ],
+                total_refunds=audit["total_refunds"],
+                processed_count=audit["processed_count"],
+                drifted_count=audit["drifted_count"],
+                total_refunded=str(audit["total_refunded"]),
             ),
         )
 
