@@ -65,7 +65,7 @@ def upgrade() -> None:
         sa.Column("dispense_year", sa.Integer(), nullable=False),
         sa.Column("medicine_id", sa.Integer(), nullable=False),
         sa.Column("quantity_dispensed", sa.Numeric(10, 2), nullable=False),
-        sa.Column("dispense_date", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("dispense_date", sa.DateTime(timezone=True), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

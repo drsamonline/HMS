@@ -42,7 +42,7 @@ def upgrade() -> None:
         sa.Column("patient_id", sa.Integer(), nullable=False),
         sa.Column("department_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("service_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("activity_datetime", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("activity_datetime", sa.DateTime(timezone=True), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.Column("case_type", sa.String(10), nullable=False, server_default="new"),
         sa.Column("fulfillment_mode", sa.String(20), nullable=True),
         sa.Column("source_type", sa.String(30), nullable=True),

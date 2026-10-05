@@ -18,21 +18,33 @@ from pathlib import Path
 import pytest
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from sqlalchemy import inspect
+from sqlalchemy import create_engine, inspect
 
 from app.db.base import Base
 
 
 @pytest.fixture()
 def clean_root(tmp_path: Path, monkeypatch) -> Path:
-    """Point the runtime at an empty 'machine' with no database present."""
+    """Point the runtime at an empty 'machine' with no database present.
+
+    ``HHMS_APPLICATION_ROOT`` relocates every writable runtime path
+    (data dir, logs, secret key, default database) into a throwaway
+    directory; the module-level ``ROOT_DIR`` snapshot is patched to match
+    because it is captured at import time.
+    """
     root = tmp_path / "hhms-install"
     root.mkdir()
-    monkeypatch.setenv("DATABASE_URL", f"sqlite+aiosqlite:///{(root / 'data' / 'hhms.sqlite3').as_posix()}")
+    monkeypatch.setenv("HHMS_APPLICATION_ROOT", str(root))
+    monkeypatch.setenv(
+        "DATABASE_URL", f"sqlite+aiosqlite:///{(root / 'data' / 'hhms.sqlite3').as_posix()}"
+    )
     monkeypatch.setenv("ENVIRONMENT", "test")
+    from app.config import runtime_paths as paths_module
     from app.config import settings as settings_module
     from app.db import session as session_module
 
+    monkeypatch.setattr(paths_module, "application_root", lambda: root)
+    monkeypatch.setattr(settings_module, "ROOT_DIR", root)
     settings_module.get_settings.cache_clear()
     session_module.get_engine.cache_clear()
     session_module.get_session_factory.cache_clear()
@@ -74,14 +86,15 @@ def test_prepare_runtime_bootstraps_empty_machine(clean_root: Path) -> None:
 
     assert version == "0028_prescription_operational_year_lifecycle"
     # Core domain tables must all be present after a fresh upgrade chain.
+    # (Table names follow the project's declared __tablename__ values.)
     for required in (
-        "users",
-        "patients",
-        "visits",
-        "stock_batches",
-        "prescription_items",
-        "dispense_records",
-        "number_sequences",
+        "User",
+        "Patient",
+        "Visit",
+        "StockBatch",
+        "PrescriptionItem",
+        "DispenseRecord",
+        "NumberSequence",
     ):
         assert required in tables, f"missing table after clean install: {required}"
 
@@ -117,9 +130,10 @@ def test_migration_chain_head_matches_model_metadata(clean_root: Path) -> None:
     script = ScriptDirectory.from_config(migration_config())
     assert script.get_heads() == ["0028_prescription_operational_year_lifecycle"]
 
-    with sqlite3.connect(_db_file(clean_root)) as conn:
-        ctx = MigrationContext.configure(conn)
-        installed = set(ctx.get_table_names())
+    engine = create_engine(f"sqlite:///{_db_file(clean_root)}")
+    with engine.connect() as conn:
+        installed = set(inspect(conn).get_table_names())
+    engine.dispose()
 
     declared = set(Base.metadata.tables.keys())
     missing = declared - installed

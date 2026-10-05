@@ -58,7 +58,7 @@ def upgrade() -> None:
         sa.Column("patient_id", sa.Integer(), nullable=False),
         sa.Column("admission_year", sa.Integer(), nullable=False),
         sa.Column("admission_number", sa.String(20), nullable=False),
-        sa.Column("admission_datetime", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("admission_datetime", sa.DateTime(timezone=True), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.Column("bed_id", sa.Integer(), nullable=False),
         sa.Column("department_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("service_id", postgresql.UUID(as_uuid=True), nullable=True),

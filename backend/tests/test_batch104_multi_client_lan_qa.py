@@ -35,6 +35,7 @@ CLIENT_COUNT = 6
 
 @pytest.fixture()
 def shared_db(tmp_path: Path) -> str:
+    """One shared LAN database file, unique per test (no cross-test bleed)."""
     return str(tmp_path / "hhms-lan-shared.sqlite3")
 
 
@@ -59,9 +60,16 @@ def test_concurrent_logins_across_shared_file_db(shared_db: str) -> None:
     assert len(set(tokens)) == CLIENT_COUNT
 
 
-def test_concurrent_token_mints_and_authenticated_roundtrips(shared_db: str) -> None:
-    """Each simulated client logs in then calls /auth/me concurrently."""
-    with make_file_client(shared_db) as (make_client, dispose):
+def test_concurrent_token_mints_and_authenticated_roundtrips(tmp_path: Path) -> None:
+    """Each simulated client logs in then calls /auth/me concurrently.
+
+    Uses its own shared DB file so user seeding from earlier tests in the
+    module cannot leak into this fixture's schema.
+    """
+    with make_file_client(str(tmp_path / "hhms-lan-roundtrip.sqlite3")) as (
+        make_client,
+        dispose,
+    ):
         credentials = [seed_client_user(i) for i in range(1, CLIENT_COUNT + 1)]
 
         def session_roundtrip(item):

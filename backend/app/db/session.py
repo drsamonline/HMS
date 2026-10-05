@@ -48,7 +48,6 @@ def get_engine() -> AsyncEngine:
 
     if settings.DATABASE_URL.startswith("sqlite+aiosqlite://"):
         connect_args["check_same_thread"] = False
-        engine_kwargs["connect_args"] = connect_args
         if ":memory:" in settings.DATABASE_URL:
             # In-memory SQLite exists only inside the single connection that
             # created it, so every session must share one pinned connection.
@@ -58,16 +57,19 @@ def get_engine() -> AsyncEngine:
         else:
             # File-based SQLite (the real packaged/LAN runtime) must support
             # concurrent requests.  A single pinned StaticPool connection
-            # serialises *and* deadlocks multi-session workloads, so use a
-            # small queue pool plus WAL journaling and a busy timeout so
-            # simultaneous LAN clients can read/write safely.
-            from sqlalchemy import event
-            from sqlalchemy.pool import QueuePool
-
-            engine_kwargs["poolclass"] = QueuePool
-            engine_kwargs["pool_size"] = 5
-            engine_kwargs["max_overflow"] = 10
-            engine_kwargs["pool_timeout"] = 30
+            # serialises *and* deadlocks multi-session workloads, so use one
+            # connection per checkout plus WAL journaling and a busy timeout
+            # below so simultaneous LAN clients can read/write safely.
+            #
+            # ``isolation_level=None`` puts the pysqlite driver in true
+            # autocommit mode so SQLAlchemy (not the silent legacy driver
+            # mode that auto-commits on DDL and never emits BEGIN for DML)
+            # controls transaction boundaries.  Without this, row locks
+            # acquired via ``SELECT ... FOR UPDATE`` (see
+            # ``NumberSequenceService``) are released immediately and
+            # concurrent identifier minting produces duplicate numbers.
+            connect_args["isolation_level"] = None
+        engine_kwargs["connect_args"] = connect_args
     else:
         engine_kwargs["connect_args"] = connect_args
 
