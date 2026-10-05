@@ -13,8 +13,9 @@ Usage::
 """
 from __future__ import annotations
 
+import asyncio
 import os
-from contextlib import asynccontextmanager, contextmanager
+from contextlib import contextmanager
 from typing import Iterator
 
 # Configure environment BEFORE any ``app`` imports so cached settings
@@ -46,8 +47,12 @@ def make_client() -> Iterator["object"]:
     get_session_factory.cache_clear()
     get_engine.cache_clear()
     engine = get_engine()
-    with engine.begin() as connection:
-        connection.run_sync(Base.metadata.create_all)
+
+    async def _create_schema() -> None:
+        async with engine.begin() as connection:
+            await connection.run_sync(Base.metadata.create_all)
+
+    asyncio.run(_create_schema())
 
     application = FastAPI()
     application.add_middleware(ProcessTimeMiddleware)
@@ -61,7 +66,13 @@ def make_client() -> Iterator["object"]:
         yield client
     finally:
         client.close()
-        engine.sync_engine.dispose()
+
+        # Dispose the async engine from within an event loop so the
+        # aiosqlite connections close cleanly (avoids MissingGreenlet).
+        async def _dispose() -> None:
+            await engine.dispose()
+
+        asyncio.run(_dispose())
         get_session_factory.cache_clear()
         get_engine.cache_clear()
 
@@ -72,6 +83,75 @@ def auth_headers() -> dict[str, str]:
 
     token = create_access_token(subject="qa-batch103")
     return {"Authorization": f"Bearer {token}"}
+
+
+def seed_user(*, username: str = "qa-admin", password: str = "qa-password") -> int:
+    """Insert an active User row directly and return its id.
+
+    Intended for end-to-end ``POST /auth/login`` round-trips against the
+    ephemeral in-memory schema created by :func:`make_client`. Must be
+    called inside an active ``with make_client()`` block.
+    """
+    from app.auth.password import hash_password
+    from app.db.session import get_session_factory
+    from app.models.user import User
+
+    factory = get_session_factory()
+
+    async def _seed() -> int:
+        async with factory() as db:
+            user = User(
+                username=username,
+                password_hash=hash_password(password),
+                full_name="QA Batch 103",
+                email=None,
+                is_active=True,
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+            return user.id
+
+    return asyncio.run(_seed())
+
+
+def seed_number_sequence(
+    *,
+    sequence_name: str,
+    prefix: str = "",
+    suffix: str = "",
+    current_value: int = 0,
+    padding_length: int = 4,
+    reset_frequency: str = "never",
+) -> int:
+    """Insert an active NumberSequence row and return its id.
+
+    Required for end-to-end writes that mint human-readable identifiers
+    (e.g. ``POST /patients`` needs the ``patient_number`` sequence).
+    Must be called inside an active ``with make_client()`` block.
+    """
+    from app.db.session import get_session_factory
+    from app.models.number_sequence import NumberSequence
+
+    factory = get_session_factory()
+
+    async def _seed() -> int:
+        async with factory() as db:
+            seq = NumberSequence(
+                sequence_name=sequence_name,
+                prefix=prefix,
+                suffix=suffix,
+                current_value=current_value,
+                padding_length=padding_length,
+                reset_frequency=reset_frequency,
+                is_active=True,
+            )
+            db.add(seq)
+            await db.commit()
+            await db.refresh(seq)
+            return seq.id
+
+    return asyncio.run(_seed())
 
 
 def api_get(client, path: str, **kwargs):
