@@ -26,21 +26,34 @@ os.environ.setdefault("SECRET_KEY", "batch103-qa-test-secret-key")
 os.environ.setdefault("DISCOVERY_ENABLED", "false")
 
 
-@contextmanager
-def make_client() -> Iterator["object"]:
-    """Yield a TestClient bound to the full API with an in-memory schema."""
+def _build_application():
+    """Assemble the full production ASGI stack (middleware + handlers + api_router)."""
     from fastapi import FastAPI
-    from fastapi.testclient import TestClient
 
     from app.api.v1.api import api_router
-    from app.db.base import Base  # noqa: F401 - registers all models
-    from app.db.session import get_engine, get_session_factory
     from app.middleware import (
         ProcessTimeMiddleware,
         RequestIDMiddleware,
         RequestLoggingMiddleware,
         register_exception_handlers,
     )
+
+    application = FastAPI()
+    application.add_middleware(ProcessTimeMiddleware)
+    application.add_middleware(RequestIDMiddleware)
+    application.add_middleware(RequestLoggingMiddleware)
+    register_exception_handlers(application)
+    application.include_router(api_router, prefix="/api/v1")
+    return application
+
+
+@contextmanager
+def make_client() -> Iterator["object"]:
+    """Yield a TestClient bound to the full API with an in-memory schema."""
+    from fastapi.testclient import TestClient
+
+    from app.db.base import Base  # noqa: F401 - registers all models
+    from app.db.session import get_engine, get_session_factory
 
     # Fresh in-memory database per harness use: clear the cached engine so
     # every ``with make_client()`` block starts from an empty schema.
@@ -54,12 +67,7 @@ def make_client() -> Iterator["object"]:
 
     asyncio.run(_create_schema())
 
-    application = FastAPI()
-    application.add_middleware(ProcessTimeMiddleware)
-    application.add_middleware(RequestIDMiddleware)
-    application.add_middleware(RequestLoggingMiddleware)
-    register_exception_handlers(application)
-    application.include_router(api_router, prefix="/api/v1")
+    application = _build_application()
 
     client = TestClient(application)
     try:
@@ -75,6 +83,64 @@ def make_client() -> Iterator["object"]:
         asyncio.run(_dispose())
         get_session_factory.cache_clear()
         get_engine.cache_clear()
+
+
+@contextmanager
+def make_file_client(db_path: str) -> Iterator[tuple]:
+    """Yield ``(client_factory, dispose)`` over one shared file-based SQLite DB.
+
+    Reproduces the packaged LAN runtime: a file-backed database with WAL
+    journaling and busy timeout, any number of independent ``TestClient``
+    instances (one per simulated client machine), each built on its own
+    event loop thread — exactly what concurrent multi-client requests hit
+    on a real server process.
+
+    The caller must invoke ``dispose()`` before exiting the context so the
+    engine is torn down while the temporary DATABASE_URL env is still set.
+    """
+    from fastapi.testclient import TestClient
+
+    from app.db.base import Base  # noqa: F401 - registers all models
+    from app.db.session import get_engine, get_session_factory
+
+    prev_db_url = os.environ.get("DATABASE_URL")
+    os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{db_path}"
+    get_session_factory.cache_clear()
+    get_engine.cache_clear()
+    engine = get_engine()
+
+    async def _create_schema() -> None:
+        async with engine.begin() as connection:
+            await connection.run_sync(Base.metadata.create_all)
+
+    asyncio.run(_create_schema())
+
+    application = _build_application()
+    clients: list[TestClient] = []
+
+    def client_factory() -> TestClient:
+        client = TestClient(application)
+        clients.append(client)
+        return client
+
+    def dispose() -> None:
+        for client in clients:
+            client.close()
+
+        async def _dispose_engine() -> None:
+            await engine.dispose()
+
+        asyncio.run(_dispose_engine())
+        get_session_factory.cache_clear()
+        get_engine.cache_clear()
+
+    try:
+        yield client_factory, dispose
+    finally:
+        if prev_db_url is None:
+            os.environ.pop("DATABASE_URL", None)
+        else:
+            os.environ["DATABASE_URL"] = prev_db_url
 
 
 def auth_headers() -> dict[str, str]:

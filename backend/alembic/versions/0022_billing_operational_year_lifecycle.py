@@ -75,7 +75,10 @@ def upgrade() -> None:
     )
     # Payments may outlive their rolled-over invoice; the link becomes
     # detachable during annual billing rollover.
-    op.alter_column("Payment", "invoice_id", existing_type=sa.Integer(), nullable=True)
+    with op.batch_alter_table("Payment") as batch_op:
+        batch_op.alter_column(
+            "invoice_id", existing_type=sa.Integer(), nullable=True
+        )
     op.create_index("ix_payment_payment_year", "Payment", ["payment_year"])
     op.create_index("ix_payment_storage_tier", "Payment", ["storage_tier"])
     op.create_index("ix_payment_is_current_year", "Payment", ["is_current_year"])
@@ -239,7 +242,10 @@ def downgrade() -> None:
     op.drop_index("ix_payment_is_current_year", table_name="Payment")
     op.drop_index("ix_payment_storage_tier", table_name="Payment")
     op.drop_index("ix_payment_payment_year", table_name="Payment")
-    op.alter_column("Payment", "invoice_id", existing_type=sa.Integer(), nullable=False)
+    with op.batch_alter_table("Payment") as batch_op:
+        batch_op.alter_column(
+            "invoice_id", existing_type=sa.Integer(), nullable=False
+        )
     op.drop_column("Payment", "is_current_year")
     op.drop_column("Payment", "storage_tier")
     op.drop_column("Payment", "payment_year")

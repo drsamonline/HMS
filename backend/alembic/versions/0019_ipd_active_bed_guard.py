@@ -1,4 +1,5 @@
 """Prevent more than one active admission from occupying the same bed."""
+import sqlalchemy as sa
 from alembic import op
 
 revision = "0019_ipd_active_bed_guard"
@@ -13,8 +14,9 @@ def upgrade() -> None:
         "Admission",
         ["bed_id"],
         unique=True,
-        postgresql_where="admission_status IN ('admitted','active')",
-        sqlite_where="admission_status IN ('admitted','active')",
+        # Partial-index predicates must be SQL expressions, not raw strings.
+        postgresql_where=sa.text("admission_status IN ('admitted','active')"),
+        sqlite_where=sa.text("admission_status IN ('admitted','active')"),
     )
 
 
