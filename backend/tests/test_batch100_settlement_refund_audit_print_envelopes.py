@@ -115,7 +115,7 @@ def test_settlement_audit_result_splits_and_headlines():
     assert by_id[1]["overpayment_amount"] == Decimal("0")
 
     assert result["total_billed"] == Decimal("1200")
-    assert result["total_collected"] == Decimal("800")
+    assert result["total_collected"] == Decimal("900")
     assert result["total_outstanding"] == Decimal("300")
     assert (
         result["total_billed"]
@@ -525,16 +525,25 @@ def test_batch100_print_schemas_defined_and_exported():
         assert cls in reporting_schemas.__all__, cls
 
 
+def _field_bound(field, bound_type):
+    """Pull a numeric bound (Ge/Le) out of a Pydantic v2 FieldInfo."""
+    for constraint in field.metadata:
+        if isinstance(constraint, bound_type):
+            return getattr(constraint, bound_type.__name__.lower())
+    return None
+
+
 def test_batch100_print_request_bounds_and_report_types():
+    from pydantic import Ge, Le, ValidationError
+
     from app.schemas.reporting import (
         DischargeAuditPrintRequest,
         InvoiceSettlementAuditPrintEnvelope,
+        InvoiceSettlementAuditPrintRequest,
         OPDQueueSummaryPrintRequest,
-        RefundAuditPrintEnvelope,
         RefundAuditPrintEnvelope,
         InvoiceSettlementAuditPrintEnvelope as SettlementEnvelope,
     )
-    from pydantic import ValidationError
 
     # bounded limits match the dashboard feeds
     assert InvoiceSettlementAuditPrintEnvelope.model_fields["report_type"].default == (
@@ -543,10 +552,12 @@ def test_batch100_print_request_bounds_and_report_types():
     assert RefundAuditPrintEnvelope.model_fields["report_type"].default == (
         "refund_audit_print"
     )
-    assert DischargeAuditPrintRequest.model_fields["limit"].ge == 1
-    assert DischargeAuditPrintRequest.model_fields["limit"].le == 500
-    assert OPDQueueSummaryPrintRequest.model_fields["limit_days"].default == 14
-    assert OPDQueueSummaryPrintRequest.model_fields["limit_days"].le == 90
+    limit_field = DischargeAuditPrintRequest.model_fields["limit"]
+    assert _field_bound(limit_field, Ge) == 1
+    assert _field_bound(limit_field, Le) == 500
+    days_field = OPDQueueSummaryPrintRequest.model_fields["limit_days"]
+    assert days_field.default == 14
+    assert _field_bound(days_field, Le) == 90
     assert SettlementEnvelope.model_fields["report_type"].default == (
         "invoice_settlement_audit_print"
     )
