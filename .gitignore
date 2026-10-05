@@ -1,11 +1,6 @@
-# Python compiled files and caches
+# Python
 __pycache__/
-*.py[cod]
-*$py.class
-
-# Sensitive data / runtime state
-data/secret.key
-data/server_id
+*.pyc
 
 # Logs
-*.log
+data/logs/

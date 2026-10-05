@@ -51,9 +51,10 @@ def upgrade() -> None:
 
     # Dispense rows may outlive their rolled-over prescription item; the link
     # becomes detachable during annual pharmacy rollover.
-    op.alter_column(
-        "DispenseRecord", "prescription_item_id", existing_type=sa.Integer(), nullable=True
-    )
+    with op.batch_alter_table("DispenseRecord") as batch_op:
+        batch_op.alter_column(
+            "prescription_item_id", existing_type=sa.Integer(), nullable=True
+        )
 
     op.create_table(
         "DispenseArchiveReference",
@@ -99,9 +100,10 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_table("DispenseArchiveReference")
-    op.alter_column(
-        "DispenseRecord", "prescription_item_id", existing_type=sa.Integer(), nullable=False
-    )
+    with op.batch_alter_table("DispenseRecord") as batch_op:
+        batch_op.alter_column(
+            "prescription_item_id", existing_type=sa.Integer(), nullable=False
+        )
     op.drop_index("ix_dispense_record_is_current_year", table_name="DispenseRecord")
     op.drop_index("ix_dispense_record_storage_tier", table_name="DispenseRecord")
     op.drop_index("ix_dispense_record_dispense_year", table_name="DispenseRecord")

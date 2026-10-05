@@ -49,13 +49,50 @@ def get_engine() -> AsyncEngine:
     if settings.DATABASE_URL.startswith("sqlite+aiosqlite://"):
         connect_args["check_same_thread"] = False
         engine_kwargs["connect_args"] = connect_args
-        # SQLite is file-based and does not benefit from a server-style pool.
-        from sqlalchemy.pool import StaticPool
-        engine_kwargs["poolclass"] = StaticPool
+        if ":memory:" in settings.DATABASE_URL:
+            # In-memory SQLite exists only inside the single connection that
+            # created it, so every session must share one pinned connection.
+            from sqlalchemy.pool import StaticPool
+
+            engine_kwargs["poolclass"] = StaticPool
+        else:
+            # File-based SQLite (the real packaged/LAN runtime) must support
+            # concurrent requests.  A single pinned StaticPool connection
+            # serialises *and* deadlocks multi-session workloads, so use a
+            # small queue pool plus WAL journaling and a busy timeout so
+            # simultaneous LAN clients can read/write safely.
+            from sqlalchemy import event
+            from sqlalchemy.pool import QueuePool
+
+            engine_kwargs["poolclass"] = QueuePool
+            engine_kwargs["pool_size"] = 5
+            engine_kwargs["max_overflow"] = 10
+            engine_kwargs["pool_timeout"] = 30
     else:
         engine_kwargs["connect_args"] = connect_args
 
-    return create_async_engine(settings.DATABASE_URL, **engine_kwargs)
+    engine = create_async_engine(settings.DATABASE_URL, **engine_kwargs)
+
+    if (
+        settings.DATABASE_URL.startswith("sqlite+aiosqlite://")
+        and ":memory:" not in settings.DATABASE_URL
+    ):
+        # Per-connection pragmas for file-based SQLite: WAL lets concurrent
+        # readers coexist with a writer, and busy_timeout makes transient
+        # write-lock contention wait instead of failing with SQLITE_BUSY.
+        from sqlalchemy import event
+
+        @event.listens_for(engine.sync_engine, "connect")
+        def _set_sqlite_pragmas(dbapi_connection, _connection_record):
+            cursor = dbapi_connection.cursor()
+            try:
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA busy_timeout=5000")
+                cursor.execute("PRAGMA synchronous=NORMAL")
+            finally:
+                cursor.close()
+
+    return engine
 
 
 @lru_cache(maxsize=1)
