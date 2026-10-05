@@ -87,7 +87,9 @@ billed amounts re-derived from `InvoiceItem` line totals in one grouped pass (`b
 total_investigations_checked`) via the shared `build_investigation_billing_reconciliation_scan`/`_result` trio, printable
 through `POST /reports/investigation-billing-reconciliation-print-envelope` with screen/paper parity by construction; the
 commit also restores the Batch 100 discharge-audit/OPD-queue print envelope service builders and locks the refund-audit
-rollup to scan order (no silent re-sort) lost in an incomplete merge). Follows Batch 101's Ward Occupancy Print Envelope & Operational Print Completion
+rollup to scan order (no silent re-sort) lost in an incomplete merge). **Batch 102 closes the remaining functional
+surfaces: the next batch is Batch QA — Milestone 6 Comprehensive QA/debugging (unit/integration/E2E/LAN/performance/
+clean-machine), followed by Milestone 7 release packaging & deployment.** Follows Batch 101's Ward Occupancy Print Envelope & Operational Print Completion
 (second mega-batch under the amended D-008 policy: `GET /dashboard/ward-occupancy-summary` rolls active beds into
 per-ward buckets — Unassigned bucketing, `occupied_beds + reserved_beds + available_beds == total_beds` for any input —
 via the shared `build_ward_occupancy_summary_scan`/`build_ward_occupancy_summary_result` pair, printable through
