@@ -90,6 +90,14 @@ from app.schemas.reporting import (
     PaymentMethodOverpaymentPrintEnvelope,
     PaymentMethodOverpaymentPrintLine,
     PaymentMethodOverpaymentPrintRequest,
+    InvoiceSettlementAuditPrintData,
+    InvoiceSettlementAuditPrintEnvelope,
+    InvoiceSettlementAuditPrintLine,
+    InvoiceSettlementAuditPrintRequest,
+    RefundAuditPrintData,
+    RefundAuditPrintEnvelope,
+    RefundAuditPrintLine,
+    RefundAuditPrintRequest,
     ReceiptNumberingContinuityPrintData,
     ReceiptNumberingContinuityPrintEnvelope,
     ReceiptNumberingContinuityPrintRequest,
@@ -872,47 +880,50 @@ class ReportingService:
     async def build_invoice_settlement_audit_print_envelope(
         self, db: AsyncSession, request: InvoiceSettlementAuditPrintRequest
     ) -> InvoiceSettlementAuditPrintEnvelope:
-        """Assemble a printable invoice settlement audit packet.
+        """Assemble a printable cleared/unsettled settlement audit packet.
 
         Batch 100 — reporting/printing integration for the billing domain:
-        reuses the dashboard's shared live-payment scan and settlement
-        rollup (``build_invoice_settlement_audit_scan``, built on the same
-        ``_build_reconciliation_rows`` row builder as the Batch 89/94/97
-        ledgers with the Batch 68 clamp reused verbatim), so printed rows
-        always satisfy ``settled_amount + outstanding_amount ==
-        total_amount`` line-for-line, headlines satisfy
-        ``cleared_count + unsettled_count == total_invoices`` plus
-        ``total_billed == total_collected + total_outstanding``, and the
-        packet matches ``GET /dashboard/invoice-settlement-audit``
-        line-for-line for the same scan window.
+        reuses the dashboard's shared reconciliation scan
+        (``build_invoice_settlement_audit_result_from_db``, built on the
+        same ``_build_reconciliation_rows`` row builder as the Batch 94
+        reconciliation ledger, stored counters/status never trusted), so
+        printed rows always satisfy ``settled_amount + outstanding_amount
+        == total_amount`` and match
+        ``GET /dashboard/invoice-settlement-audit`` line-for-line for the
+        same scan window.
         """
         from app.api.v1.endpoints.dashboard import (
-            build_invoice_settlement_audit_scan,
+            build_invoice_settlement_audit_result_from_db,
         )
 
-        audit = await build_invoice_settlement_audit_scan(db, request.limit)
+        audit = await build_invoice_settlement_audit_result_from_db(
+            db, request.limit
+        )
 
         return InvoiceSettlementAuditPrintEnvelope(
             title=request.title or "HHMS Invoice Settlement Audit",
             generated_at=datetime.utcnow(),
             data=InvoiceSettlementAuditPrintData(
                 as_of=audit["as_of"],
+                items=[
+                    InvoiceSettlementAuditPrintLine(
+                        **{
+                            key: (
+                                str(value) if isinstance(value, Decimal) else value
+                            )
+                            for key, value in item.items()
+                            if key
+                            in InvoiceSettlementAuditPrintLine.model_fields
+                        }
+                    )
+                    for item in audit["items"]
+                ],
                 total_invoices=audit["total_invoices"],
                 cleared_count=audit["cleared_count"],
                 unsettled_count=audit["unsettled_count"],
                 total_billed=str(audit["total_billed"]),
                 total_collected=str(audit["total_collected"]),
                 total_outstanding=str(audit["total_outstanding"]),
-                total_overpaid=str(audit["total_overpaid"]),
-                items=[
-                    InvoiceSettlementAuditPrintLine(
-                        **{
-                            key: (str(value) if isinstance(value, Decimal) else value)
-                            for key, value in item.items()
-                        }
-                    )
-                    for item in audit["items"]
-                ],
             ),
         )
 
@@ -922,10 +933,10 @@ class ReportingService:
         """Assemble a printable refund processing audit packet.
 
         Batch 100 — reporting/printing integration for the billing domain:
-        reuses the dashboard's shared negative-Payment scan and per-refund
-        flag rollup (``build_refund_audit_scan``), so printed rows carry
-        the exact same ``has_remarks``/``invoice_exists``/
-        ``net_non_negative``/``processing_complete`` flags as
+        reuses the dashboard's shared negative-Payment scan
+        (``build_refund_audit_scan``, one ordered pass over refund
+        receipts plus a single grouped net-collections pass, stored
+        counters never trusted), so printed rows match
         ``GET /dashboard/refund-audit`` line-for-line and headlines
         satisfy ``processed_count + drifted_count == total_refunds``.
         """
@@ -938,90 +949,22 @@ class ReportingService:
             generated_at=datetime.utcnow(),
             data=RefundAuditPrintData(
                 as_of=audit["as_of"],
-                total_refunds=audit["total_refunds"],
-                processed_count=audit["processed_count"],
-                drifted_count=audit["drifted_count"],
-                total_refunded=str(audit["total_refunded"]),
                 items=[
                     RefundAuditPrintLine(
                         **{
-                            key: (str(value) if isinstance(value, Decimal) else value)
+                            key: (
+                                str(value) if isinstance(value, Decimal) else value
+                            )
                             for key, value in item.items()
-                            if key != "remarks"
+                            if key in RefundAuditPrintLine.model_fields
                         }
                     )
                     for item in audit["items"]
                 ],
-            ),
-        )
-
-    async def build_discharge_audit_print_envelope(
-        self, db: AsyncSession, request: DischargeAuditPrintRequest
-    ) -> DischargeAuditPrintEnvelope:
-        """Assemble a printable ward-flow discharge audit packet.
-
-        Batch 100 — reporting/printing integration for the IPD domain:
-        reuses the dashboard's shared joined scan and reconciliation
-        derivation (``build_discharge_audit_scan`` +
-        ``build_discharge_audit_result`` from Batch 99 verbatim), so every
-        printed row carries the same ``admission_discharged``/``bed_freed``
-        flags and non-negative ages as ``GET /dashboard/discharge-audit``
-        and headlines satisfy ``reconciled_count + drift_count ==
-        total_discharges`` for the same scan window.
-        """
-        from app.api.v1.endpoints.dashboard import (
-            build_discharge_audit_result,
-            build_discharge_audit_scan,
-        )
-
-        rows = await build_discharge_audit_scan(db, request.limit)
-        audit = build_discharge_audit_result(rows, datetime.utcnow())
-
-        return DischargeAuditPrintEnvelope(
-            title=request.title or "HHMS Discharge Audit Ledger",
-            generated_at=datetime.utcnow(),
-            data=DischargeAuditPrintData(
-                as_of=audit["as_of"],
-                total_discharges=audit["total_discharges"],
-                reconciled_count=audit["reconciled_count"],
-                drift_count=audit["drift_count"],
-                items=[
-                    DischargeAuditPrintLine(**item)
-                    for item in audit["items"]
-                ],
-            ),
-        )
-
-    async def build_opd_queue_summary_print_envelope(
-        self, db: AsyncSession, request: OPDQueueSummaryPrintRequest
-    ) -> OPDQueueSummaryPrintEnvelope:
-        """Assemble a printable OPD queue daily summary packet.
-
-        Batch 100 — reporting/printing integration for the OPD domain:
-        reuses the dashboard's shared grouped scan and per-day rollup
-        (``build_opd_queue_summary_scan`` from Batch 99 verbatim), so each
-        printed day's status split sums back to that day's total tokens
-        and the headline open backlog matches
-        ``GET /dashboard/opd-queue-summary`` for the same window.
-        """
-        from app.api.v1.endpoints.dashboard import (
-            build_opd_queue_summary_scan,
-        )
-
-        summary = await build_opd_queue_summary_scan(db, request.limit_days)
-
-        return OPDQueueSummaryPrintEnvelope(
-            title=request.title or "HHMS OPD Queue Daily Summary",
-            generated_at=datetime.utcnow(),
-            data=OPDQueueSummaryPrintData(
-                as_of=summary["as_of"],
-                days_reported=summary["days_reported"],
-                total_tokens=summary["total_tokens"],
-                total_open=summary["total_open"],
-                items=[
-                    OPDQueueSummaryPrintLine(**item)
-                    for item in summary["items"]
-                ],
+                total_refunds=audit["total_refunds"],
+                processed_count=audit["processed_count"],
+                drifted_count=audit["drifted_count"],
+                total_refunded=str(audit["total_refunded"]),
             ),
         )
 
