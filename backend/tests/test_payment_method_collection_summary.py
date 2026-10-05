@@ -142,11 +142,13 @@ def test_reports_workspace_card_prepares_through_envelope():
     handler = src.split("#payment-method-prepare")[-1]
     assert "await buildPaymentMethodSummaryPrintEnvelope({limit" in handler
     assert "envelope?.data" in handler
-    # Batch 89 quoting convention: card ids render as plain id="..." attributes
-    # (verified by template evaluation — see harness note in batch docstring)
-    assert 'id="payment-method-limit"' in src
-    assert 'id="payment-method-prepare"' in src
-    assert 'id="payment-method-note"' in src
+    # Batch 89 quoting convention: inside the innerHTML template literal the
+    # ids ship as single-escaped `id=\"...\"` sequences (rendered by the browser
+    # as valid plain id="..." attributes — verified by template evaluation,
+    # see harness note in batch docstring).
+    assert 'id=\\"payment-method-limit\\"' in src
+    assert 'id=\\"payment-method-prepare\\"' in src
+    assert 'id=\\"payment-method-note\\"' in src
 
 
 def test_documentation_indexed():
