@@ -101,6 +101,19 @@ drifted rows surface instead of disappearing);
 queue day with a status split whose invariant
 ``waiting + in_consultation + completed + cancelled == total_tokens``
 always holds, so each day's open backlog reconciles line-for-line.
+
+Batch 102 — Investigation Billing Reconciliation: ``GET
+/dashboard/investigation-billing-reconciliation`` proves every open
+laboratory order from the Batch 84 pending-investigation vocabulary still
+has its billed amount on a live non-cancelled invoice. Billed amounts are
+derived from ``InvoiceItem`` rows matched by ``investigation_id`` reference
+(or investigation-number prefix in the description, covering legacy lines)
+in one grouped pass — never trusted from any stored counter — so each row
+satisfies ``billed_amount == charged_total - credited_total`` and the
+headlines satisfy ``pending_count + billed_missing_count ==
+total_investigations_checked`` plus ``total_billed == sum(billed_amount)``.
+Unbilled investigations surface with ``billed_amount == 0`` instead of
+disappearing, mirroring the Batch 89/97 drift-surfacing philosophy.
 """
 
 from __future__ import annotations
