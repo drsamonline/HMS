@@ -177,7 +177,16 @@ Runs entirely on the local network with a server-owned database — *no internet
   for all four new surfaces in the Reports & Printing workspace *(Batch 100)*
 
 ### 🧪 Test Suite
-- 362 backend tests passing as of Batch 100 (see [CHANGELOG.md](CHANGELOG.md)).
+- ✔ Ward occupancy summary — `GET /dashboard/ward-occupancy-summary` rolls active beds
+  into per-ward buckets (null wards surface under an explicit "Unassigned" label;
+  `occupied_beds + reserved_beds + available_beds == total_beds` for any input,
+  `active_admissions <= occupied_beds`) via the shared
+  `build_ward_occupancy_summary_scan`/`build_ward_occupancy_summary_result` pair;
+  printable through `POST /reports/ward-occupancy-print-envelope`, alongside the OPD
+  queue summary print preview renderer *(Batch 101)*
+
+### 🧪 Test Suite
+- 372 backend tests passing as of Batch 101 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection
