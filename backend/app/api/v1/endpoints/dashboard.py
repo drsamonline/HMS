@@ -1932,7 +1932,7 @@ def build_invoice_settlement_audit_result(rows: list[dict], as_of: date) -> dict
     }
 
 
-async def build_invoice_settlement_audit_result_from_db(db, limit: int) -> dict:
+async def build_invoice_settlement_audit_scan(db, limit: int) -> dict:
     """Scan-and-aggregate entry point shared with the reporting service.
 
     Batch 100 — single implementation behind both
@@ -1949,7 +1949,7 @@ async def build_invoice_settlement_audit_result_from_db(db, limit: int) -> dict:
         refunds_result = await db.execute(
             select(Payment.invoice_id, func.count(Payment.id))
             .where(Payment.invoice_id.in_(invoice_ids))
-            .where(Payment.amount_paid < 0)
+            .where(Payment.amount_paid < Decimal("0"))
             .group_by(Payment.invoice_id)
         )
         refund_counts = {
@@ -1981,7 +1981,7 @@ async def invoice_settlement_audit(
     ``cleared_count + unsettled_count == total_invoices`` and
     ``total_billed == total_collected + total_outstanding``.
     """
-    result = await build_invoice_settlement_audit_result_from_db(db, limit)
+    result = await build_invoice_settlement_audit_scan(db, limit)
     return InvoiceSettlementAuditResponse(**result)
 
 
@@ -2312,7 +2312,6 @@ __all__ = [
     "build_payment_method_overpayment_result",
     "build_payment_method_summary_result",
     "build_invoice_settlement_audit_result",
-    "build_invoice_settlement_audit_result_from_db",
     "build_receivables_aging_result",
     "build_refund_audit_result",
     "build_refund_audit_scan",
