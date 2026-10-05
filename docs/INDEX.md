@@ -167,6 +167,7 @@
 | [CLIENT_INVOICE_PAYMENT_RECONCILIATION_PRINT_ENVELOPE.md](CLIENT_INVOICE_PAYMENT_RECONCILIATION_PRINT_ENVELOPE.md) | Invoice payment reconciliation print envelope (Batch 94) |
 | [CLIENT_COLLECTION_SUMMARY_PRINT_ENVELOPE.md](CLIENT_COLLECTION_SUMMARY_PRINT_ENVELOPE.md) | Collection summary print envelope (Batch 95) |
 | [CLIENT_PAYMENT_METHOD_COLLECTION_SUMMARY.md](CLIENT_PAYMENT_METHOD_COLLECTION_SUMMARY.md) | Payment method collection summary + print envelope (Batch 96) |
+| [CLIENT_INVOICE_OVERPAYMENT_LEDGER.md](CLIENT_INVOICE_OVERPAYMENT_LEDGER.md) | Invoice overpayment ledger dashboard feed + print envelope (Batch 97) |
 | [CLIENT_PAYMENT_METHOD_OVERPAYMENT_BREAKDOWN.md](CLIENT_PAYMENT_METHOD_OVERPAYMENT_BREAKDOWN.md) | Payment method overpayment breakdown + print envelope (Batch 98) |
 | [CLIENT_DISCHARGE_AUDIT_OPD_QUEUE_SUMMARY.md](CLIENT_DISCHARGE_AUDIT_OPD_QUEUE_SUMMARY.md) | Discharge audit & OPD queue daily summary dashboard feeds (Batch 99) |
 | [CLIENT_BATCH100_SETTLEMENT_REFUND_AUDIT_PRINT_ENVELOPES.md](CLIENT_BATCH100_SETTLEMENT_REFUND_AUDIT_PRINT_ENVELOPES.md) | Settlement/refund audit feeds, operational print envelopes & overpayment ghost-card fix (Batch 100) |
@@ -277,4 +278,4 @@ Specification → Review → Implementation → Code Review → Testing → Git 
 
 ---
 
-*112 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
+*113 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*

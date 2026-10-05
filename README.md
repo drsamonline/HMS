@@ -132,6 +132,19 @@ Runs entirely on the local network with a server-owned database — *no internet
   parity) and percentage shares (`sum(per-method collected) == total_collected`),
   through one shared derivation (`build_payment_method_summary_result`) behind both
   surfaces; a Reports & Printing workspace card prepares through the envelope *(Batch 96)*
+- ✔ Invoice overpayment ledger — `GET /dashboard/invoice-overpayments` surfaces
+  what the Batch 68/89 clamp conceals: invoices whose live un-clamped payment
+  total exceeds the billed amount, with `overpaid_amount == total_paid_raw -
+  total_amount` per row and `total_paid_raw == total_billed + total_overpaid`
+  headlines, derived by the shared `build_overpayment_ledger` /
+  `build_overpayment_ledger_result` pair; printable through
+  `POST /reports/invoice-overpayment-print-envelope` *(Batch 97)*
+- ✔ Payment method overpayment breakdown — `GET /dashboard/payment-method-overpayments` +
+  `POST /reports/payment-method-overpayment-print-envelope` split the scan
+  window's over-collection across payment methods (per-method gross received,
+  collected and overpaid remainder; `total_gross == total_collected +
+  total_overpaid`) through the shared `build_payment_method_overpayment_breakdown`
+  / `build_payment_method_overpayment_result` pair *(Batch 98)*
 - ✔ Discharge audit — `GET /dashboard/discharge-audit` reconciles every recent
   discharge against its admission status and bed occupancy (`admission_discharged`,
   `bed_freed`, `is_reconciled`; `reconciled_count + drift_count == total_discharges`)
@@ -143,9 +156,28 @@ Runs entirely on the local network with a server-owned database — *no internet
   to the day total (`waiting + in_consultation + completed + cancelled ==
   total_tokens`), derived by the shared `build_opd_queue_summary_result` /
   `build_opd_queue_summary_scan` pair behind a single grouped pass *(Batch 99)*
+- ✔ Invoice settlement audit — `GET /dashboard/invoice-settlement-audit` rolls the
+  live reconciliation scan into per-invoice settled/outstanding lines (Batch 68
+  clamp parity; `settled_amount + outstanding_amount == total_amount` per row,
+  `cleared_count + unsettled_count == total_invoices`) with refund counts from one
+  grouped negative-payment pass; printable through
+  `POST /reports/invoice-settlement-audit-print-envelope` *(Batch 100)*
+- ✔ Refund audit — `GET /dashboard/refund-audit` scans negative Payment rows
+  (newest first) and flags each refund via `invoice_exists` / `has_remarks` /
+  `net_non_negative` → `processing_complete`, with
+  `processed_count + drifted_count == total_refunds`; printable through
+  `POST /reports/refund-audit-print-envelope` *(Batch 100)*
+- ✔ Operational print envelopes — discharge audit and OPD queue summary now honor
+  the Batch 99 "future print envelope" hooks via
+  `POST /reports/discharge-audit-print-envelope` and
+  `POST /reports/opd-queue-summary-print-envelope`, reusing the exact shared
+  scan/derivation pairs for screen/paper parity by construction *(Batch 100)*
+- ✔ Ghost-card fix — the Batch 97 invoice overpayment ledger, server-complete but
+  unreachable from the UI, gained an "Invoice overpayment ledger" card plus cards
+  for all four new surfaces in the Reports & Printing workspace *(Batch 100)*
 
 ### 🧪 Test Suite
-- 337 backend tests passing as of Batch 99 (see [CHANGELOG.md](CHANGELOG.md)).
+- 362 backend tests passing as of Batch 100 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection

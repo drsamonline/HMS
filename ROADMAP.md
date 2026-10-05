@@ -79,8 +79,17 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 99 — Discharge Audit & OPD Queue Daily Summary**
-(the first mega-batch under the amended D-008 policy: `GET /dashboard/discharge-audit` reconciles every recent
+Functional application build is in progress through **Batch 100 — Settlement/Refund Audit Feeds & Operational Print Envelopes**
+(second mega-batch under the amended D-008 policy: `GET /dashboard/invoice-settlement-audit` rolls the live reconciliation
+scan into per-invoice settled/outstanding lines with refund counts (`settled_amount + outstanding_amount == total_amount`,
+`cleared_count + unsettled_count == total_invoices`) via the shared `build_invoice_settlement_audit_result` /
+`build_invoice_settlement_audit_scan` pair, while `GET /dashboard/refund-audit` flags every negative Payment row through
+`invoice_exists` / `has_remarks` / `net_non_negative` → `processing_complete` (`processed_count + drifted_count ==
+total_refunds`) via `build_refund_audit_result` / `build_refund_audit_scan`; four print envelopes — settlement audit,
+refund audit, discharge audit and OPD queue summary — consume the Batch 99 "future print envelope" hooks by delegating to
+the exact same dashboard scan/derivation functions, and the Batch 97 invoice overpayment ledger ghost card was wired into
+the Reports & Printing workspace alongside cards for all new surfaces). Follows Batch 99's Discharge Audit & OPD Queue
+Daily Summary (first mega-batch under D-008: `GET /dashboard/discharge-audit` reconciles every recent
 discharge against admission status and bed occupancy through the shared `build_discharge_audit_result` /
 `build_discharge_audit_scan` pair, while `GET /dashboard/opd-queue-summary` rolls live OPD token rows up per queue
 day through `build_opd_queue_summary_result` / `build_opd_queue_summary_scan`, both surfaced as new dashboard panels
@@ -110,8 +119,8 @@ four ledger cards' Prepare buttons), Batch 88's whole-book receipt numbering con
 invoice-scoped receipt continuity report, Batch 86's receivables aging ledger, Batch 85's invoice print envelope,
 Batch 84's laboratory pending-investigation feed, Batch 83's IPD bed-occupancy feed and Batch 82's
 outstanding-billing feed). Remaining before QA: further cross-module workflow
-continuity, server/client packaging
-and deployment, and completion of final reporting/printing integration. Comprehensive QA/debugging begins after
+continuity and server/client packaging & deployment (the final reporting/printing
+integration track closed with Batch 100's settlement/refund feeds and operational print envelopes). Comprehensive QA/debugging begins after
 cross-module integration, packaging, and final reporting/printing are complete.
 **Batch-size policy (amended 2026-10-04, see D-008):** from Batch 99 onward the remaining surfaces are delivered
 as mega-batches bundling 3–5 thematically-coherent features per commit (e.g. one payment-analysis batch, one
