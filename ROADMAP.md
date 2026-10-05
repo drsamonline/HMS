@@ -79,8 +79,15 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 102 — Investigation Billing Reconciliation Feed & Print Envelope**
-(third mega-batch under the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
+Functional application build is complete through **Batch 102 — Investigation Billing Reconciliation Feed & Print Envelope**;
+the release effort has now entered **Batch 103 — Milestone 6 Comprehensive QA (in progress)**. Batch 103 delivers the shared
+full-stack QA harness (`backend/tests/_qa_harness.py` — in-memory SQLite + real middleware/auth/service/DB layers) and the
+end-to-end route suite `tests/test_batch103_qa_end_to_end.py` (10 tests: auth lifecycle incl. a login-500 product bug found
+and fixed — `user.hashed_password` → `user.password_hash`; patient writes with sequence minting and text normalization;
+handled-error paths for missing number sequences; all 14 dashboard feeds answering 200 on cold state). Full backend suite:
+**391 passed**. Remaining Milestone 6 scope: cross-module integration tests, multi-client LAN testing, performance testing,
+clean-machine installation testing — then Milestone 7 release packaging & deployment. Batch 102 itself (third mega-batch under
+the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
 lab order from the Batch 84 pending-investigation vocabulary still carries its billed amount on a live non-cancelled invoice —
 billed amounts re-derived from `InvoiceItem` line totals in one grouped pass (`billed_amount == charged_total - credited_total`,
 `pending_count + in_progress_count == total_investigations_checked`, `billed_count + billed_missing_count ==

@@ -120,20 +120,27 @@ def seed_number_sequence(
     sequence_name: str,
     prefix: str = "",
     suffix: str = "",
-    current_value: int = 0,
+    current_value: int | str = 0,
     padding_length: int = 4,
-    reset_frequency: str = "never",
+    reset_frequency: str | None = "never",
 ) -> int:
     """Insert an active NumberSequence row and return its id.
 
     Required for end-to-end writes that mint human-readable identifiers
     (e.g. ``POST /patients`` needs the ``patient_number`` sequence).
     Must be called inside an active ``with make_client()`` block.
+
+    ``current_value`` accepts ``None``/strings as well as ints so callers
+    can probe how the API behaves on malformed persisted state; it is
+    coerced to ``int`` before insertion. ``reset_frequency=None`` maps to
+    the model default (``"never"``).
     """
     from app.db.session import get_session_factory
     from app.models.number_sequence import NumberSequence
 
     factory = get_session_factory()
+    coerced_current = int(current_value or 0)
+    frequency = reset_frequency if reset_frequency else "never"
 
     async def _seed() -> int:
         async with factory() as db:
@@ -141,9 +148,9 @@ def seed_number_sequence(
                 sequence_name=sequence_name,
                 prefix=prefix,
                 suffix=suffix,
-                current_value=current_value,
+                current_value=coerced_current,
                 padding_length=padding_length,
-                reset_frequency=reset_frequency,
+                reset_frequency=frequency,
                 is_active=True,
             )
             db.add(seq)
@@ -173,6 +180,8 @@ def api_patch(client, path: str, json=None, **kwargs):
 __all__ = [
     "make_client",
     "auth_headers",
+    "seed_user",
+    "seed_number_sequence",
     "api_get",
     "api_post",
     "api_patch",
