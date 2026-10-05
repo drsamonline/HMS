@@ -118,6 +118,7 @@ disappearing, mirroring the Batch 89/97 drift-surfacing philosophy.
 
 from __future__ import annotations
 
+import re
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
@@ -133,6 +134,7 @@ from app.models.case_record import CaseRecord
 from app.models.discharge import Discharge
 from app.models.investigation import Investigation
 from app.models.invoice import Invoice
+from app.models.invoice_item import InvoiceItem
 from app.models.opd_token import OPDToken
 from app.models.patient import Patient
 from app.models.payment import Payment
@@ -140,6 +142,7 @@ from app.schemas.dashboard import (
     InvoiceSettlementAuditResponse,
     RefundAuditResponse,
     BedOccupancyResponse,
+    InvestigationBillingReconciliationResponse,
     WardOccupancySummaryItem,
     WardOccupancySummaryResponse,
     DischargeAuditResponse,
@@ -2004,10 +2007,12 @@ def build_refund_audit_result(rows: list[dict], as_of: date) -> dict:
     items = []
     processed_count = 0
     total_refunded = Decimal("0")
+    # Oldest-first: matches the scan's oldest-first fetch so printed/screen
+    # rows read like a ledger (earliest refund at the top) and ties resolve
+    # by payment_id ascending.
     for row in sorted(
         rows,
         key=lambda r: (_as_naive_utc(r["payment_datetime"]), r["payment_id"]),
-        reverse=True,
     ):
         refund_amount = abs(Decimal(str(row["refund_amount"])))
         has_remarks = bool((row.get("remarks") or "").strip())
@@ -2297,12 +2302,253 @@ async def ward_occupancy_summary(
     return WardOccupancySummaryResponse(**result)
 
 
+# ---------------------------------------------------------------------------
+# Batch 102 — Investigation Billing Reconciliation
+# ---------------------------------------------------------------------------
+
+_INVESTIGATION_BILLING_ITEM_TYPES = ("investigation", "lab", "laboratory")
+
+
+def _invoice_line_investigation_key(description: str | None) -> int | None:
+    """Extract the investigation id an invoice line was billed against.
+
+    Lines are matched by their ``Investigation:<id>`` reference token in the
+    description (the billing convention for investigation charges); a bare
+    numeric token preceded by an ``investigation``-style keyword is also
+    accepted so legacy free-text lines still reconcile. Anything else
+    returns ``None`` and simply never matches, mirroring the drift-surfacing
+    philosophy (unmatched orders stay visible with ``billed_amount == 0``).
+    """
+    if not description:
+        return None
+    text = str(description)
+    match = re.search(r"Investigation\s*:\s*(\d+)", text, re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+    match = re.search(
+        r"investigation(?:\s+(?:no|number|#|id))?[^0-9]*(\d+)", text, re.IGNORECASE
+    )
+    if match:
+        return int(match.group(1))
+    return None
+
+
+def build_investigation_billing_reconciliation_result(
+    rows: list[dict], as_of: datetime
+) -> dict:
+    """Roll raw investigation/billing rows up into ledger items + headlines.
+
+    Pure derivation shared verbatim by the dashboard endpoint and the print
+    envelope (one implementation, two surfaces). Every row satisfies
+    ``billed_amount == charged_total - credited_total`` by construction, and
+    the headlines satisfy ``pending_count + in_progress_count ==
+    total_investigations_checked``, ``billed_count + billed_missing_count ==
+    total_investigations_checked`` and ``total_billed == sum(billed_amount)``.
+    Unbilled investigations keep their place in the ledger with
+    ``billed_amount == Decimal("0")`` instead of disappearing.
+    """
+    items = []
+    pending_count = 0
+    in_progress_count = 0
+    billed_count = 0
+    billed_missing_count = 0
+    total_billed = Decimal("0")
+    for row in rows:
+        status = (row.get("investigation_status") or "").lower()
+        if status == "pending":
+            pending_count += 1
+        elif status == "in_progress":
+            in_progress_count += 1
+        charged_total = Decimal(str(row.get("charged_total", 0) or 0))
+        credited_total = Decimal(str(row.get("credited_total", 0) or 0))
+        billed_amount = charged_total - credited_total
+        is_billed = billed_amount > 0
+        if is_billed:
+            billed_count += 1
+        else:
+            billed_missing_count += 1
+        total_billed += billed_amount
+        requested_at = row.get("requested_datetime")
+        age_hours = 0
+        if isinstance(requested_at, datetime):
+            if requested_at.tzinfo is not None:
+                requested_at = requested_at.astimezone(timezone.utc).replace(
+                    tzinfo=None
+                )
+            age_hours = max(int((as_of - requested_at).total_seconds() // 3600), 0)
+        items.append(
+            {
+                **row,
+                "age_hours": age_hours,
+                "charged_total": charged_total,
+                "credited_total": credited_total,
+                "billed_amount": billed_amount,
+                "is_billed": is_billed,
+                "is_billed_missing": not is_billed,
+            }
+        )
+    return {
+        "as_of": as_of,
+        "currency_note": "Amounts derived from live InvoiceItem line totals; never trusted from stored counters.",
+        "items": items,
+        "total_investigations_checked": len(items),
+        "pending_count": pending_count,
+        "in_progress_count": in_progress_count,
+        "billed_count": billed_count,
+        "billed_missing_count": billed_missing_count,
+        "total_billed": total_billed,
+    }
+
+
+async def build_investigation_billing_reconciliation_scan(db, limit: int) -> list[dict]:
+    """Single grouped scan feeding the Batch 102 billing reconciliation.
+
+    Shared entry point so the dashboard endpoint and the print envelope read
+    exactly the same rows: every open investigation order in the Batch 84
+    pending vocabulary (oldest-first, capped by ``limit``), plus one grouped
+    pass over ``InvoiceItem`` lines joined to *live non-cancelled* invoices
+    only. Billed amounts are re-derived from line totals matched via the
+    ``Investigation:<id>`` reference convention (legacy investigation-number
+    prefixes included), never trusted from any stored counter. Patient
+    enrichment is batched (no N+1).
+    """
+    open_statuses = ("pending", "in_progress")
+    result = await db.execute(
+        select(Investigation)
+        .where(
+            Investigation.is_current_year.is_(True),
+            func.lower(Investigation.investigation_status).in_(open_statuses),
+        )
+        .order_by(
+            Investigation.requested_datetime.asc(),
+            Investigation.id.asc(),
+        )
+        .limit(limit)
+    )
+    investigations = list(result.scalars().all())
+
+    patients_by_id: dict[int, Patient] = {}
+    patient_ids = {inv.patient_id for inv in investigations}
+    if patient_ids:
+        pat_result = await db.execute(
+            select(Patient).where(Patient.id.in_(patient_ids))
+        )
+        patients_by_id = {p.id: p for p in pat_result.scalars()}
+
+    # One grouped pass: positive investigation lines vs credit (negative)
+    # lines, restricted to live non-cancelled invoices so cancelled billing
+    # can never mask a missing charge.
+    charged_by_investigation: dict[int, Decimal] = {}
+    credited_by_investigation: dict[int, Decimal] = {}
+    item_count_by_investigation: dict[int, int] = {}
+    if investigations:
+        line_result = await db.execute(
+            select(InvoiceItem, Invoice.payment_status)
+            .join(Invoice, InvoiceItem.invoice_id == Invoice.id)
+            .where(
+                Invoice.is_current_year.is_(True),
+                func.lower(Invoice.payment_status) != "cancelled",
+                InvoiceItem.item_type.in_(_INVESTIGATION_BILLING_ITEM_TYPES),
+            )
+        )
+        for item, _invoice_status in line_result:
+            investigation_id = _invoice_line_investigation_key(item.description)
+            if investigation_id is None:
+                continue
+            line_total = Decimal(str(item.line_total or 0))
+            if line_total >= 0:
+                charged_by_investigation[investigation_id] = (
+                    charged_by_investigation.get(investigation_id, Decimal("0"))
+                    + line_total
+                )
+            else:
+                credited_by_investigation[investigation_id] = (
+                    credited_by_investigation.get(investigation_id, Decimal("0"))
+                    - line_total
+                )
+            item_count_by_investigation[investigation_id] = (
+                item_count_by_investigation.get(investigation_id, 0) + 1
+            )
+
+    as_of = datetime.now(timezone.utc).replace(tzinfo=None)
+    rows = []
+    for inv in investigations:
+        requested_at = inv.requested_datetime
+        if requested_at.tzinfo is not None:
+            requested_at = requested_at.astimezone(timezone.utc).replace(tzinfo=None)
+        rows.append(
+            {
+                "investigation_id": inv.id,
+                "patient_id": inv.patient_id,
+                "patient_name": _patient_display_name(patients_by_id.get(inv.patient_id)),
+                "patient_number": (
+                    patients_by_id[inv.patient_id].patient_number
+                    if inv.patient_id in patients_by_id
+                    else None
+                ),
+                "case_type": inv.case_type,
+                "visit_id": inv.visit_id,
+                "admission_id": inv.admission_id,
+                "investigation_number": inv.investigation_number,
+                "investigation_name": inv.investigation_name,
+                "investigation_status": inv.investigation_status,
+                "requested_datetime": requested_at,
+                "charged_total": charged_by_investigation.get(inv.id, Decimal("0")),
+                "credited_total": credited_by_investigation.get(inv.id, Decimal("0")),
+                "invoice_item_count": item_count_by_investigation.get(inv.id, 0),
+            }
+        )
+    return rows
+
+
+async def build_investigation_billing_reconciliation(db, limit: int) -> dict:
+    """Scan-and-aggregate entry point shared with the reporting service.
+
+    Batch 102 — single implementation behind both
+    ``GET /dashboard/investigation-billing-reconciliation`` and
+    ``POST /reports/investigation-billing-reconciliation-print-envelope``.
+    """
+    rows = await build_investigation_billing_reconciliation_scan(db, limit)
+    return build_investigation_billing_reconciliation_result(
+        rows, datetime.now(timezone.utc)
+    )
+
+
+@router.get(
+    "/investigation-billing-reconciliation",
+    response_model=InvestigationBillingReconciliationResponse,
+)
+async def investigation_billing_reconciliation(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=1000),
+) -> InvestigationBillingReconciliationResponse:
+    """Prove every open lab order still has its billed amount on live billing.
+
+    Batch 102 — reconciles the Batch 84 pending-investigation vocabulary
+    against ``InvoiceItem`` lines on live non-cancelled invoices: billed
+    amounts are re-derived from line totals in one grouped pass (never
+    trusted from stored counters), each row keeps ``billed_amount ==
+    charged_total - credited_total``, and the headlines keep
+    ``pending_count + in_progress_count == total_investigations_checked``
+    plus ``billed_count + billed_missing_count ==
+    total_investigations_checked``. Unbilled investigations surface with
+    ``billed_amount == 0`` instead of disappearing — the same
+    drift-surfacing philosophy as the Batch 89/97 ledgers.
+    """
+    result = await build_investigation_billing_reconciliation(db, limit)
+    return InvestigationBillingReconciliationResponse(**result)
+
+
 __all__ = [
     "build_collection_summary_by_patient",
     "build_discharge_audit_result",
     "build_discharge_audit_scan",
     "build_invoice_settlement_audit_result",
     "build_invoice_settlement_audit_scan",
+    "build_investigation_billing_reconciliation",
+    "build_investigation_billing_reconciliation_result",
+    "build_investigation_billing_reconciliation_scan",
     "build_overpayment_ledger",
     "build_overpayment_ledger_result",
     "build_opd_queue_summary_result",

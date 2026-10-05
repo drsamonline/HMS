@@ -82,6 +82,10 @@ from app.schemas.reporting import (
     WardOccupancyPrintEnvelope,
     WardOccupancyPrintLine,
     WardOccupancyPrintRequest,
+    InvestigationBillingReconciliationPrintData,
+    InvestigationBillingReconciliationPrintEnvelope,
+    InvestigationBillingReconciliationPrintLine,
+    InvestigationBillingReconciliationPrintRequest,
     PaymentMethodSummaryPrintData,
     PaymentMethodSummaryPrintEnvelope,
     PaymentMethodSummaryPrintLine,
@@ -1003,6 +1007,66 @@ class ReportingService:
                 items=[
                     WardOccupancyPrintLine(**item)
                     for item in summary["items"]
+                ],
+            ),
+        )
+
+    async def build_investigation_billing_reconciliation_print_envelope(
+        self,
+        db: AsyncSession,
+        request: InvestigationBillingReconciliationPrintRequest,
+    ) -> InvestigationBillingReconciliationPrintEnvelope:
+        """Assemble a printable investigation billing reconciliation packet.
+
+        Batch 102 — reporting/printing integration for the lab/billing
+        boundary: reuses the dashboard's shared investigation scan and
+        billing rollup (``build_investigation_billing_reconciliation_scan`` +
+        ``build_investigation_billing_reconciliation_result`` verbatim), so
+        every printed row keeps ``billed_amount == charged_total -
+        credited_total`` and the headlines match
+        ``GET /dashboard/investigation-billing-reconciliation`` row-for-row.
+        Unbilled open investigations stay on the page with
+        ``billed_amount == 0`` instead of disappearing.
+        """
+        from app.api.v1.endpoints.dashboard import (
+            build_investigation_billing_reconciliation_result,
+            build_investigation_billing_reconciliation_scan,
+        )
+
+        rows = await build_investigation_billing_reconciliation_scan(
+            db, request.limit
+        )
+        summary = build_investigation_billing_reconciliation_result(
+            rows, datetime.utcnow()
+        )
+        # The shared scan/rollup also emits visit_id/admission_id for the
+        # dashboard feed; the print line intentionally omits them, so drop
+        # any keys not part of the print contract before validation.
+        printable_keys = (
+            InvestigationBillingReconciliationPrintLine.model_fields.keys()
+        )
+        items = [
+            {key: item[key] for key in printable_keys if key in item}
+            for item in summary["items"]
+        ]
+
+        return InvestigationBillingReconciliationPrintEnvelope(
+            title=request.title or "HHMS Investigation Billing Reconciliation",
+            generated_at=datetime.utcnow(),
+            data=InvestigationBillingReconciliationPrintData(
+                as_of=summary["as_of"],
+                currency_note=summary["currency_note"],
+                total_investigations_checked=summary[
+                    "total_investigations_checked"
+                ],
+                pending_count=summary["pending_count"],
+                in_progress_count=summary["in_progress_count"],
+                billed_count=summary["billed_count"],
+                billed_missing_count=summary["billed_missing_count"],
+                total_billed=summary["total_billed"],
+                items=[
+                    InvestigationBillingReconciliationPrintLine(**item)
+                    for item in items
                 ],
             ),
         )

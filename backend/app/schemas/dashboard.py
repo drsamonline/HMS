@@ -634,6 +634,56 @@ class RefundAuditResponse(BaseSchema):
     total_refunded: Decimal
 
 
+class InvestigationBillingReconciliationItem(BaseSchema):
+    """One open investigation reconciled against live invoice billing.
+
+    ``billed_amount`` is re-derived from ``InvoiceItem`` line totals matched
+    to the investigation (never trusted from any stored counter), so every
+    row satisfies ``billed_amount == charged_total - credited_total``.
+    Unbilled orders surface with ``billed_amount == 0`` and
+    ``is_billed_missing`` set instead of disappearing from the ledger.
+    """
+
+    investigation_id: int
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    case_type: str | None = None
+    visit_id: int | None = None
+    admission_id: int | None = None
+    investigation_number: str
+    investigation_name: str
+    investigation_status: str
+    requested_datetime: datetime
+    age_hours: int
+    billed_amount: Decimal
+    charged_total: Decimal
+    credited_total: Decimal
+    invoice_item_count: int
+    is_billed: bool
+    is_billed_missing: bool
+
+
+class InvestigationBillingReconciliationResponse(BaseSchema):
+    """Investigation billing ledger rows plus headline reconciliation totals.
+
+    Headlines satisfy ``pending_count + in_progress_count ==
+    total_investigations_checked`` and ``billed_count + billed_missing_count
+    == total_investigations_checked``, so the laboratory backlog foots
+    line-for-line against the billing side.
+    """
+
+    as_of: datetime
+    currency_note: str | None = None
+    items: list[InvestigationBillingReconciliationItem]
+    total_investigations_checked: int
+    pending_count: int
+    in_progress_count: int
+    billed_count: int
+    billed_missing_count: int
+    total_billed: Decimal
+
+
 __all__ = [
     "DueFollowUpItem",
     "DueFollowUpsResponse",
@@ -670,4 +720,6 @@ __all__ = [
     "InvoiceSettlementAuditResponse",
     "RefundAuditItem",
     "RefundAuditResponse",
+    "InvestigationBillingReconciliationItem",
+    "InvestigationBillingReconciliationResponse",
 ]
