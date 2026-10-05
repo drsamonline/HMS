@@ -133,6 +133,8 @@ export async function buildInvoiceSettlementAuditPrintEnvelope(payload){return r
 export async function buildRefundAuditPrintEnvelope(payload){return request("/api/v1/reports/refund-audit-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 export async function buildDischargeAuditPrintEnvelope(payload){return request("/api/v1/reports/discharge-audit-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 export async function buildOPDQueueSummaryPrintEnvelope(payload){return request("/api/v1/reports/opd-queue-summary-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
+export async function getDashboardWardOccupancySummary(options={}){const q=new URLSearchParams({limit:String(options.limit??500)});return request(`/api/v1/dashboard/ward-occupancy-summary?${q.toString()}`)}
+export async function buildWardOccupancyPrintEnvelope(payload){return request("/api/v1/reports/ward-occupancy-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 export async function createFollowup(payload){return request("/api/v1/followups",{method:"POST",body:JSON.stringify(payload)})}
 export async function searchICD11(q){return request(`/api/v1/icd11/search?q=${encodeURIComponent(q)}&limit=15`)}
 export async function createPrescription(payload){return request("/api/v1/prescriptions",{method:"POST",body:JSON.stringify(payload)})}

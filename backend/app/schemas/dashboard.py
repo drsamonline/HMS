@@ -84,6 +84,46 @@ class BedOccupancyResponse(BaseSchema):
     total_beds: int
 
 
+class WardOccupancySummaryItem(BaseSchema):
+    """One ward's occupancy rollup for the ward-clarity dashboard feed.
+
+    Batch 101 — every active bed (occupied, reserved or available) is
+    bucketed under its ward name; beds with no ward assigned surface under
+    the explicit ``"Unassigned"`` label instead of silently disappearing.
+    The split invariant ``occupied_beds + reserved_beds + available_beds ==
+    total_beds`` holds on every row by construction, and
+    ``active_admissions <= occupied_beds`` because a live admission can
+    only attach to a bed marked occupied (reserved beds are pre-admission
+    bookings without a linked episode yet).
+    """
+
+    ward: str
+    total_beds: int
+    occupied_beds: int
+    reserved_beds: int
+    available_beds: int
+    active_admissions: int
+    longest_stay_days: int | None = None
+
+
+class WardOccupancySummaryResponse(BaseSchema):
+    """Per-ward occupancy rollup plus hospital-wide headline counts.
+
+    Headlines satisfy ``total_occupied + total_reserved + total_available
+    == total_beds`` so the ward table always foots against the master bed
+    ledger it is derived from.
+    """
+
+    as_of: datetime
+    items: list[WardOccupancySummaryItem]
+    wards_reported: int
+    total_beds: int
+    total_occupied: int
+    total_reserved: int
+    total_available: int
+    total_active_admissions: int
+
+
 class PendingInvestigationItem(BaseSchema):
     """One live investigation awaiting laboratory results."""
 
@@ -601,6 +641,8 @@ __all__ = [
     "OutstandingInvoicesResponse",
     "BedOccupancyItem",
     "BedOccupancyResponse",
+    "WardOccupancySummaryItem",
+    "WardOccupancySummaryResponse",
     "PendingInvestigationItem",
     "PendingInvestigationsResponse",
     "ReceivablesAgingBucket",

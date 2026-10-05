@@ -427,3 +427,29 @@ export function createOPDQueueSummaryPrintPreview(host,{envelope=null,data=null,
   $("#queue-summary-print-now",shell).addEventListener("click",()=>window.print());
   return {envelope,data:payload};
 }
+
+export function createWardOccupancyPrintPreview(host,{envelope=null,data=null,title="Ward Occupancy Summary"}={}){
+  host.innerHTML="";
+  const payload=envelope?.data??data??{};
+  const items=payload.items||[];
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Ward Occupancy Print Preview</strong><span class="print-count">${esc(String(payload.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="ward-occupancy-print-now">Print Summary</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(envelope?.title||title)}</h1><p class="print-generated">As of: ${esc(String(payload.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Ward Occupancy</h2></div>`
+    +`<table class="print-table"><tbody>`
+    +`<tr><td>Wards reported</td><td>${esc(payload.wards_reported??0)}</td></tr>`
+    +`<tr><td>Total beds</td><td>${esc(payload.total_beds??0)}</td></tr>`
+    +`<tr><td>Occupied</td><td>${esc(payload.total_occupied??0)}</td></tr>`
+    +`<tr><td>Reserved</td><td>${esc(payload.total_reserved??0)}</td></tr>`
+    +`<tr><td>Available</td><td>${esc(payload.total_available??0)}</td></tr>`
+    +`<tr><td>Active admissions</td><td>${esc(payload.total_active_admissions??0)}</td></tr>`
+    +`</tbody></table></section>`
+    +`<section class="print-section print-page-break" data-print-section="wards"><div class="print-section-heading"><h2>Per-Ward Occupancy Ledger</h2></div>`
+    +(items.length?`<table class="print-table"><thead><tr><th>Ward</th><th>Beds</th><th>Occupied</th><th>Reserved</th><th>Available</th><th>Active Admissions</th><th>Longest Stay (days)</th></tr></thead><tbody>`
+      +items.map(it=>`<tr><td>${esc(it.ward)}</td><td>${esc(it.total_beds)}</td><td>${esc(it.occupied_beds)}</td><td>${esc(it.reserved_beds)}</td><td>${esc(it.available_beds)}</td><td>${esc(it.active_admissions)}</td><td>${esc(it.longest_stay_days??"—")}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No active beds found in this scan window.</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#ward-occupancy-print-now",shell).addEventListener("click",()=>window.print());
+  return {envelope,data:payload};
+}

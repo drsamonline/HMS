@@ -78,6 +78,10 @@ from app.schemas.reporting import (
     OPDQueueSummaryPrintEnvelope,
     OPDQueueSummaryPrintLine,
     OPDQueueSummaryPrintRequest,
+    WardOccupancyPrintData,
+    WardOccupancyPrintEnvelope,
+    WardOccupancyPrintLine,
+    WardOccupancyPrintRequest,
     PaymentMethodSummaryPrintData,
     PaymentMethodSummaryPrintEnvelope,
     PaymentMethodSummaryPrintLine,
@@ -961,6 +965,45 @@ class ReportingService:
                 processed_count=audit["processed_count"],
                 drifted_count=audit["drifted_count"],
                 total_refunded=str(audit["total_refunded"]),
+            ),
+        )
+
+    async def build_ward_occupancy_print_envelope(
+        self, db: AsyncSession, request: WardOccupancyPrintRequest
+    ) -> WardOccupancyPrintEnvelope:
+        """Assemble a printable ward occupancy summary packet.
+
+        Batch 101 — reporting/printing integration for the IPD/ward domain:
+        reuses the dashboard's shared bed scan and per-ward rollup
+        (``build_ward_occupancy_summary_scan`` +
+        ``build_ward_occupancy_summary_result`` verbatim), so every printed
+        ward row keeps ``occupied_beds + reserved_beds + available_beds ==
+        total_beds`` and the hospital-wide headlines match
+        ``GET /dashboard/ward-occupancy-summary`` ward-for-ward.
+        """
+        from app.api.v1.endpoints.dashboard import (
+            build_ward_occupancy_summary_result,
+            build_ward_occupancy_summary_scan,
+        )
+
+        rows = await build_ward_occupancy_summary_scan(db, request.limit)
+        summary = build_ward_occupancy_summary_result(rows, datetime.utcnow())
+
+        return WardOccupancyPrintEnvelope(
+            title=request.title or "HHMS Ward Occupancy Summary",
+            generated_at=datetime.utcnow(),
+            data=WardOccupancyPrintData(
+                as_of=summary["as_of"],
+                wards_reported=summary["wards_reported"],
+                total_beds=summary["total_beds"],
+                total_occupied=summary["total_occupied"],
+                total_reserved=summary["total_reserved"],
+                total_available=summary["total_available"],
+                total_active_admissions=summary["total_active_admissions"],
+                items=[
+                    WardOccupancyPrintLine(**item)
+                    for item in summary["items"]
+                ],
             ),
         )
 
