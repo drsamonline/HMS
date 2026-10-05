@@ -972,6 +972,73 @@ class ReportingService:
             ),
         )
 
+    async def build_discharge_audit_print_envelope(
+        self, db: AsyncSession, request: DischargeAuditPrintRequest
+    ) -> DischargeAuditPrintEnvelope:
+        """Assemble a printable ward-flow discharge audit packet.
+
+        Batch 100 — reporting/printing integration for the IPD/ward domain:
+        reuses the dashboard's shared joined scan and reconciliation
+        derivation (``build_discharge_audit_scan`` +
+        ``build_discharge_audit_result`` verbatim), so every printed row
+        matches ``GET /dashboard/discharge-audit`` line-for-line and
+        headlines satisfy ``reconciled_count + drift_count ==
+        total_discharges`` without trusting stored status columns.
+        """
+        from app.api.v1.endpoints.dashboard import (
+            build_discharge_audit_result,
+            build_discharge_audit_scan,
+        )
+
+        rows = await build_discharge_audit_scan(db, request.limit)
+        audit = build_discharge_audit_result(rows, datetime.utcnow())
+
+        return DischargeAuditPrintEnvelope(
+            title=request.title or "HHMS Discharge Audit",
+            generated_at=datetime.utcnow(),
+            data=DischargeAuditPrintData(
+                as_of=audit["as_of"],
+                items=[
+                    DischargeAuditPrintLine(**item)
+                    for item in audit["items"]
+                ],
+                total_discharges=audit["total_discharges"],
+                reconciled_count=audit["reconciled_count"],
+                drift_count=audit["drift_count"],
+            ),
+        )
+
+    async def build_opd_queue_summary_print_envelope(
+        self, db: AsyncSession, request: OPDQueueSummaryPrintRequest
+    ) -> OPDQueueSummaryPrintEnvelope:
+        """Assemble a printable OPD queue daily summary packet.
+
+        Batch 100 — reporting/printing integration for the OPD domain:
+        reuses the dashboard's shared grouped scan (``build_opd_queue_summary_scan``,
+        which delegates to ``build_opd_queue_summary_result``), so each
+        printed day's status split sums back to that day's total and the
+        headline open backlog matches
+        ``GET /dashboard/opd-queue-summary`` for the same window.
+        """
+        from app.api.v1.endpoints.dashboard import build_opd_queue_summary_scan
+
+        summary = await build_opd_queue_summary_scan(db, request.limit_days)
+
+        return OPDQueueSummaryPrintEnvelope(
+            title=request.title or "HHMS OPD Queue Summary",
+            generated_at=datetime.utcnow(),
+            data=OPDQueueSummaryPrintData(
+                as_of=summary["as_of"],
+                items=[
+                    OPDQueueSummaryPrintLine(**item)
+                    for item in summary["items"]
+                ],
+                days_reported=summary["days_reported"],
+                total_tokens=summary["total_tokens"],
+                total_open=summary["total_open"],
+            ),
+        )
+
     async def build_ward_occupancy_print_envelope(
         self, db: AsyncSession, request: WardOccupancyPrintRequest
     ) -> WardOccupancyPrintEnvelope:

@@ -2007,12 +2007,14 @@ def build_refund_audit_result(rows: list[dict], as_of: date) -> dict:
     items = []
     processed_count = 0
     total_refunded = Decimal("0")
-    # Oldest-first: matches the scan's oldest-first fetch so printed/screen
-    # rows read like a ledger (earliest refund at the top) and ties resolve
-    # by payment_id ascending.
+    # Newest-first: mirrors the scan's ``payment_datetime.desc(),
+    # Payment.id.desc()`` fetch so the ledger leads with the most recent
+    # refund; sorting here keeps the rollup independent of input order and
+    # resolves ties by payment_id descending.
     for row in sorted(
         rows,
         key=lambda r: (_as_naive_utc(r["payment_datetime"]), r["payment_id"]),
+        reverse=True,
     ):
         refund_amount = abs(Decimal(str(row["refund_amount"])))
         has_remarks = bool((row.get("remarks") or "").strip())
@@ -2020,7 +2022,9 @@ def build_refund_audit_result(rows: list[dict], as_of: date) -> dict:
             row.get("invoice_number")
         )
         net_paid = row.get("invoice_net_paid")
-        net_non_negative = net_paid is None or Decimal(str(net_paid)) >= 0
+        net_non_negative = (
+            net_paid is not None and Decimal(str(net_paid)) >= 0
+        )
         processing_complete = (
             has_remarks and invoice_exists and net_non_negative
         )
