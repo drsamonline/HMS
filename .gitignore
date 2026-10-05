@@ -1,1 +1,7 @@
-(empty)
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+.venv/

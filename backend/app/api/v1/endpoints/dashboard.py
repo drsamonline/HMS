@@ -2007,15 +2007,11 @@ def build_refund_audit_result(rows: list[dict], as_of: date) -> dict:
     items = []
     processed_count = 0
     total_refunded = Decimal("0")
-    # Newest-first: mirrors the scan's ``payment_datetime.desc(),
-    # Payment.id.desc()`` fetch so the ledger leads with the most recent
-    # refund; sorting here keeps the rollup independent of input order and
-    # resolves ties by payment_id descending.
-    for row in sorted(
-        rows,
-        key=lambda r: (_as_naive_utc(r["payment_datetime"]), r["payment_id"]),
-        reverse=True,
-    ):
+    # Stable input-order pass (no re-sort): the scan already fetches the
+    # newest ``limit`` refunds in ``payment_datetime.desc(),
+    # Payment.id.desc()`` order, and the Batch 100 contract keeps that
+    # ledger order end-to-end so screen, feed and print stay identical.
+    for row in rows:
         refund_amount = abs(Decimal(str(row["refund_amount"])))
         has_remarks = bool((row.get("remarks") or "").strip())
         invoice_exists = row.get("invoice_id") is not None and bool(

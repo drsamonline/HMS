@@ -71,9 +71,9 @@ both are restored and locked in by the existing Batch 100 suite (20/20 green):
 Hardening alongside restoration: the refund-audit `net_non_negative` flag now
 requires a present invoice net ledger (`net_paid is None` no longer passes), so
 a refund whose parent-invoice re-sum is missing can never be reported
-`processing_complete`. Row display order is the newest-first ledger (the
-rollup now explicitly sorts `payment_datetime`/`payment_id` descending, matching
-the scan, instead of relying on input order).
+`processing_complete`. Row display order is the scan's newest-first ledger (the
+rollup iterates in input order — no silent re-sort — so feed, screen and print
+show exactly the same rows in exactly the same order).
 
 ## Client wiring
 
