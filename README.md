@@ -77,6 +77,12 @@ Runs entirely on the local network with a server-owned database — *no internet
   /reports/investigation-billing-reconciliation-print-envelope`) sharing one scan/
   derivation trio for screen/paper parity, closing the lab/billing boundary
   *(Batch 102)*
+- ✔ Comprehensive QA (Milestone 6, in progress) — full-stack end-to-end route
+  suite on an ephemeral in-memory database covering auth lifecycle, patient
+  writes with sequence minting, and every dashboard feed; found and fixed a
+  login 500 (`hashed_password` → `password_hash`); cross-module integration
+  suite (patient → visit → OPD token → queue progression, warm-state audit
+  feeds) plus performance smoke benchmark *(Batch 103)*
 - ✔ Reporting and print manifests
 - ✔ Client-side report rendering and batch printing
 - ✔ Invoice print envelope with live payment-derived balances *(Batch 85)*
@@ -197,7 +203,7 @@ Runs entirely on the local network with a server-owned database — *no internet
   /reports/investigation-billing-reconciliation-print-envelope` *(Batch 102)*
 
 ### 🧪 Test Suite
-- 381 backend tests passing as of Batch 102 (see [CHANGELOG.md](CHANGELOG.md)).
+- 393 backend tests passing as of Batch 103 (Milestone 6 QA in progress — includes a full-stack end-to-end route suite and a cross-module integration suite; see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection

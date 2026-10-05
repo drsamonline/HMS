@@ -1,7 +1,11 @@
-# Python bytecode
+# Python compiled files and caches
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 
-# Virtual environments
-venv/
-.venv/
+# Sensitive data / runtime state
+data/secret.key
+data/server_id
+
+# Logs
+*.log

@@ -18,7 +18,7 @@ class AuthService:
         if not username.strip() or not password: raise AuthenticationException("Incorrect username or password.")
         try: user=await self.user_service.get_by_username(db,username=username.strip())
         except SQLAlchemyError as exc: raise DatabaseException("Unable to authenticate user.") from exc
-        if user is None or not verify_password(password,user.hashed_password): raise AuthenticationException("Incorrect username or password.")
+        if user is None or not verify_password(password,user.password_hash): raise AuthenticationException("Incorrect username or password.")
         return user
     async def login(self,db:AsyncSession,*,username:str,password:str)->str:
         user=await self.authenticate(db,username=username,password=password)

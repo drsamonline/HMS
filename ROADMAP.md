@@ -79,15 +79,26 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 102 — Investigation Billing Reconciliation Feed & Print Envelope**
-(third mega-batch under the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
+Functional application build is complete through **Batch 102 — Investigation Billing Reconciliation Feed & Print Envelope**;
+the release effort has now entered **Batch 103 — Milestone 6 Comprehensive QA (in progress)**. Batch 103 delivers the shared
+full-stack QA harness (`backend/tests/_qa_harness.py` — in-memory SQLite + real middleware/auth/service/DB layers) and the
+end-to-end route suite `tests/test_batch103_qa_end_to_end.py` (10 tests: auth lifecycle incl. a login-500 product bug found
+and fixed — `user.hashed_password` → `user.password_hash`; patient writes with sequence minting and text normalization;
+handled-error paths for missing number sequences; all 14 dashboard feeds answering 200 on cold state), the cross-module
+integration suite `tests/test_batch103_cross_module_integration.py` (patient → visit → OPD token → queue progression chains
+plus warm-state probes of all 14 audit feeds), and a performance smoke benchmark (~104 writes/s, 14 dashboard feeds in
+102.5 ms total). Full backend suite: **393 passed**. Remaining Milestone 6 scope: multi-client LAN testing and
+clean-machine installation testing — then Milestone 7 release packaging & deployment. Batch 102 itself (third mega-batch under
+the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
 lab order from the Batch 84 pending-investigation vocabulary still carries its billed amount on a live non-cancelled invoice —
 billed amounts re-derived from `InvoiceItem` line totals in one grouped pass (`billed_amount == charged_total - credited_total`,
 `pending_count + in_progress_count == total_investigations_checked`, `billed_count + billed_missing_count ==
 total_investigations_checked`) via the shared `build_investigation_billing_reconciliation_scan`/`_result` trio, printable
 through `POST /reports/investigation-billing-reconciliation-print-envelope` with screen/paper parity by construction; the
 commit also restores the Batch 100 discharge-audit/OPD-queue print envelope service builders and locks the refund-audit
-rollup to scan order (no silent re-sort) lost in an incomplete merge). Follows Batch 101's Ward Occupancy Print Envelope & Operational Print Completion
+rollup to scan order (no silent re-sort) lost in an incomplete merge). **Batch 102 closes the remaining functional
+surfaces: the next batch is Batch QA — Milestone 6 Comprehensive QA/debugging (unit/integration/E2E/LAN/performance/
+clean-machine), followed by Milestone 7 release packaging & deployment.** Follows Batch 101's Ward Occupancy Print Envelope & Operational Print Completion
 (second mega-batch under the amended D-008 policy: `GET /dashboard/ward-occupancy-summary` rolls active beds into
 per-ward buckets — Unassigned bucketing, `occupied_beds + reserved_beds + available_beds == total_beds` for any input —
 via the shared `build_ward_occupancy_summary_scan`/`build_ward_occupancy_summary_result` pair, printable through
