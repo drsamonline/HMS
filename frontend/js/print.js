@@ -346,6 +346,7 @@ export function createInvoiceSettlementAuditPrintPreview(host,{envelope=null,dat
     +`<tr><td>Total billed</td><td>${money(payload.total_billed)}</td></tr>`
     +`<tr><td>Total collected</td><td>${money(payload.total_collected)}</td></tr>`
     +`<tr><td>Total outstanding</td><td>${money(payload.total_outstanding)}</td></tr>`
+    +`<tr><td>Total overpaid</td><td>${money(payload.total_overpaid)}</td></tr>`
     +`</tbody></table></section>`
     +`<section class="print-section print-page-break" data-print-section="ledger"><div class="print-section-heading"><h2>Settlement Ledger</h2></div>`
     +(items.length?`<table class="print-table"><thead><tr><th>Invoice</th><th>Patient</th><th>Date</th><th>Billed</th><th>Settled</th><th>Outstanding</th><th>Overpaid</th><th>Payments</th><th>Refunds</th><th>Status</th></tr></thead><tbody>`

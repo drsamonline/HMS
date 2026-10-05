@@ -71,6 +71,7 @@ def test_settlement_audit_result_splits_and_headlines():
         _settlement_row(),  # fully cleared
         _settlement_row(
             invoice_id=2,
+            total_amount=Decimal("500"),
             amount_paid=Decimal("200"),
             balance_due=Decimal("300"),
             total_paid_raw=Decimal("200"),
@@ -115,8 +116,8 @@ def test_settlement_audit_result_splits_and_headlines():
     assert by_id[1]["overpayment_amount"] == Decimal("0")
 
     assert result["total_billed"] == Decimal("1200")
-    assert result["total_collected"] == Decimal("900")
-    assert result["total_outstanding"] == Decimal("300")
+    assert result["total_collected"] == Decimal("800")
+    assert result["total_outstanding"] == Decimal("400")
     assert (
         result["total_billed"]
         == result["total_collected"] + result["total_outstanding"]
@@ -460,6 +461,7 @@ def test_batch100_dashboard_schema_validation_round_trip():
         total_billed="500",
         total_collected="500",
         total_outstanding="0",
+        total_overpaid="0",
     )
     assert settlement.items[0].settled_amount == Decimal("500")
 
@@ -526,7 +528,7 @@ def test_batch100_print_schemas_defined_and_exported():
 
 
 def _field_bound(field, bound_type):
-    """Pull a numeric bound (Ge/Le) out of a Pydantic v2 FieldInfo."""
+    """Pull a numeric bound (annotated_types Ge/Le) out of a FieldInfo."""
     for constraint in field.metadata:
         if isinstance(constraint, bound_type):
             return getattr(constraint, bound_type.__name__.lower())
@@ -534,7 +536,8 @@ def _field_bound(field, bound_type):
 
 
 def test_batch100_print_request_bounds_and_report_types():
-    from pydantic import Ge, Le, ValidationError
+    from annotated_types import Ge, Le
+    from pydantic import ValidationError
 
     from app.schemas.reporting import (
         DischargeAuditPrintRequest,
