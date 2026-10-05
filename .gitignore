@@ -1,12 +1,8 @@
-# Python compiled files and cache
+# Python compiled files
 __pycache__/
-*.py[cod]
-*$py.class
+*.pyc
 
-# Logs
-*.log
-
-# Environment variables
+# Environment and secrets
 .env
 .env.local
-.env.*.local
+data/secret.key

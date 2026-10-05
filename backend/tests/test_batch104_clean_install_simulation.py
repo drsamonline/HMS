@@ -18,8 +18,7 @@ from pathlib import Path
 import pytest
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from sqlalchemy import inspect
-from sqlalchemy.engine import default as engine_default
+from sqlalchemy import create_engine, inspect
 
 from app.db.base import Base
 
@@ -131,11 +130,10 @@ def test_migration_chain_head_matches_model_metadata(clean_root: Path) -> None:
     script = ScriptDirectory.from_config(migration_config())
     assert script.get_heads() == ["0028_prescription_operational_year_lifecycle"]
 
-    with sqlite3.connect(_db_file(clean_root)) as conn:
-        ctx = MigrationContext.configure(
-            connection=conn, dialect=engine_default(paramstyle="qmark")
-        )
-        installed = set(ctx.get_table_names())
+    engine = create_engine(f"sqlite:///{_db_file(clean_root)}")
+    with engine.connect() as conn:
+        installed = set(inspect(conn).get_table_names())
+    engine.dispose()
 
     declared = set(Base.metadata.tables.keys())
     missing = declared - installed

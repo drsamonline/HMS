@@ -31,8 +31,8 @@ def upgrade() -> None:
         sa.Column("supplier_id", sa.Integer(), nullable=True),
         sa.Column("goods_receipt_id", sa.Integer(), nullable=True),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("1")),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.ForeignKeyConstraint(["medicine_id"], ["Medicine.id"], name="fk_stock_batch_medicine"),
         sa.ForeignKeyConstraint(["supplier_id"], ["Supplier.id"], name="fk_stock_batch_supplier"),
         sa.ForeignKeyConstraint(["goods_receipt_id"], ["GoodsReceipt.id"], name="fk_stock_batch_goods_receipt"),
@@ -56,8 +56,8 @@ def upgrade() -> None:
         # NOTE: item_year / storage_tier / is_current_year lifecycle columns
         # and their indexes are introduced by revision 0028 — do not create
         # them here or the fresh-install chain hits "duplicate column".
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.ForeignKeyConstraint(["prescription_id"], ["Prescription.id"], name="fk_prescription_item_prescription"),
         sa.ForeignKeyConstraint(["medicine_id"], ["Medicine.id"], name="fk_prescription_item_medicine"),
     )
@@ -71,11 +71,11 @@ def upgrade() -> None:
         sa.Column("medicine_id", sa.Integer(), nullable=False),
         sa.Column("stock_batch_id", sa.Integer(), nullable=False),
         sa.Column("quantity_dispensed", sa.Numeric(10, 2), nullable=False),
-        sa.Column("dispense_date", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("dispense_date", sa.DateTime(timezone=True), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.Column("dispensed_by", sa.Integer(), nullable=False),
         sa.Column("notes", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
         sa.ForeignKeyConstraint(["prescription_item_id"], ["PrescriptionItem.id"], name="fk_dispense_prescription_item"),
         sa.ForeignKeyConstraint(["medicine_id"], ["Medicine.id"], name="fk_dispense_medicine"),
         sa.ForeignKeyConstraint(["stock_batch_id"], ["StockBatch.id"], name="fk_dispense_stock_batch"),
