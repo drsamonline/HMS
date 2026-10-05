@@ -1,6 +1,3 @@
-# Python compiled files
-__pycache__/
+# Compiled/Binary files
 *.pyc
-
-# Git bundles (large binary artifacts)
-*.bundle
+__pycache__/

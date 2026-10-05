@@ -79,7 +79,7 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional application build is in progress through **Batch 100 — Settlement/Refund Audit Feeds & Operational Print Envelopes**
+Functional application build is in progress through **Batch 101 — Ward Occupancy Print Envelope & Operational Print Completion**
 (second mega-batch under the amended D-008 policy: `GET /dashboard/invoice-settlement-audit` rolls the live reconciliation
 scan into per-invoice settled/outstanding lines with refund counts (`settled_amount + outstanding_amount == total_amount`,
 `cleared_count + unsettled_count == total_invoices`) via the shared `build_invoice_settlement_audit_result` /
@@ -120,7 +120,7 @@ invoice-scoped receipt continuity report, Batch 86's receivables aging ledger, B
 Batch 84's laboratory pending-investigation feed, Batch 83's IPD bed-occupancy feed and Batch 82's
 outstanding-billing feed). Remaining before QA: further cross-module workflow
 continuity and server/client packaging & deployment (the final reporting/printing
-integration track closed with Batch 100's settlement/refund feeds and operational print envelopes). Comprehensive QA/debugging begins after
+integration track closed with Batch 100’s settlement/refund feeds and Batch 101’s ward occupancy feed + operational print envelopes). Comprehensive QA/debugging begins after
 cross-module integration, packaging, and final reporting/printing are complete.
 **Batch-size policy (amended 2026-10-04, see D-008):** from Batch 99 onward the remaining surfaces are delivered
 as mega-batches bundling 3–5 thematically-coherent features per commit (e.g. one payment-analysis batch, one

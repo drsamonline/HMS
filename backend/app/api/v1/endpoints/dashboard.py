@@ -102,18 +102,18 @@ queue day with a status split whose invariant
 ``waiting + in_consultation + completed + cancelled == total_tokens``
 always holds, so each day's open backlog reconciles line-for-line.
 
-Batch 100 — Billing Settlement Mega-Batch: three settlement-continuity
-surfaces built on the shared reconciliation scan machinery.
-``GET /dashboard/invoice-settlement-audit`` reuses the Batch 94
-``_build_reconciliation_rows`` scan verbatim and rolls it into a
-cleared/unsettled ledger (``settled_amount + outstanding_amount ==
-total_amount`` per row; refund receipts count as negative payments);
-``GET /dashboard/refund-audit`` audits every negative ``Payment`` ledger
-entry for processing drift (invoice link, remarks note, non-negative net
-collections); and
-``POST /reports/invoice-settlement-audit-print-envelope`` plus
-``POST /reports/refund-audit-print-envelope`` print through the exact
-same shared derivations so screen and paper can never drift.
+Batch 102 — Investigation Billing Reconciliation: ``GET
+/dashboard/investigation-billing-reconciliation`` proves every open
+laboratory order from the Batch 84 pending-investigation vocabulary still
+has its billed amount on a live non-cancelled invoice. Billed amounts are
+derived from ``InvoiceItem`` rows matched by ``investigation_id`` reference
+(or investigation-number prefix in the description, covering legacy lines)
+in one grouped pass — never trusted from any stored counter — so each row
+satisfies ``billed_amount == charged_total - credited_total`` and the
+headlines satisfy ``pending_count + billed_missing_count ==
+total_investigations_checked`` plus ``total_billed == sum(billed_amount)``.
+Unbilled investigations surface with ``billed_amount == 0`` instead of
+disappearing, mirroring the Batch 89/97 drift-surfacing philosophy.
 """
 
 from __future__ import annotations
@@ -1932,7 +1932,7 @@ def build_invoice_settlement_audit_result(rows: list[dict], as_of: date) -> dict
     }
 
 
-async def build_invoice_settlement_audit_result_from_db(db, limit: int) -> dict:
+async def build_invoice_settlement_audit_scan(db, limit: int) -> dict:
     """Scan-and-aggregate entry point shared with the reporting service.
 
     Batch 100 — single implementation behind both
@@ -1949,7 +1949,7 @@ async def build_invoice_settlement_audit_result_from_db(db, limit: int) -> dict:
         refunds_result = await db.execute(
             select(Payment.invoice_id, func.count(Payment.id))
             .where(Payment.invoice_id.in_(invoice_ids))
-            .where(Payment.amount_paid < 0)
+            .where(Payment.amount_paid < Decimal("0"))
             .group_by(Payment.invoice_id)
         )
         refund_counts = {
@@ -1981,7 +1981,7 @@ async def invoice_settlement_audit(
     ``cleared_count + unsettled_count == total_invoices`` and
     ``total_billed == total_collected + total_outstanding``.
     """
-    result = await build_invoice_settlement_audit_result_from_db(db, limit)
+    result = await build_invoice_settlement_audit_scan(db, limit)
     return InvoiceSettlementAuditResponse(**result)
 
 
@@ -2312,7 +2312,6 @@ __all__ = [
     "build_payment_method_overpayment_result",
     "build_payment_method_summary_result",
     "build_invoice_settlement_audit_result",
-    "build_invoice_settlement_audit_result_from_db",
     "build_receivables_aging_result",
     "build_refund_audit_result",
     "build_refund_audit_scan",

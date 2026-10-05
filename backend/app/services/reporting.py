@@ -884,7 +884,7 @@ class ReportingService:
 
         Batch 100 — reporting/printing integration for the billing domain:
         reuses the dashboard's shared reconciliation scan
-        (``build_invoice_settlement_audit_result_from_db``, built on the
+        (``build_invoice_settlement_audit_scan``, built on the
         same ``_build_reconciliation_rows`` row builder as the Batch 94
         reconciliation ledger, stored counters/status never trusted), so
         printed rows always satisfy ``settled_amount + outstanding_amount
@@ -893,10 +893,10 @@ class ReportingService:
         same scan window.
         """
         from app.api.v1.endpoints.dashboard import (
-            build_invoice_settlement_audit_result_from_db,
+            build_invoice_settlement_audit_scan,
         )
 
-        audit = await build_invoice_settlement_audit_result_from_db(
+        audit = await build_invoice_settlement_audit_scan(
             db, request.limit
         )
 
