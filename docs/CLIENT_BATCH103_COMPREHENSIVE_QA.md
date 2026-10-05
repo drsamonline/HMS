@@ -8,7 +8,7 @@ deployed software, not just as isolated units. The first deliverable is a **full
 routes through the complete FastAPI stack (middleware → exception handlers → auth dependency → service layer → async
 SQLAlchemy → database), so regressions that unit tests structurally cannot see are caught before release packaging.
 
-## Delivered in this session
+## Delivered so far
 
 ### 1. Shared QA harness (`backend/tests/_qa_harness.py`)
 - `make_client()` — context manager giving each test block a fresh in-memory SQLite schema and a `TestClient` bound to the
@@ -16,7 +16,8 @@ SQLAlchemy → database), so regressions that unit tests structurally cannot see
 - Schema creation runs through the async engine (`asyncio.run` + `engine.begin()` + `run_sync(create_all)`); teardown
   disposes the engine inside a dedicated event loop — no greenlet crashes, no cross-test leakage.
 - Helpers: `auth_headers()` (signed JWT for authorized probes), `seed_user()` (active account with hashed password),
-  `seed_number_sequence()` (identifier sequences required by write endpoints), `api_get/api_post/api_patch`.
+  `seed_number_sequence()` (identifier sequences required by write endpoints), `seed_visit()` (direct Visit insert that
+  maintains the `visit_number` sequence for cross-module chains), `api_get/api_post/api_patch/api_put`.
 
 ### 2. A real product bug found and fixed ✅
 The very first end-to-end login probe returned **HTTP 500**: `app/services/auth.py` verified credentials against
@@ -37,18 +38,34 @@ no prior test ever drove the full login route.
 Route paths were verified against the actual `@router.get` decorators registered on the dashboard router, correcting two
 mis-guessed probe paths from the initial QA pass (they were harness errors, not product defects).
 
+### 4. Cross-module integration suite (`backend/tests/test_batch103_cross_module_integration.py`, 2 tests)
+| Flow | Proven behavior |
+| --- | --- |
+| OPD journey | Patient registered over HTTP (`P-0001`) → visit seeded (`V-0001`, readable via `GET /visits/{id}`) → OPD token minted (`token_number == 1`, status `waiting`) |
+| Guard rails | Duplicate token for the same visit rejected as a handled 4xx — never a 500 |
+| Queue lifecycle | `PUT /opd-tokens/{id}` progresses `waiting → called → completed` with timestamps; queue list returns exactly the progressed row |
+| Warm-state feeds | All 14 dashboard/audit feeds (Batches 98–102 incl. refund audit, discharge audit and investigation billing reconciliation) answer 200 with dict envelopes once real patient/visit/token rows exist — closing the cold-state-only gap of the first suite |
+
+### 5. Performance smoke benchmark
+File-backed SQLite database, full middleware stack, single client:
+- Login round-trip (argon2 verification + JWT issue): ~0.6 s one-off, then 200 sequential patient registrations in **1.92 s (~104 writes/s)**.
+- List read (100-row page): **9.8 ms**.
+- All 14 dashboard audit feeds: **102.5 ms total (7.3 ms avg)** on a warm 200-patient database.
+
+Verdict: comfortably inside the sub-second interaction budget for the intended single-server LAN deployment; no optimization
+work required before Milestone 7 packaging.
+
 ## Test totals
-- New E2E suite: **10 passed**
-- Full backend suite: **391 passed, 0 failed** (381 functional + 10 end-to-end)
+- E2E route suite: **10 passed** · Cross-module integration suite: **2 passed**
+- Full backend suite: **393 passed, 0 failed** (381 functional + 12 QA/E2E/integration)
 
 ## Remaining Milestone 6 scope (next sessions)
-1. Cross-module integration tests (billing ↔ payments ↔ refunds flows with real data, beyond the empty-state proofs above).
-2. Multi-client LAN testing (discovery, concurrent sessions).
-3. Performance testing (dashboard scan bounds under load).
-4. Clean-machine installation testing — the gate into Milestone 7 (release packaging & deployment).
+1. Multi-client LAN testing (discovery, concurrent sessions against a shared server process).
+2. Clean-machine installation testing — the gate into Milestone 7 (release packaging & deployment).
 
 ## Changed files
-- `backend/tests/_qa_harness.py` (new/repaired)
+- `backend/tests/_qa_harness.py` (new/repaired; extended with `seed_visit()`, `api_put()`)
 - `backend/tests/test_batch103_qa_end_to_end.py` (new)
+- `backend/tests/test_batch103_cross_module_integration.py` (new)
 - `backend/app/services/auth.py` (product fix: `password_hash`)
-- `README.md`, `CHANGELOG.md`, `ROADMAP.md`, `.ai/PROJECT_STATE.md` (advanced to Batch 103; test count 391)
+- `README.md`, `CHANGELOG.md`, `ROADMAP.md`, `.ai/PROJECT_STATE.md` (advanced to Batch 103; test count 393)

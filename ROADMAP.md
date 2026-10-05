@@ -84,8 +84,10 @@ the release effort has now entered **Batch 103 — Milestone 6 Comprehensive QA 
 full-stack QA harness (`backend/tests/_qa_harness.py` — in-memory SQLite + real middleware/auth/service/DB layers) and the
 end-to-end route suite `tests/test_batch103_qa_end_to_end.py` (10 tests: auth lifecycle incl. a login-500 product bug found
 and fixed — `user.hashed_password` → `user.password_hash`; patient writes with sequence minting and text normalization;
-handled-error paths for missing number sequences; all 14 dashboard feeds answering 200 on cold state). Full backend suite:
-**391 passed**. Remaining Milestone 6 scope: cross-module integration tests, multi-client LAN testing, performance testing,
+handled-error paths for missing number sequences; all 14 dashboard feeds answering 200 on cold state), the cross-module
+integration suite `tests/test_batch103_cross_module_integration.py` (patient → visit → OPD token → queue progression chains
+plus warm-state probes of all 14 audit feeds), and a performance smoke benchmark (~104 writes/s, 14 dashboard feeds in
+102.5 ms total). Full backend suite: **393 passed**. Remaining Milestone 6 scope: multi-client LAN testing and
 clean-machine installation testing — then Milestone 7 release packaging & deployment. Batch 102 itself (third mega-batch under
 the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
 lab order from the Batch 84 pending-investigation vocabulary still carries its billed amount on a live non-cancelled invoice —

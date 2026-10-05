@@ -161,6 +161,79 @@ def seed_number_sequence(
     return asyncio.run(_seed())
 
 
+def seed_visit(
+    *,
+    patient_id: int,
+    consulting_doctor_id: int = 1,
+    visit_type: str = "new",
+    case_type: str = "new",
+    chief_complaint: str | None = "QA integration complaint",
+) -> tuple[int, str]:
+    """Insert a Visit row directly and return ``(id, visit_number)``.
+
+    Seeds the ``visit_number`` sequence when it is not configured yet so
+    cross-module integration tests can chain Patient -> Visit -> OPD token
+    flows without repeating boilerplate. Must be called inside an active
+    ``with make_client()`` block.
+    """
+    from datetime import datetime, timezone
+
+    from sqlalchemy import select
+
+    from app.db.session import get_session_factory
+    from app.models.number_sequence import NumberSequence
+    from app.models.visit import Visit
+
+    factory = get_session_factory()
+
+    async def _seed() -> tuple[int, str]:
+        async with factory() as db:
+            seq = (
+                await db.execute(
+                    select(NumberSequence).where(
+                        NumberSequence.sequence_name == "visit_number"
+                    )
+                )
+            ).scalar_one_or_none()
+            if seq is None:
+                seq = NumberSequence(
+                    sequence_name="visit_number",
+                    prefix="V-",
+                    suffix="",
+                    current_value=0,
+                    padding_length=4,
+                    reset_frequency="never",
+                    is_active=True,
+                )
+                db.add(seq)
+                await db.flush()
+
+            seq.current_value += 1
+            now = datetime.now(timezone.utc)
+            seq.updated_at = now
+            visit_number = f"{seq.prefix}{str(seq.current_value).zfill(seq.padding_length)}{seq.suffix}"
+
+            visit = Visit(
+                patient_id=patient_id,
+                visit_type=visit_type,
+                visit_datetime=now,
+                chief_complaint=chief_complaint,
+                consultation_status="registered",
+                consulting_doctor_id=consulting_doctor_id,
+                case_type=case_type,
+                visit_number=visit_number,
+                visit_year=now.year,
+                storage_tier="live",
+                is_current_year=True,
+            )
+            db.add(visit)
+            await db.commit()
+            await db.refresh(visit)
+            return visit.id, visit_number
+
+    return asyncio.run(_seed())
+
+
 def api_get(client, path: str, **kwargs):
     return client.get(f"/api/v1{path}", headers=auth_headers(), **kwargs)
 
@@ -177,12 +250,20 @@ def api_patch(client, path: str, json=None, **kwargs):
     )
 
 
+def api_put(client, path: str, json=None, **kwargs):
+    return client.put(
+        f"/api/v1{path}", json=json, headers=auth_headers(), **kwargs
+    )
+
+
 __all__ = [
     "make_client",
     "auth_headers",
     "seed_user",
     "seed_number_sequence",
+    "seed_visit",
     "api_get",
     "api_post",
     "api_patch",
+    "api_put",
 ]
