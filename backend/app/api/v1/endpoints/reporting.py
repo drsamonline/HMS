@@ -25,6 +25,8 @@ from app.schemas.reporting import (
     DischargeAuditPrintRequest,
     OPDQueueSummaryPrintEnvelope,
     OPDQueueSummaryPrintRequest,
+    WardOccupancyPrintEnvelope,
+    WardOccupancyPrintRequest,
     PaymentMethodOverpaymentPrintEnvelope,
     PaymentMethodOverpaymentPrintRequest,
     InvoiceReceiptContinuityPrintEnvelope,
@@ -347,6 +349,29 @@ async def build_opd_queue_summary_print_envelope(
     matches ``GET /dashboard/opd-queue-summary`` for the same window.
     """
     return await reporting_service.build_opd_queue_summary_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/ward-occupancy-print-envelope",
+    response_model=WardOccupancyPrintEnvelope,
+)
+async def build_ward_occupancy_print_envelope(
+    report_in: WardOccupancyPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> WardOccupancyPrintEnvelope:
+    """Batch 101 — printable ward occupancy summary packet.
+
+    Reuses the Batch 101 shared bed scan and per-ward rollup verbatim
+    (``build_ward_occupancy_summary_scan`` +
+    ``build_ward_occupancy_summary_result``), so every printed ward row
+    keeps ``occupied_beds + reserved_beds + available_beds == total_beds``
+    and hospital-wide headlines match
+    ``GET /dashboard/ward-occupancy-summary`` ward-for-ward.
+    """
+    return await reporting_service.build_ward_occupancy_print_envelope(
         db, report_in
     )
 

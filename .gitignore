@@ -1,2 +1,6 @@
-# Git bundles
+# Python compiled files
+__pycache__/
+*.pyc
+
+# Git bundles (large binary artifacts)
 *.bundle

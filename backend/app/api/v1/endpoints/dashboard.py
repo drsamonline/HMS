@@ -127,6 +127,8 @@ from app.schemas.dashboard import (
     InvoiceSettlementAuditResponse,
     RefundAuditResponse,
     BedOccupancyResponse,
+    WardOccupancySummaryItem,
+    WardOccupancySummaryResponse,
     DischargeAuditResponse,
     DueFollowUpsResponse,
     InvoiceOverpaymentResponse,
@@ -2103,6 +2105,169 @@ async def refund_audit(
     return RefundAuditResponse(**result)
 
 
+WARD_UNASSIGNED_LABEL = "Unassigned"
+
+
+def build_ward_occupancy_summary_result(
+    rows: list[dict], as_of: datetime
+) -> dict:
+    """Pure per-ward rollup over active bed occupancy rows.
+
+    Batch 101 — shared derivation behind ``GET /dashboard/ward-occupancy-
+    summary`` (and the matching print envelope). Input rows are
+    ``(bed_id, ward, occupancy_status, has_active_admission,
+    length_of_stay_days)`` dicts from the grouped bed/admission scan;
+    every bed is bucketed under its ward name with null wards surfacing
+    under the explicit ``"Unassigned"`` label so nothing disappears from
+    the ledger. Statuses outside the occupied/reserved/available vocabulary
+    still count toward ``total_beds`` via the available bucket's remainder
+    logic below, keeping the split invariant
+    ``occupied_beds + reserved_beds + available_beds == total_beds`` true
+    for any input. Stay ages are clamped non-negative; wards with no live
+    admission report ``longest_stay_days=None`` rather than a fake zero.
+    """
+    as_of_naive = _as_naive_utc(as_of)
+    by_ward: dict[str, dict] = {}
+    for row in rows:
+        ward = (row.get("ward") or "").strip() or WARD_UNASSIGNED_LABEL
+        bucket = by_ward.setdefault(
+            ward,
+            {
+                "ward": ward,
+                "total_beds": 0,
+                "occupied_beds": 0,
+                "reserved_beds": 0,
+                "available_beds": 0,
+                "active_admissions": 0,
+                "longest_stay_days": None,
+            },
+        )
+        bucket["total_beds"] += 1
+        status = (row.get("occupancy_status") or "").lower()
+        if status == "occupied":
+            bucket["occupied_beds"] += 1
+        elif status == "reserved":
+            bucket["reserved_beds"] += 1
+        else:
+            bucket["available_beds"] += 1
+        if row.get("has_active_admission"):
+            bucket["active_admissions"] += 1
+            stay = row.get("length_of_stay_days")
+            if stay is not None:
+                stay = max(int(stay), 0)
+                if (
+                    bucket["longest_stay_days"] is None
+                    or stay > bucket["longest_stay_days"]
+                ):
+                    bucket["longest_stay_days"] = stay
+
+    items = [
+        by_ward[ward]
+        for ward in sorted(by_ward, key=lambda w: (w != WARD_UNASSIGNED_LABEL, w))
+    ]
+    # Unassigned ward sorts last; everything else alphabetically.
+    items.sort(key=lambda item: item["ward"])
+
+    return {
+        "as_of": as_of_naive,
+        "items": items,
+        "wards_reported": len(items),
+        "total_beds": sum(item["total_beds"] for item in items),
+        "total_occupied": sum(item["occupied_beds"] for item in items),
+        "total_reserved": sum(item["reserved_beds"] for item in items),
+        "total_available": sum(item["available_beds"] for item in items),
+        "total_active_admissions": sum(
+            item["active_admissions"] for item in items
+        ),
+    }
+
+
+async def build_ward_occupancy_summary_scan(db, limit: int) -> list[dict]:
+    """Single grouped scan feeding the Batch 101 ward occupancy summary.
+
+    Shared entry point so the dashboard endpoint and the print envelope
+    read exactly the same rows: every active bed (capped by ``limit``,
+    newest master records first) plus one batched lookup of live
+    admissions attached to those beds (the Batch 61 partial unique index
+    guarantees at most one active admission per bed, so counts cannot
+    double-book). Length-of-stay days are computed against a single
+    ``as_of`` snapshot here so the pure rollup above stays deterministic.
+    """
+    as_of = datetime.now(timezone.utc).replace(tzinfo=None)
+    beds_result = await db.execute(
+        select(Bed)
+        .where(Bed.is_active.is_(True))
+        .order_by(Bed.ward.asc(), Bed.bed_number.asc(), Bed.id.desc())
+        .limit(limit)
+    )
+    beds = list(beds_result.scalars().all())
+    if not beds:
+        return []
+
+    active_statuses = ("admitted", "active")
+    bed_ids = [bed.id for bed in beds]
+    adm_result = await db.execute(
+        select(Admission)
+        .where(
+            Admission.bed_id.in_(bed_ids),
+            func.lower(Admission.admission_status).in_(active_statuses),
+        )
+        .order_by(Admission.admission_datetime.desc(), Admission.id.desc())
+    )
+    admissions_by_bed: dict[int, Admission] = {}
+    for admission in adm_result.scalars():
+        admissions_by_bed.setdefault(admission.bed_id, admission)
+
+    rows = []
+    for bed in beds:
+        admission = admissions_by_bed.get(bed.id)
+        length_of_stay_days = None
+        if admission is not None:
+            admitted_at = admission.admission_datetime
+            if admitted_at.tzinfo is not None:
+                admitted_at = admitted_at.astimezone(timezone.utc).replace(
+                    tzinfo=None
+                )
+            length_of_stay_days = max((as_of - admitted_at).days, 0)
+        rows.append(
+            {
+                "bed_id": bed.id,
+                "ward": bed.ward,
+                "occupancy_status": bed.occupancy_status,
+                "has_active_admission": admission is not None,
+                "length_of_stay_days": length_of_stay_days,
+            }
+        )
+    return rows
+
+
+@router.get(
+    "/ward-occupancy-summary", response_model=WardOccupancySummaryResponse
+)
+async def ward_occupancy_summary(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=500, ge=1, le=2000),
+) -> WardOccupancySummaryResponse:
+    """Per-ward occupancy rollup for hospital-wide ward clarity.
+
+    Batch 101 — complements the existing ``/bed-occupancy`` bed-level feed
+    with the ward-level view administrators need: each active bed lands in
+    exactly one ward bucket (unlabelled beds surface under "Unassigned"),
+    so ``total_occupied + total_reserved + total_available == total_beds``
+    always foots against the master bed ledger, and every ward row keeps
+    ``occupied_beds + reserved_beds + available_beds == total_beds``.
+    Live-admission counts reuse the Batch 61 concurrency guarantees (one
+    active admission per bed maximum), so ``active_admissions <=
+    occupied_beds`` holds ward-by-ward.
+    """
+    rows = await build_ward_occupancy_summary_scan(db, limit)
+    result = build_ward_occupancy_summary_result(
+        rows, datetime.now(timezone.utc).replace(tzinfo=None)
+    )
+    return WardOccupancySummaryResponse(**result)
+
+
 __all__ = [
     "build_collection_summary_by_patient",
     "build_discharge_audit_result",
@@ -2120,5 +2285,7 @@ __all__ = [
     "build_receivables_aging_result",
     "build_refund_audit_result",
     "build_refund_audit_scan",
+    "build_ward_occupancy_summary_result",
+    "build_ward_occupancy_summary_scan",
     "router",
 ]

@@ -866,6 +866,57 @@ class OPDQueueSummaryPrintEnvelope(BaseSchema):
     data: OPDQueueSummaryPrintData
 
 
+class WardOccupancyPrintRequest(BaseSchema):
+    """Batch 101 — print request for the ward occupancy summary ledger."""
+
+    limit: int = Field(default=500, ge=1, le=2000)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class WardOccupancyPrintLine(BaseSchema):
+    """One ward's occupancy rollup as printed on paper.
+
+    Mirrors ``WardOccupancySummaryItem`` from the dashboard feed (the same
+    shared Batch 101 scan/derivation is reused verbatim), so every printed
+    row satisfies ``occupied_beds + reserved_beds + available_beds ==
+    total_beds`` and ``active_admissions <= occupied_beds``.
+    """
+
+    ward: str
+    total_beds: int
+    occupied_beds: int
+    reserved_beds: int
+    available_beds: int
+    active_admissions: int
+    longest_stay_days: int | None = None
+
+
+class WardOccupancyPrintData(BaseSchema):
+    as_of: datetime
+    items: list[WardOccupancyPrintLine]
+    wards_reported: int
+    total_beds: int
+    total_occupied: int
+    total_reserved: int
+    total_available: int
+    total_active_admissions: int
+
+
+class WardOccupancyPrintEnvelope(BaseSchema):
+    """Batch 101 — printable ward occupancy summary packet.
+
+    Built through the exact same bed scan and per-ward rollup as
+    ``GET /dashboard/ward-occupancy-summary``, so printed headlines always
+    satisfy ``total_occupied + total_reserved + total_available ==
+    total_beds`` and match the dashboard feed ward-for-ward.
+    """
+
+    report_type: Literal["ward_occupancy_print"] = "ward_occupancy_print"
+    title: str
+    generated_at: datetime
+    data: WardOccupancyPrintData
+
+
 __all__ = [
     "ReportSection",
     "ALL_REPORT_SECTIONS",
@@ -935,4 +986,8 @@ __all__ = [
     "OPDQueueSummaryPrintLine",
     "OPDQueueSummaryPrintData",
     "OPDQueueSummaryPrintEnvelope",
+    "WardOccupancyPrintRequest",
+    "WardOccupancyPrintLine",
+    "WardOccupancyPrintData",
+    "WardOccupancyPrintEnvelope",
 ]
