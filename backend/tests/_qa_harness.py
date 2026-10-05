@@ -300,6 +300,79 @@ def seed_visit(
     return asyncio.run(_seed())
 
 
+# ---------------------------------------------------------------------------
+# Batch 104 — multi-client LAN QA helpers
+# ---------------------------------------------------------------------------
+
+# Pre-computed Argon2 hash for the fixed LAN-QA password below.  Hashing is
+# deliberately expensive; doing it once at import time (instead of per seed
+# row) keeps concurrent fan-out tests fast and deterministic.
+_QA_LAN_PASSWORD = "Lan-QA-Passw0rd!"
+_QA_LAN_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$"
+    "qKUZImbWH7QNiypH1Bxixg$"
+    "NOBFOK8eHOnnEChxLCoK7tyTZC58loyU2ZMRfEleBN0"
+)
+
+
+def seed_client_user(index: int) -> tuple[str, str]:
+    """Insert an active User row for simulated LAN client ``index``.
+
+    Returns ``(username, password)`` so callers can perform real
+    ``POST /auth/login`` round-trips against the shared file database.
+    Must be called inside an active ``with make_file_client(...)`` block
+    (after the engine env has been pointed at the shared DB).
+    """
+    from app.db.session import get_session_factory
+    from app.models.user import User
+
+    factory = get_session_factory()
+    username = f"lan-client-{index:02d}"
+
+    async def _seed() -> int:
+        async with factory() as db:
+            user = User(
+                username=username,
+                password_hash=_QA_LAN_HASH,
+                full_name=f"LAN Client {index:02d}",
+                email=None,
+                is_active=True,
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+            return user.id
+
+    asyncio.run(_seed())
+    return username, _QA_LAN_PASSWORD
+
+
+def token_for_login(client, username: str, password: str) -> str:
+    """Log in through the real auth route and return the bearer token."""
+    response = client.post(
+        "/api/v1/auth/login", json={"username": username, "password": password}
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["token_type"] == "bearer"
+    assert isinstance(body["access_token"], str) and body["access_token"]
+    return body["access_token"]
+
+
+def concurrent_map(fn, items, workers: int = 8) -> list:
+    """Fan ``fn`` out over ``items`` across real threads (simulated LAN clients).
+
+    Each worker thread performs its own blocking HTTP call through a
+    TestClient; because every TestClient runs its own event loop on its own
+    thread, this reproduces simultaneous multi-client traffic hitting one
+    server process and one shared SQLite data file.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        return list(pool.map(fn, items))
+
+
 def api_get(client, path: str, **kwargs):
     return client.get(f"/api/v1{path}", headers=auth_headers(), **kwargs)
 
@@ -324,10 +397,14 @@ def api_put(client, path: str, json=None, **kwargs):
 
 __all__ = [
     "make_client",
+    "make_file_client",
     "auth_headers",
     "seed_user",
     "seed_number_sequence",
     "seed_visit",
+    "seed_client_user",
+    "token_for_login",
+    "concurrent_map",
     "api_get",
     "api_post",
     "api_patch",

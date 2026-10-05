@@ -53,9 +53,9 @@ def upgrade() -> None:
         sa.Column("duration_days", sa.Integer(), nullable=True),
         sa.Column("instructions", sa.Text(), nullable=True),
         sa.Column("quantity", sa.Numeric(10, 2), nullable=False),
-        sa.Column("item_year", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("storage_tier", sa.String(20), nullable=False, server_default="live"),
-        sa.Column("is_current_year", sa.Boolean(), nullable=False, server_default=sa.text("1")),
+        # NOTE: item_year / storage_tier / is_current_year lifecycle columns
+        # and their indexes are introduced by revision 0028 — do not create
+        # them here or the fresh-install chain hits "duplicate column".
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(["prescription_id"], ["Prescription.id"], name="fk_prescription_item_prescription"),
@@ -63,9 +63,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_prescription_item_prescription_id", "PrescriptionItem", ["prescription_id"])
     op.create_index("ix_prescription_item_medicine_id", "PrescriptionItem", ["medicine_id"])
-    op.create_index("ix_prescription_item_item_year", "PrescriptionItem", ["item_year"])
-    op.create_index("ix_prescription_item_storage_tier", "PrescriptionItem", ["storage_tier"])
-    op.create_index("ix_prescription_item_is_current_year", "PrescriptionItem", ["is_current_year"])
 
     op.create_table(
         "DispenseRecord",
@@ -96,9 +93,6 @@ def downgrade() -> None:
     op.drop_index("ix_dispense_record_medicine_id", table_name="DispenseRecord")
     op.drop_index("ix_dispense_record_prescription_item_id", table_name="DispenseRecord")
     op.drop_table("DispenseRecord")
-    op.drop_index("ix_prescription_item_is_current_year", table_name="PrescriptionItem")
-    op.drop_index("ix_prescription_item_storage_tier", table_name="PrescriptionItem")
-    op.drop_index("ix_prescription_item_item_year", table_name="PrescriptionItem")
     op.drop_index("ix_prescription_item_medicine_id", table_name="PrescriptionItem")
     op.drop_index("ix_prescription_item_prescription_id", table_name="PrescriptionItem")
     op.drop_table("PrescriptionItem")
