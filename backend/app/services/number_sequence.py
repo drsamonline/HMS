@@ -33,15 +33,31 @@ class NumberSequenceService:
     flush time.
     """
 
-    def __init__(self) -> None:
-        # Serialises the check-and-mint window for concurrent tasks sharing
-        # one process (the packaged single-server runtime).  Cross-process
-        # safety on SQLite still comes from the atomic UPDATE below, which
-        # is a single write statement and thus serialised by the DB itself.
-        self._mint_lock = asyncio.Lock()
+    def _mint_lock(self) -> asyncio.Lock:
+        """Per-event-loop in-process mint lock (lazily bound).
+
+        ``asyncio.Lock`` created at import/service-construction time binds
+        to whichever loop first touches it; under multi-loop runtimes
+        (e.g. several ``TestClient`` threads, or any off-loop worker) that
+        raises ``RuntimeError: ... bound to a different event loop``.
+        Keying the lock by the *running* loop keeps same-loop tasks
+        serialised while remaining safe across loops.  Cross-loop and
+        cross-process safety always comes from the atomic SQLite UPDATE
+        below, which is a single write statement serialised by the DB.
+        """
+        loop = asyncio.get_running_loop()
+        locks = getattr(self, "_mint_locks", None)
+        if locks is None:
+            locks = {}
+            self._mint_locks = locks
+        lock = locks.get(loop)
+        if lock is None:
+            lock = asyncio.Lock()
+            locks[loop] = lock
+        return lock
 
     async def next_number(self, db: AsyncSession, sequence_name: str) -> str:
-        async with self._mint_lock:
+        async with self._mint_lock():
             result = await db.execute(
                 select(NumberSequence)
                 .where(

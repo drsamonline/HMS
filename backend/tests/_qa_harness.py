@@ -117,6 +117,7 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
 
     application = _build_application()
     clients: list[TestClient] = []
+    disposed = False
 
     def client_factory() -> TestClient:
         client = TestClient(application)
@@ -124,6 +125,10 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
         return client
 
     def dispose() -> None:
+        nonlocal disposed
+        if disposed:
+            return
+        disposed = True
         for client in clients:
             client.close()
 
@@ -137,6 +142,11 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
     try:
         yield client_factory, dispose
     finally:
+        # Safety net: dispose is idempotent, so this is a no-op when the
+        # caller already invoked it inside the block — but guarantees the
+        # pooled connections to this DB file are closed even if they
+        # forgot (leaked engines caused cross-test state bleed in Batch 104).
+        dispose()
         if prev_db_url is None:
             os.environ.pop("DATABASE_URL", None)
         else:
