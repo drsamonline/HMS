@@ -124,6 +124,8 @@ from app.models.opd_token import OPDToken
 from app.models.patient import Patient
 from app.models.payment import Payment
 from app.schemas.dashboard import (
+    InvoiceSettlementAuditResponse,
+    RefundAuditResponse,
     BedOccupancyResponse,
     DischargeAuditResponse,
     DueFollowUpsResponse,
@@ -1838,10 +1840,266 @@ async def opd_queue_summary(
     return OPDQueueSummaryResponse(**result)
 
 
+def build_invoice_settlement_audit_result(rows: list[dict], as_of: date) -> dict:
+    """Roll clamped reconciliation rows into settlement-audit headlines.
+
+    Batch 100 — shared derivation behind both
+    ``GET /dashboard/invoice-settlement-audit`` and
+    ``POST /reports/invoice-settlement-audit-print-envelope``. Input rows
+    come from the exact same grouped live-payment scan as the Batch 89/94
+    reconciliation ledger (plus the Batch 97 un-clamped paid total), so
+    every item satisfies ``settled_amount + outstanding_amount ==
+    total_amount`` line-for-line by construction. ``is_cleared`` marks
+    invoices whose collected amount covers the billed total; headline
+    totals roll back to ``total_billed == total_collected +
+    total_outstanding`` and ``cleared_count + unsettled_count ==
+    total_invoices``.
+    """
+    items = []
+    cleared_count = 0
+    total_billed = Decimal("0")
+    total_collected = Decimal("0")
+    total_outstanding = Decimal("0")
+    for row in rows:
+        settled_amount = row["amount_paid"]
+        outstanding_amount = row["balance_due"]
+        is_cleared = outstanding_amount == Decimal("0")
+        if is_cleared:
+            cleared_count += 1
+        total_billed += row["total_amount"]
+        total_collected += settled_amount
+        total_outstanding += outstanding_amount
+        overpaid_raw = row["total_paid_raw"] - row["total_amount"]
+        items.append(
+            {
+                "invoice_id": row["invoice_id"],
+                "invoice_number": row["invoice_number"],
+                "invoice_date": row["invoice_date"],
+                "patient_id": row["patient_id"],
+                "patient_name": row["patient_name"],
+                "patient_number": row["patient_number"],
+                "total_amount": row["total_amount"],
+                "total_paid": row["total_paid_raw"],
+                "settled_amount": settled_amount,
+                "outstanding_amount": outstanding_amount,
+                "overpayment_amount": (
+                    overpaid_raw if overpaid_raw > Decimal("0") else Decimal("0")
+                ),
+                "payment_count": row["receipt_count"],
+                "refund_count": row.get("refund_count", 0),
+                "stored_payment_status": row["stored_payment_status"],
+                "derived_payment_status": row["derived_payment_status"],
+                "status_matches": row["is_reconciled"],
+                "is_cleared": is_cleared,
+            }
+        )
+    return {
+        "as_of": as_of,
+        "items": items,
+        "total_invoices": len(items),
+        "cleared_count": cleared_count,
+        "unsettled_count": len(items) - cleared_count,
+        "total_billed": total_billed,
+        "total_collected": total_collected,
+        "total_outstanding": total_outstanding,
+    }
+
+
+async def build_invoice_settlement_audit_scan(db, limit: int) -> dict:
+    """Scan-and-aggregate entry point shared with the reporting service.
+
+    Batch 100 — single implementation behind both
+    ``GET /dashboard/invoice-settlement-audit`` and
+    ``POST /reports/invoice-settlement-audit-print-envelope``. Reuses the
+    exact same grouped Payment pass as the Batch 89/90/94/97 ledgers (no
+    N+1, stored counters/status never trusted); one extra grouped count
+    pass captures per-invoice refund entries (negative Payment rows) so
+    the audit can show how many adjustments landed against each invoice.
+    """
+    rows = await _build_reconciliation_rows(db, limit)
+
+    # Single grouped pass counting refund (negative) ledger entries per
+    # scanned invoice — same window, no per-row queries.
+    refund_counts: dict[int, int] = {}
+    if rows:
+        invoice_ids = [row["invoice_id"] for row in rows]
+        refunds_result = await db.execute(
+            select(Payment.invoice_id, func.count(Payment.id))
+            .where(Payment.invoice_id.in_(invoice_ids))
+            .where(Payment.amount_paid < Decimal("0"))
+            .group_by(Payment.invoice_id)
+        )
+        refund_counts = {
+            invoice_id: int(count or 0) for invoice_id, count in refunds_result
+        }
+    for row in rows:
+        row["refund_count"] = refund_counts.get(row["invoice_id"], 0)
+
+    return build_invoice_settlement_audit_result(rows, date.today())
+
+
+@router.get("/invoice-settlement-audit", response_model=InvoiceSettlementAuditResponse)
+async def invoice_settlement_audit(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> InvoiceSettlementAuditResponse:
+    """Recent invoices split into settled/outstanding with cleared headlines.
+
+    Batch 100 — payment-analysis continuity feed completing the
+    Batch 96–98 collection track: where Batch 89 reconciles derived vs
+    stored status and Batch 97 surfaces over-collection, this ledger shows
+    *how far* each invoice has been collected. Every figure comes from the
+    shared live-payment scan (Batch 68 clamp semantics), so
+    ``settled_amount + outstanding_amount == total_amount`` holds on every
+    row, ``is_cleared`` matches a zero outstanding balance, and the
+    headlines satisfy ``cleared_count + unsettled_count == total_invoices``
+    plus ``total_billed == total_collected + total_outstanding``.
+    """
+    result = await build_invoice_settlement_audit_scan(db, limit)
+    return InvoiceSettlementAuditResponse(**result)
+
+
+def build_refund_audit_result(rows: list[dict], as_of: date) -> dict:
+    """Roll negative-payment scan rows into refund-audit headlines.
+
+    Batch 100 — shared derivation behind both
+    ``GET /dashboard/refund-audit`` and
+    ``POST /reports/refund-audit-print-envelope``. Each row is one refund
+    (negative ``Payment.amount_paid``) joined to its invoice when the link
+    exists. A refund is ``processing_complete`` only when all three
+    individual flags hold: the invoice link resolves (``invoice_exists``),
+    a non-empty remarks note explains the adjustment (``has_remarks``), and
+    the invoice's net collections stay non-negative (``net_non_negative``,
+    mirroring the refund posting guard). Drifted refunds keep appearing
+    with the failing flag surfaced instead of silently disappearing, so
+    ``processed_count + drifted_count == total_refunds`` always holds.
+    """
+    items = []
+    processed_count = 0
+    total_refunded = Decimal("0")
+    for row in sorted(
+        rows, key=lambda r: r["payment_datetime"], reverse=True
+    ):
+        invoice_exists = row["invoice_id"] is not None
+        has_remarks = bool((row["remarks"] or "").strip())
+        net_non_negative = invoice_exists and row["invoice_net_paid"] >= Decimal("0")
+        processing_complete = invoice_exists and has_remarks and net_non_negative
+        if processing_complete:
+            processed_count += 1
+        total_refunded += row["refund_amount"]
+        items.append(
+            {
+                **row,
+                "has_remarks": has_remarks,
+                "invoice_exists": invoice_exists,
+                "net_non_negative": net_non_negative,
+                "processing_complete": processing_complete,
+            }
+        )
+    return {
+        "as_of": as_of,
+        "items": items,
+        "total_refunds": len(items),
+        "processed_count": processed_count,
+        "drifted_count": len(items) - processed_count,
+        "total_refunded": total_refunded,
+    }
+
+
+async def build_refund_audit_scan(db, limit: int) -> dict:
+    """Scan-and-aggregate entry point shared with the reporting service.
+
+    Batch 100 — single implementation behind both
+    ``GET /dashboard/refund-audit`` and
+    ``POST /reports/refund-audit-print-envelope``. One filtered scan of
+    negative Payment rows (newest first, capped at ``limit``) plus a single
+    grouped pass re-summing the full live ledger per referenced invoice
+    (un-clamped, so refunds offset payments exactly as posted). Amounts are
+    reported as positive refund magnitudes; orphaned refund rows (invoice
+    link missing) surface with ``invoice_exists`` false rather than being
+    dropped.
+    """
+    refunds_result = await db.execute(
+        select(Payment)
+        .where(Payment.amount_paid < Decimal("0"))
+        .order_by(Payment.payment_datetime.desc(), Payment.id.desc())
+        .limit(limit)
+    )
+    refunds = list(refunds_result.scalars())
+
+    invoice_ids = {refund.invoice_id for refund in refunds if refund.invoice_id}
+    invoices: dict[int, Invoice] = {}
+    net_paid_by_invoice: dict[int, Decimal] = {}
+    if invoice_ids:
+        invoices_result = await db.execute(
+            select(Invoice).where(Invoice.id.in_(invoice_ids))
+        )
+        invoices = {invoice.id: invoice for invoice in invoices_result.scalars()}
+        ledger_result = await db.execute(
+            select(Payment.invoice_id, func.sum(Payment.amount_paid))
+            .where(Payment.invoice_id.in_(invoice_ids))
+            .group_by(Payment.invoice_id)
+        )
+        net_paid_by_invoice = {
+            invoice_id: Decimal(str(paid_total or 0))
+            for invoice_id, paid_total in ledger_result
+        }
+
+    rows = []
+    for refund in refunds:
+        invoice = invoices.get(refund.invoice_id) if refund.invoice_id else None
+        rows.append(
+            {
+                "payment_id": refund.id,
+                "receipt_number": refund.receipt_number,
+                "payment_datetime": refund.payment_datetime,
+                "payment_method": refund.payment_method,
+                "refund_amount": abs(Decimal(str(refund.amount_paid))),
+                "invoice_id": refund.invoice_id,
+                "invoice_number": invoice.invoice_number if invoice else None,
+                "invoice_total_amount": (
+                    invoice.total_amount if invoice else None
+                ),
+                "invoice_net_paid": (
+                    net_paid_by_invoice.get(refund.invoice_id, Decimal("0"))
+                    if invoice
+                    else None
+                ),
+                "received_by": refund.received_by,
+                "remarks": refund.remarks,
+            }
+        )
+    return build_refund_audit_result(rows, date.today())
+
+
+@router.get("/refund-audit", response_model=RefundAuditResponse)
+async def refund_audit(
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+    limit: int = Query(default=200, ge=1, le=500),
+) -> RefundAuditResponse:
+    """Recent refund ledger entries inspected for processing drift.
+
+    Batch 100 — payment-analysis continuity feed: negative Payment rows
+    are refunds/adjustments, and the billing rules require each one to
+    reference a live invoice, carry an explanatory remarks note, and leave
+    the invoice's net collections non-negative. This feed audits every
+    recent refund against those guarantees using the live ledger only;
+    drifted refunds surface with the failing check flagged instead of
+    vanishing, and headlines always satisfy
+    ``processed_count + drifted_count == total_refunds``.
+    """
+    result = await build_refund_audit_scan(db, limit)
+    return RefundAuditResponse(**result)
+
+
 __all__ = [
     "build_collection_summary_by_patient",
     "build_discharge_audit_result",
     "build_discharge_audit_scan",
+    "build_invoice_settlement_audit_result",
+    "build_invoice_settlement_audit_scan",
     "build_overpayment_ledger",
     "build_overpayment_ledger_result",
     "build_opd_queue_summary_result",
@@ -1851,5 +2109,7 @@ __all__ = [
     "build_payment_method_overpayment_result",
     "build_payment_method_summary_result",
     "build_receivables_aging_result",
+    "build_refund_audit_result",
+    "build_refund_audit_scan",
     "router",
 ]

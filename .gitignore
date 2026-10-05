@@ -1,7 +1,7 @@
-# Compiled/Binary files
+# Python compiled files
 __pycache__/
 *.pyc
 
-# Dependency directories
-venv/
-.venv/
+# Environment and logs
+.env
+*.log

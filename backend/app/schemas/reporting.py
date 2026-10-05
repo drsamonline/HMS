@@ -757,6 +757,114 @@ class RefundAuditPrintEnvelope(BaseSchema):
     data: RefundAuditPrintData
 
 
+class DischargeAuditPrintRequest(BaseSchema):
+    """Batch 100 — print request for the ward-flow discharge audit ledger."""
+
+    limit: int = Field(default=200, ge=1, le=500)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class DischargeAuditPrintLine(BaseSchema):
+    """One discharge reconciled against admission and bed state on paper.
+
+    Mirrors ``DischargeAuditItem`` from the dashboard feed (the shared
+    Batch 99 scan/derivation is reused verbatim), so every printed row
+    carries the individual ``admission_discharged``/``bed_freed`` flags
+    plus ``is_reconciled`` and a non-negative ``hours_since_discharge``.
+    """
+
+    discharge_id: int
+    discharge_number: str
+    discharge_datetime: datetime
+    discharge_status: str
+    admission_id: int
+    admission_number: str
+    admission_status: str
+    admission_discharged: bool
+    patient_name: str
+    patient_number: str | None = None
+    bed_number: str | None = None
+    ward: str | None = None
+    bed_occupancy_status: str | None = None
+    bed_freed: bool
+    hours_since_discharge: int
+    is_reconciled: bool
+
+
+class DischargeAuditPrintData(BaseSchema):
+    as_of: datetime
+    items: list[DischargeAuditPrintLine]
+    total_discharges: int
+    reconciled_count: int
+    drift_count: int
+
+
+class DischargeAuditPrintEnvelope(BaseSchema):
+    """Batch 100 — printable discharge audit packet.
+
+    Built through the exact same joined scan and reconciliation derivation
+    as ``GET /dashboard/discharge-audit`` (``build_discharge_audit_scan`` +
+    ``build_discharge_audit_result``), so printed headlines always satisfy
+    ``reconciled_count + drift_count == total_discharges`` and match the
+    dashboard feed line-for-line for the same scan window.
+    """
+
+    report_type: Literal["discharge_audit_print"] = "discharge_audit_print"
+    title: str
+    generated_at: datetime
+    data: DischargeAuditPrintData
+
+
+class OPDQueueSummaryPrintRequest(BaseSchema):
+    """Batch 100 — print request for the OPD queue daily summary."""
+
+    limit_days: int = Field(default=14, ge=1, le=90)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class OPDQueueSummaryPrintLine(BaseSchema):
+    """One queue day's token workload as printed on paper.
+
+    Mirrors ``OPDQueueSummaryItem`` from the dashboard feed; the status
+    split invariant ``waiting + in_consultation + completed + cancelled ==
+    total_tokens`` holds on every printed row because both sides come from
+    the same grouped pass, with ``open_token_count`` equal to the still-
+    running backlog (waiting + in_consultation).
+    """
+
+    queue_date: date
+    total_tokens: int
+    waiting: int
+    in_consultation: int
+    completed: int
+    cancelled: int
+    open_token_count: int
+
+
+class OPDQueueSummaryPrintData(BaseSchema):
+    as_of: datetime
+    items: list[OPDQueueSummaryPrintLine]
+    days_reported: int
+    total_tokens: int
+    total_open: int
+
+
+class OPDQueueSummaryPrintEnvelope(BaseSchema):
+    """Batch 100 — printable OPD queue daily summary packet.
+
+    Built through the exact same grouped scan and per-day rollup as
+    ``GET /dashboard/opd-queue-summary`` (``build_opd_queue_summary_scan``
+    delegates to ``build_opd_queue_summary_result``), so each printed day's
+    status split sums back to that day's total and the headline open
+    backlog matches the dashboard feed for the same window.
+    """
+
+    report_type: Literal["opd_queue_summary_print"] = "opd_queue_summary_print"
+    title: str
+    generated_at: datetime
+    data: OPDQueueSummaryPrintData
+
+
 __all__ = [
     "ReportSection",
     "ALL_REPORT_SECTIONS",
@@ -818,4 +926,12 @@ __all__ = [
     "RefundAuditPrintLine",
     "RefundAuditPrintData",
     "RefundAuditPrintEnvelope",
+    "DischargeAuditPrintRequest",
+    "DischargeAuditPrintLine",
+    "DischargeAuditPrintData",
+    "DischargeAuditPrintEnvelope",
+    "OPDQueueSummaryPrintRequest",
+    "OPDQueueSummaryPrintLine",
+    "OPDQueueSummaryPrintData",
+    "OPDQueueSummaryPrintEnvelope",
 ]

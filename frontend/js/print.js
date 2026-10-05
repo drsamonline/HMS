@@ -330,3 +330,99 @@ export function createPaymentMethodOverpaymentPrintPreview(host,{envelope=null,d
   $("#method-overpayment-print-now",shell).addEventListener("click",()=>window.print());
   return {envelope,data:payload};
 }
+
+export function createInvoiceSettlementAuditPrintPreview(host,{envelope=null,data=null,title="Invoice Settlement Audit"}={}){
+  host.innerHTML="";
+  const payload=envelope?.data??data??{};
+  const items=payload.items||[];
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Settlement Audit Print Preview</strong><span class="print-count">${esc(String(payload.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="settlement-audit-print-now">Print Audit</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(envelope?.title||title)}</h1><p class="print-generated">As of: ${esc(String(payload.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Settlement Summary</h2></div>`
+    +`<table class="print-table"><tbody>`
+    +`<tr><td>Invoices audited</td><td>${esc(payload.total_invoices??0)}</td></tr>`
+    +`<tr><td>Cleared</td><td>${esc(payload.cleared_count??0)}</td></tr>`
+    +`<tr><td>Unsettled</td><td>${esc(payload.unsettled_count??0)}</td></tr>`
+    +`<tr><td>Total billed</td><td>${money(payload.total_billed)}</td></tr>`
+    +`<tr><td>Total collected</td><td>${money(payload.total_collected)}</td></tr>`
+    +`<tr><td>Total outstanding</td><td>${money(payload.total_outstanding)}</td></tr>`
+    +`</tbody></table></section>`
+    +`<section class="print-section print-page-break" data-print-section="ledger"><div class="print-section-heading"><h2>Settlement Ledger</h2></div>`
+    +(items.length?`<table class="print-table"><thead><tr><th>Invoice</th><th>Patient</th><th>Date</th><th>Billed</th><th>Settled</th><th>Outstanding</th><th>Overpaid</th><th>Payments</th><th>Refunds</th><th>Status</th></tr></thead><tbody>`
+      +items.map(it=>`<tr><td>${esc(it.invoice_number)}</td><td>${esc(it.patient_name)}${it.patient_number?` — ${esc(it.patient_number)}`:""}</td><td>${esc(String(it.invoice_date||"").slice(0,10))}</td><td>${money(it.total_amount)}</td><td>${money(it.settled_amount)}</td><td>${money(it.outstanding_amount)}</td><td>${money(it.overpayment_amount)}</td><td>${esc(it.payment_count)}</td><td>${esc(it.refund_count)}</td><td>${esc(human(it.derived_payment_status))}${it.is_cleared?" · Cleared":""}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No invoices found in this scan window.</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#settlement-audit-print-now",shell).addEventListener("click",()=>window.print());
+  return {envelope,data:payload};
+}
+
+export function createRefundAuditPrintPreview(host,{envelope=null,data=null,title="Refund Processing Audit"}={}){
+  host.innerHTML="";
+  const payload=envelope?.data??data??{};
+  const items=payload.items||[];
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Refund Audit Print Preview</strong><span class="print-count">${esc(String(payload.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="refund-audit-print-now">Print Audit</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(envelope?.title||title)}</h1><p class="print-generated">As of: ${esc(String(payload.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Refund Summary</h2></div>`
+    +`<table class="print-table"><tbody>`
+    +`<tr><td>Refunds scanned</td><td>${esc(payload.total_refunds??0)}</td></tr>`
+    +`<tr><td>Processed</td><td>${esc(payload.processed_count??0)}</td></tr>`
+    +`<tr><td>Drifted</td><td>${esc(payload.drifted_count??0)}</td></tr>`
+    +`<tr><td>Total refunded</td><td>${money(payload.total_refunded)}</td></tr>`
+    +`</tbody></table></section>`
+    +`<section class="print-section print-page-break" data-print-section="ledger"><div class="print-section-heading"><h2>Refund Ledger</h2></div>`
+    +(items.length?`<table class="print-table"><thead><tr><th>Receipt</th><th>Datetime</th><th>Method</th><th>Refund</th><th>Invoice</th><th>Net Paid</th><th>Remarks</th><th>State</th></tr></thead><tbody>`
+      +items.map(it=>`<tr><td>${esc(it.receipt_number)}</td><td>${esc(String(it.payment_datetime||"").slice(0,16).replace("T"," "))}</td><td>${esc(human(it.payment_method))}</td><td>${money(it.refund_amount)}</td><td>${esc(it.invoice_number??"—")}</td><td>${it.invoice_net_paid==null?"—":money(it.invoice_net_paid)}</td><td>${it.has_remarks?"Yes":"No"}</td><td>${it.processing_complete?"Complete":"Drifted"}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No refund entries found in this scan window.</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#refund-audit-print-now",shell).addEventListener("click",()=>window.print());
+  return {envelope,data:payload};
+}
+
+export function createDischargeAuditPrintPreview(host,{envelope=null,data=null,title="Discharge Audit Ledger"}={}){
+  host.innerHTML="";
+  const payload=envelope?.data??data??{};
+  const items=payload.items||[];
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Discharge Audit Print Preview</strong><span class="print-count">${esc(String(payload.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="discharge-audit-print-now">Print Audit</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(envelope?.title||title)}</h1><p class="print-generated">As of: ${esc(String(payload.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Discharge Summary</h2></div>`
+    +`<table class="print-table"><tbody>`
+    +`<tr><td>Discharges audited</td><td>${esc(payload.total_discharges??0)}</td></tr>`
+    +`<tr><td>Reconciled</td><td>${esc(payload.reconciled_count??0)}</td></tr>`
+    +`<tr><td>Drifted</td><td>${esc(payload.drift_count??0)}</td></tr>`
+    +`</tbody></table></section>`
+    +`<section class="print-section print-page-break" data-print-section="ledger"><div class="print-section-heading"><h2>Discharge Ledger</h2></div>`
+    +(items.length?`<table class="print-table"><thead><tr><th>Discharge</th><th>Datetime</th><th>Patient</th><th>Admission</th><th>Ward / Bed</th><th>Admission Discharged</th><th>Bed Freed</th><th>Hours Since</th><th>State</th></tr></thead><tbody>`
+      +items.map(it=>`<tr><td>${esc(it.discharge_number)}</td><td>${esc(String(it.discharge_datetime||"").slice(0,16).replace("T"," "))}</td><td>${esc(it.patient_name)}${it.patient_number?` — ${esc(it.patient_number)}`:""}</td><td>${esc(it.admission_number)}</td><td>${esc(it.ward??"—")}${it.bed_number?` / ${esc(it.bed_number)}`:""}</td><td>${it.admission_discharged?"Yes":"No"}</td><td>${it.bed_freed?"Yes":"No"}</td><td>${esc(it.hours_since_discharge)}</td><td>${it.is_reconciled?"Reconciled":"Drifted"}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No discharges found in this scan window.</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#discharge-audit-print-now",shell).addEventListener("click",()=>window.print());
+  return {envelope,data:payload};
+}
+
+export function createOPDQueueSummaryPrintPreview(host,{envelope=null,data=null,title="OPD Queue Daily Summary"}={}){
+  host.innerHTML="";
+  const payload=envelope?.data??data??{};
+  const items=payload.items||[];
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Queue Summary Print Preview</strong><span class="print-count">${esc(String(payload.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="queue-summary-print-now">Print Summary</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(envelope?.title||title)}</h1><p class="print-generated">As of: ${esc(String(payload.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Queue Summary</h2></div>`
+    +`<table class="print-table"><tbody>`
+    +`<tr><td>Days reported</td><td>${esc(payload.days_reported??0)}</td></tr>`
+    +`<tr><td>Total tokens</td><td>${esc(payload.total_tokens??0)}</td></tr>`
+    +`<tr><td>Open backlog</td><td>${esc(payload.total_open??0)}</td></tr>`
+    +`</tbody></table></section>`
+    +`<section class="print-section print-page-break" data-print-section="days"><div class="print-section-heading"><h2>Per-Day Queue Ledger</h2></div>`
+    +(items.length?`<table class="print-table"><thead><tr><th>Queue Date</th><th>Tokens</th><th>Waiting</th><th>In Consultation</th><th>Completed</th><th>Cancelled</th><th>Open</th></tr></thead><tbody>`
+      +items.map(it=>`<tr><td>${esc(it.queue_date)}</td><td>${esc(it.total_tokens)}</td><td>${esc(it.waiting)}</td><td>${esc(it.in_consultation)}</td><td>${esc(it.completed)}</td><td>${esc(it.cancelled)}</td><td>${esc(it.open_token_count)}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No queue days found in this scan window.</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#queue-summary-print-now",shell).addEventListener("click",()=>window.print());
+  return {envelope,data:payload};
+}
