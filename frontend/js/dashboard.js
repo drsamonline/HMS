@@ -1,4 +1,4 @@
-import { getServerBaseUrl, getAccessToken, listPatients, getDashboardDueFollowups, getDashboardOutstandingInvoices, getDashboardBedOccupancy, getDashboardPendingInvestigations, getDashboardDischargeAudit, getDashboardOPDQueueSummary } from "./api.js";
+import { getServerBaseUrl, getAccessToken, listPatients, getDashboardDueFollowups, getDashboardOutstandingInvoices, getDashboardBedOccupancy, getDashboardPendingInvestigations, getDashboardDischargeAudit, getDashboardOPDQueueSummary, getDashboardInvestigationBillingReconciliation } from "./api.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>'"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "'":"&#39;", '"':"&quot;" }[c]));
@@ -46,6 +46,10 @@ export async function openDashboard(host, context = {}) {
     <section class="content-panel">
       <h3>OPD queue daily summary</h3>
       <div id="dashboard-opd-queue-summary" class="patient-list"><div class="empty-state">Loading…</div></div>
+    </section>
+    <section class="content-panel">
+      <h3>Investigation billing reconciliation</h3>
+      <div id="dashboard-investigation-billing" class="patient-list"><div class="empty-state">Loading…</div></div>
     </section>
     <section class="content-panel">
       <h3>Recent patients</h3>
@@ -222,6 +226,32 @@ export async function openDashboard(host, context = {}) {
     }
   } catch {
     $("#dashboard-opd-queue-summary", host).innerHTML = '<div class="empty-state">OPD queue summary is unavailable right now.</div>';
+  }
+
+  try {
+    const invBilling = await getDashboardInvestigationBillingReconciliation({ limit: 50 });
+    const invHost = $("#dashboard-investigation-billing", host);
+    const orders = invBilling?.items ?? [];
+    if (!orders.length) {
+      invHost.innerHTML = '<div class="empty-state">No open investigations to reconcile against billing.</div>';
+    } else {
+      invHost.innerHTML = `
+        <p class="muted">${esc(invBilling?.total_investigations_checked ?? 0)} open investigation(s) · ${esc(invBilling?.billed_count ?? 0)} billed · ${esc(invBilling?.billed_missing_count ?? 0)} unbilled · total billed ${esc(invBilling?.total_billed ?? "0")}</p>
+      ` + orders.map(inv => `
+        <button type="button" class="patient-card" data-invbilling-patient="${esc(inv.patient_id)}">
+          <strong>${esc(inv.investigation_name)}${inv.is_billed_missing ? " · not billed" : ""}</strong>
+          <span>${esc(inv.patient_name)} (${esc(inv.patient_number || "—")}) · ${esc(inv.investigation_number)} · ${esc(inv.investigation_status)} · ${esc(inv.age_hours)} hour(s) old · billed ${esc(inv.billed_amount)} (${esc(inv.invoice_item_count)} line(s))</span>
+        </button>
+      `).join("");
+      invHost.querySelectorAll("[data-invbilling-patient]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelector(".nav-item[data-view='patients']")?.click();
+          window.dispatchEvent(new CustomEvent("hhms:open-patient-clinical", { detail: { patientId: Number(btn.dataset.invbillingPatient) } }));
+        });
+      });
+    }
+  } catch {
+    $("#dashboard-investigation-billing", host).innerHTML = '<div class="empty-state">Investigation billing reconciliation is unavailable right now.</div>';
   }
 
   try {

@@ -27,6 +27,8 @@ from app.schemas.reporting import (
     OPDQueueSummaryPrintRequest,
     WardOccupancyPrintEnvelope,
     WardOccupancyPrintRequest,
+    InvestigationBillingReconciliationPrintEnvelope,
+    InvestigationBillingReconciliationPrintRequest,
     PaymentMethodOverpaymentPrintEnvelope,
     PaymentMethodOverpaymentPrintRequest,
     RefundAuditPrintEnvelope,
@@ -374,6 +376,30 @@ async def build_ward_occupancy_print_envelope(
     ``GET /dashboard/ward-occupancy-summary`` ward-for-ward.
     """
     return await reporting_service.build_ward_occupancy_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/investigation-billing-reconciliation-print-envelope",
+    response_model=InvestigationBillingReconciliationPrintEnvelope,
+)
+async def build_investigation_billing_reconciliation_print_envelope(
+    report_in: InvestigationBillingReconciliationPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvestigationBillingReconciliationPrintEnvelope:
+    """Batch 102 — printable investigation billing reconciliation packet.
+
+    Reuses the Batch 102 shared investigation scan and billing rollup
+    (``build_investigation_billing_reconciliation_scan`` +
+    ``build_investigation_billing_reconciliation_result``), so every printed
+    row keeps ``billed_amount == charged_total - credited_total`` and the
+    headlines match ``GET /dashboard/investigation-billing-reconciliation``
+    row-for-row. Unbilled open investigations stay on the page with
+    ``billed_amount == 0`` instead of disappearing.
+    """
+    return await reporting_service.build_investigation_billing_reconciliation_print_envelope(
         db, report_in
     )
 

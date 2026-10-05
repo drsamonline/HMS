@@ -72,6 +72,11 @@ Runs entirely on the local network with a server-owned database — *no internet
 - ✔ Clinical activity and statistics
 
 ### 🖨️ Reporting & Printing
+- ✔ Investigation billing reconciliation — dashboard proof feed + print envelope
+  (`GET /dashboard/investigation-billing-reconciliation`, `POST
+  /reports/investigation-billing-reconciliation-print-envelope`) sharing one scan/
+  derivation trio for screen/paper parity, closing the lab/billing boundary
+  *(Batch 102)*
 - ✔ Reporting and print manifests
 - ✔ Client-side report rendering and batch printing
 - ✔ Invoice print envelope with live payment-derived balances *(Batch 85)*
@@ -175,8 +180,6 @@ Runs entirely on the local network with a server-owned database — *no internet
 - ✔ Ghost-card fix — the Batch 97 invoice overpayment ledger, server-complete but
   unreachable from the UI, gained an "Invoice overpayment ledger" card plus cards
   for all four new surfaces in the Reports & Printing workspace *(Batch 100)*
-
-### 🧪 Test Suite
 - ✔ Ward occupancy summary — `GET /dashboard/ward-occupancy-summary` rolls active beds
   into per-ward buckets (null wards surface under an explicit "Unassigned" label;
   `occupied_beds + reserved_beds + available_beds == total_beds` for any input,
@@ -184,9 +187,17 @@ Runs entirely on the local network with a server-owned database — *no internet
   `build_ward_occupancy_summary_scan`/`build_ward_occupancy_summary_result` pair;
   printable through `POST /reports/ward-occupancy-print-envelope`, alongside the OPD
   queue summary print preview renderer *(Batch 101)*
+- ✔ Investigation billing reconciliation — `GET
+  /dashboard/investigation-billing-reconciliation` proves every open lab order
+  still carries its billed amount on a live non-cancelled invoice (billed amounts
+  re-derived from `InvoiceItem` line totals in one grouped pass, never trusted from
+  stored counters; each row keeps `billed_amount == charged_total - credited_total`;
+  unbilled orders surface with `billed_amount == 0` instead of disappearing) via the
+  shared scan/result trio; printable through `POST
+  /reports/investigation-billing-reconciliation-print-envelope` *(Batch 102)*
 
 ### 🧪 Test Suite
-- 372 backend tests passing as of Batch 101 (see [CHANGELOG.md](CHANGELOG.md)).
+- 381 backend tests passing as of Batch 102 (see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection

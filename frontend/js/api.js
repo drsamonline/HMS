@@ -119,6 +119,8 @@ export async function buildReceivablesAgingPrintEnvelope(payload){return request
 export async function buildInvoiceReceiptContinuityPrintEnvelope(payload){return request("/api/v1/reports/invoice-receipt-continuity-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 export async function buildReceiptNumberingContinuityPrintEnvelope(payload){return request("/api/v1/reports/receipt-numbering-continuity-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 export async function buildInvoicePaymentReconciliationPrintEnvelope(payload){return request("/api/v1/reports/invoice-payment-reconciliation-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
+export async function getDashboardInvestigationBillingReconciliation(options={}){const q=new URLSearchParams({limit:String(options.limit??200)});return request(`/api/v1/dashboard/investigation-billing-reconciliation?${q.toString()}`)}
+export async function buildInvestigationBillingReconciliationPrintEnvelope(payload){return request("/api/v1/reports/investigation-billing-reconciliation-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 export async function getDashboardPaymentMethodSummary(options={}){const q=new URLSearchParams({limit:String(options.limit??200)});return request(`/api/v1/dashboard/payment-method-summary?${q.toString()}`)}
 export async function buildPaymentMethodSummaryPrintEnvelope(payload){return request("/api/v1/reports/payment-method-summary-print-envelope",{method:"POST",body:JSON.stringify(payload)});}
 export async function getDashboardInvoiceOverpayments(options={}){const q=new URLSearchParams({limit:String(options.limit??200)});return request(`/api/v1/dashboard/invoice-overpayments?${q.toString()}`)}

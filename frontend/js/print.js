@@ -453,3 +453,35 @@ export function createWardOccupancyPrintPreview(host,{envelope=null,data=null,ti
   $("#ward-occupancy-print-now",shell).addEventListener("click",()=>window.print());
   return {envelope,data:payload};
 }
+
+export function createInvestigationBillingReconciliationPrintPreview(host,{envelope=null,data=null,title="Investigation Billing Reconciliation"}={}){
+  host.innerHTML="";
+  const payload=envelope?.data??data??{};
+  const items=payload.items||[];
+  const missing=items.filter(it=>it.is_billed_missing===true);
+  const shell=document.createElement("div"); shell.className="print-preview-shell";
+  shell.innerHTML=`<div class="print-toolbar no-print"><div><strong>Investigation Billing Print Preview</strong><span class="print-count">${esc(String(payload.as_of??"").slice(0,10))}</span></div><div class="button-row"><button id="investigation-billing-print-now">Print Ledger</button></div></div>`
+    +`<article class="print-document"><header class="print-header"><div class="print-brand">HHMS</div><div><h1>${esc(envelope?.title||title)}</h1><p class="print-generated">As of: ${esc(String(payload.as_of??"—"))} · Generated: ${esc(new Date().toLocaleString())}</p></div></header><main>`
+    +`<section class="print-section" data-print-section="summary"><div class="print-section-heading"><h2>Reconciliation Summary</h2></div>`
+    +`<table class="print-table"><tbody>`
+    +`<tr><td>Investigations checked</td><td>${esc(payload.total_investigations_checked??0)}</td></tr>`
+    +`<tr><td>Pending</td><td>${esc(payload.pending_count??0)}</td></tr>`
+    +`<tr><td>In progress</td><td>${esc(payload.in_progress_count??0)}</td></tr>`
+    +`<tr><td>Billed</td><td>${esc(payload.billed_count??0)}</td></tr>`
+    +`<tr><td>Billed missing</td><td>${esc(payload.billed_missing_count??0)}</td></tr>`
+    +`<tr><td>Total billed</td><td>${money(payload.total_billed)}</td></tr>`
+    +`</tbody></table></section>`
+    +`<section class="print-section print-page-break" data-print-section="ledger"><div class="print-section-heading"><h2>Open Investigation Billing Ledger</h2></div>`
+    +(items.length?`<table class="print-table"><thead><tr><th>Investigation</th><th>Patient</th><th>Name</th><th>Status</th><th>Requested</th><th>Age (hrs)</th><th>Charged</th><th>Credited</th><th>Billed</th><th>Lines</th><th>Billed?</th></tr></thead><tbody>`
+      +items.map(it=>`<tr><td>${esc(it.investigation_number)}</td><td>${esc(it.patient_name)}${it.patient_number?` — ${esc(it.patient_number)}`:""}</td><td>${esc(it.investigation_name)}</td><td>${esc(human(it.investigation_status))}</td><td>${esc(String(it.requested_datetime||"").slice(0,16).replace("T"," "))}</td><td>${esc(it.age_hours)}</td><td>${money(it.charged_total)}</td><td>${money(it.credited_total)}</td><td>${money(it.billed_amount)}</td><td>${esc(it.invoice_item_count)}</td><td>${it.is_billed_missing?"✗ missing":"✓"}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">No open investigations to reconcile</div>')
+    +`</section>`
+    +`<section class="print-section" data-print-section="missing"><div class="print-section-heading"><h2>Unbilled Open Investigations</h2></div>`
+    +(missing.length?`<table class="print-table"><thead><tr><th>Investigation</th><th>Patient</th><th>Name</th><th>Status</th><th>Age (hrs)</th><th>Billed</th></tr></thead><tbody>`
+      +missing.map(it=>`<tr><td>${esc(it.investigation_number)}</td><td>${esc(it.patient_name)}</td><td>${esc(it.investigation_name)}</td><td>${esc(human(it.investigation_status))}</td><td>${esc(it.age_hours)}</td><td>${money(it.billed_amount)}</td></tr>`).join("")
+      +`</tbody></table>`:'<div class="print-empty">Every open investigation has live billing lines — no unbilled drift detected.</div>')
+    +`</section></main></article>`;
+  host.appendChild(shell);
+  $("#investigation-billing-print-now",shell).addEventListener("click",()=>window.print());
+  return {envelope,data:payload};
+}

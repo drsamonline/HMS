@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import Field, model_validator
@@ -917,6 +918,72 @@ class WardOccupancyPrintEnvelope(BaseSchema):
     data: WardOccupancyPrintData
 
 
+class InvestigationBillingReconciliationPrintRequest(BaseSchema):
+    """Batch 102 — print request for the investigation billing ledger."""
+
+    limit: int = Field(default=200, ge=1, le=1000)
+    title: str | None = Field(default=None, max_length=200)
+
+
+class InvestigationBillingReconciliationPrintLine(BaseSchema):
+    """One open investigation's billing reconciliation as printed on paper.
+
+    Mirrors ``InvestigationBillingReconciliationItem`` from the dashboard
+    feed (the same shared Batch 102 scan/derivation is reused verbatim), so
+    every printed row satisfies ``billed_amount == charged_total -
+    credited_total`` and unbilled orders surface with ``billed_amount == 0``
+    instead of disappearing.
+    """
+
+    investigation_id: int
+    patient_id: int
+    patient_name: str
+    patient_number: str | None = None
+    case_type: str | None = None
+    investigation_number: str
+    investigation_name: str
+    investigation_status: str
+    requested_datetime: datetime
+    age_hours: int
+    billed_amount: Decimal
+    charged_total: Decimal
+    credited_total: Decimal
+    invoice_item_count: int
+    is_billed: bool
+    is_billed_missing: bool
+
+
+class InvestigationBillingReconciliationPrintData(BaseSchema):
+    as_of: datetime
+    currency_note: str | None = None
+    items: list[InvestigationBillingReconciliationPrintLine]
+    total_investigations_checked: int
+    pending_count: int
+    in_progress_count: int
+    billed_count: int
+    billed_missing_count: int
+    total_billed: Decimal
+
+
+class InvestigationBillingReconciliationPrintEnvelope(BaseSchema):
+    """Batch 102 — printable investigation billing reconciliation packet.
+
+    Built through the exact same investigation scan and billing derivation
+    as ``GET /dashboard/investigation-billing-reconciliation``, so printed
+    headlines always satisfy ``pending_count + in_progress_count ==
+    total_investigations_checked``, ``billed_count + billed_missing_count ==
+    total_investigations_checked`` and ``total_billed == sum(billed_amount)``
+    — matching the dashboard feed row-for-row.
+    """
+
+    report_type: Literal[
+        "investigation_billing_reconciliation_print"
+    ] = "investigation_billing_reconciliation_print"
+    title: str
+    generated_at: datetime
+    data: InvestigationBillingReconciliationPrintData
+
+
 __all__ = [
     "ReportSection",
     "ALL_REPORT_SECTIONS",
@@ -990,4 +1057,8 @@ __all__ = [
     "WardOccupancyPrintLine",
     "WardOccupancyPrintData",
     "WardOccupancyPrintEnvelope",
+    "InvestigationBillingReconciliationPrintRequest",
+    "InvestigationBillingReconciliationPrintLine",
+    "InvestigationBillingReconciliationPrintData",
+    "InvestigationBillingReconciliationPrintEnvelope",
 ]
