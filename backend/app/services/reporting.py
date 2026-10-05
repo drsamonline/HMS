@@ -899,6 +899,7 @@ class ReportingService:
                 total_billed=str(audit["total_billed"]),
                 total_collected=str(audit["total_collected"]),
                 total_outstanding=str(audit["total_outstanding"]),
+                total_overpaid=str(audit["total_overpaid"]),
                 items=[
                     InvoiceSettlementAuditPrintLine(
                         **{

@@ -1855,15 +1855,17 @@ def build_invoice_settlement_audit_result(rows: list[dict], as_of: date) -> dict
     every item satisfies ``settled_amount + outstanding_amount ==
     total_amount`` line-for-line by construction. ``is_cleared`` marks
     invoices whose collected amount covers the billed total; headline
-    totals roll back to ``total_billed == total_collected +
-    total_outstanding`` and ``cleared_count + unsettled_count ==
-    total_invoices``.
+    totals roll back to ``total_collected + total_outstanding ==
+    total_billed + total_overpaid`` (over-collection is reported in the
+    ``total_overpaid`` headline so it never silently disappears) and
+    ``cleared_count + unsettled_count == total_invoices``.
     """
     items = []
     cleared_count = 0
     total_billed = Decimal("0")
     total_collected = Decimal("0")
     total_outstanding = Decimal("0")
+    total_overpaid = Decimal("0")
     for row in rows:
         settled_amount = row["amount_paid"]
         outstanding_amount = row["balance_due"]
@@ -1874,6 +1876,8 @@ def build_invoice_settlement_audit_result(rows: list[dict], as_of: date) -> dict
         total_collected += settled_amount
         total_outstanding += outstanding_amount
         overpaid_raw = row["total_paid_raw"] - row["total_amount"]
+        if overpaid_raw > Decimal("0"):
+            total_overpaid += overpaid_raw
         items.append(
             {
                 "invoice_id": row["invoice_id"],
@@ -1906,6 +1910,7 @@ def build_invoice_settlement_audit_result(rows: list[dict], as_of: date) -> dict
         "total_billed": total_billed,
         "total_collected": total_collected,
         "total_outstanding": total_outstanding,
+        "total_overpaid": total_overpaid,
     }
 
 

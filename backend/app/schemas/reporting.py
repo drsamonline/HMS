@@ -685,6 +685,7 @@ class InvoiceSettlementAuditPrintData(BaseSchema):
     total_billed: str
     total_collected: str
     total_outstanding: str
+    total_overpaid: str
 
 
 class InvoiceSettlementAuditPrintEnvelope(BaseSchema):
