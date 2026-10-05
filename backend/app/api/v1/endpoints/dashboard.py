@@ -137,6 +137,8 @@ from app.models.opd_token import OPDToken
 from app.models.patient import Patient
 from app.models.payment import Payment
 from app.schemas.dashboard import (
+    InvoiceSettlementAuditResponse,
+    RefundAuditResponse,
     BedOccupancyResponse,
     DischargeAuditResponse,
     DueFollowUpsResponse,
@@ -1490,11 +1492,15 @@ def build_payment_method_overpayment_breakdown(
         gross = Decimal(str(receipt["amount_paid"]))
         left = remaining.get(receipt["invoice_id"])
         if left is None:
-            applied = Decimal("0")
-        else:
-            applied = min(gross, left)
-            if applied > 0:
-                remaining[receipt["invoice_id"]] = left - applied
+            # Batch 100 — receipts against invoices outside the scan
+            # window count as neither collected nor overpaid (Batch 96
+            # parity), so per-method ``gross == collected + overpaid``
+            # holds on every printed row and phantom excess from
+            # out-of-window invoices never inflates the split.
+            continue
+        applied = min(gross, left)
+        if applied > 0:
+            remaining[receipt["invoice_id"]] = left - applied
         excess = gross - applied
         overpaid_by_method[method] = overpaid_by_method.get(
             method, Decimal("0")
@@ -2130,6 +2136,8 @@ __all__ = [
     "build_collection_summary_by_patient",
     "build_discharge_audit_result",
     "build_discharge_audit_scan",
+    "build_invoice_settlement_audit_result",
+    "build_invoice_settlement_audit_scan",
     "build_overpayment_ledger",
     "build_overpayment_ledger_result",
     "build_opd_queue_summary_result",

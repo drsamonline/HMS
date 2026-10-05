@@ -263,5 +263,88 @@ async def build_payment_method_overpayment_print_envelope(
         db, report_in
     )
 
+@router.post(
+    "/invoice-settlement-audit-print-envelope",
+    response_model=InvoiceSettlementAuditPrintEnvelope,
+)
+async def build_invoice_settlement_audit_print_envelope(
+    report_in: InvoiceSettlementAuditPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvoiceSettlementAuditPrintEnvelope:
+    """Batch 100 — printable invoice settlement audit packet.
+
+    Shares the dashboard's live-payment scan and settlement rollup
+    (``build_invoice_settlement_audit_scan``, built on the same Batch 68
+    clamp as ``GET /dashboard/invoice-settlement-audit``), so printed rows
+    always satisfy ``settled_amount + outstanding_amount == total_amount``
+    line-for-line and headlines reconcile with the dashboard feed for the
+    same scan window.
+    """
+    return await reporting_service.build_invoice_settlement_audit_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/refund-audit-print-envelope",
+    response_model=RefundAuditPrintEnvelope,
+)
+async def build_refund_audit_print_envelope(
+    report_in: RefundAuditPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> RefundAuditPrintEnvelope:
+    """Batch 100 — printable refund processing audit packet.
+
+    Shares the dashboard's negative-Payment scan and per-refund flag
+    rollup (``build_refund_audit_scan``), so printed rows carry the exact
+    same processing flags as ``GET /dashboard/refund-audit`` line-for-line
+    and headlines satisfy ``processed_count + drifted_count ==
+    total_refunds``.
+    """
+    return await reporting_service.build_refund_audit_print_envelope(db, report_in)
+
+
+@router.post(
+    "/discharge-audit-print-envelope",
+    response_model=DischargeAuditPrintEnvelope,
+)
+async def build_discharge_audit_print_envelope(
+    report_in: DischargeAuditPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> DischargeAuditPrintEnvelope:
+    """Batch 100 — printable ward-flow discharge audit packet.
+
+    Reuses the Batch 99 shared joined scan and reconciliation derivation
+    verbatim (``build_discharge_audit_scan`` +
+    ``build_discharge_audit_result``), so every printed row matches
+    ``GET /dashboard/discharge-audit`` and headlines satisfy
+    ``reconciled_count + drift_count == total_discharges``.
+    """
+    return await reporting_service.build_discharge_audit_print_envelope(db, report_in)
+
+
+@router.post(
+    "/opd-queue-summary-print-envelope",
+    response_model=OPDQueueSummaryPrintEnvelope,
+)
+async def build_opd_queue_summary_print_envelope(
+    report_in: OPDQueueSummaryPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> OPDQueueSummaryPrintEnvelope:
+    """Batch 100 — printable OPD queue daily summary packet.
+
+    Reuses the Batch 99 shared grouped scan and per-day rollup verbatim
+    (``build_opd_queue_summary_scan``), so each printed day's status split
+    sums back to that day's total tokens and the headline open backlog
+    matches ``GET /dashboard/opd-queue-summary`` for the same window.
+    """
+    return await reporting_service.build_opd_queue_summary_print_envelope(
+        db, report_in
+    )
+
 
 __all__ = ["router"]

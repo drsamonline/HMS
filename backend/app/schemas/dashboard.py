@@ -536,7 +536,13 @@ class InvoiceSettlementAuditItem(BaseSchema):
 
 
 class InvoiceSettlementAuditResponse(BaseSchema):
-    """Settlement audit rows plus headline cleared/unsettled counts."""
+    """Settlement audit rows plus headline cleared/unsettled counts.
+
+    Headline invariant (Batch 100): ``total_collected +
+    total_outstanding == total_billed + total_overpaid`` — clamped
+    collections plus visible over-collection always reconcile back to the
+    billed total, so money never silently disappears on paper or screen.
+    """
 
     as_of: date
     items: list[InvoiceSettlementAuditItem]
@@ -546,6 +552,7 @@ class InvoiceSettlementAuditResponse(BaseSchema):
     total_billed: Decimal
     total_collected: Decimal
     total_outstanding: Decimal
+    total_overpaid: Decimal
 
 
 class RefundAuditItem(BaseSchema):
