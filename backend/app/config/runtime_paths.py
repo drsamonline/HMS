@@ -6,7 +6,17 @@ from pathlib import Path
 
 
 def application_root() -> Path:
-    """Return the directory used as the HHMS application root."""
+    """Return the directory used as the HHMS application root.
+
+    ``HHMS_APPLICATION_ROOT`` overrides the location for tests and for
+    installations that keep their writable data directory outside the
+    packaged application tree.
+    """
+    import os
+
+    override = os.environ.get("HHMS_APPLICATION_ROOT")
+    if override:
+        return Path(override).resolve()
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parents[3]

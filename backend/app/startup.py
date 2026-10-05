@@ -36,12 +36,20 @@ def configure_logging() -> None:
 def migration_config() -> Config:
     """Return Alembic configuration for source and packaged deployments."""
     root = application_root()
+    # The backend source directory (…/backend) is a stable fallback for
+    # installations whose writable data root differs from the code root.
+    source_backend = Path(__file__).resolve().parents[1]
     candidates = [
         root / "alembic.ini",
         root / "backend" / "alembic.ini",
+        source_backend / "alembic.ini",
     ]
     ini = next((path for path in candidates if path.exists()), candidates[0])
-    script_candidates = [root / "alembic", root / "backend" / "alembic"]
+    script_candidates = [
+        root / "alembic",
+        root / "backend" / "alembic",
+        source_backend / "alembic",
+    ]
     script_location = next((path for path in script_candidates if path.exists()), script_candidates[0])
     config = Config(str(ini))
     config.set_main_option("script_location", str(script_location))

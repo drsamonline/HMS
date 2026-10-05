@@ -58,16 +58,12 @@ def get_engine() -> AsyncEngine:
         else:
             # File-based SQLite (the real packaged/LAN runtime) must support
             # concurrent requests.  A single pinned StaticPool connection
-            # serialises *and* deadlocks multi-session workloads, so use a
-            # small queue pool plus WAL journaling and a busy timeout so
-            # simultaneous LAN clients can read/write safely.
-            from sqlalchemy import event
-            from sqlalchemy.pool import QueuePool
-
-            engine_kwargs["poolclass"] = QueuePool
-            engine_kwargs["pool_size"] = 5
-            engine_kwargs["max_overflow"] = 10
-            engine_kwargs["pool_timeout"] = 30
+            # serialises *and* deadlocks multi-session workloads, so rely on
+            # aiosqlite's native NullPool (one connection per session — the
+            # async-safe choice; QueuePool is rejected by asyncio engines)
+            # plus WAL journaling and a busy timeout below so simultaneous
+            # LAN clients can read/write safely.
+            pass
     else:
         engine_kwargs["connect_args"] = connect_args
 
