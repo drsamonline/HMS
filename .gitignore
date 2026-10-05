@@ -1,8 +1,4 @@
-# Python compiled files
-__pycache__/
-*.pyc
-
-# Environment and secrets
-.env
-.env.local
-data/secret.key
+# Database files
+*.sqlite3
+*-shm
+*-wal

@@ -1,8 +1,10 @@
 """HHMS number-sequence generation service."""
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
-from sqlalchemy import select
+
+from sqlalchemy import case, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ResourceNotFoundException
@@ -10,32 +12,114 @@ from app.models.number_sequence import NumberSequence
 
 
 class NumberSequenceService:
-    """Generate configurable human-readable identifiers inside the caller transaction."""
+    """Generate configurable human-readable identifiers inside the caller transaction.
+
+    Concurrency model
+    -----------------
+    The canonical mechanism is ``SELECT ... FOR UPDATE`` (row lock held for
+    the caller's transaction), which serialises minting correctly on real
+    database backends (PostgreSQL/MySQL).
+
+    SQLite cannot honour that lock: it has no ``FOR UPDATE`` support and the
+    driver silently downgrades the clause, so two concurrent transactions in
+    one server process can read the same counter value before either commits
+    and mint duplicate identifiers.  For SQLite connections this service
+    therefore mints atomically with a single-writer
+    ``UPDATE ... SET current_value = current_value + 1 RETURNING ...``
+    statement — the increment happens entirely inside the database engine,
+    so racing writers can never observe the same pre-increment value.  The
+    loaded ORM instance's state is refreshed from the returned row so the
+    caller's session stays consistent without issuing a second write at
+    flush time.
+    """
+
+    def __init__(self) -> None:
+        # Serialises the check-and-mint window for concurrent tasks sharing
+        # one process (the packaged single-server runtime).  Cross-process
+        # safety on SQLite still comes from the atomic UPDATE below, which
+        # is a single write statement and thus serialised by the DB itself.
+        self._mint_lock = asyncio.Lock()
 
     async def next_number(self, db: AsyncSession, sequence_name: str) -> str:
+        async with self._mint_lock:
+            result = await db.execute(
+                select(NumberSequence)
+                .where(
+                    NumberSequence.sequence_name == sequence_name,
+                    NumberSequence.is_active.is_(True),
+                )
+                .with_for_update()
+            )
+            sequence = result.scalar_one_or_none()
+            if sequence is None:
+                raise ResourceNotFoundException(
+                    f"Number sequence '{sequence_name}' is not configured."
+                )
+
+            now = datetime.now(timezone.utc)
+            reset_now = sequence.last_reset_at is None
+            self._reset_if_due(sequence, now)
+
+            bind_dialect = db.get_bind().dialect.name
+            if bind_dialect == "sqlite":
+                current_value = await self._mint_sqlite_atomic(
+                    db, sequence, now, reset_now=reset_now
+                )
+            else:
+                sequence.current_value += 1
+                if sequence.last_reset_at is None:
+                    sequence.last_reset_at = now
+                sequence.updated_at = now
+                current_value = sequence.current_value
+
+            value = str(current_value).zfill(sequence.padding_length)
+            return f"{sequence.prefix}{value}{sequence.suffix}"
+
+    async def _mint_sqlite_atomic(
+        self,
+        db: AsyncSession,
+        sequence: NumberSequence,
+        now: datetime,
+        *,
+        reset_now: bool,
+    ) -> int:
+        """Mint via a single-writer ``UPDATE ... RETURNING`` on SQLite.
+
+        The whole increment executes inside the database engine, so racing
+        transactions cannot observe the same pre-increment value even when
+        ``FOR UPDATE`` row locking is unavailable.
+        """
         result = await db.execute(
-            select(NumberSequence)
-            .where(
-                NumberSequence.sequence_name == sequence_name,
-                NumberSequence.is_active.is_(True),
+            update(NumberSequence)
+            .where(NumberSequence.id == sequence.id)
+            .values(
+                current_value=NumberSequence.current_value + 1,
+                last_reset_at=case(
+                    (NumberSequence.last_reset_at.is_(None), now),
+                    else_=NumberSequence.last_reset_at,
+                ),
+                updated_at=now,
             )
-            .with_for_update()
+            .returning(NumberSequence.current_value)
+            .execution_options(synchronize_session=False)
         )
-        sequence = result.scalar_one_or_none()
-        if sequence is None:
+        row = result.first()
+        if row is None:  # pragma: no cover - defensive
             raise ResourceNotFoundException(
-                f"Number sequence '{sequence_name}' is not configured."
+                "Number sequence row disappeared during minting."
             )
+        current_value = int(row[0])
 
-        now = datetime.now(timezone.utc)
-        self._reset_if_due(sequence, now)
-        sequence.current_value += 1
-        if sequence.last_reset_at is None:
-            sequence.last_reset_at = now
-        sequence.updated_at = now
-
-        value = str(sequence.current_value).zfill(sequence.padding_length)
-        return f"{sequence.prefix}{value}{sequence.suffix}"
+        # Mirror the authoritative DB values onto the identity-mapped ORM
+        # instance *without* marking it dirty (plain ``instance.__dict__``
+        # writes bypass the attribute-change tracker), so session flush does
+        # not re-issue an overwrite of the counter.
+        state_values = sequence.__dict__
+        state_values["current_value"] = current_value
+        state_values["updated_at"] = now
+        if reset_now or state_values.get("last_reset_at") is None:
+            state_values["last_reset_at"] = now
+        return current_value
 
     def _reset_if_due(self, sequence: NumberSequence, now: datetime) -> None:
         frequency = (sequence.reset_frequency or "never").strip().lower()
