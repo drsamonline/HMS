@@ -98,7 +98,7 @@ Runs entirely on the local network with a server-owned database — *no internet
   fixed three release-blocking defects: StaticPool concurrency deadlock,
   migration-chain gaps incl. missing base tables in 0018, and 184 missing
   `CURRENT_TIMESTAMP` server defaults *(Batch 104)*
-- ✔ **437 backend tests passing** as of Batch 107 — see [CHANGELOG.md](CHANGELOG.md)
+- ✔ **448 backend tests passing** as of Batch 108 — see [CHANGELOG.md](CHANGELOG.md)
 
 ### 📦 Release Engineering (Milestone 7 — in progress)
 - ✔ Single-source versioning from the root `VERSION` file, resolved across
@@ -117,6 +117,14 @@ Runs entirely on the local network with a server-owned database — *no internet
   uninstall) and CI release pipeline `.github/workflows/release.yml`
   (test-gated Linux bundle + Windows EXE/installer builds + SHA-256
   checksummed GitHub Releases), gated by a 10-test QA suite *(Batch 107)*
+- ✔ Backup/restore & recovery workflows verified end-to-end on the packaged
+  file-backed runtime (point-in-time restore, snapshot hygiene, corrupt-upload
+  rejection, byte-exact downloads, admin gating) *(Batch 108)*
+- ✔ Client launcher packaging contract (`HHMS-Client.exe`): single-file
+  self-contained win-x64 publish, WebView2 SDK pinned at 1.0.3856.49, frontend
+  bundled, LAN discovery bridge, version lock-step with `VERSION`; installer
+  `-IncludeClient` switch bundles it into Inno/NSIS setups; 11-test QA suite
+  *(Batch 108)*
 - ✔ Repository hygiene: linearized history, secret-hygiene sweep (334 stale
   runtime/cache artifacts untracked), hardened `.gitignore` *(Batches 105–cleanup)*
 
@@ -129,8 +137,8 @@ Runs entirely on the local network with a server-owned database — *no internet
 
 - ✅ Final server EXE build *(Batch 106 — one-file Linux artifact built & smoke-tested; Windows EXE + installer automated in CI, Batch 107)*
 - ✅ Installer & release automation *(Batch 107 — build-installer.ps1 + release.yml tag-triggered pipeline with checksums)*
-- ⬜ Client launcher packaging verification — `HHMS-Client.exe` build + WebView2 offline redistributable bundling *(launcher prerequisite check done in Batch 105)*
-- ⬜ Backup / restore and recovery workflows
+- ✅ Client launcher packaging verification — `HHMS-Client.exe` single-file self-contained publish contract locked by QA, WebView2 SDK pinned, installer `-IncludeClient` bundling *(Batch 108; offline redistributable CAB bundling pending)*
+- ✅ Backup / restore and recovery workflows *(Batch 108 — round-trip, snapshot hygiene, corrupt-upload rejection, admin gating verified on file-backed runtime)*
 - ⬜ Performance & security audit pass
 - ⬜ Cross-module client integration and role-aware UI polish
 - ⬜ Final print / printer QA on target hardware
