@@ -13,12 +13,6 @@
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <AssemblyName>HHMS-Client</AssemblyName>
     <RootNamespace>HHMS.Client</RootNamespace>
-    <!-- Single-source release versioning: keep these in sync with the
-         repository-root VERSION file (asserted by
-         backend/tests/test_batch106_exe_build_qa.py). -->
-    <Version>0.0.1</Version>
-    <AssemblyVersion>0.0.1.0</AssemblyVersion>
-    <FileVersion>0.0.1.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3856.49" />

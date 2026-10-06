@@ -31,23 +31,30 @@ python -m PyInstaller --version >/dev/null 2>&1 || {
     exit 1
 }
 
-cd "${BACKEND_ROOT}"
+# NOTE: --specpath is a makespec-only option and is rejected when a .spec file
+# is given directly; the spec's own paths (defined relative to its location)
+# are authoritative, so we simply run from the packaging directory.
+cd "${BACKEND_ROOT}/packaging"
 python -m PyInstaller \
     --noconfirm \
     --clean \
     --distpath "${OUT_DIR}" \
     --workpath "${PROJECT_ROOT}/build/work" \
-    --specpath "${BACKEND_ROOT}/packaging" \
     "${SPEC}"
 
-BUNDLE="${OUT_DIR}/HHMS-Server"
-if [ ! -x "${BUNDLE}/HHMS-Server" ] && [ ! -f "${BUNDLE}/HHMS-Server" ]; then
-    echo "ERROR: expected bundle executable missing at ${BUNDLE}/HHMS-Server" >&2
+# The spec builds a ONE-FILE executable (all data embedded in the binary),
+# so the artifact is dist/HHMS-Server itself — not a directory.  VERSION is
+# bundled inside via datas; the exe-adjacent copy below is only a fallback
+# for application-root version resolution and is harmless to ship.
+BUNDLE_EXE="${OUT_DIR}/HHMS-Server"
+if [ ! -f "${BUNDLE_EXE}" ]; then
+    echo "ERROR: expected bundle executable missing at ${BUNDLE_EXE}" >&2
     exit 1
 fi
+chmod +x "${BUNDLE_EXE}"
 
 # Ship the release VERSION next to the bundle for application-root resolution.
-cp "${PROJECT_ROOT}/VERSION" "${BUNDLE}/VERSION"
+cp "${PROJECT_ROOT}/VERSION" "${OUT_DIR}/VERSION"
 
-echo "==> Build complete: ${BUNDLE}"
-echo "    Start with: ${BUNDLE}/HHMS-Server   (first run bootstraps data/ and migrations)"
+echo "==> Build complete: ${BUNDLE_EXE}"
+echo "    Start with: ${BUNDLE_EXE}   (first run bootstraps data/ and migrations)"
