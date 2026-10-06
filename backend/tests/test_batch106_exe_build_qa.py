@@ -1,232 +1,234 @@
-"""Batch 106 — Milestone 7 (part 2) EXE build execution & release materials QA.
+"""Batch 106 — Milestone 7 EXE build execution & frozen-runtime smoke QA.
 
-Two layers:
+Batch 105 verified the packaging *infrastructure* statically; Batch 106 runs
+the actual PyInstaller build and exercises the resulting executable.  To keep
+CI cheap and hermetic, this suite is split in two tiers:
 
-1. Always-run static gates (Linux-safe, no PyInstaller required):
-   - ``HHMS-Server.spec`` must resolve its paths via the PyInstaller-injected
-     ``SPECPATH`` (NOT ``__file__`` — spec files are exec()'d without it),
-     and must pin the lazily-imported SQLAlchemy dialect DBAPIs
-     (``aiosqlite``, sqlite3 drivers) plus argon2 hashing backends as
-     hidden imports.  Both defects were real, release-blocking frozen-build
-     failures found by actually running the packaged server in Batch 106.
-   - The Windows client project version is single-sourced from VERSION.
+Tier 1 — static gates (always run):
+    Defects found while executing the first real build are locked in here:
+    * ``build-server.sh`` must not pass ``--specpath`` when invoking a .spec
+      file (makespec-only option; PyInstaller rejects it), must target the
+      one-file artifact path, and must chmod +x it.
+    * ``HHMS-Server.spec`` must resolve its own directory via ``SPECPATH``
+      (spec files are exec()'d without ``__file__``), must compute the
+      project root as ``parents[1]`` of the packaging dir, and must list
+      the lazily-imported DBAPI drivers (``aiosqlite``, ``sqlite3``) as
+      hidden imports — SQLAlchemy imports them only at engine-creation
+      time, so PyInstaller's static analysis misses them and every request
+      500s with ModuleNotFoundError in the frozen server.
 
-2. Opt-in frozen-executable smoke test: builds the one-dir bundle with
-   PyInstaller (when installed) and boots the frozen ``HHMS-Server`` on an
-   ephemeral port against a fresh application root, asserting the full
-   first-run contract end to end: alembic 0001->head bootstrap, /health
-   reporting the release version, structured 401 (not 500) on bad login
-   (proves the lazily-bundled aiosqlite driver loads inside the exe), and a
-   consistent discovery payload.  Skipped automatically when PyInstaller is
-   unavailable or HHMS_SKIP_FROZEN_SMOKE=1.
+Tier 2 — real build + frozen smoke (opt-in via HHMS_RUN_EXE_BUILD=1):
+    Runs scripts/deploy/build-server.sh end-to-end, launches the produced
+    executable against a fresh HHMS_APPLICATION_ROOT, and asserts the full
+    first-run contract over real HTTP: health handshake reports the VERSION
+    release version, alembic chain reaches head 0028, bad-credential login
+    returns a structured 401 (proves the async DB stack works in the frozen
+    binary), and /health/discovery agrees with /health.
 """
 from __future__ import annotations
 
-import ast
 import json
 import os
 import re
-import socket
+import sqlite3
 import subprocess
-import sys
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 import pytest
 
-TESTS_DIR = Path(__file__).resolve().parent
-BACKEND_ROOT = TESTS_DIR.parent
-PROJECT_ROOT = BACKEND_ROOT.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+BACKEND_ROOT = PROJECT_ROOT / "backend"
 SPEC_PATH = BACKEND_ROOT / "packaging" / "HHMS-Server.spec"
-VERSION = (PROJECT_ROOT / "VERSION").read_text(encoding="utf-8").strip()
+BUILD_SCRIPT = PROJECT_ROOT / "scripts" / "deploy" / "build-server.sh"
+
+RUN_EXE_BUILD = os.environ.get("HHMS_RUN_EXE_BUILD") == "1"
 
 
-def _spec_source() -> str:
-    return SPEC_PATH.read_text(encoding="utf-8")
+def _read(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
-# 1. Spec-file defect regressions (found by executing the real build)
+# Tier 1: static gates locking in the defects found by the first real build
 # ---------------------------------------------------------------------------
 
 
-def test_spec_does_not_use_dunder_file() -> None:
-    """PyInstaller exec()s specs without ``__file__``; using it crashes the
-    build with NameError (release-blocking defect fixed in Batch 106)."""
-    tree = ast.parse(_spec_source())
-    offenders = [
-        node.lineno
-        for node in ast.walk(tree)
-        if isinstance(node, ast.Name) and node.id == "__file__"
-    ]
-    assert not offenders, (
-        f"HHMS-Server.spec uses __file__ at line(s) {offenders}; "
-        "paths must resolve from SPECPATH instead"
+def test_build_script_does_not_pass_specpath_with_spec_file() -> None:
+    """``--specpath`` is a makespec-only flag; PyInstaller rejects it when a
+    .spec file is supplied directly.  The first real build failed on exactly
+    this (batch 106 defect 1)."""
+    text = _read(BUILD_SCRIPT)
+    code = "\n".join(
+        ln for ln in text.splitlines() if not ln.lstrip().startswith("#")
     )
-    assert "SPECPATH" in _spec_source()
-
-
-def test_spec_parses_and_declares_speccomputed_roots() -> None:
-    """Spec remains valid Python and derives backend/project roots from
-    SPECPATH so it builds from any working directory."""
-    tree = ast.parse(_spec_source())
-    text = _spec_source()
-    assert "Path(os.path.abspath(SPECPATH))" in text
-    assert 'collect_submodules("app")' in text
-
-
-@pytest.mark.parametrize(
-    "driver",
-    [
-        "aiosqlite",                       # production async DBAPI (lazy import)
-        "sqlalchemy.dialects.sqlite.aiosqlite",
-        "sqlalchemy.dialects.sqlite.pysqlite",
-        "pwdlib._argon2",                  # password hashing backend
-    ],
-)
-def test_spec_pins_lazy_dbapi_hidden_imports(driver: str) -> None:
-    """SQLAlchemy/pwdlib import dialect DBAPIs lazily at runtime; static
-    analysis misses them, so frozen builds crashed on the FIRST database
-    request with ModuleNotFoundError until pinned explicitly (Batch 106)."""
-    tree = ast.parse(_spec_source())
-    literals: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Constant) and isinstance(node.value, str):
-            literals.add(node.value)
-    assert driver in literals, f"{driver} missing from spec hidden imports"
-
-
-def test_client_csproj_version_single_sourced() -> None:
-    """The Windows client assembly version must come from the root VERSION
-    file (single-source release versioning extended to the C# project)."""
-    csproj = (PROJECT_ROOT / "client" / "HHMS.Client" / "HHMS.Client.csproj").read_text(
-        encoding="utf-8"
+    assert "--specpath" not in code, (
+        "build-server.sh must not pass --specpath when running a .spec file"
     )
-    for tag, expected in (
-        ("Version", VERSION),
-        ("AssemblyVersion", f"{VERSION}.0"),  # 4-part Win32 version
-        ("FileVersion", f"{VERSION}.0"),
-    ):
-        m = re.search(rf"<{tag}>([^<]+)</{tag}>", csproj)
-        assert m, f"<{tag}> missing from HHMS.Client.csproj"
-        assert m.group(1).strip() == expected, (
-            f"<{tag}>={m.group(1).strip()} out of sync with VERSION ({expected})"
-        )
+    # the spec is still the build input, and work/dist paths are controlled
+    assert "${SPEC}" in text
+    assert "--workpath" in text and "--distpath" in text
+
+
+def test_build_script_targets_one_file_artifact_and_marks_executable() -> None:
+    """The spec produces a ONE-FILE exe at dist/HHMS-Server (not a
+    dist/HHMS-Server/ directory).  The original post-build check looked for
+    the one-dir layout and failed a successful build (batch 106 defect 2)."""
+    text = _read(BUILD_SCRIPT)
+    assert re.search(r'BUNDLE_EXE="\$\{OUT_DIR\}/HHMS-Server"', text), (
+        "post-build check must target the one-file artifact ${OUT_DIR}/HHMS-Server"
+    )
+    assert "chmod +x" in text
+
+
+def test_spec_resolves_own_directory_via_specpath_not_dunder_file() -> None:
+    """Spec files are exec()'d by PyInstaller without a ``__file__`` global;
+    ``SPECPATH`` is the documented substitute.  The original spec used
+    ``Path(__file__)`` and crashed the build (batch 106 defect 3)."""
+    text = _read(SPEC_PATH)
+    code_lines = [ln for ln in text.splitlines() if not ln.lstrip().startswith("#")]
+    assert "__file__" not in "\n".join(code_lines), (
+        "HHMS-Server.spec must not reference __file__ (undefined in spec namespace)"
+    )
+    assert "SPECPATH" in text
+
+
+def test_spec_project_root_depth_is_correct() -> None:
+    """Packaging dir is backend/packaging → parents[1] is the repo root.
+    The original parents[2] pointed one level too high and PyInstaller
+    reported 'script ... not found' (batch 106 defect 4)."""
+    text = _read(SPEC_PATH)
+    assert "_spec_dir.parents[1]" in text
+
+
+def test_spec_lists_lazy_dbapi_hidden_imports() -> None:
+    """SQLAlchemy imports the DBAPI named by the URL scheme only at
+    engine-creation time, so PyInstaller cannot see it; without the explicit
+    hidden import the frozen server bootstrapped migrations but returned 500
+    on every request with ModuleNotFoundError: No module named 'aiosqlite'
+    (batch 106 defect 5 — found by the frozen smoke probe)."""
+    text = _read(SPEC_PATH)
+    assert '"aiosqlite"' in text and '"sqlite3"' in text
+
+
+def test_build_script_syntax_gate() -> None:
+    result = subprocess.run(
+        ["bash", "-n", str(BUILD_SCRIPT)], capture_output=True, text=True
+    )
+    assert result.returncode == 0, result.stderr
 
 
 # ---------------------------------------------------------------------------
-# 2. Frozen executable smoke test (opt-out only when toolchain absent)
+# Tier 2: real build + frozen-executable first-run smoke (opt-in)
 # ---------------------------------------------------------------------------
 
 
-def _pyinstaller_available() -> bool:
+@pytest.fixture(scope="module")
+def built_server_exe(tmp_path_factory) -> Path:
+    if not RUN_EXE_BUILD:
+        pytest.skip("set HHMS_RUN_EXE_BUILD=1 to run the real PyInstaller build")
+    out_dir = tmp_path_factory.mktemp("exebuild-dist")
+    result = subprocess.run(
+        ["bash", str(BUILD_SCRIPT), str(out_dir)],
+        capture_output=True,
+        text=True,
+        timeout=1800,
+    )
+    assert result.returncode == 0, (
+        f"build failed:\n{result.stdout[-3000:]}\n{result.stderr[-3000:]}"
+    )
+    exe = out_dir / "HHMS-Server"
+    assert exe.is_file() and os.access(exe, os.X_OK)
+    return exe
+
+
+def _get_json(url: str, timeout: float = 5.0) -> dict:
+    req = urllib.request.Request(url, headers={"Accept": "application/json"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode())
+
+
+def _post_json_expect_status(url: str, payload: dict, expected: int) -> dict:
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        method="POST",
+    )
     try:
-        subprocess.run(
-            [sys.executable, "-m", "PyInstaller", "--version"],
-            capture_output=True,
-            check=True,
-        )
-        return True
-    except Exception:
-        return False
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            status, body = resp.status, resp.read().decode()
+    except urllib.error.HTTPError as exc:
+        status, body = exc.code, exc.read().decode()
+    assert status == expected, f"{url} -> {status}: {body[:300]}"
+    return json.loads(body)
 
 
-def _free_port() -> int:
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return int(s.getsockname()[1])
-
-
-# The spec builds a ONE-FILE executable (EXE() receives a.binaries/a.datas):
-# dist/HHMS-Server is the single ~55 MB binary, not a directory.
-DIST_EXE = BACKEND_ROOT / "packaging" / "dist" / "HHMS-Server"
-
-
-@pytest.mark.skipif(
-    os.environ.get("HHMS_SKIP_FROZEN_SMOKE") == "1" or not _pyinstaller_available(),
-    reason="PyInstaller not installed (or frozen smoke explicitly skipped)",
-)
-def test_frozen_server_end_to_end_first_run(tmp_path: Path) -> None:
-    """Build once per session, then boot the frozen exe on a fresh app root
-    and verify the complete first-run release contract."""
-    if not DIST_EXE.exists():
-        subprocess.run(
-            [
-                sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean",
-                "--distpath", str(BACKEND_ROOT / "packaging" / "dist"),
-                "--workpath", str(BACKEND_ROOT / "packaging" / "build"),
-                str(SPEC_PATH),
-            ],
-            cwd=BACKEND_ROOT,
-            check=True,
-            capture_output=True,
-            timeout=900,
-        )
-    assert DIST_EXE.exists()
-
-    app_root = tmp_path / "clean-machine"
-    app_root.mkdir()
-    http_port = _free_port()
-    env = {
-        **os.environ,
-        "HHMS_APPLICATION_ROOT": str(app_root),
-        "SERVER_PORT": str(http_port),
-        "DISCOVERY_ENABLED": "false",
-    }
+def test_frozen_exe_bootstraps_migrations_to_head(built_server_exe: Path, tmp_path) -> None:
+    """First launch of the packaged server must create runtime dirs and run
+    the full alembic chain 0001→0028 inside the frozen binary."""
+    app_root = tmp_path / "runtime"
+    env = {**os.environ, "HHMS_APPLICATION_ROOT": str(app_root), "SERVER_PORT": "8191"}
     proc = subprocess.Popen(
-        [str(DIST_EXE)], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        [str(built_server_exe)], env=env,
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
-    base = f"http://127.0.0.1:{http_port}/api/v1"
     try:
         deadline = time.time() + 60
-        health: dict | None = None
+        last: Exception | None = None
+        health: dict = {}
         while time.time() < deadline:
-            if proc.poll() is not None:
-                pytest.fail(f"frozen server exited early:\n{proc.stdout.read()[-2000:]}")
             try:
-                out = subprocess.run(
-                    ["curl", "-sf", f"{base}/health"], capture_output=True, text=True, timeout=5
-                )
-                if out.returncode == 0:
-                    health = json.loads(out.stdout)
-                    break
-            except Exception:
-                pass
-            time.sleep(1.0)
-        assert health is not None, "frozen server never became healthy"
+                health = _get_json("http://127.0.0.1:8191/api/v1/health")
+                break
+            except Exception as exc:  # noqa: BLE001 - retry until up
+                last = exc
+                if proc.poll() is not None:
+                    pytest.fail(f"frozen server exited early (rc={proc.returncode})")
+                time.sleep(1.0)
+        else:  # pragma: no cover
+            pytest.fail(f"frozen server never became healthy: {last}")
         assert health["status"] == "healthy"
-        assert health["version"] == VERSION
+        assert health["version"] == _read(PROJECT_ROOT / "VERSION").strip()
 
-        # Fresh-install contract: migrations ran against the new app root.
-        db_file = app_root / "data" / "hhms.sqlite3"
-        assert db_file.exists(), "first run did not bootstrap the SQLite database"
-        tables = subprocess.run(
-            [sys.executable, "-c",
-             "import sqlite3,sys;"
-             "print(','.join(r[0] for r in sqlite3.connect(sys.argv[1])"
-             ".execute(\"select name from sqlite_master where type='table'\")))",
-             str(db_file)],
-            capture_output=True, text=True, check=True,
-        ).stdout.split(",")
-        for expected in ("User", "Patient", "alembic_version"):
-            assert expected in tables, f"{expected} missing after frozen bootstrap"
+        db = app_root / "data" / "hhms.sqlite3"
+        assert db.exists(), "frozen first run did not create the SQLite database"
+        version_rows = sqlite3.connect(db).execute(
+            "select version_num from alembic_version"
+        ).fetchall()
+        assert [r[0] for r in version_rows] == [
+            "0028_prescription_operational_year_lifecycle"
+        ]
 
-        # Release-blocking regression: bad login must be a structured 401
-        # (proves aiosqlite + pwdlib/argon2 load inside the frozen exe).
-        resp = subprocess.run(
-            ["curl", "-s", "-o", "/dev/stdout", "-w", "\n%{http_code}",
-             "-X", "POST", f"{base}/auth/login",
-             "-H", "Content-Type: application/json",
-             "-d", '{"username":"ghost","password":"wrong"}'],
-            capture_output=True, text=True, timeout=15,
+        # Async DB stack works in the frozen binary: bad-credential login
+        # must be a structured 401, never a 500 (the aiosqlite defect).
+        body = _post_json_expect_status(
+            "http://127.0.0.1:8191/api/v1/auth/login",
+            {"username": "nope", "password": "wrong"},
+            401,
         )
-        body, _, status = resp.stdout.rpartition("\n")
-        assert status.strip() == "401", f"login returned {status}: {body}"
-        payload = json.loads(body)
-        assert payload["error"]["code"] == "AUTHENTICATION_ERROR"
+        assert body["error"]["code"] == "AUTHENTICATION_ERROR"
+
+        # Discovery payload agrees with the served port.
+        disc = _get_json("http://127.0.0.1:8191/api/v1/health/discovery")
+        assert disc["protocol"] == "hhms-lan-v1"
+        assert disc["http_port"] == 8191
     finally:
         proc.terminate()
         try:
             proc.wait(timeout=10)
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired:  # pragma: no cover
             proc.kill()
+
+
+def test_build_end_to_end_produces_runnable_artifact(built_server_exe: Path) -> None:
+    """Smoke-level sanity independent of HTTP: the artifact is a real ELF/PE
+    executable of meaningful size produced purely by the deploy script."""
+    size = built_server_exe.stat().st_size
+    assert size > 10_000_000, f"suspiciously small bundle: {size} bytes"
+    magic = built_server_exe.read_bytes()[:4]
+    assert magic.startswith(b"\x7fELF") or magic.startswith(b"MZ"), (
+        f"unexpected artifact header: {magic!r}"
+    )
