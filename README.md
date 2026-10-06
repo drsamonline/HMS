@@ -77,17 +77,22 @@ Runs entirely on the local network with a server-owned database — *no internet
   /reports/investigation-billing-reconciliation-print-envelope`) sharing one scan/
   derivation trio for screen/paper parity, closing the lab/billing boundary
   *(Batch 102)*
-- ✔ Comprehensive QA (Milestone 6, complete) — full-stack end-to-end route
-  suite on an ephemeral in-memory database covering auth lifecycle, patient
-  writes with sequence minting, and every dashboard feed; found and fixed a
-  login 500 (`hashed_password` → `password_hash`); cross-module integration
-  suite (patient → visit → OPD token → queue progression, warm-state audit
-  feeds) plus performance smoke benchmark *(Batch 103)*; multi-client LAN
-  concurrency suite (shared file-backed WAL SQLite, concurrent logins /
-  registrations / token mints, UDP discovery handshake) and clean-machine
-  installation simulation (fresh-directory alembic bootstrap 0001→0028) —
-  fixing a StaticPool concurrency deadlock, migration-chain gaps, and missing
-  timestamp server defaults *(Batch 104)*
+- ✔ Full-stack E2E + integration QA *(Milestone 6 Batch 103)* — end-to-end
+  route suite on an ephemeral in-memory database covering the auth lifecycle,
+  patient writes with sequence minting, and every dashboard feed; surfaced and
+  fixed a release-blocking login 500 (`hashed_password` vs `password_hash`
+  column mismatch); cross-module integration suite (patient → visit → OPD
+  token → queue progression, warm-state audit feeds) plus a performance smoke
+  benchmark *(Batch 103)*
+- ✔ Multi-client LAN QA & clean-install testing *(Milestone 6 Batch 104,
+  complete)* — concurrency suite over a shared file-backed WAL SQLite DB
+  (concurrent logins / registrations / token mints via N client threads, UDP
+  discovery `HHMS_DISCOVER_V1` handshake) and clean-machine installation
+  simulation (fresh-directory Alembic bootstrap 0001→0028, ORM/schema parity,
+  empty-DB auth round-trip); fixed three release-blocking defects: StaticPool
+  concurrency deadlock on file-based SQLite, migration-chain gaps incl.
+  missing base tables in 0018, and 184 missing `CURRENT_TIMESTAMP` server
+  defaults *(Batch 104)*
 - ✔ Reporting and print manifests
 - ✔ Client-side report rendering and batch printing
 - ✔ Invoice print envelope with live payment-derived balances *(Batch 85)*
@@ -222,10 +227,10 @@ Runs entirely on the local network with a server-owned database — *no internet
 - ⬜ Role-aware UI
 - ⬜ Final print/printer QA
 - ⬜ WebView2 runtime packaging
-- ⬜ Multi-client LAN tests
+- ✅ Multi-client LAN tests *(Batch 104 — concurrency suite on shared file-backed WAL SQLite + UDP discovery handshake)*
 - ⬜ Backup/restore and recovery
 - ⬜ Performance/security audit
-- ⬜ Final EXE packaging and clean-machine installation
+- ⬜ Final EXE packaging and clean-machine installation *(DB bootstrap verified in Batch 104; EXE packaging pending Milestone 7)*
 
 > 📊 Progress is tracked per batch in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md) and planned in [ROADMAP.md](ROADMAP.md).
 
