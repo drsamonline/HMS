@@ -208,7 +208,7 @@ def test_frozen_server_end_to_end_first_run(tmp_path: Path) -> None:
              str(db_file)],
             capture_output=True, text=True, check=True,
         ).stdout.split(",")
-        for expected in ("users", "patients", "alembic_version"):
+        for expected in ("User", "Patient", "alembic_version"):
             assert expected in tables, f"{expected} missing after frozen bootstrap"
 
         # Release-blocking regression: bad login must be a structured 401
