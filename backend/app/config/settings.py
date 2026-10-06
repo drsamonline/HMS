@@ -25,6 +25,7 @@ from app.config.runtime_paths import (
     logs_directory,
     secret_key_path,
 )
+from app.release_version import release_version
 
 
 ROOT_DIR = application_root()
@@ -74,7 +75,7 @@ class Settings(BaseSettings):
     )
 
     APP_VERSION: str = Field(
-        default="0.1.0",
+        default_factory=release_version,
     )
 
     API_V1_PREFIX: str = Field(

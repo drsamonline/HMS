@@ -14,11 +14,14 @@ a = Analysis(
     datas=[
         (str(backend_root / "alembic"), "alembic"),
         (str(backend_root / "alembic.ini"), "."),
+        # Single-source release version: bundled at the archive root so
+        # app.release_version resolves it inside the frozen executable.
+        (str(project_root / "VERSION"), "."),
     ],
     hiddenimports=hidden_app_imports,
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=[str(Path(__file__).resolve().parent / "hooks" / "runtime_hook_alembic_path.py")],
     excludes=[],
     noarchive=False,
 )
