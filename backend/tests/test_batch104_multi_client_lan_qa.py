@@ -130,14 +130,32 @@ def test_concurrent_patient_registrations_mint_unique_numbers(shared_db: str) ->
 
 
 def _udp_probe(port: int, request: bytes = b"HHMS_DISCOVER_V1", timeout: float = 3.0):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.settimeout(timeout)
-    try:
-        sock.sendto(request, ("127.0.0.1", port))
-        data, _addr = sock.recvfrom(4096)
-        return json.loads(data.decode("utf-8"))
-    finally:
-        sock.close()
+    """Send one discovery datagram and await the reply.
+
+    UDP is best-effort even on loopback (the very first send after a fresh
+    bind can be dropped by the kernel/lo under load), so retry with a short
+    per-attempt window instead of failing the suite on a lost datagram.
+    The responder's magic-token check makes duplicate probes harmless.
+    """
+    deadline = time.monotonic() + timeout
+    attempt_timeout = 1.0
+    last_error: Exception | None = None
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError(
+                f"no discovery reply on port {port} within {timeout}s"
+            ) from last_error
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.settimeout(min(attempt_timeout, remaining))
+        try:
+            sock.sendto(request, ("127.0.0.1", port))
+            data, _addr = sock.recvfrom(4096)
+            return json.loads(data.decode("utf-8"))
+        except (socket.timeout, TimeoutError) as exc:
+            last_error = exc
+        finally:
+            sock.close()
 
 
 def test_udp_discovery_handshake_matches_http_contract(monkeypatch, tmp_path):
@@ -146,6 +164,13 @@ def test_udp_discovery_handshake_matches_http_contract(monkeypatch, tmp_path):
     from app.network.discovery import DISCOVERY_REQUEST, LanDiscoveryResponder
 
     monkeypatch.setenv("HHMS_DATA_DIR", str(tmp_path))
+    # The QA harness pins DISCOVERY_ENABLED=false process-wide at import so
+    # the rest of the suite never binds UDP sockets; opt back in explicitly
+    # (monkeypatch restores the previous value on teardown).  Also pin
+    # HHMS_APPLICATION_ROOT to the temp dir: settings resolution reads a
+    # .env from the application root, and without this an ambient root
+    # inherited from earlier tests could shadow the env vars below.
+    monkeypatch.setenv("HHMS_APPLICATION_ROOT", str(tmp_path))
     monkeypatch.setenv("DISCOVERY_ENABLED", "true")
     free_port = socket.socket()
     free_port.bind(("127.0.0.1", 0))
