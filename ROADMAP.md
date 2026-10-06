@@ -31,7 +31,7 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Data access layer
 - [x] Validation and error handling ([docs/VALIDATION_RULES.md](docs/VALIDATION_RULES.md))
 - [ ] Performance/security audit
-- [ ] Backup/restore and recovery hardening
+- [x] Backup/restore and recovery hardening (Batch 108 — full round-trip verified on file-backed runtime: point-in-time restore, snapshot hygiene, corrupt-upload rejection, byte-exact downloads, admin gating)
 
 ## Milestone 3 – Frontend 🔄
 
@@ -66,11 +66,13 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Performance testing
 - [x] Clean-machine installation testing (Batch 104 — fresh-directory migration-chain bootstrap, 0001→0028, verified green)
 
-## Milestone 7 – Release 🔶 (in progress — Batches 105–107 landed packaging, EXE build, installer & CI)
+## Milestone 7 – Release 🔶 (in progress — Batches 105–108 landed packaging, EXE build, installer & CI, backup/restore + client launcher)
 
-- [ ] WebView2 runtime packaging *(launcher prerequisite check in `scripts/deploy/server-launch.ps1` done Batch 105; offline redistributable bundling pending)*
-- [x] Final server EXE packaging (Batch 106 — real one-file PyInstaller build executed + frozen first-run smoke verified; Batch 107 — Windows EXE automated in CI) *(client launcher verification pending)*
-- [x] Installer & release automation (Batch 107 — `scripts/deploy/build-installer.ps1` Inno Setup/NSIS + `.github/workflows/release.yml` tag-triggered pipeline with SHA-256 checksums and GitHub Release publishing)
+- [x] Client launcher packaging verification (Batch 108 — `client/HHMS.Client` single-file self-contained win-x64 `HHMS-Client.exe` contract locked by QA; WebView2 SDK pinned at 1.0.3856.49; frontend bundled; `-IncludeClient` installer switch) *(offline WebView2 redistributable CAB bundling pending)*
+- [ ] WebView2 runtime packaging *(launcher prerequisite check in `scripts/deploy/server-launch.ps1` done Batch 105; pinned SDK ships in the launcher EXE per Batch 108; offline redistributable bundling pending)*
+- [x] Final server EXE packaging (Batch 106 — real one-file PyInstaller build executed + frozen first-run smoke verified; Batch 107 — Windows EXE automated in CI; Batch 108 — client launcher verification closed)
+- [x] Installer & release automation (Batch 107 — `scripts/deploy/build-installer.ps1` Inno Setup/NSIS + `.github/workflows/release.yml` tag-triggered pipeline with SHA-256 checksums and GitHub Release publishing; Batch 108 — `-IncludeClient` launcher bundling)
+- [x] Backup / restore workflows (Batch 108 — round-trip, snapshot hygiene, corrupt-upload rejection, admin gating verified on file-backed runtime)
 - [ ] Documentation finalization
 - [x] Deployment scripts (Batch 105 — `scripts/deploy/`: build-server.sh, install-first-run.sh, server-launch.ps1, usage README; syntax/integrity verified by QA suite)
 - [ ] User training materials
@@ -111,11 +113,16 @@ and lazy-DBAPI `aiosqlite`/`sqlite3` hidden imports); 8-test tiered QA suite; fu
 preferred with NSIS fallback, user-writable/no-admin install layout, patient data preserved across uninstall per the
 Batch 104 relocation contract, version from the single-source `VERSION` file) and the CI release pipeline
 `.github/workflows/release.yml` (test-gated Linux bundle + Windows EXE/installer jobs + SHA-256-checksummed GitHub
-Release on `v*` tags), locked in by a 10-test QA suite. Full backend suite: **437 passed, 2 skipped**. Remaining
-Milestone 7 scope: client launcher (`HHMS-Client.exe`) packaging verification + WebView2 offline redistributable
-bundling, backup/restore workflows, performance & security audit pass, documentation/training finalization, production
-release (secret rotation first — `data/secret.key` persists in git history). Next batch: **Batch 108 — client launcher
-packaging & WebView2 bundling**. Batch 102 itself (third mega-batch under
+Release on `v*` tags), locked in by a 10-test QA suite. Full backend suite: **437 passed, 2 skipped**.
+**Batch 108 (Milestone 7 part 4)** verified the backup/restore/recovery workflows end-to-end on a file-backed SQLite
+runtime (point-in-time restore fidelity, pre-restore snapshot hygiene, corrupt-upload rejection, byte-exact downloads,
+administrator gating on every verb) and locked the client launcher packaging contract (`HHMS-Client.exe`: single-file
+self-contained win-x64 publish, WebView2 SDK pinned at 1.0.3856.49, bundled frontend, UDP discovery bridge, version in
+lock-step with root `VERSION`), adding an opt-in `-IncludeClient` switch to the installer script for both Inno and NSIS
+paths; 11-test QA suite. Full backend suite: **448 passed, 2 skipped**. Remaining
+Milestone 7 scope: WebView2 offline redistributable CAB bundling, performance & security audit pass,
+documentation/training finalization, production release (secret rotation first — `data/secret.key` persists in git
+history). Next batch: **Batch 109 — performance & security audit pass**. Batch 102 itself (third mega-batch under
 the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
 lab order from the Batch 84 pending-investigation vocabulary still carries its billed amount on a live non-cancelled invoice —
 billed amounts re-derived from `InvoiceItem` line totals in one grouped pass (`billed_amount == charged_total - credited_total`,

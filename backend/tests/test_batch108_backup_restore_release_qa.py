@@ -19,6 +19,7 @@ Milestone 7 (Release) part 4 / Milestone 8 (Release Cut).  Covers:
 
 from __future__ import annotations
 
+import asyncio
 import re
 import sqlite3
 from pathlib import Path

@@ -176,6 +176,7 @@
 | [CLIENT_BATCH103_COMPREHENSIVE_QA.md](CLIENT_BATCH103_COMPREHENSIVE_QA.md) | Comprehensive QA Milestone 6 — full-stack E2E route suite, cross-module integration, performance benchmark & login regression fix (Batch 103) |
 | [CLIENT_BATCH104_LAN_MULTI_CLIENT_INSTALLATION_QA.md](CLIENT_BATCH104_LAN_MULTI_CLIENT_INSTALLATION_QA.md) | Multi-client LAN concurrency QA & clean-machine installation testing — Milestone 6 complete, three release-blocking fixes (Batch 104) |
 | [CLIENT_BATCH105_RELEASE_PACKAGING_DEPLOYMENT.md](CLIENT_BATCH105_RELEASE_PACKAGING_DEPLOYMENT.md) | Release packaging infrastructure & deployment scripts — single-source versioning, frozen-runtime Alembic hook, build/install/launch scripts, secret-hygiene completion (Batch 105) |
+| [CLIENT_BATCH108_BACKUP_RESTORE_RELEASE_QA.md](CLIENT_BATCH108_BACKUP_RESTORE_RELEASE_QA.md) | Backup/restore workflow verification, client launcher packaging contract (WebView2 pin, bundled frontend), installer -IncludeClient switch (Batch 108) |
 | [CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md](CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md) | Client operational workspace integration |
 | [CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md](CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md) | Client operational navigation convergence |
 | [CLIENT_RBAC_NAVIGATION.md](CLIENT_RBAC_NAVIGATION.md) | Client RBAC-aware navigation |
