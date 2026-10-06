@@ -46,7 +46,13 @@ API = "/api/v1/maintenance/backups"
 
 
 def _seed_admin(client_factory, db_path: str, username: str = "batch108-admin") -> dict[str, str]:
-    """Insert an active admin user directly and return bearer headers."""
+    """Insert an active admin user directly and return bearer headers.
+
+    The backup endpoints enforce role-based access via ``_require_admin``
+    (active Role in {admin, administrator, superuser} joined through
+    UserRole), so the QA user must carry a real admin role assignment —
+    raw JWT subjects without one are correctly rejected.
+    """
     import asyncio
 
     from app.auth.password import hash_password
@@ -83,7 +89,8 @@ def _seed_admin(client_factory, db_path: str, username: str = "batch108-admin") 
 def _count_patients(db_path: str) -> int:
     conn = sqlite3.connect(db_path)
     try:
-        row = conn.execute("SELECT COUNT(*) FROM patients").fetchone()
+        # Schema uses PascalCase table names (Patient), not snake_case.
+        row = conn.execute('SELECT COUNT(*) FROM "Patient"').fetchone()
         return int(row[0]) if row else 0
     finally:
         conn.close()

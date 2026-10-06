@@ -51,7 +51,14 @@ class BackupService:
         url = get_settings().DATABASE_URL
         if not url.startswith("sqlite+aiosqlite:///"):
             raise BusinessRuleException("Local backup is currently supported only for SQLite deployments.")
+        # The live database is wherever the running engine actually points.
+        # Default to the conventional data-root path, but honour an explicit
+        # DATABASE_URL override (custom file or :memory:) so packaged and
+        # test runtimes back up exactly what they serve (Batch 108).
         source = database_path()
+        configured = Path(url.removeprefix("sqlite+aiosqlite:///"))
+        if str(configured) != "":
+            source = configured.resolve() if ":memory:" not in url else source
         if not source.exists():
             raise ResourceNotFoundException("HHMS database file does not exist yet.")
         return source

@@ -1,15 +1,2 @@
-# Python compiled files
 __pycache__/
-*.py[cod]
-*$py.class
-
-# Build artifacts
-build/
-dist/
-
-# Environment and IDE files
-.env
-.venv/
-venv/
-.vscode/
-.idea/
+*.pyc

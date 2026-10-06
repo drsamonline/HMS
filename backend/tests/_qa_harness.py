@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import os
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Iterator
 
 # Configure environment BEFORE any ``app`` imports so cached settings
@@ -107,7 +108,14 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
     from app.db.base import Base  # noqa: F401 - registers all models
     from app.db.session import get_engine, get_session_factory
 
+    # The backup/restore endpoints operate on the *live* runtime data root,
+    # so relocate HHMS_APPLICATION_ROOT to the temp directory for the
+    # duration of the block (Batch 108).  The engine itself keeps serving
+    # the caller-supplied DB path; BackupService._ensure_sqlite() resolves
+    # the live file from DATABASE_URL.
+    prev_app_root = os.environ.get("HHMS_APPLICATION_ROOT")
     prev_db_url = os.environ.get("DATABASE_URL")
+    os.environ["HHMS_APPLICATION_ROOT"] = str(Path(db_path).resolve().parent)
     os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{db_path}"
     get_settings.cache_clear()
     get_session_factory.cache_clear()
@@ -157,6 +165,11 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
             os.environ.pop("DATABASE_URL", None)
         else:
             os.environ["DATABASE_URL"] = prev_db_url
+        if prev_app_root is None:
+            os.environ.pop("HHMS_APPLICATION_ROOT", None)
+        else:
+            os.environ["HHMS_APPLICATION_ROOT"] = prev_app_root
+        get_settings.cache_clear()
 
 
 def auth_headers() -> dict[str, str]:
