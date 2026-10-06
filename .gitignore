@@ -1,4 +1,6 @@
+# Python compiled files
+__pycache__/
+*.pyc
+
 # Database files
-*.sqlite3
-*-shm
-*-wal
+data/*.sqlite3

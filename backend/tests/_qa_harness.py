@@ -22,7 +22,7 @@ from typing import Iterator
 # resolve to the ephemeral in-memory database.
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 os.environ.setdefault("ENVIRONMENT", "test")
-os.environ.setdefault("SECRET_KEY", "batch103-qa-test-secret-key")
+os.environ.setdefault("SECRET_KEY", "batch103-qa-test-secret-key-0123456789abcdef")
 os.environ.setdefault("DISCOVERY_ENABLED", "false")
 
 
@@ -52,11 +52,13 @@ def make_client() -> Iterator["object"]:
     """Yield a TestClient bound to the full API with an in-memory schema."""
     from fastapi.testclient import TestClient
 
+    from app.config.settings import get_settings
     from app.db.base import Base  # noqa: F401 - registers all models
     from app.db.session import get_engine, get_session_factory
 
     # Fresh in-memory database per harness use: clear the cached engine so
     # every ``with make_client()`` block starts from an empty schema.
+    get_settings.cache_clear()
     get_session_factory.cache_clear()
     get_engine.cache_clear()
     engine = get_engine()
@@ -81,6 +83,7 @@ def make_client() -> Iterator["object"]:
             await engine.dispose()
 
         asyncio.run(_dispose())
+        get_settings.cache_clear()
         get_session_factory.cache_clear()
         get_engine.cache_clear()
 
@@ -100,11 +103,13 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
     """
     from fastapi.testclient import TestClient
 
+    from app.config.settings import get_settings
     from app.db.base import Base  # noqa: F401 - registers all models
     from app.db.session import get_engine, get_session_factory
 
     prev_db_url = os.environ.get("DATABASE_URL")
     os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{db_path}"
+    get_settings.cache_clear()
     get_session_factory.cache_clear()
     get_engine.cache_clear()
     engine = get_engine()
@@ -117,6 +122,7 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
 
     application = _build_application()
     clients: list[TestClient] = []
+    disposed = False
 
     def client_factory() -> TestClient:
         client = TestClient(application)
@@ -124,6 +130,10 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
         return client
 
     def dispose() -> None:
+        nonlocal disposed
+        if disposed:
+            return
+        disposed = True
         for client in clients:
             client.close()
 
@@ -131,12 +141,18 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
             await engine.dispose()
 
         asyncio.run(_dispose_engine())
+        get_settings.cache_clear()
         get_session_factory.cache_clear()
         get_engine.cache_clear()
 
     try:
         yield client_factory, dispose
     finally:
+        # Safety net: dispose is idempotent, so this is a no-op when the
+        # caller already invoked it inside the block — but guarantees the
+        # pooled connections to this DB file are closed even if they
+        # forgot (leaked engines caused cross-test state bleed in Batch 104).
+        dispose()
         if prev_db_url is None:
             os.environ.pop("DATABASE_URL", None)
         else:

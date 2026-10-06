@@ -35,6 +35,7 @@ CLIENT_COUNT = 6
 
 @pytest.fixture()
 def shared_db(tmp_path: Path) -> str:
+    """One shared LAN database file, unique per test (no cross-test bleed)."""
     return str(tmp_path / "hhms-lan-shared.sqlite3")
 
 
