@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import re
+import shutil
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,10 +38,16 @@ def _sqlite_backup(source: Path, target: Path) -> None:
 
 
 def _sqlite_integrity(path: Path) -> bool:
-    conn = sqlite3.connect(path)
+    try:
+        conn = sqlite3.connect(path)
+    except sqlite3.DatabaseError:
+        return False
     try:
         result = conn.execute("PRAGMA integrity_check").fetchone()
         return bool(result and result[0] == "ok")
+    except sqlite3.DatabaseError:
+        # Non-SQLite / corrupt payloads raise here — treat as failed check.
+        return False
     finally:
         conn.close()
 
@@ -116,14 +124,47 @@ class BackupService:
         Safety contract (Batch 108):
         * The backup file must pass ``PRAGMA integrity_check`` before it is
           allowed to touch the live database.
-        * A automatic pre-restore snapshot of the current live database is
+        * An automatic pre-restore snapshot of the current live database is
           taken first (``pre-restore-<utcstamp>.sqlite3``) so an operator can
           roll back even the restore itself.
         * The restored database is re-verified after replacement; on failure
           the pre-restore snapshot is swapped back automatically.
+        * The live engine pool is disposed before and after the swap.  On
+          POSIX deleting an open file only unlinks it — writes from pooled
+          connections would then land in the deleted inode and be lost, so
+          every connection that could still hold the old file open must be
+          closed first (and any connections opened during the restore are
+          released afterwards so later requests rebind to the new file).
         """
         source = self._ensure_sqlite()
         backup = self.backup_path(name)
+
+        from app.db.session import get_engine
+
+        try:
+            engine = get_engine()
+        except Exception:  # pragma: no cover - defensive: uninitialised runtime
+            engine = None
+
+        async def _release_pool() -> None:
+            if engine is not None:
+                await engine.dispose()
+
+        def _copy_into_live(origin: Path) -> None:
+            """Byte-level replacement of the live DB file.
+
+            Used when the old live inode was unlinked while pooled
+            connections still held it open (POSIX delete semantics), so a
+            fresh SQLite write handle cannot be reopened on it.  The engine
+            pool is disposed around the restore, so no writer should remain;
+            this path guarantees the new file carries exactly the origin's
+            bytes with no stale side-cars.
+            """
+            for suffix in ("", "-wal", "-shm"):
+                Path(str(source) + suffix).unlink(missing_ok=True)
+            shutil.copyfile(origin, source)
+            with open(source, "rb") as handle:
+                os.fsync(handle.fileno())
 
         def _do_restore() -> Path:
             if not _sqlite_integrity(backup):
@@ -135,18 +176,14 @@ class BackupService:
             snapshot = backups_directory() / f"pre-restore-{stamp}.sqlite3"
             if source.exists():
                 _sqlite_backup(source, snapshot)
-            # Replace the live database atomically enough for SQLite: drop
-            # side-car journals/WAL first so no stale pages survive.
-            for suffix in ("-wal", "-shm"):
-                sidecar = Path(str(source) + suffix)
-                sidecar.unlink(missing_ok=True)
-            _sqlite_backup(backup, source)
+            # Replace the live database wholesale: drop the file and its
+            # side-cars so no stale WAL/shm pages shadow the restored
+            # content, then materialise the backup as the new live file.
+            _copy_into_live(backup)
             if not _sqlite_integrity(source):
                 # Roll the snapshot back into place.
-                if source.exists():
-                    source.unlink()
                 if snapshot.exists():
-                    _sqlite_backup(snapshot, source)
+                    _copy_into_live(snapshot)
                 snapshot.unlink(missing_ok=True)
                 raise BusinessRuleException(
                     "Restored database failed integrity check; previous state was rolled back."
@@ -154,7 +191,14 @@ class BackupService:
             snapshot.unlink(missing_ok=True)
             return source
 
-        await asyncio.to_thread(_do_restore)
+        # Release pooled connections *before* touching the live file, then
+        # restore, then release again so post-restore sessions reopen the
+        # replacement file.
+        await _release_pool()
+        try:
+            await asyncio.to_thread(_do_restore)
+        finally:
+            await _release_pool()
         return {
             "restored": backup.name,
             "database": str(source),
