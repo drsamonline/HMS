@@ -1,1 +1,31 @@
-(empty)
+# --- Python bytecode / caches -------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.venv/
+venv/
+
+# --- Build artifacts -----------------------------------------------------------
+build/
+dist/
+*.bundle
+
+# --- Runtime data (recreated on first run; never commit) -----------------------
+data/*.sqlite3
+data/*.sqlite3-wal
+data/*.sqlite3-shm
+data/logs/
+data/secret.key
+data/server_id
+data/uploads/
+data/backups/
+*.log
+
+# --- Editors / OS ---------------------------------------------------------------
+.DS_Store
+.idea/
+.vscode/
