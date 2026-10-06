@@ -77,12 +77,17 @@ Runs entirely on the local network with a server-owned database — *no internet
   /reports/investigation-billing-reconciliation-print-envelope`) sharing one scan/
   derivation trio for screen/paper parity, closing the lab/billing boundary
   *(Batch 102)*
-- ✔ Comprehensive QA (Milestone 6, in progress) — full-stack end-to-end route
+- ✔ Comprehensive QA (Milestone 6, complete) — full-stack end-to-end route
   suite on an ephemeral in-memory database covering auth lifecycle, patient
   writes with sequence minting, and every dashboard feed; found and fixed a
   login 500 (`hashed_password` → `password_hash`); cross-module integration
   suite (patient → visit → OPD token → queue progression, warm-state audit
-  feeds) plus performance smoke benchmark *(Batch 103)*
+  feeds) plus performance smoke benchmark *(Batch 103)*; multi-client LAN
+  concurrency suite (shared file-backed WAL SQLite, concurrent logins /
+  registrations / token mints, UDP discovery handshake) and clean-machine
+  installation simulation (fresh-directory alembic bootstrap 0001→0028) —
+  fixing a StaticPool concurrency deadlock, migration-chain gaps, and missing
+  timestamp server defaults *(Batch 104)*
 - ✔ Reporting and print manifests
 - ✔ Client-side report rendering and batch printing
 - ✔ Invoice print envelope with live payment-derived balances *(Batch 85)*
@@ -203,7 +208,7 @@ Runs entirely on the local network with a server-owned database — *no internet
   /reports/investigation-billing-reconciliation-print-envelope` *(Batch 102)*
 
 ### 🧪 Test Suite
-- 393 backend tests passing as of Batch 103 (Milestone 6 QA in progress — includes a full-stack end-to-end route suite and a cross-module integration suite; see [CHANGELOG.md](CHANGELOG.md)).
+- 403 backend tests passing as of Batch 104 (Milestone 6 QA complete — full-stack E2E route suite, cross-module integration, multi-client LAN concurrency, and clean-machine installation simulation; see [CHANGELOG.md](CHANGELOG.md)).
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection
