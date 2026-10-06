@@ -59,178 +59,74 @@ Runs entirely on the local network with a server-owned database — *no internet
 - ✔ Homoeopathic case records
 - ✔ Diagnosis and ICD-11
 - ✔ Prescriptions and medicines
-- ✔ IPD admission and clinical documentation
+- ✔ IPD admission, ward/bed management and clinical documentation
 - ✔ Investigations / laboratory / X-Ray
+- ✔ Annual case rollover and archival lifecycle *(Batch 69)*
 
 ### ⚙️ Operational
-- ✔ Billing and payments
-- ✔ Dashboard outstanding-billing receivables feed *(Batch 82)*
-- ✔ Dashboard IPD bed-occupancy continuity feed *(Batch 83)*
-- ✔ Dashboard laboratory pending-investigation backlog feed *(Batch 84)*
+- ✔ Billing and payments (live-payment-derived invoice balances)
+- ✔ Dashboard feeds — outstanding billing, IPD bed-occupancy continuity,
+  laboratory pending-investigation backlog *(Batches 82–84)*
 - ✔ MRD / patient files / archives
 - ✔ Department and service masters
 - ✔ Clinical activity and statistics
 
 ### 🖨️ Reporting & Printing
-- ✔ Investigation billing reconciliation — dashboard proof feed + print envelope
-  (`GET /dashboard/investigation-billing-reconciliation`, `POST
-  /reports/investigation-billing-reconciliation-print-envelope`) sharing one scan/
-  derivation trio for screen/paper parity, closing the lab/billing boundary
-  *(Batch 102)*
-- ✔ Full-stack E2E + integration QA *(Milestone 6 Batch 103)* — end-to-end
-  route suite on an ephemeral in-memory database covering the auth lifecycle,
-  patient writes with sequence minting, and every dashboard feed; surfaced and
-  fixed a release-blocking login 500 (`hashed_password` vs `password_hash`
-  column mismatch); cross-module integration suite (patient → visit → OPD
-  token → queue progression, warm-state audit feeds) plus a performance smoke
-  benchmark *(Batch 103)*
-- ✔ Multi-client LAN QA & clean-install testing *(Milestone 6 Batch 104,
-  complete)* — concurrency suite over a shared file-backed WAL SQLite DB
-  (concurrent logins / registrations / token mints via N client threads, UDP
-  discovery `HHMS_DISCOVER_V1` handshake) and clean-machine installation
-  simulation (fresh-directory Alembic bootstrap 0001→0028, ORM/schema parity,
-  empty-DB auth round-trip); fixed three release-blocking defects: StaticPool
-  concurrency deadlock on file-based SQLite, migration-chain gaps incl.
-  missing base tables in 0018, and 184 missing `CURRENT_TIMESTAMP` server
-  defaults *(Batch 104)*
-- ✔ Reporting and print manifests
-- ✔ Client-side report rendering and batch printing
-- ✔ Invoice print envelope with live payment-derived balances *(Batch 85)*
-- ✔ Receivables aging ledger — `GET /dashboard/receivables-aging` with
-  standard 0–30 / 31–60 / 61–90 / Over-90 buckets over the Batch 82
-  outstanding-invoice (live-payment) derivation, printable aging preview in
-  the Reports & Printing workspace *(Batch 86)*
-- ✔ Invoice receipt continuity report — `GET /dashboard/invoice-receipt-continuity`
-  audits receipt-book integrity over live payments (missing receipts,
-  duplicate receipt numbers, numeric sequence breaks), printable continuity
-  audit with headline aggregates in the Reports & Printing workspace *(Batch 87)*
-- ✔ Receipt numbering continuity audit — `GET /dashboard/receipt-numbering-continuity`
-  reconciles the whole receipt book by numeric series (missing numbers,
-  duplicates, `expected == actual + gaps` invariant), printable numbering
-  audit in the Reports & Printing workspace *(Batch 88)*
-- ✔ Invoice payment reconciliation ledger — `GET /dashboard/invoice-payment-reconciliation`
-  checks every scanned invoice against the live Payment ledger with
-  derived-vs-stored status drift detection, printable reconciliation ledger
-  in the Reports & Printing workspace *(Batch 89)*
-- ✔ Collection summary by patient — `GET /dashboard/collection-summary-by-patient`
-  rolls the reconciliation ledger into per-patient billed / collected /
-  outstanding totals (`total_collected + outstanding == total_billed`), with a
-  printable collection summary envelope sharing the same scan/aggregation and
-  a Reports & Printing workspace card *(Batch 90)*
-- ✔ Receivables aging print envelope — `POST /reports/receivables-aging-print-envelope`
-  builds the printable aging packet through the exact shared derivation
-  (`build_receivables_aging_result`) behind `GET /dashboard/receivables-aging`,
-  so printed buckets always reconcile line-for-line with the screen; the
-  Reports & Printing aging card now prepares through the envelope *(Batch 91)*
-- ✔ Invoice receipt continuity print envelope — `POST /reports/invoice-receipt-continuity-print-envelope`
-  builds the printable continuity audit through the exact shared scan +
-  derivation (`_load_continuity_scan_inputs` / `build_invoice_receipt_continuity_result`)
-  behind `GET /dashboard/invoice-receipt-continuity`, so printed headline
-  aggregates always sum back to `invoices_checked` and match the screen; the
-  Reports & Printing continuity card now prepares through the envelope *(Batch 92)*
-- ✔ Receipt numbering continuity print envelope — `POST /reports/receipt-numbering-continuity-print-envelope`
-  builds the printable numbering audit through the exact shared whole-book
-  derivation (`build_receipt_numbering_continuity_result`) behind
-  `GET /dashboard/receipt-numbering-continuity`, so printed series lines and
-  headline aggregates (`expected == actual + gaps`) always match the screen;
-  the Reports & Printing numbering card now prepares through the envelope *(Batch 93)*
-- ✔ Invoice payment reconciliation print envelope — `POST /reports/invoice-payment-reconciliation-print-envelope`
-  builds the printable reconciliation packet through the exact shared live-scan
-  derivation (`build_invoice_payment_reconciliation_ledger`) behind
-  `GET /dashboard/invoice-payment-reconciliation`, so printed headlines always
-  satisfy `paid + partial + unpaid == invoices_checked` and
-  `total_billed == total_paid + total_outstanding`; the Reports & Printing
-  reconciliation card now prepares through the envelope *(Batch 94)*
-- ✔ Collection summary print envelope — `POST /reports/collection-summary-print-envelope`
-  builds the printable per-patient collection packet through the exact shared
-  scan/aggregation (`_build_reconciliation_rows` + `build_collection_summary_by_patient`)
-  behind `GET /dashboard/collection-summary-by-patient`, so printed headlines always
-  satisfy `total_billed == total_collected + total_outstanding`; the Reports & Printing
-  collection summary card now prepares through the envelope *(Batch 95)*
-- ✔ Payment method collection summary — `GET /dashboard/payment-method-summary` +
-  `POST /reports/payment-method-summary-print-envelope` roll the live payment scan
-  into per-method receipt counts, gross received vs collected (Batch 68 clamp
-  parity) and percentage shares (`sum(per-method collected) == total_collected`),
-  through one shared derivation (`build_payment_method_summary_result`) behind both
-  surfaces; a Reports & Printing workspace card prepares through the envelope *(Batch 96)*
-- ✔ Invoice overpayment ledger — `GET /dashboard/invoice-overpayments` surfaces
-  what the Batch 68/89 clamp conceals: invoices whose live un-clamped payment
-  total exceeds the billed amount, with `overpaid_amount == total_paid_raw -
-  total_amount` per row and `total_paid_raw == total_billed + total_overpaid`
-  headlines, derived by the shared `build_overpayment_ledger` /
-  `build_overpayment_ledger_result` pair; printable through
-  `POST /reports/invoice-overpayment-print-envelope` *(Batch 97)*
-- ✔ Payment method overpayment breakdown — `GET /dashboard/payment-method-overpayments` +
-  `POST /reports/payment-method-overpayment-print-envelope` split the scan
-  window's over-collection across payment methods (per-method gross received,
-  collected and overpaid remainder; `total_gross == total_collected +
-  total_overpaid`) through the shared `build_payment_method_overpayment_breakdown`
-  / `build_payment_method_overpayment_result` pair *(Batch 98)*
-- ✔ Discharge audit — `GET /dashboard/discharge-audit` reconciles every recent
-  discharge against its admission status and bed occupancy (`admission_discharged`,
-  `bed_freed`, `is_reconciled`; `reconciled_count + drift_count == total_discharges`)
-  through one shared derivation (`build_discharge_audit_result` /
-  `build_discharge_audit_scan`); drifted rows stay visible with actionable cards on
-  the dashboard *(Batch 99)*
-- ✔ OPD queue daily summary — `GET /dashboard/opd-queue-summary` rolls live OPD
-  token rows up per queue day (newest first) with a status split that always sums
-  to the day total (`waiting + in_consultation + completed + cancelled ==
-  total_tokens`), derived by the shared `build_opd_queue_summary_result` /
-  `build_opd_queue_summary_scan` pair behind a single grouped pass *(Batch 99)*
-- ✔ Invoice settlement audit — `GET /dashboard/invoice-settlement-audit` rolls the
-  live reconciliation scan into per-invoice settled/outstanding lines (Batch 68
-  clamp parity; `settled_amount + outstanding_amount == total_amount` per row,
-  `cleared_count + unsettled_count == total_invoices`) with refund counts from one
-  grouped negative-payment pass; printable through
-  `POST /reports/invoice-settlement-audit-print-envelope` *(Batch 100)*
-- ✔ Refund audit — `GET /dashboard/refund-audit` scans negative Payment rows
-  (newest first) and flags each refund via `invoice_exists` / `has_remarks` /
-  `net_non_negative` → `processing_complete`, with
-  `processed_count + drifted_count == total_refunds`; printable through
-  `POST /reports/refund-audit-print-envelope` *(Batch 100)*
-- ✔ Operational print envelopes — discharge audit and OPD queue summary now honor
-  the Batch 99 "future print envelope" hooks via
-  `POST /reports/discharge-audit-print-envelope` and
-  `POST /reports/opd-queue-summary-print-envelope`, reusing the exact shared
-  scan/derivation pairs for screen/paper parity by construction *(Batch 100)*
-- ✔ Ghost-card fix — the Batch 97 invoice overpayment ledger, server-complete but
-  unreachable from the UI, gained an "Invoice overpayment ledger" card plus cards
-  for all four new surfaces in the Reports & Printing workspace *(Batch 100)*
-- ✔ Ward occupancy summary — `GET /dashboard/ward-occupancy-summary` rolls active beds
-  into per-ward buckets (null wards surface under an explicit "Unassigned" label;
-  `occupied_beds + reserved_beds + available_beds == total_beds` for any input,
-  `active_admissions <= occupied_beds`) via the shared
-  `build_ward_occupancy_summary_scan`/`build_ward_occupancy_summary_result` pair;
-  printable through `POST /reports/ward-occupancy-print-envelope`, alongside the OPD
-  queue summary print preview renderer *(Batch 101)*
-- ✔ Investigation billing reconciliation — `GET
-  /dashboard/investigation-billing-reconciliation` proves every open lab order
-  still carries its billed amount on a live non-cancelled invoice (billed amounts
-  re-derived from `InvoiceItem` line totals in one grouped pass, never trusted from
-  stored counters; each row keeps `billed_amount == charged_total - credited_total`;
-  unbilled orders surface with `billed_amount == 0` instead of disappearing) via the
-  shared scan/result trio; printable through `POST
-  /reports/investigation-billing-reconciliation-print-envelope` *(Batch 102)*
+- ✔ Reporting and print manifests, client-side report rendering, batch printing
+- ✔ A family of **screen/paper-parity audit surfaces** (Batches 85–102): each
+  dashboard feed is derived by one shared scan/service and mirrored by a
+  matching print envelope (`POST /reports/...-print-envelope`), so printed
+  figures reconcile line-for-line with the screen by construction:
+  - Receivables aging ledger + print envelope *(Batches 86, 91)*
+  - Invoice receipt continuity & receipt numbering continuity (+ envelopes) *(Batches 87–88, 92–93)*
+  - Invoice payment reconciliation ledger & collection summary by patient (+ envelopes) *(Batches 89–90, 94–95)*
+  - Payment-method collection summary & overpayment breakdown *(Batches 96, 98)*
+  - Invoice overpayment ledger *(Batch 97)* · Invoice settlement audit & refund audit *(Batch 100)*
+  - Discharge audit & OPD queue daily summary (+ operational envelopes) *(Batches 99–100)*
+  - Ward occupancy summary + print envelope *(Batch 101)*
+  - Investigation billing reconciliation + print envelope *(Batch 102)*
+- ✔ Reports & Printing workspace cards for every surface above *(Batch 100 ghost-card fix)*
 
-### 🧪 Test Suite
-- 403 backend tests passing as of Batch 104 (Milestone 6 QA complete — full-stack E2E route suite, cross-module integration, multi-client LAN concurrency, and clean-machine installation simulation; see [CHANGELOG.md](CHANGELOG.md)).
+### 🧪 Quality Assurance (Milestone 6 — complete)
+- ✔ Full-stack E2E route suite + cross-module integration + performance smoke
+  benchmark; fixed a release-blocking login 500 (`hashed_password` vs
+  `password_hash` column mismatch) *(Batch 103)*
+- ✔ Multi-client LAN concurrency suite on a shared file-backed WAL SQLite DB
+  (parallel logins / registrations / token mints, UDP `HHMS_DISCOVER_V1`
+  discovery handshake) and clean-machine installation simulation (fresh-dir
+  Alembic bootstrap 0001→0028, ORM/schema parity, empty-DB auth round-trip);
+  fixed three release-blocking defects: StaticPool concurrency deadlock,
+  migration-chain gaps incl. missing base tables in 0018, and 184 missing
+  `CURRENT_TIMESTAMP` server defaults *(Batch 104)*
+- ✔ **421 backend tests passing** as of Batch 105 — see [CHANGELOG.md](CHANGELOG.md)
+
+### 📦 Release Engineering (Milestone 7 — in progress)
+- ✔ Single-source versioning from the root `VERSION` file, resolved across
+  source / packaged / PyInstaller-frozen layouts and surfaced by `/health`
+  (`backend/app/release_version.py`) *(Batch 105)*
+- ✔ Frozen-runtime Alembic execution via a bundled PyInstaller hook +
+  updated `HHMS-Server.spec` *(Batch 105)*
+- ✔ Deployment scripts in `scripts/deploy/` (`build-server.sh`,
+  `install-first-run.sh`, Windows `server-launch.ps1` with WebView2
+  prerequisite check), validated by an 18-test packaging QA suite *(Batch 105)*
+- ✔ Repository hygiene: linearized history, secret-hygiene sweep (334 stale
+  runtime/cache artifacts untracked), hardened `.gitignore` *(Batches 105–cleanup)*
 
 ### 🌐 Infrastructure
 - ✔ LAN discovery and client/server connection
-- ✔ Annual case rollover and archival lifecycle *(Batch 69)*
 
 ---
 
-## 🚧 Remaining Release Work
+## 🚧 Remaining Release Work *(Milestone 7)*
 
-- ⬜ Cross-module client integration
-- ⬜ Role-aware UI
-- ⬜ Final print/printer QA
-- ⬜ WebView2 runtime packaging
-- ✅ Multi-client LAN tests *(Batch 104 — concurrency suite on shared file-backed WAL SQLite + UDP discovery handshake)*
-- ⬜ Backup/restore and recovery
-- ⬜ Performance/security audit
-- ⬜ Final EXE packaging and clean-machine installation *(DB bootstrap verified in Batch 104; EXE packaging pending Milestone 7)*
+- ⬜ Final EXE builds — PyInstaller `HHMS-Server.exe` / `HHMS-Client.exe` artifacts + clean-machine installation run *(spec, frozen-Alembic hook, versioning and build/install scripts landed in Batch 105; DB bootstrap verified in Batch 104)*
+- ⬜ WebView2 runtime packaging — offline redistributable bundling *(launcher prerequisite check done in Batch 105)*
+- ⬜ Backup / restore and recovery workflows
+- ⬜ Performance & security audit pass
+- ⬜ Cross-module client integration and role-aware UI polish
+- ⬜ Final print / printer QA on target hardware
+- ✅ Multi-client LAN tests *(Batch 104 — WAL SQLite concurrency + UDP discovery handshake)*
+- ✅ Clean-machine database installation *(Batch 104 — fresh-dir Alembic bootstrap 0001→0028)*
 
 > 📊 Progress is tracked per batch in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md) and planned in [ROADMAP.md](ROADMAP.md).
 
@@ -258,6 +154,7 @@ Runs entirely on the local network with a server-owned database — *no internet
 | 🔐 Security | [SECURITY_ARCHITECTURE](docs/SECURITY_ARCHITECTURE.md) · [SECURITY.md](SECURITY.md) |
 | 🎨 UI & printing | [UI_GUIDELINES](docs/UI_GUIDELINES.md) · [PRINT_STANDARDS](docs/PRINT_STANDARDS.md) |
 | 🧪 Testing | [docs/TESTING_STRATEGY.md](docs/TESTING_STRATEGY.md) |
+| 🚀 Deployment & releases | [docs/DEPLOYMENT_ARCHITECTURE.md](docs/DEPLOYMENT_ARCHITECTURE.md) · [CHANGELOG.md](CHANGELOG.md) |
 | 📖 Terminology | [docs/GLOSSARY.md](docs/GLOSSARY.md) |
 
 ---

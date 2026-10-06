@@ -66,14 +66,14 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Performance testing
 - [x] Clean-machine installation testing (Batch 104 — fresh-directory migration-chain bootstrap, 0001→0028, verified green)
 
-## Milestone 7 – Release ⬜
+## Milestone 7 – Release 🔶 (in progress — Batch 105 landed packaging infrastructure)
 
-- [ ] WebView2 runtime packaging
-- [ ] Final EXE packaging (server + client)
+- [ ] WebView2 runtime packaging *(launcher prerequisite check in `scripts/deploy/server-launch.ps1` done Batch 105; offline redistributable bundling pending)*
+- [ ] Final EXE packaging (server + client) *(spec + frozen-Alembic runtime hook + build script landed Batch 105; actual Windows/Linux builds pending)*
 - [ ] Documentation finalization
-- [ ] Deployment scripts
+- [x] Deployment scripts (Batch 105 — `scripts/deploy/`: build-server.sh, install-first-run.sh, server-launch.ps1, usage README; syntax/integrity verified by QA suite)
 - [ ] User training materials
-- [ ] Production release
+- [ ] Production release *(secret rotation required first: `data/secret.key` exists in git history through Batch 104-era commits)*
 
 ---
 
@@ -96,8 +96,16 @@ idempotent re-run, end-to-end auth on an empty install). Batch 104 surfaced and 
 now restricted to `:memory:` with QueuePool + WAL/busy_timeout for file DBs; (b) migration-chain gaps that made fresh
 installs fail (missing base tables in 0018, invalid ALTER patterns in 0007/0015, partial-index syntax in 0019, 184 columns
 across 15 migrations missing `CURRENT_TIMESTAMP` server defaults); (c) an `asyncio.Lock` loop-binding defect in the number
-sequence service under concurrent request loops. Full backend suite: **403 passed**. Next: Milestone 7 release packaging &
-deployment. Batch 102 itself (third mega-batch under
+sequence service under concurrent request loops. Full backend suite reached **403 passed**; Milestone 6 closed.
+**Batch 105 (Milestone 7 part 1) then landed release-packaging infrastructure**: single-source versioning from the root
+`VERSION` file resolved across source/packaged/PyInstaller-frozen layouts (`backend/app/release_version.py`, surfaced by
+`/health`), frozen-runtime Alembic via a bundled PyInstaller runtime hook + updated `HHMS-Server.spec`, deployment scripts
+(`scripts/deploy/`: build-server.sh, install-first-run.sh, Windows server-launch.ps1 with WebView2 prerequisite check), an
+18-test packaging QA suite, and completed secret-hygiene (334 stale tracked runtime/cache artifacts untracked; `.gitignore`
+hardened). Full backend suite: **421 passed**. Remaining Milestone 7 scope: actual EXE builds on Windows/Linux runners,
+WebView2 offline redistributable bundling, documentation finalization, training materials, production release (secret
+rotation first — `data/secret.key` persists in git history). Next batch: **Batch 106 — EXE build execution & client
+launcher packaging**. Batch 102 itself (third mega-batch under
 the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
 lab order from the Batch 84 pending-investigation vocabulary still carries its billed amount on a live non-cancelled invoice —
 billed amounts re-derived from `InvoiceItem` line totals in one grouped pass (`billed_amount == charged_total - credited_total`,
