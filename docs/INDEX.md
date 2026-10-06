@@ -173,7 +173,8 @@
 | [CLIENT_BATCH100_SETTLEMENT_REFUND_AUDIT_PRINT_ENVELOPES.md](CLIENT_BATCH100_SETTLEMENT_REFUND_AUDIT_PRINT_ENVELOPES.md) | Settlement/refund audit feeds, operational print envelopes & overpayment ghost-card fix (Batch 100) |
 | [CLIENT_BATCH101_WARD_OCCUPANCY_PRINT_ENVELOPE.md](CLIENT_BATCH101_WARD_OCCUPANCY_PRINT_ENVELOPE.md) | Ward occupancy dashboard feed + print envelope & OPD queue renderer (Batch 101) |
 | [CLIENT_BATCH102_INVESTIGATION_BILLING_RECONCILIATION.md](CLIENT_BATCH102_INVESTIGATION_BILLING_RECONCILIATION.md) | Investigation billing reconciliation dashboard feed + print envelope & Batch 100 restoration (Batch 102) |
-| [CLIENT_BATCH103_COMPREHENSIVE_QA.md](CLIENT_BATCH103_COMPREHENSIVE_QA.md) | Comprehensive QA Milestone 6 — full-stack E2E route suite, QA harness & login regression fix (Batch 103) |
+| [CLIENT_BATCH103_COMPREHENSIVE_QA.md](CLIENT_BATCH103_COMPREHENSIVE_QA.md) | Comprehensive QA Milestone 6 — full-stack E2E route suite, cross-module integration, performance benchmark & login regression fix (Batch 103) |
+| [CLIENT_BATCH104_LAN_MULTI_CLIENT_INSTALLATION_QA.md](CLIENT_BATCH104_LAN_MULTI_CLIENT_INSTALLATION_QA.md) | Multi-client LAN concurrency QA & clean-machine installation testing — Milestone 6 complete, three release-blocking fixes (Batch 104) |
 | [CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md](CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md) | Client operational workspace integration |
 | [CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md](CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md) | Client operational navigation convergence |
 | [CLIENT_RBAC_NAVIGATION.md](CLIENT_RBAC_NAVIGATION.md) | Client RBAC-aware navigation |

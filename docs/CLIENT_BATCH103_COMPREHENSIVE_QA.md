@@ -1,6 +1,9 @@
-# Batch 103 — Comprehensive QA (Milestone 6, in progress)
+# Batch 103 — Comprehensive QA (Milestone 6)
 
-**Status:** In progress — end-to-end route suite delivered; integration/LAN/performance/clean-machine passes remain.
+**Status:** ✅ Complete — E2E route suite, cross-module integration and performance benchmark delivered in Batch 103;
+the remaining Milestone 6 passes (multi-client LAN testing, clean-machine installation) were closed in Batch 104
+(see [CLIENT_BATCH104_LAN_MULTI_CLIENT_INSTALLATION_QA.md](CLIENT_BATCH104_LAN_MULTI_CLIENT_INSTALLATION_QA.md)).
+Milestone 6 is now fully complete with the full backend suite at **403 passed**.
 
 ## What this batch is about
 Batch 102 closed the remaining functional surfaces. Batch 103 begins Milestone 6: proving the whole application works as
@@ -59,9 +62,9 @@ work required before Milestone 7 packaging.
 - E2E route suite: **10 passed** · Cross-module integration suite: **2 passed**
 - Full backend suite: **393 passed, 0 failed** (381 functional + 12 QA/E2E/integration)
 
-## Remaining Milestone 6 scope (next sessions)
-1. Multi-client LAN testing (discovery, concurrent sessions against a shared server process).
-2. Clean-machine installation testing — the gate into Milestone 7 (release packaging & deployment).
+## Remaining Milestone 6 scope (closed in Batch 104 ✅)
+1. Multi-client LAN testing (discovery, concurrent sessions against a shared server process) — done in Batch 104.
+2. Clean-machine installation testing — the gate into Milestone 7 (release packaging & deployment) — done in Batch 104.
 
 ## Changed files
 - `backend/tests/_qa_harness.py` (new/repaired; extended with `seed_visit()`, `api_put()`)

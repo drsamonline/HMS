@@ -1,6 +1,6 @@
-# Python compiled files
+# Compiled and build artifacts
 __pycache__/
 *.pyc
 
-# Database files
-data/*.sqlite3
+# Logs and temp files
+data/logs/
