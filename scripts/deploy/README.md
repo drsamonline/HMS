@@ -23,3 +23,18 @@
 
 All script contracts above are enforced by
 `backend/tests/test_batch105_release_packaging_qa.py`.
+
+## build-installer.ps1 (Windows, Batch 107)
+
+Packages `build/dist/HHMS-Server.exe` into a distributable installer
+(`dist/installer/HHMS-Setup-<version>.exe`) using Inno Setup 6 when present,
+falling back to NSIS automatically. Runs without admin rights and installs to
+`%LOCALAPPDATA%\Programs\HHMS`; the writable data root (`%LOCALAPPDATA%\HHMS\data`)
+is never removed on uninstall, so clinic data survives upgrades. Version comes
+from the repo-root `VERSION` file. Usually invoked by CI
+(`.github/workflows/release.yml`), but runnable locally:
+
+```powershell
+.\scripts\deploy\build-installer.ps1            # auto toolset detection
+.\scripts\deploy\build-installer.ps1 -Tool inno # force Inno Setup
+```

@@ -1,0 +1,119 @@
+# ---------------------------------------------------------------------------
+# HHMS release pipeline — Milestone 7 Batch 107.
+#
+# On pushes tagged v* (and manual dispatch) this builds the packaged server
+# on both platforms, runs the backend regression suite, produces the Windows
+# installer via scripts/deploy/build-installer.ps1 (Inno Setup is preinstalled
+# on GitHub windows runners), computes SHA-256 checksums, and attaches every
+# artifact to a GitHub Release.
+#
+# The Linux job doubles as the CI gate for ordinary pushes/PRs.
+# ---------------------------------------------------------------------------
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  test:
+    name: Backend regression (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+      - name: Run full backend suite
+        run: python -m pytest backend/tests -q
+
+  build-server-linux:
+    name: Server bundle (Linux)
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies + PyInstaller
+        run: pip install -r backend/requirements.txt pyinstaller==6.*
+      - name: Build one-file bundle
+        run: bash scripts/deploy/build-server.sh
+      - name: Smoke-test bundle (first-run bootstrap + health)
+        run: |
+          ./build/dist/HHMS-Server --smoke-test || \
+          ( nohup ./build/dist/HHMS-Server >/tmp/hhms.log 2>&1 & \
+            for i in $(seq 1 30); do \
+              curl -fsS http://127.0.0.1:8000/api/v1/health && break; sleep 2; \
+            done; kill %1 )
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hhms-server-linux
+          path: build/dist/HHMS-Server
+
+  build-installer-windows:
+    name: Windows EXE + installer
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies + PyInstaller
+        run: pip install -r backend/requirements.txt pyinstaller==6.*
+      - name: Build server EXE
+        shell: pwsh
+        run: |
+          Set-Location backend/packaging
+          python -m PyInstaller --noconfirm --clean `
+            --distpath ..\..\build\dist --workpath ..\..\build\work `
+            HHMS-Server.spec
+          Copy-Item ..\..\VERSION ..\..\build\dist\VERSION
+      - name: Build installer (Inno Setup, NSIS fallback)
+        shell: pwsh
+        run: ./scripts/deploy/build-installer.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hhms-windows-installer
+          path: dist/installer/HHMS-Setup-*.exe
+
+  release:
+    name: GitHub Release + checksums
+    needs: [build-server-linux, build-installer-windows]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Compute SHA-256 checksums
+        run: |
+          cd artifacts
+          find . -type f -print0 | xargs -0 sha256sum > ../SHA256SUMS.txt
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*
+            SHA256SUMS.txt
+          generate_release_notes: true

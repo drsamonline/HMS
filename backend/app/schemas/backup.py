@@ -12,4 +12,9 @@ class BackupRead(BaseSchema):
     size_bytes: int
     modified_at: datetime
 
-__all__ = ["BackupCreate", "BackupRead"]
+class BackupRestoreResult(BaseSchema):
+    restored: str
+    database: str
+    restored_at: datetime
+
+__all__ = ["BackupCreate", "BackupRead", "BackupRestoreResult"]

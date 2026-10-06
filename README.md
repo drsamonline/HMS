@@ -98,7 +98,7 @@ Runs entirely on the local network with a server-owned database — *no internet
   fixed three release-blocking defects: StaticPool concurrency deadlock,
   migration-chain gaps incl. missing base tables in 0018, and 184 missing
   `CURRENT_TIMESTAMP` server defaults *(Batch 104)*
-- ✔ **421 backend tests passing** as of Batch 105 — see [CHANGELOG.md](CHANGELOG.md)
+- ✔ **437 backend tests passing** as of Batch 107 — see [CHANGELOG.md](CHANGELOG.md)
 
 ### 📦 Release Engineering (Milestone 7 — in progress)
 - ✔ Single-source versioning from the root `VERSION` file, resolved across
@@ -109,6 +109,14 @@ Runs entirely on the local network with a server-owned database — *no internet
 - ✔ Deployment scripts in `scripts/deploy/` (`build-server.sh`,
   `install-first-run.sh`, Windows `server-launch.ps1` with WebView2
   prerequisite check), validated by an 18-test packaging QA suite *(Batch 105)*
+- ✔ Real one-file EXE build executed end-to-end + frozen first-run smoke
+  (migrations to head, `/health` version handshake, structured 401); five
+  build/runtime defects fixed incl. lazy-DBAPI hidden imports *(Batch 106)*
+- ✔ Windows installer builder `scripts/deploy/build-installer.ps1` (Inno Setup
+  with NSIS fallback; user-writable install dir; patient data preserved on
+  uninstall) and CI release pipeline `.github/workflows/release.yml`
+  (test-gated Linux bundle + Windows EXE/installer builds + SHA-256
+  checksummed GitHub Releases), gated by a 10-test QA suite *(Batch 107)*
 - ✔ Repository hygiene: linearized history, secret-hygiene sweep (334 stale
   runtime/cache artifacts untracked), hardened `.gitignore` *(Batches 105–cleanup)*
 
@@ -119,8 +127,9 @@ Runs entirely on the local network with a server-owned database — *no internet
 
 ## 🚧 Remaining Release Work *(Milestone 7)*
 
-- ⬜ Final EXE builds — PyInstaller `HHMS-Server.exe` / `HHMS-Client.exe` artifacts + clean-machine installation run *(spec, frozen-Alembic hook, versioning and build/install scripts landed in Batch 105; DB bootstrap verified in Batch 104)*
-- ⬜ WebView2 runtime packaging — offline redistributable bundling *(launcher prerequisite check done in Batch 105)*
+- ✅ Final server EXE build *(Batch 106 — one-file Linux artifact built & smoke-tested; Windows EXE + installer automated in CI, Batch 107)*
+- ✅ Installer & release automation *(Batch 107 — build-installer.ps1 + release.yml tag-triggered pipeline with checksums)*
+- ⬜ Client launcher packaging verification — `HHMS-Client.exe` build + WebView2 offline redistributable bundling *(launcher prerequisite check done in Batch 105)*
 - ⬜ Backup / restore and recovery workflows
 - ⬜ Performance & security audit pass
 - ⬜ Cross-module client integration and role-aware UI polish
