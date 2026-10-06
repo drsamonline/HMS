@@ -66,10 +66,11 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Performance testing
 - [x] Clean-machine installation testing (Batch 104 — fresh-directory migration-chain bootstrap, 0001→0028, verified green)
 
-## Milestone 7 – Release 🔶 (in progress — Batch 105 landed packaging infrastructure)
+## Milestone 7 – Release 🔶 (in progress — Batches 105–107 landed packaging, EXE build, installer & CI)
 
 - [ ] WebView2 runtime packaging *(launcher prerequisite check in `scripts/deploy/server-launch.ps1` done Batch 105; offline redistributable bundling pending)*
-- [ ] Final EXE packaging (server + client) *(spec + frozen-Alembic runtime hook + build script landed Batch 105; actual Windows/Linux builds pending)*
+- [x] Final server EXE packaging (Batch 106 — real one-file PyInstaller build executed + frozen first-run smoke verified; Batch 107 — Windows EXE automated in CI) *(client launcher verification pending)*
+- [x] Installer & release automation (Batch 107 — `scripts/deploy/build-installer.ps1` Inno Setup/NSIS + `.github/workflows/release.yml` tag-triggered pipeline with SHA-256 checksums and GitHub Release publishing)
 - [ ] Documentation finalization
 - [x] Deployment scripts (Batch 105 — `scripts/deploy/`: build-server.sh, install-first-run.sh, server-launch.ps1, usage README; syntax/integrity verified by QA suite)
 - [ ] User training materials
@@ -102,10 +103,19 @@ sequence service under concurrent request loops. Full backend suite reached **40
 `/health`), frozen-runtime Alembic via a bundled PyInstaller runtime hook + updated `HHMS-Server.spec`, deployment scripts
 (`scripts/deploy/`: build-server.sh, install-first-run.sh, Windows server-launch.ps1 with WebView2 prerequisite check), an
 18-test packaging QA suite, and completed secret-hygiene (334 stale tracked runtime/cache artifacts untracked; `.gitignore`
-hardened). Full backend suite: **421 passed**. Remaining Milestone 7 scope: actual EXE builds on Windows/Linux runners,
-WebView2 offline redistributable bundling, documentation finalization, training materials, production release (secret
-rotation first — `data/secret.key` persists in git history). Next batch: **Batch 106 — EXE build execution & client
-launcher packaging**. Batch 102 itself (third mega-batch under
+hardened). Full backend suite: **421 passed**. **Batch 106 (Milestone 7 part 2)** then executed the real
+PyInstaller build end-to-end on Linux and smoke-tested the frozen binary against a fresh application root, fixing five
+build/runtime defects (`--specpath` misuse, spec `__file__` → `SPECPATH`, project-root off-by-one, one-file artifact path,
+and lazy-DBAPI `aiosqlite`/`sqlite3` hidden imports); 8-test tiered QA suite; full suite **427 passed, 2 skipped**.
+**Batch 107 (Milestone 7 part 3)** added the Windows installer builder `scripts/deploy/build-installer.ps1` (Inno Setup
+preferred with NSIS fallback, user-writable/no-admin install layout, patient data preserved across uninstall per the
+Batch 104 relocation contract, version from the single-source `VERSION` file) and the CI release pipeline
+`.github/workflows/release.yml` (test-gated Linux bundle + Windows EXE/installer jobs + SHA-256-checksummed GitHub
+Release on `v*` tags), locked in by a 10-test QA suite. Full backend suite: **437 passed, 2 skipped**. Remaining
+Milestone 7 scope: client launcher (`HHMS-Client.exe`) packaging verification + WebView2 offline redistributable
+bundling, backup/restore workflows, performance & security audit pass, documentation/training finalization, production
+release (secret rotation first — `data/secret.key` persists in git history). Next batch: **Batch 108 — client launcher
+packaging & WebView2 bundling**. Batch 102 itself (third mega-batch under
 the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
 lab order from the Batch 84 pending-investigation vocabulary still carries its billed amount on a live non-cancelled invoice —
 billed amounts re-derived from `InvoiceItem` line totals in one grouped pass (`billed_amount == charged_total - credited_total`,
