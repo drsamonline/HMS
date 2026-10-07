@@ -18,12 +18,20 @@ from .exception_handler import (
 )
 from .logging import RequestLoggingMiddleware
 from .process_time import ProcessTimeMiddleware
+from .rate_limit import (
+    RATE_LIMITED_PATHS,
+    RateLimitMiddleware,
+    SlidingWindowRateLimiter,
+)
 from .request_id import RequestIDMiddleware
 
 __all__ = [
     "RequestIDMiddleware",
     "ProcessTimeMiddleware",
     "RequestLoggingMiddleware",
+    "RateLimitMiddleware",
+    "SlidingWindowRateLimiter",
+    "RATE_LIMITED_PATHS",
     "register_exception_handlers",
     "handle_hhms_exception",
     "handle_http_exception",
