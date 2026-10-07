@@ -66,7 +66,7 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Performance testing
 - [x] Clean-machine installation testing (Batch 104 — fresh-directory migration-chain bootstrap, 0001→0028, verified green)
 
-## Milestone 7 – Release 🔶 (in progress — Batches 105–110 landed packaging, EXE build, installer & CI, backup/restore + client launcher, performance & security audit, role-aware UI QA)
+## Milestone 7 – Release 🔶 (in progress — Batches 105–111 landed packaging, EXE build, installer & CI, backup/restore + client launcher, performance & security audit, role-aware UI QA, documentation & training finalization)
 
 - [x] Client launcher packaging verification (Batch 108 — `client/HHMS.Client` single-file self-contained win-x64 `HHMS-Client.exe` contract locked by QA; WebView2 SDK pinned at 1.0.3856.49; frontend bundled; `-IncludeClient` installer switch) *(offline WebView2 redistributable CAB bundling pending)*
 - [ ] WebView2 runtime packaging *(launcher prerequisite check in `scripts/deploy/server-launch.ps1` done Batch 105; pinned SDK ships in the launcher EXE per Batch 108; offline redistributable bundling pending)*
@@ -75,9 +75,9 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Backup / restore workflows (Batch 108 — round-trip, snapshot hygiene, corrupt-upload rejection, admin gating verified on file-backed runtime)
 - [x] Performance & security audit pass (Batch 109 — login brute-force rate limiter `app/middleware/rate_limit.py` with structured 429 + `Retry-After` before Argon2 work, settings-tunable budget/window, SQL-level pagination gates, sub-second health probes, JWT audit invariants; 20-test QA suite)
 - [x] Role-aware UI & cross-module navigation QA (Batch 110 — `GET /auth/me` profile contract ↔ `frontend/js/rbac.js` navigation gate locked end-to-end: live server-profile-driven visibility, inactive-role filtering, vocabulary completeness, deny-by-default, hidden/disabled/aria-hidden triple; non-numeric-subject 401 product fix; 10-test QA suite)
-- [ ] Documentation finalization
+- [x] Documentation finalization *(Batch 111 — docs/USER_GUIDE.md end-user manual, docs/ADMIN_TRAINING.md administrator handbook, docs/DEVELOPER_ONBOARDING.md contributor guide; all claims grounded in verified repo facts; indexed in docs/INDEX.md with audience reading-order pointers)*
 - [x] Deployment scripts (Batch 105 — `scripts/deploy/`: build-server.sh, install-first-run.sh, server-launch.ps1, usage README; syntax/integrity verified by QA suite)
-- [ ] User training materials
+- [x] User training materials *(Batch 111 — USER_GUIDE.md role-driven workflow manual + ADMIN_TRAINING.md hands-on training handbook with day-1 checklist and quarterly restore drill)*
 - [ ] Production release *(secret rotation required first: `data/secret.key` exists in git history through Batch 104-era commits)*
 
 ---
@@ -132,10 +132,20 @@ locking the cross-module navigation contract end-to-end between `GET /api/v1/aut
 (`frontend/js/rbac.js`): live server-profile-driven visibility with inactive-role filtering, ACCESS-vocabulary completeness
 over all 14 `data-access` nav keys, blanket `ALL_ACCESS_ROLES`, deny-by-default, three-fold denial effect
 (hidden/disabled/aria-hidden), record-tab fallback; shipped a product fix turning a non-numeric JWT `sub` crash (500) into a
-structured 401; 10-test QA suite. Full backend suite: **478 passed, 2 skipped**. Remaining
-Milestone 7 scope: WebView2 offline redistributable CAB bundling,
-documentation/training finalization, production release (secret rotation first — `data/secret.key` persists in git
-history). Next batch: **Batch 111 — documentation/training finalization**. Batch 102 itself (third mega-batch under
+structured 401; 10-test QA suite. Full backend suite: **478 passed, 2 skipped**.
+**Batch 111 (Milestone 7 part 7)** closed documentation & training finalization — the last two open
+Milestone 7 documentation items — with three audience guides grounded entirely in verified repository
+facts: `docs/USER_GUIDE.md` (end-user manual: client startup/discovery, sign-in + rate-limiter lockout
+behavior, role-driven navigation over all 14 modules, daily workflows registration→OPD→clinical→IPD→
+billing→reports/printing, troubleshooting matrix), `docs/ADMIN_TRAINING.md` (administrator handbook:
+installation incl. WebView2 prerequisite handling, day-1 checklist, users/roles/RBAC management, backup
+policy via the admin-gated Backups workspace, quarterly restore drill, escalation matrix, security
+hygiene), and `docs/DEVELOPER_ONBOARDING.md` (contributor guide: repo map, environment setup, testing
+contract, mandatory batch closing ritual, QA-enforced convention gotchas). Documentation-only batch —
+no product code touched; full backend suite unchanged at **478 passed, 2 skipped**. Remaining
+Milestone 7 scope: WebView2 offline redistributable CAB bundling, cross-module client integration
+polish, final print/printer hardware QA, production release (secret rotation first — `data/secret.key`
+persists in git history). Next batch: **Batch 112 — remaining Milestone 7 hardware/packaging scope**. Batch 102 itself (third mega-batch under
 the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
 lab order from the Batch 84 pending-investigation vocabulary still carries its billed amount on a live non-cancelled invoice —
 billed amounts re-derived from `InvoiceItem` line totals in one grouped pass (`billed_amount == charged_total - credited_total`,
