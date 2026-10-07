@@ -126,8 +126,8 @@ paths; 11-test QA suite. Full backend suite: **448 passed, 2 skipped**.
 dependency-free sliding-window brute-force throttle (`app/middleware/rate_limit.py`, mounted outermost; structured 429 +
 `Retry-After` before any Argon2 work; `LOGIN_RATE_LIMIT_ATTEMPTS`/`LOGIN_RATE_LIMIT_WINDOW_SECONDS` settings), SQL-level
 pagination bounds and sub-second health-probe gates were locked by QA alongside JWT audit invariants (reserved-claim
-refusal, expiry/tamper rejection, HS256 pinning, secret entropy guard); 20-test QA suite. Full backend suite:
-**468 passed, 2 skipped**. **Batch 110 (Milestone 7 part 6)** closed the last open Milestone 3 item — role-aware UI — by
+refusal, expiry/tamper rejection, HS256 pinning, secret entropy guard); 20-test QA suite.
+**Batch 110 (Milestone 7 part 6)** closed the last open Milestone 3 item — role-aware UI — by
 locking the cross-module navigation contract end-to-end between `GET /api/v1/auth/me` and the client RBAC gate
 (`frontend/js/rbac.js`): live server-profile-driven visibility with inactive-role filtering, ACCESS-vocabulary completeness
 over all 14 `data-access` nav keys, blanket `ALL_ACCESS_ROLES`, deny-by-default, three-fold denial effect
