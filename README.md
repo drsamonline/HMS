@@ -98,7 +98,7 @@ Runs entirely on the local network with a server-owned database — *no internet
   fixed three release-blocking defects: StaticPool concurrency deadlock,
   migration-chain gaps incl. missing base tables in 0018, and 184 missing
   `CURRENT_TIMESTAMP` server defaults *(Batch 104)*
-- ✔ **478 backend tests passing** as of Batch 111 (unchanged; Batch 111 is documentation-only) — see [CHANGELOG.md](CHANGELOG.md)
+- ✔ **492 backend tests passing** as of Batch 112 — see [CHANGELOG.md](CHANGELOG.md)
 
 ### 📦 Release Engineering (Milestone 7 — in progress)
 - ✔ Single-source versioning from the root `VERSION` file, resolved across
@@ -139,6 +139,11 @@ Runs entirely on the local network with a server-owned database — *no internet
   manual), `docs/ADMIN_TRAINING.md` (administrator handbook with day-1 checklist + restore drill),
   `docs/DEVELOPER_ONBOARDING.md` (contributor onboarding) — all claims grounded in verified repo facts;
   indexed with audience reading-order pointers *(Batch 111)*
+- ✔ WebView2 offline redistributable bundling for air-gapped installs: `stage_webview2_redist.ps1`
+  fixed-version CAB staging (HTTPS + Microsoft-host allow-list, SHA-256 pinning, `redist-manifest.json`),
+  installer `-Webview2RedistDir` switch with checksum re-verification and `expand.exe` unpack into
+  `{app}\WebView2Runtime\<version>` (Inno + NSIS), launcher `runtimeDirectory:` consumption with
+  Evergreen fallback; 14-test QA suite *(Batch 112)*
 - ✔ Repository hygiene: linearized history, secret-hygiene sweep (334 stale
   runtime/cache artifacts untracked), hardened `.gitignore` *(Batches 105–cleanup)*
 
@@ -151,11 +156,12 @@ Runs entirely on the local network with a server-owned database — *no internet
 
 - ✅ Final server EXE build *(Batch 106 — one-file Linux artifact built & smoke-tested; Windows EXE + installer automated in CI, Batch 107)*
 - ✅ Installer & release automation *(Batch 107 — build-installer.ps1 + release.yml tag-triggered pipeline with checksums)*
-- ✅ Client launcher packaging verification — `HHMS-Client.exe` single-file self-contained publish contract locked by QA, WebView2 SDK pinned, installer `-IncludeClient` bundling *(Batch 108; offline redistributable CAB bundling pending)*
+- ✅ Client launcher packaging verification — `HHMS-Client.exe` single-file self-contained publish contract locked by QA, WebView2 SDK pinned, installer `-IncludeClient` bundling *(Batch 108; offline redistributable CAB bundling closed Batch 112)*
 - ✅ Backup / restore and recovery workflows *(Batch 108 — round-trip, snapshot hygiene, corrupt-upload rejection, admin gating verified on file-backed runtime)*
 - ✅ Performance & security audit pass *(Batch 109 — login brute-force rate limiter with 429 + Retry-After, pagination/health performance gates, JWT audit invariants)*
 - ✅ Role-aware UI & cross-module navigation QA *(Batch 110 — /auth/me profile contract ↔ client RBAC gate locked by a 10-test suite; non-numeric-subject 401 fix)*
 - ✅ Documentation & training finalization *(Batch 111 — user/admin/developer audience guides, docs/INDEX.md reading-order pointers)*
+- ✅ WebView2 offline redistributable bundling *(Batch 112 — `stage_webview2_redist.ps1` CAB staging with SHA-256 pinning + host allow-list, installer `-Webview2RedistDir` unpack to `{app}\WebView2Runtime`, launcher `runtimeDirectory:` consumption; 14-test QA suite)*
 - ⬜ Cross-module client integration polish
 - ⬜ Final print / printer QA on target hardware
 - ✅ Multi-client LAN tests *(Batch 104 — WAL SQLite concurrency + UDP discovery handshake)*

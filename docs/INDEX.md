@@ -180,6 +180,7 @@
 | [CLIENT_BATCH109_PERFORMANCE_SECURITY_AUDIT_QA.md](CLIENT_BATCH109_PERFORMANCE_SECURITY_AUDIT_QA.md) | Performance & security audit pass — login brute-force rate limiter (429 + Retry-After), pagination/health performance gates, JWT audit invariants (Batch 109) |
 | [CLIENT_BATCH110_ROLE_AWARE_UI_QA.md](CLIENT_BATCH110_ROLE_AWARE_UI_QA.md) | Role-aware UI & cross-module navigation QA — /auth/me profile contract, client RBAC navigation gate (deny-by-default, three-fold denial), non-numeric-sub 401 fix (Batch 110) |
 | [CLIENT_BATCH111_DOCUMENTATION_TRAINING_FINALIZATION.md](CLIENT_BATCH111_DOCUMENTATION_TRAINING_FINALIZATION.md) | Documentation & training finalization — user/admin/developer audience guides grounded in verified repo facts, INDEX reading-order pointers (Batch 111) |
+| [CLIENT_BATCH112_WEBVIEW2_OFFLINE_REDIST_QA.md](CLIENT_BATCH112_WEBVIEW2_OFFLINE_REDIST_QA.md) | WebView2 offline redistributable bundling — fixed-version CAB staging (host allow-list, SHA-256 pinning, manifest), installer `-Webview2RedistDir` unpack contract, launcher runtimeDirectory consumption (Batch 112) |
 | [USER_GUIDE.md](USER_GUIDE.md) | End-user manual — daily workflows by role (registration, OPD, clinical, IPD, billing, pharmacy, reports), navigation & roles, data-entry conventions, client troubleshooting (Batch 111) |
 | [ADMIN_TRAINING.md](ADMIN_TRAINING.md) | Administrator training manual — server/client installation, day-1 configuration checklist, users & roles, backups, restore drill, escalation matrix, security hygiene (Batch 111) |
 | [DEVELOPER_ONBOARDING.md](DEVELOPER_ONBOARDING.md) | Developer onboarding guide — repository map, environment setup, testing contract, batch closing ritual, conventions, first-week exercise (Batch 111) |
@@ -292,4 +293,4 @@ Specification → Review → Implementation → Code Review → Testing → Git 
 
 ---
 
-*121 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
+*122 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
