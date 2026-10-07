@@ -178,6 +178,7 @@
 | [CLIENT_BATCH105_RELEASE_PACKAGING_DEPLOYMENT.md](CLIENT_BATCH105_RELEASE_PACKAGING_DEPLOYMENT.md) | Release packaging infrastructure & deployment scripts — single-source versioning, frozen-runtime Alembic hook, build/install/launch scripts, secret-hygiene completion (Batch 105) |
 | [CLIENT_BATCH108_BACKUP_RESTORE_RELEASE_QA.md](CLIENT_BATCH108_BACKUP_RESTORE_RELEASE_QA.md) | Backup/restore workflow verification, client launcher packaging contract (WebView2 pin, bundled frontend), installer -IncludeClient switch (Batch 108) |
 | [CLIENT_BATCH109_PERFORMANCE_SECURITY_AUDIT_QA.md](CLIENT_BATCH109_PERFORMANCE_SECURITY_AUDIT_QA.md) | Performance & security audit pass — login brute-force rate limiter (429 + Retry-After), pagination/health performance gates, JWT audit invariants (Batch 109) |
+| [CLIENT_BATCH110_ROLE_AWARE_UI_QA.md](CLIENT_BATCH110_ROLE_AWARE_UI_QA.md) | Role-aware UI & cross-module navigation QA — /auth/me profile contract, client RBAC navigation gate (deny-by-default, three-fold denial), non-numeric-sub 401 fix (Batch 110) |
 | [CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md](CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md) | Client operational workspace integration |
 | [CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md](CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md) | Client operational navigation convergence |
 | [CLIENT_RBAC_NAVIGATION.md](CLIENT_RBAC_NAVIGATION.md) | Client RBAC-aware navigation |

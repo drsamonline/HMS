@@ -40,7 +40,7 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Form implementations (clinical, operational, administrative workspaces)
 - [x] State management (client session/navigation)
 - [ ] Cross-module client integration
-- [ ] Role-aware UI
+- [x] Role-aware UI *(Batch 110 — /auth/me profile contract ↔ client RBAC navigation gate locked end-to-end by a 10-test QA suite; deny-by-default, three-fold denial effect, blanket admin roles)*
 
 ## Milestone 4 – Printing 🔄
 
@@ -66,7 +66,7 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Performance testing
 - [x] Clean-machine installation testing (Batch 104 — fresh-directory migration-chain bootstrap, 0001→0028, verified green)
 
-## Milestone 7 – Release 🔶 (in progress — Batches 105–109 landed packaging, EXE build, installer & CI, backup/restore + client launcher, performance & security audit)
+## Milestone 7 – Release 🔶 (in progress — Batches 105–110 landed packaging, EXE build, installer & CI, backup/restore + client launcher, performance & security audit, role-aware UI QA)
 
 - [x] Client launcher packaging verification (Batch 108 — `client/HHMS.Client` single-file self-contained win-x64 `HHMS-Client.exe` contract locked by QA; WebView2 SDK pinned at 1.0.3856.49; frontend bundled; `-IncludeClient` installer switch) *(offline WebView2 redistributable CAB bundling pending)*
 - [ ] WebView2 runtime packaging *(launcher prerequisite check in `scripts/deploy/server-launch.ps1` done Batch 105; pinned SDK ships in the launcher EXE per Batch 108; offline redistributable bundling pending)*
@@ -74,6 +74,7 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Installer & release automation (Batch 107 — `scripts/deploy/build-installer.ps1` Inno Setup/NSIS + `.github/workflows/release.yml` tag-triggered pipeline with SHA-256 checksums and GitHub Release publishing; Batch 108 — `-IncludeClient` launcher bundling)
 - [x] Backup / restore workflows (Batch 108 — round-trip, snapshot hygiene, corrupt-upload rejection, admin gating verified on file-backed runtime)
 - [x] Performance & security audit pass (Batch 109 — login brute-force rate limiter `app/middleware/rate_limit.py` with structured 429 + `Retry-After` before Argon2 work, settings-tunable budget/window, SQL-level pagination gates, sub-second health probes, JWT audit invariants; 20-test QA suite)
+- [x] Role-aware UI & cross-module navigation QA (Batch 110 — `GET /auth/me` profile contract ↔ `frontend/js/rbac.js` navigation gate locked end-to-end: live server-profile-driven visibility, inactive-role filtering, vocabulary completeness, deny-by-default, hidden/disabled/aria-hidden triple; non-numeric-subject 401 product fix; 10-test QA suite)
 - [ ] Documentation finalization
 - [x] Deployment scripts (Batch 105 — `scripts/deploy/`: build-server.sh, install-first-run.sh, server-launch.ps1, usage README; syntax/integrity verified by QA suite)
 - [ ] User training materials
@@ -126,10 +127,15 @@ dependency-free sliding-window brute-force throttle (`app/middleware/rate_limit.
 `Retry-After` before any Argon2 work; `LOGIN_RATE_LIMIT_ATTEMPTS`/`LOGIN_RATE_LIMIT_WINDOW_SECONDS` settings), SQL-level
 pagination bounds and sub-second health-probe gates were locked by QA alongside JWT audit invariants (reserved-claim
 refusal, expiry/tamper rejection, HS256 pinning, secret entropy guard); 20-test QA suite. Full backend suite:
-**468 passed, 2 skipped**. Remaining
+**468 passed, 2 skipped**. **Batch 110 (Milestone 7 part 6)** closed the last open Milestone 3 item — role-aware UI — by
+locking the cross-module navigation contract end-to-end between `GET /api/v1/auth/me` and the client RBAC gate
+(`frontend/js/rbac.js`): live server-profile-driven visibility with inactive-role filtering, ACCESS-vocabulary completeness
+over all 14 `data-access` nav keys, blanket `ALL_ACCESS_ROLES`, deny-by-default, three-fold denial effect
+(hidden/disabled/aria-hidden), record-tab fallback; shipped a product fix turning a non-numeric JWT `sub` crash (500) into a
+structured 401; 10-test QA suite. Full backend suite: **478 passed, 2 skipped**. Remaining
 Milestone 7 scope: WebView2 offline redistributable CAB bundling,
 documentation/training finalization, production release (secret rotation first — `data/secret.key` persists in git
-history). Next batch: **Batch 110 — documentation/training finalization**. Batch 102 itself (third mega-batch under
+history). Next batch: **Batch 111 — documentation/training finalization**. Batch 102 itself (third mega-batch under
 the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
 lab order from the Batch 84 pending-investigation vocabulary still carries its billed amount on a live non-cancelled invoice —
 billed amounts re-derived from `InvoiceItem` line totals in one grouped pass (`billed_amount == charged_total - credited_total`,
