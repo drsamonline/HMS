@@ -98,7 +98,7 @@ Runs entirely on the local network with a server-owned database — *no internet
   fixed three release-blocking defects: StaticPool concurrency deadlock,
   migration-chain gaps incl. missing base tables in 0018, and 184 missing
   `CURRENT_TIMESTAMP` server defaults *(Batch 104)*
-- ✔ **448 backend tests passing** as of Batch 108 — see [CHANGELOG.md](CHANGELOG.md)
+- ✔ **468 backend tests passing** as of Batch 109 — see [CHANGELOG.md](CHANGELOG.md)
 
 ### 📦 Release Engineering (Milestone 7 — in progress)
 - ✔ Single-source versioning from the root `VERSION` file, resolved across
@@ -125,6 +125,12 @@ Runs entirely on the local network with a server-owned database — *no internet
   bundled, LAN discovery bridge, version lock-step with `VERSION`; installer
   `-IncludeClient` switch bundles it into Inno/NSIS setups; 11-test QA suite
   *(Batch 108)*
+- ✔ Performance & security audit pass: dependency-free sliding-window login
+  rate limiter (`app/middleware/rate_limit.py`, structured 429 + `Retry-After`
+  before Argon2 work, env-tunable budget/window), SQL-level pagination bounds,
+  sub-second health-probe gate, JWT audit invariants (reserved claims,
+  expiry/tamper rejection, HS256 pinning, secret entropy); 20-test QA suite
+  *(Batch 109)*
 - ✔ Repository hygiene: linearized history, secret-hygiene sweep (334 stale
   runtime/cache artifacts untracked), hardened `.gitignore` *(Batches 105–cleanup)*
 
@@ -139,7 +145,7 @@ Runs entirely on the local network with a server-owned database — *no internet
 - ✅ Installer & release automation *(Batch 107 — build-installer.ps1 + release.yml tag-triggered pipeline with checksums)*
 - ✅ Client launcher packaging verification — `HHMS-Client.exe` single-file self-contained publish contract locked by QA, WebView2 SDK pinned, installer `-IncludeClient` bundling *(Batch 108; offline redistributable CAB bundling pending)*
 - ✅ Backup / restore and recovery workflows *(Batch 108 — round-trip, snapshot hygiene, corrupt-upload rejection, admin gating verified on file-backed runtime)*
-- ⬜ Performance & security audit pass
+- ✅ Performance & security audit pass *(Batch 109 — login brute-force rate limiter with 429 + Retry-After, pagination/health performance gates, JWT audit invariants)*
 - ⬜ Cross-module client integration and role-aware UI polish
 - ⬜ Final print / printer QA on target hardware
 - ✅ Multi-client LAN tests *(Batch 104 — WAL SQLite concurrency + UDP discovery handshake)*

@@ -30,7 +30,7 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Business logic implementation (functional batches through Batch 69)
 - [x] Data access layer
 - [x] Validation and error handling ([docs/VALIDATION_RULES.md](docs/VALIDATION_RULES.md))
-- [ ] Performance/security audit
+- [x] Performance/security audit (Batch 109 — login brute-force rate limiter with structured 429 + Retry-After, SQL-level pagination gates, sub-second health probes, JWT audit invariants; 20-test QA suite)
 - [x] Backup/restore and recovery hardening (Batch 108 — full round-trip verified on file-backed runtime: point-in-time restore, snapshot hygiene, corrupt-upload rejection, byte-exact downloads, admin gating)
 
 ## Milestone 3 – Frontend 🔄
@@ -66,13 +66,14 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Performance testing
 - [x] Clean-machine installation testing (Batch 104 — fresh-directory migration-chain bootstrap, 0001→0028, verified green)
 
-## Milestone 7 – Release 🔶 (in progress — Batches 105–108 landed packaging, EXE build, installer & CI, backup/restore + client launcher)
+## Milestone 7 – Release 🔶 (in progress — Batches 105–109 landed packaging, EXE build, installer & CI, backup/restore + client launcher, performance & security audit)
 
 - [x] Client launcher packaging verification (Batch 108 — `client/HHMS.Client` single-file self-contained win-x64 `HHMS-Client.exe` contract locked by QA; WebView2 SDK pinned at 1.0.3856.49; frontend bundled; `-IncludeClient` installer switch) *(offline WebView2 redistributable CAB bundling pending)*
 - [ ] WebView2 runtime packaging *(launcher prerequisite check in `scripts/deploy/server-launch.ps1` done Batch 105; pinned SDK ships in the launcher EXE per Batch 108; offline redistributable bundling pending)*
 - [x] Final server EXE packaging (Batch 106 — real one-file PyInstaller build executed + frozen first-run smoke verified; Batch 107 — Windows EXE automated in CI; Batch 108 — client launcher verification closed)
 - [x] Installer & release automation (Batch 107 — `scripts/deploy/build-installer.ps1` Inno Setup/NSIS + `.github/workflows/release.yml` tag-triggered pipeline with SHA-256 checksums and GitHub Release publishing; Batch 108 — `-IncludeClient` launcher bundling)
 - [x] Backup / restore workflows (Batch 108 — round-trip, snapshot hygiene, corrupt-upload rejection, admin gating verified on file-backed runtime)
+- [x] Performance & security audit pass (Batch 109 — login brute-force rate limiter `app/middleware/rate_limit.py` with structured 429 + `Retry-After` before Argon2 work, settings-tunable budget/window, SQL-level pagination gates, sub-second health probes, JWT audit invariants; 20-test QA suite)
 - [ ] Documentation finalization
 - [x] Deployment scripts (Batch 105 — `scripts/deploy/`: build-server.sh, install-first-run.sh, server-launch.ps1, usage README; syntax/integrity verified by QA suite)
 - [ ] User training materials
@@ -119,10 +120,16 @@ runtime (point-in-time restore fidelity, pre-restore snapshot hygiene, corrupt-u
 administrator gating on every verb) and locked the client launcher packaging contract (`HHMS-Client.exe`: single-file
 self-contained win-x64 publish, WebView2 SDK pinned at 1.0.3856.49, bundled frontend, UDP discovery bridge, version in
 lock-step with root `VERSION`), adding an opt-in `-IncludeClient` switch to the installer script for both Inno and NSIS
-paths; 11-test QA suite. Full backend suite: **448 passed, 2 skipped**. Remaining
-Milestone 7 scope: WebView2 offline redistributable CAB bundling, performance & security audit pass,
+paths; 11-test QA suite. Full backend suite: **448 passed, 2 skipped**.
+**Batch 109 (Milestone 7 part 5)** closed the performance & security audit: `POST /api/v1/auth/login` gained a
+dependency-free sliding-window brute-force throttle (`app/middleware/rate_limit.py`, mounted outermost; structured 429 +
+`Retry-After` before any Argon2 work; `LOGIN_RATE_LIMIT_ATTEMPTS`/`LOGIN_RATE_LIMIT_WINDOW_SECONDS` settings), SQL-level
+pagination bounds and sub-second health-probe gates were locked by QA alongside JWT audit invariants (reserved-claim
+refusal, expiry/tamper rejection, HS256 pinning, secret entropy guard); 20-test QA suite. Full backend suite:
+**468 passed, 2 skipped**. Remaining
+Milestone 7 scope: WebView2 offline redistributable CAB bundling,
 documentation/training finalization, production release (secret rotation first — `data/secret.key` persists in git
-history). Next batch: **Batch 109 — performance & security audit pass**. Batch 102 itself (third mega-batch under
+history). Next batch: **Batch 110 — documentation/training finalization**. Batch 102 itself (third mega-batch under
 the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
 lab order from the Batch 84 pending-investigation vocabulary still carries its billed amount on a live non-cancelled invoice —
 billed amounts re-derived from `InvoiceItem` line totals in one grouped pass (`billed_amount == charged_total - credited_total`,

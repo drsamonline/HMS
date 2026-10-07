@@ -34,6 +34,7 @@ def _build_application():
     from app.api.v1.api import api_router
     from app.middleware import (
         ProcessTimeMiddleware,
+        RateLimitMiddleware,
         RequestIDMiddleware,
         RequestLoggingMiddleware,
         register_exception_handlers,
@@ -43,6 +44,20 @@ def _build_application():
     application.add_middleware(ProcessTimeMiddleware)
     application.add_middleware(RequestIDMiddleware)
     application.add_middleware(RequestLoggingMiddleware)
+
+    # Mirror the production stack (Batch 109): login throttle active in
+    # QA too, with a generous budget so legitimate suites (concurrent
+    # LAN logins, repeated auth probes) never trip it. Settings are
+    # resolved inside the harness env because ``get_settings`` is cached
+    # per client block.
+    from app.config.settings import get_settings as _get_settings
+
+    _settings = _get_settings()
+    application.add_middleware(
+        RateLimitMiddleware,
+        limit=max(_settings.LOGIN_RATE_LIMIT_ATTEMPTS, 200),
+        window_seconds=float(_settings.LOGIN_RATE_LIMIT_WINDOW_SECONDS),
+    )
     register_exception_handlers(application)
     application.include_router(api_router, prefix="/api/v1")
     return application

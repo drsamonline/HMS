@@ -117,6 +117,18 @@ class Settings(BaseSettings):
         ge=1,
     )
 
+    LOGIN_RATE_LIMIT_ATTEMPTS: int = Field(
+        default=10,
+        ge=1,
+        description="Maximum login attempts per client within the rate-limit window.",
+    )
+
+    LOGIN_RATE_LIMIT_WINDOW_SECONDS: int = Field(
+        default=60,
+        ge=1,
+        description="Sliding-window length (seconds) for login throttling.",
+    )
+
     # ==========================================================
     # Database
     # ==========================================================
