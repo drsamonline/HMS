@@ -1,1 +1,19 @@
-(empty)
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Build artifacts and distributions
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Logs
+logs/
+*.log
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
