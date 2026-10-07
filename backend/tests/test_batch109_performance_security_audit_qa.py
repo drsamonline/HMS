@@ -44,6 +44,7 @@ os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault("SECRET_KEY", "batch109-audit-secret-key-0123456789abcdef")
 os.environ.setdefault("DISCOVERY_ENABLED", "false")
 
+import _qa_harness as qa_harness  # noqa: E402  (tests/ dir is on sys.path; no package import)
 from _qa_harness import (  # noqa: E402
     _QA_LAN_PASSWORD,
     make_client,
@@ -162,20 +163,9 @@ def test_production_app_mounts_rate_limit_outermost() -> None:
 
 def test_harness_stack_mirrors_production_throttle() -> None:
     # _build_application is called inside make_client blocks where the
-    # harness env is active; assemble directly here after seeding env.
-    from tests._qa_harness import _build_application  # type: ignore
-
-    try:
-        application = _build_application()
-    except ModuleNotFoundError:
-        import importlib.util
-
-        spec = importlib.util.spec_from_file_location(
-            "_qa_harness", Path(__file__).parent / "_qa_harness.py"
-        )
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        application = module._build_application()
+    # harness env is active; assemble directly via the already-imported
+    # harness module (tests/ dir is on sys.path, not a package).
+    application = qa_harness._build_application()
 
     chain = _middleware_chain(application)
     assert chain[0] is RateLimitMiddleware
@@ -226,23 +216,14 @@ def _make_tiny_client():
     import app.db.session as session_module
     from app.db.base import Base  # noqa: F401 - registers all models
 
-    import tests._qa_harness as harness  # noqa: F401
-
-    if harness.__name__ == "_qa_harness":
-        qa_harness = harness
-    else:  # pragma: no cover - alternate import identity
-        import importlib
-
-        qa_harness = importlib.import_module("_qa_harness")
-
     os.environ["HHMS_APPLICATION_ROOT"] = str(Path(os.environ.get("TMPDIR", "/tmp")) / "batch109-e2e")
     os.environ["LOGIN_RATE_LIMIT_ATTEMPTS"] = "3"
     os.environ["LOGIN_RATE_LIMIT_WINDOW_SECONDS"] = "60"
 
-    qa_harness.get_settings.cache_clear()
-    qa_harness.get_session_factory.cache_clear()
+    get_settings.cache_clear()
+    session_module.get_session_factory.cache_clear()
     session_module.get_engine.cache_clear()
-    engine = qa_harness.get_engine()
+    engine = session_module.get_engine()
 
     async def _create_schema() -> None:
         async with engine.begin() as connection:
@@ -416,9 +397,19 @@ def test_jwt_rejects_reserved_claim_override() -> None:
 
 
 def test_jwt_rejects_expired_and_tampered_tokens() -> None:
-    from datetime import timedelta
-
-    expired = create_access_token(subject="7", expires_delta=timedelta(seconds=-30))
+    # ``create_access_token`` deliberately rejects non-positive lifetimes,
+    # so forge an already-expired token directly with the same secret and
+    # pinned algorithm to exercise the decode-side expiry enforcement.
+    expired = pyjwt.encode(
+        {
+            "sub": "7",
+            "exp": int(time.time()) - 30,
+            "iat": int(time.time()) - 120,
+            "type": "access",
+        },
+        Settings().SECRET_KEY,
+        algorithm="HS256",
+    )
     with pytest.raises(pyjwt.ExpiredSignatureError):
         decode_access_token(expired)
 
