@@ -46,8 +46,8 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 - [x] Print manifest standard ([docs/PRINT_STANDARDS.md](docs/PRINT_STANDARDS.md))
 - [x] Client print renderer and batch printing
-- [ ] Prescription template final QA
-- [ ] Printer hardware QA
+- [x] Prescription template final QA *(Batch 113 — automated print-pipeline contract suite locks CSS geometry/chrome-hiding, JS fetcher↔renderer↔button consistency over all 16 envelope routes, HTML-escape XSS guard, cold-DB 200s and paper-parity end-to-end)*
+- [ ] Printer hardware QA *(automated readiness locked by Batch 113; physical-paper field checklist on target hardware remains an operational task)*
 - [ ] PDF generation verification
 
 ## Milestone 5 – Reports 🔄
@@ -66,7 +66,7 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Performance testing
 - [x] Clean-machine installation testing (Batch 104 — fresh-directory migration-chain bootstrap, 0001→0028, verified green)
 
-## Milestone 7 – Release 🔶 (in progress — Batches 105–112 landed packaging, EXE build, installer & CI, backup/restore + client launcher, performance & security audit, role-aware UI QA, documentation & training finalization, WebView2 offline redistributable bundling)
+## Milestone 7 – Release 🔶 (in progress — Batches 105–113 landed packaging, EXE build, installer & CI, backup/restore + client launcher, performance & security audit, role-aware UI QA, documentation & training finalization, WebView2 offline redistributable bundling, print pipeline & hardware-readiness QA)
 
 - [x] Client launcher packaging verification (Batch 108 — `client/HHMS.Client` single-file self-contained win-x64 `HHMS-Client.exe` contract locked by QA; WebView2 SDK pinned at 1.0.3856.49; frontend bundled; `-IncludeClient` installer switch; Batch 112 — offline redistributable CAB bundling closed)
 - [x] WebView2 runtime packaging *(launcher prerequisite check in `scripts/deploy/server-launch.ps1` done Batch 105; pinned SDK ships in the launcher EXE per Batch 108; Batch 112 — `stage_webview2_redist.ps1` fixed-version CAB staging with SHA-256 pinning + Microsoft-host allow-list, `-Webview2RedistDir` installer bundling via `expand.exe` unpack to `{app}\WebView2Runtime\<version>`, launcher `runtimeDirectory:` consumption; 14-test QA suite)*
@@ -151,9 +151,17 @@ re-verifies the CAB checksum before bundling and injects `expand.exe` unpacking 
 for both Inno and NSIS paths (uninstall removes the runtime dir but never touches the Batch 104 data root); the
 launcher (`MainForm.cs`) probes that folder and passes it as `CoreWebView2Environment.CreateAsync(runtimeDirectory:)`,
 falling back to the Evergreen system runtime when absent. 14-test QA suite; full backend suite: **492 passed, 2 skipped**.
-Remaining Milestone 7 scope: cross-module client integration polish, final print/printer hardware QA on target
-hardware, production release (secret rotation first — `data/secret.key` persists in git history). Next batch:
-**Batch 113 — remaining Milestone 7 hardware/integration scope**. Batch 102 itself (third mega-batch under
+**Batch 113 (Milestone 7 part 9)** closed the last open functional print item with an 11-test print-pipeline &
+hardware-readiness contract suite (`tests/test_batch113_print_pipeline_qa.py`): print.css geometry/chrome-hiding
+rules, client JS fetcher↔renderer↔button consistency across all 16 POST envelope routes plus the HTML-escape-before-
+innerHTML XSS guard, cold-database 200s on every envelope (handled 404/422 never 500 for missing records), and a
+paper-parity end-to-end test (Patient→Visit→Invoice→Item→Payment→invoice-print-envelope totals match exactly).
+Product fix shipped: refund-audit envelope crashed on cold DBs (`total_overpaid` omitted by the shared scan rollup
+for empty invoice lists while the schema requires it) — `reporting.py` now derives it from rows. Full backend suite:
+**503 passed, 2 skipped**.
+Remaining Milestone 7 scope: cross-module client integration polish, physical printer field-checklist execution on
+target hardware (operational, non-code), production release (secret rotation first — `data/secret.key` persists in git
+history). Next batch: **Batch 114 — remaining Milestone 7 integration scope**. Batch 102 itself (third mega-batch under
 the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
 lab order from the Batch 84 pending-investigation vocabulary still carries its billed amount on a live non-cancelled invoice —
 billed amounts re-derived from `InvoiceItem` line totals in one grouped pass (`billed_amount == charged_total - credited_total`,

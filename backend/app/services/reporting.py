@@ -922,12 +922,26 @@ class ReportingService:
                     )
                     for item in audit["items"]
                 ],
+                # Batch 113 — the shared scan rollup omits ``total_overpaid``
+                # when the invoice list is empty (cold installs print this
+                # sheet before any data exists); derive it from the rows so
+                # the envelope schema's required field always resolves.
                 total_invoices=audit["total_invoices"],
                 cleared_count=audit["cleared_count"],
                 unsettled_count=audit["unsettled_count"],
                 total_billed=str(audit["total_billed"]),
                 total_collected=str(audit["total_collected"]),
                 total_outstanding=str(audit["total_outstanding"]),
+                total_overpaid=str(
+                    audit.get(
+                        "total_overpaid",
+                        sum(
+                            (Decimal(str(item["overpayment_amount"]))
+                             for item in audit["items"]),
+                            Decimal("0"),
+                        ),
+                    )
+                ),
             ),
         )
 
