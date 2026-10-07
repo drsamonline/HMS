@@ -98,7 +98,7 @@ Runs entirely on the local network with a server-owned database — *no internet
   fixed three release-blocking defects: StaticPool concurrency deadlock,
   migration-chain gaps incl. missing base tables in 0018, and 184 missing
   `CURRENT_TIMESTAMP` server defaults *(Batch 104)*
-- ✔ **468 backend tests passing** as of Batch 109 — see [CHANGELOG.md](CHANGELOG.md)
+- ✔ **478 backend tests passing** as of Batch 111 (unchanged; Batch 111 is documentation-only) — see [CHANGELOG.md](CHANGELOG.md)
 
 ### 📦 Release Engineering (Milestone 7 — in progress)
 - ✔ Single-source versioning from the root `VERSION` file, resolved across
@@ -131,6 +131,14 @@ Runs entirely on the local network with a server-owned database — *no internet
   sub-second health-probe gate, JWT audit invariants (reserved claims,
   expiry/tamper rejection, HS256 pinning, secret entropy); 20-test QA suite
   *(Batch 109)*
+- ✔ Role-aware UI & cross-module navigation QA: `GET /auth/me` profile contract locked end-to-end against the client RBAC
+  gate (`frontend/js/rbac.js`) — live server-profile-driven visibility, inactive-role filtering, vocabulary completeness,
+  deny-by-default, hidden/disabled/aria-hidden triple; non-numeric-subject JWT crash fixed to structured 401;
+  10-test QA suite *(Batch 110)*
+- ✔ Documentation & training finalization: three audience guides — `docs/USER_GUIDE.md` (end-user workflow
+  manual), `docs/ADMIN_TRAINING.md` (administrator handbook with day-1 checklist + restore drill),
+  `docs/DEVELOPER_ONBOARDING.md` (contributor onboarding) — all claims grounded in verified repo facts;
+  indexed with audience reading-order pointers *(Batch 111)*
 - ✔ Repository hygiene: linearized history, secret-hygiene sweep (334 stale
   runtime/cache artifacts untracked), hardened `.gitignore` *(Batches 105–cleanup)*
 
@@ -146,7 +154,9 @@ Runs entirely on the local network with a server-owned database — *no internet
 - ✅ Client launcher packaging verification — `HHMS-Client.exe` single-file self-contained publish contract locked by QA, WebView2 SDK pinned, installer `-IncludeClient` bundling *(Batch 108; offline redistributable CAB bundling pending)*
 - ✅ Backup / restore and recovery workflows *(Batch 108 — round-trip, snapshot hygiene, corrupt-upload rejection, admin gating verified on file-backed runtime)*
 - ✅ Performance & security audit pass *(Batch 109 — login brute-force rate limiter with 429 + Retry-After, pagination/health performance gates, JWT audit invariants)*
-- ⬜ Cross-module client integration and role-aware UI polish
+- ✅ Role-aware UI & cross-module navigation QA *(Batch 110 — /auth/me profile contract ↔ client RBAC gate locked by a 10-test suite; non-numeric-subject 401 fix)*
+- ✅ Documentation & training finalization *(Batch 111 — user/admin/developer audience guides, docs/INDEX.md reading-order pointers)*
+- ⬜ Cross-module client integration polish
 - ⬜ Final print / printer QA on target hardware
 - ✅ Multi-client LAN tests *(Batch 104 — WAL SQLite concurrency + UDP discovery handshake)*
 - ✅ Clean-machine database installation *(Batch 104 — fresh-dir Alembic bootstrap 0001→0028)*

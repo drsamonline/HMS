@@ -178,6 +178,11 @@
 | [CLIENT_BATCH105_RELEASE_PACKAGING_DEPLOYMENT.md](CLIENT_BATCH105_RELEASE_PACKAGING_DEPLOYMENT.md) | Release packaging infrastructure & deployment scripts — single-source versioning, frozen-runtime Alembic hook, build/install/launch scripts, secret-hygiene completion (Batch 105) |
 | [CLIENT_BATCH108_BACKUP_RESTORE_RELEASE_QA.md](CLIENT_BATCH108_BACKUP_RESTORE_RELEASE_QA.md) | Backup/restore workflow verification, client launcher packaging contract (WebView2 pin, bundled frontend), installer -IncludeClient switch (Batch 108) |
 | [CLIENT_BATCH109_PERFORMANCE_SECURITY_AUDIT_QA.md](CLIENT_BATCH109_PERFORMANCE_SECURITY_AUDIT_QA.md) | Performance & security audit pass — login brute-force rate limiter (429 + Retry-After), pagination/health performance gates, JWT audit invariants (Batch 109) |
+| [CLIENT_BATCH110_ROLE_AWARE_UI_QA.md](CLIENT_BATCH110_ROLE_AWARE_UI_QA.md) | Role-aware UI & cross-module navigation QA — /auth/me profile contract, client RBAC navigation gate (deny-by-default, three-fold denial), non-numeric-sub 401 fix (Batch 110) |
+| [CLIENT_BATCH111_DOCUMENTATION_TRAINING_FINALIZATION.md](CLIENT_BATCH111_DOCUMENTATION_TRAINING_FINALIZATION.md) | Documentation & training finalization — user/admin/developer audience guides grounded in verified repo facts, INDEX reading-order pointers (Batch 111) |
+| [USER_GUIDE.md](USER_GUIDE.md) | End-user manual — daily workflows by role (registration, OPD, clinical, IPD, billing, pharmacy, reports), navigation & roles, data-entry conventions, client troubleshooting (Batch 111) |
+| [ADMIN_TRAINING.md](ADMIN_TRAINING.md) | Administrator training manual — server/client installation, day-1 configuration checklist, users & roles, backups, restore drill, escalation matrix, security hygiene (Batch 111) |
+| [DEVELOPER_ONBOARDING.md](DEVELOPER_ONBOARDING.md) | Developer onboarding guide — repository map, environment setup, testing contract, batch closing ritual, conventions, first-week exercise (Batch 111) |
 | [CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md](CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md) | Client operational workspace integration |
 | [CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md](CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md) | Client operational navigation convergence |
 | [CLIENT_RBAC_NAVIGATION.md](CLIENT_RBAC_NAVIGATION.md) | Client RBAC-aware navigation |
@@ -246,8 +251,10 @@ All HHMS documentation adheres to the following principles:
 | 10 | [TESTING_STRATEGY.md](TESTING_STRATEGY.md) | All developers |
 
 - **Stakeholders and product owners** — focus on the Master Specification and [ROADMAP.md](../ROADMAP.md).
-- **Backend developers** — read all core specifications, with particular attention to Database Entities and Schema.
-- **Frontend developers** — prioritise the Master Specification, Frontend Architecture, and UI Guidelines.
+- **End users (clinical & administrative staff)** — read [USER_GUIDE.md](USER_GUIDE.md); your administrator will walk you through the workflows relevant to your role.
+- **Clinic administrators / IT owners** — read [ADMIN_TRAINING.md](ADMIN_TRAINING.md) end-to-end before go-live, and run the §7 restore drill quarterly.
+- **Backend developers** — read all core specifications, with particular attention to Database Entities and Schema; new contributors start with [DEVELOPER_ONBOARDING.md](DEVELOPER_ONBOARDING.md).
+- **Frontend developers** — prioritise the Master Specification, Frontend Architecture, and UI Guidelines; new contributors start with [DEVELOPER_ONBOARDING.md](DEVELOPER_ONBOARDING.md).
 - **Reviewers** — must be familiar with all documents to evaluate compliance during code review.
 
 ---
@@ -285,4 +292,4 @@ Specification → Review → Implementation → Code Review → Testing → Git 
 
 ---
 
-*117 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
+*121 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
