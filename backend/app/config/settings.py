@@ -193,6 +193,7 @@ class Settings(BaseSettings):
     AUTO_MAINTENANCE_ENABLED: bool = Field(default=True)
     AUTO_BACKUP_ENABLED: bool = Field(default=True)
     MAINTENANCE_INTERVAL_HOURS: int = Field(default=24, ge=1, le=168)
+    REPORT_SCHEDULER_INTERVAL_MINUTES: int = Field(default=60, ge=5, le=1440)
     LOG_RETENTION_DAYS: int = Field(default=30, ge=7, le=365)
 
     # ==========================================================

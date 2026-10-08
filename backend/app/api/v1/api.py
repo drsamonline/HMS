@@ -44,6 +44,8 @@ from app.api.v1.endpoints.patients import router as patients_router
 from app.api.v1.endpoints.prescriptions import router as prescriptions_router
 from app.api.v1.endpoints.progress_notes import router as progress_note_router
 from app.api.v1.endpoints.reporting import router as reporting_router
+from app.api.v1.endpoints.report_pdf import router as report_pdf_router
+from app.api.v1.endpoints.report_pdf import schedule_router as report_schedule_router
 from app.api.v1.endpoints.service_activities import router as service_activities_router
 from app.api.v1.endpoints.settings import router as settings_router
 from app.api.v1.endpoints.statistics import router as statistics_router
@@ -113,6 +115,8 @@ for router in (
     service_activities_router,
     statistics_router,
     reporting_router,
+    report_pdf_router,
+    report_schedule_router,
     settings_router,
     administration_router,
     audit_logs_router,
