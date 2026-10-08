@@ -13,6 +13,7 @@ Author  : Dr. Sohil Momin
 from __future__ import annotations
 
 from functools import lru_cache
+import os
 from pathlib import Path
 import secrets
 
@@ -31,19 +32,43 @@ from app.release_version import release_version
 ROOT_DIR = application_root()
 
 
+MIN_SECRET_KEY_LENGTH = 32
+
+
 def _load_or_create_secret_key() -> str:
-    """Load a persistent local secret or generate one on first startup."""
+    """Load a persistent local secret or generate one on first startup.
+
+    Batch 115 hardening: the persisted file is created with owner-only
+    permissions (0o600 where supported), and any key loaded from disk or
+    the environment that is shorter than ``MIN_SECRET_KEY_LENGTH`` is
+    rejected so trivially guessable secrets can never sign tokens.
+    """
     path = secret_key_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         value = path.read_text(encoding="utf-8").strip()
     except FileNotFoundError:
         value = ""
-    if value:
-        return value
-    value = secrets.token_urlsafe(48)
-    path.write_text(value + "\n", encoding="utf-8")
+    if not value:
+        value = secrets.token_urlsafe(48)
+        path.write_text(value + "\n", encoding="utf-8")
+    _harden_secret_file(path)
+    if len(value) < MIN_SECRET_KEY_LENGTH:
+        raise RuntimeError(
+            f"Persisted JWT secret at {path} is shorter than "
+            f"{MIN_SECRET_KEY_LENGTH} characters; rotate it (see "
+            "docs/SECRET_ROTATION_RUNBOOK.md)."
+        )
     return value
+
+
+def _harden_secret_file(path) -> None:
+    """Best-effort chmod 0o600 on the persisted secret file."""
+    try:
+        os.chmod(path, 0o600)
+    except (OSError, NotImplementedError):
+        # Windows ACL semantics differ; ignore where chmod is unsupported.
+        pass
 
 
 class Settings(BaseSettings):
@@ -105,7 +130,11 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str = Field(
         default_factory=lambda: _load_or_create_secret_key(),
-        description="JWT secret key. Persisted locally when no environment value is supplied.",
+        description=(
+            "JWT secret key. Persisted locally when no environment value is "
+            f"supplied. Must be at least {MIN_SECRET_KEY_LENGTH} characters."
+        ),
+        min_length=MIN_SECRET_KEY_LENGTH,
     )
 
     JWT_ALGORITHM: str = Field(

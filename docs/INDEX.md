@@ -182,6 +182,8 @@
 | [CLIENT_BATCH111_DOCUMENTATION_TRAINING_FINALIZATION.md](CLIENT_BATCH111_DOCUMENTATION_TRAINING_FINALIZATION.md) | Documentation & training finalization — user/admin/developer audience guides grounded in verified repo facts, INDEX reading-order pointers (Batch 111) |
 | [CLIENT_BATCH112_WEBVIEW2_OFFLINE_REDIST_QA.md](CLIENT_BATCH112_WEBVIEW2_OFFLINE_REDIST_QA.md) | WebView2 offline redistributable bundling — fixed-version CAB staging (host allow-list, SHA-256 pinning, manifest), installer `-Webview2RedistDir` unpack contract, launcher runtimeDirectory consumption (Batch 112) |
 | [CLIENT_BATCH113_PRINT_PIPELINE_HARDWARE_READINESS_QA.md](CLIENT_BATCH113_PRINT_PIPELINE_HARDWARE_READINESS_QA.md) | Print pipeline & hardware-readiness QA — three-layer contract suite (print.css geometry/chrome-hiding, JS fetcher↔renderer↔button consistency + HTML-escape guard, cold-DB envelope 200s, paper-parity E2E); refund-audit cold-DB crash fix (Batch 113) |
+| [CLIENT_BATCH114_CROSS_MODULE_INTEGRATION_QA.md](CLIENT_BATCH114_CROSS_MODULE_INTEGRATION_QA.md) | Cross-module client integration polish — IPD Management workspace wired into the desktop client (nav/RBAC/module/API fetchers), Pharmacy user-context fix; 13-test three-layer QA suite with `node --check` gates (Batch 114) |
+| [SECRET_ROTATION_RUNBOOK.md](SECRET_ROTATION_RUNBOOK.md) | Secret-key rotation runbook — why rotation is mandatory (historical key in git history), step-by-step procedure, impact, triggers/schedule, Batch 115 hardening table (Batch 115) |
 | [USER_GUIDE.md](USER_GUIDE.md) | End-user manual — daily workflows by role (registration, OPD, clinical, IPD, billing, pharmacy, reports), navigation & roles, data-entry conventions, client troubleshooting (Batch 111) |
 | [ADMIN_TRAINING.md](ADMIN_TRAINING.md) | Administrator training manual — server/client installation, day-1 configuration checklist, users & roles, backups, restore drill, escalation matrix, security hygiene (Batch 111) |
 | [DEVELOPER_ONBOARDING.md](DEVELOPER_ONBOARDING.md) | Developer onboarding guide — repository map, environment setup, testing contract, batch closing ritual, conventions, first-week exercise (Batch 111) |
@@ -294,4 +296,4 @@ Specification → Review → Implementation → Code Review → Testing → Git 
 
 ---
 
-*122 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
+*124 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*

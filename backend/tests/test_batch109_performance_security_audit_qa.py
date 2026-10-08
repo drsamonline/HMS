@@ -52,6 +52,7 @@ from _qa_harness import (  # noqa: E402
 )
 
 import jwt as pyjwt  # noqa: E402
+from pydantic import ValidationError  # noqa: E402
 
 from app.auth.jwt import create_access_token, decode_access_token  # noqa: E402
 from app.config.settings import Settings, get_settings  # noqa: E402
@@ -439,11 +440,13 @@ def test_jwt_algorithm_pinning_rejects_none_and_rs256() -> None:
 
 
 def test_secret_key_min_entropy_guard() -> None:
-    """Production settings must refuse trivially guessable secrets."""
-    short = Settings(SECRET_KEY="abc")
-    # pydantic-settings accepts explicit values; the audit requirement is
-    # that a generated/persisted key is long-random — assert the loader
-    # default satisfies it instead of adding runtime validation churn.
+    """Production settings must refuse trivially guessable secrets.
+
+    Batch 115 hardened this from an advisory check into an enforced
+    ``min_length`` constraint on ``Settings.SECRET_KEY``: explicit short
+    overrides are now rejected at model-validation time.
+    """
+    with pytest.raises(ValidationError):
+        Settings(SECRET_KEY="abc")
     default = Settings()
     assert len(default.SECRET_KEY) >= 32
-    assert short.SECRET_KEY == "abc"  # explicit override remains possible

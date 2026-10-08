@@ -151,4 +151,5 @@ regularly. Time the drill; a restore you have never practiced is not a backup.
 - Patch Windows (WebView2 runtime updates ride on Edge servicing).
 - Audit-user-list quarterly; deactivate dormant accounts.
 - Before any external release of installation media, rotate signing secrets and
+  (see `docs/SECRET_ROTATION_RUNBOOK.md` and `scripts/deploy/rotate-secret-key.ps1`)
   strip history containing them (see the standing note in ROADMAP Milestone 7).

@@ -9,6 +9,28 @@ Sessions are listed newest-first within each release; batch entries reflect the
 functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md).
 
 ## [Unreleased]
+### Added — Batch 115 · Milestone 7 (part 11) — Secret-Key Rotation & Production Release Gate
+- **Last open Milestone 7 production-release gate item closed** — secret-handling hardened, rotation tooling shipped, and a full operator runbook documents the pre-v1.0 rotation:
+  - Repo hygiene: `data/secret.key` and `data/server_id` untracked from git (`git rm --cached`; files remain on disk for local dev); `.gitignore` extended with `.env`, secret paths, all writable data subdirectories, sqlite files, and `*.bak-*`. The historically committed key remains reachable in old git objects — which is precisely why the runbook mandates rotation before any public deployment.
+  - Product hardening (`backend/app/config/settings.py`): `MIN_SECRET_KEY_LENGTH = 32`; `Settings.SECRET_KEY` now carries an enforced `min_length` validation constraint (Batch 109's advisory entropy check upgraded to validation-time rejection); `_load_or_create_secret_key()` refuses short persisted keys with a `RuntimeError` pointing at the runbook and applies owner-only mode 0600 after load/create (best-effort chmod; Windows ACL handled by the rotation script).
+  - New operator utility `scripts/deploy/rotate-secret-key.ps1`: timestamped backup → fresh 48-byte url-safe key (identical format to the server generator) → atomic temp+move write → owner-only Windows ACL → SHA-256 fingerprint printout (never echoes the secret); `-WhatIf`/`-RuntimeRoot` supported.
+  - Runbook `docs/SECRET_ROTATION_RUNBOOK.md`: rationale, step-by-step procedure incl. post-rotation verification (pre-rotation token ⇒ 401), impact (all sessions invalidated; clients re-login), triggers/schedule (pre-release, suspected compromise, ≤180 days routine).
+  - Test contract update: Batch 109's `test_secret_key_min_entropy_guard` rewritten to assert the enforced behavior (`ValidationError` on short explicit secrets).
+- QA suite `tests/test_batch115_secret_rotation_release_gate_qa.py` (15 tests): validation constraint declared/enforced/accepted, loader rejection/generation/hardening (POSIX-gated), rotation-script operator contract, first-run bootstrap contract, git-hygiene guards (ignored + untracked), runbook sections.
+- Full backend suite: **531 passed, 2 skipped** (516 prior + 15 Batch 115; skips remain the opt-in tier-2 EXE-build tests).
+
+### Added — Batch 114 · Milestone 7 (part 10) — Cross-Module Client Integration Polish & QA
+- **Last open functional Milestone 7 code item closed** — the IPD Management workspace is now wired end-to-end into the desktop client, and the Pharmacy module's authenticated-user context was fixed:
+  - `frontend/index.html`: IPD nav button (`data-access="ipd-management"`); Backups workspace re-gated to admin.
+  - `frontend/js/rbac.js`: ACCESS vocabulary extended with `ipd-management` plus beds/wards/admission manage permissions; deny-by-default semantics unchanged.
+  - New `frontend/js/ipd_management.js`: bed census with ward/status filters, create-bed form, admissions list, admit-patient and discharge forms — all rendering HTML-escaped.
+  - `frontend/js/app.js`: module import + workspace routing; `frontend/js/api.js`: eight fetchers matching the backend IPD routes exactly.
+  - `frontend/js/pharmacy.js`: user id now derived from the same session context as the rest of the client (was assigning an object where an id was expected).
+  - Fixes during verification: product — discharge-time comparison crashed on naive/aware datetime mix (`discharge.py`); harness — Batch 110 vocabulary regex widened to accept quoted ACCESS keys, an intermediate hyphen-normalization in `canAccess` reverted after it broke explicit grants, missing exports added (`ipd.js`, `historical.js` `getHistoricalCases`).
+- QA suite `tests/test_batch114_cross_module_integration_qa.py` (13 tests, three layers): static frontend contracts incl. `node --check` syntax gates over every touched JS file, backend round-trips over the exact workspace routes (bed-occupancy side effects, discharge releases bed), and RBAC gating semantics executed through real node against `rbac.js`.
+- Correction during close: the Batch 114 code commits re-introduced the repository-hygiene regression for a fourth time (`.gitignore` emptied; `.pyc` artifacts + `data/logs/hhms.log` committed) — reverted again; staged-tree hygiene check enforced pre-commit.
+- Full backend suite: **516 passed, 2 skipped** (up from 503; +13 Batch 114 tests; skips remain the opt-in tier-2 EXE-build tests). Remaining Milestone 7 scope: production release gated on secret-key rotation (`data/secret.key` persists in git history) and the operational physical-printer field checklist (non-code).
+
 ### Added — Batch 113 · Milestone 7 (part 9) — Print Pipeline & Hardware-Readiness QA
 - **Last open functional print item closed** with an automated three-layer contract suite `tests/test_batch113_print_pipeline_qa.py` (11 tests):
   - CSS layer: `frontend/css/print.css` A4 portrait geometry, chrome-hiding (`display:none!important` on nav/sidebar/action bars), break rules, toolbar exclusion from paper output.

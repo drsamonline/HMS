@@ -1,9 +1,8 @@
-# Python compiled files
-__pycache__/
-*.pyc
+# Environment and secrets
+.env
+.env.local
+*.env.*
 
-# Build artifacts
-build/
-
-# Logs
-*.log
+# Data files (sensitive/generated)
+data/secret.key
+data/server_id
