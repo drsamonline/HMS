@@ -152,6 +152,15 @@ export async function updateMedicineBatch(id,payload){return request(`/api/v1/me
 
 export async function listIPDAssessments(admissionId){const q=new URLSearchParams({admission_id:String(admissionId),skip:"0",limit:"100"});return request(`/api/v1/ipd-assessments?${q.toString()}`)}
 export async function createIPDAssessment(payload){return request("/api/v1/ipd-assessments",{method:"POST",body:JSON.stringify(payload)})}
+
+export async function listPainAssessments(admissionId){const q=new URLSearchParams({admission_id:String(admissionId),skip:"0",limit:"100"});return request(`/api/v1/pain-assessments?${q.toString()}`)}
+export async function createPainAssessment(payload){return request("/api/v1/pain-assessments",{method:"POST",body:JSON.stringify(payload)})}
+export async function listNutritionalAssessments(admissionId){const q=new URLSearchParams({admission_id:String(admissionId),skip:"0",limit:"100"});return request(`/api/v1/nutritional-assessments?${q.toString()}`)}
+export async function createNutritionalAssessment(payload){return request("/api/v1/nutritional-assessments",{method:"POST",body:JSON.stringify(payload)})}
+export async function listDietCharts(admissionId){const q=new URLSearchParams({admission_id:String(admissionId),skip:"0",limit:"100"});return request(`/api/v1/diet-charts?${q.toString()}`)}
+export async function createDietChart(payload){return request("/api/v1/diet-charts",{method:"POST",body:JSON.stringify(payload)})}
+export async function listProgressNotes(admissionId){const q=new URLSearchParams({admission_id:String(admissionId),skip:"0",limit:"100"});return request(`/api/v1/progress-notes?${q.toString()}`)}
+export async function createProgressNote(payload){return request("/api/v1/progress-notes",{method:"POST",body:JSON.stringify(payload)})}
 export async function createDischarge(payload){return request("/api/v1/discharges",{method:"POST",body:JSON.stringify(payload)})}
 export async function getDischargeByAdmission(admissionId){return request(`/api/v1/discharges/admission/${encodeURIComponent(admissionId)}`)}
 export async function createBed(payload){return request("/api/v1/beds",{method:"POST",body:JSON.stringify(payload)})}

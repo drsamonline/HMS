@@ -165,9 +165,9 @@ def test_touched_frontend_modules_parse_as_es_modules():
 # ---------------------------------------------------------------------------
 
 def test_bed_census_round_trip_and_filters():
-    with make_client():
+    with make_client() as client:
         uid = seed_user()
-        created = api_post("/beds", json={
+        created = api_post(client, "/beds", json={
             "bed_number": "QA-B1", "ward": "Ward A",
             "room_number": "R-1", "bed_type": "General",
         })
@@ -175,7 +175,7 @@ def test_bed_census_round_trip_and_filters():
         bed = created.json()
         assert bed["occupancy_status"] == "available"
 
-        listed = api_get("/beds", params={"ward": "Ward A"}).json()
+        listed = api_get(client, "/beds", params={"ward": "Ward A"}).json()
         assert any(b["id"] == bed["id"] for b in listed)
 
         filtered = api_get(
@@ -183,7 +183,7 @@ def test_bed_census_round_trip_and_filters():
         ).json()
         assert all(b["id"] != bed["id"] for b in filtered)
 
-        patched = api_patch(f"/beds/{bed['id']}", json={
+        patched = api_patch(client, f"/beds/{bed['id']}", json={
             "occupancy_status": "maintenance",
         })
         assert patched.status_code == 200, patched.text
@@ -191,23 +191,23 @@ def test_bed_census_round_trip_and_filters():
 
 
 def test_admission_discharge_flow_with_bed_occupancy_side_effects():
-    with make_client():
+    with make_client() as client:
         uid = seed_user()
         seed_number_sequence(sequence_name="patient_number", prefix="P-")
         _seed_ipd_sequences()
 
-        patient = api_post("/patients", json={
+        patient = api_post(client, "/patients", json={
             "first_name": "Integration", "last_name": "QA",
             "gender": "Male", "mobile_number": "9000000114",
         })
         assert patient.status_code == 201, patient.text
         pid = patient.json()["id"]
 
-        bed = api_post("/beds", json={
+        bed = api_post(client, "/beds", json={
             "bed_number": "QA-B2", "ward": "Ward B",
         }).json()
 
-        adm = api_post("/admissions", json={
+        adm = api_post(client, "/admissions", json={
             "patient_id": pid, "bed_id": bed["id"],
             "admitted_by": uid, "admission_datetime": _now_iso(),
             "case_type": "new", "admission_reason": "QA admission",
@@ -224,10 +224,10 @@ def test_admission_discharge_flow_with_bed_occupancy_side_effects():
         assert any(b["id"] == bed["id"] for b in beds_after)
 
         # Active-admission list used by the workspace refresh().
-        active = api_get("/admissions", params={"status": "admitted"}).json()
+        active = api_get(client, "/admissions", params={"status": "admitted"}).json()
         assert any(a["id"] == admission["id"] for a in active)
 
-        dis = api_post("/discharges", json={
+        dis = api_post(client, "/discharges", json={
             "admission_id": admission["id"], "discharged_by": uid,
             "discharge_datetime": _now_iso(),
             "discharge_summary": "QA discharge",
@@ -236,30 +236,30 @@ def test_admission_discharge_flow_with_bed_occupancy_side_effects():
         assert dis.json()["discharge_number"]
 
         # Bed released back to available — exactly what the UI claims.
-        beds_final = api_get("/beds").json()
+        beds_final = api_get(client, "/beds").json()
         released = next(b for b in beds_final if b["id"] == bed["id"])
         assert released["occupancy_status"] == "available"
 
 
 def test_admission_rejects_non_available_bed():
-    with make_client():
+    with make_client() as client:
         uid = seed_user()
         seed_number_sequence(sequence_name="patient_number", prefix="P-")
         _seed_ipd_sequences()
 
-        patient = api_post("/patients", json={
+        patient = api_post(client, "/patients", json={
             "first_name": "Occupant", "last_name": "QA",
             "gender": "Female",
         }).json()
-        bed = api_post("/beds", json={
+        bed = api_post(client, "/beds", json={
             "bed_number": "QA-B3", "ward": "Ward C",
         }).json()
-        first = api_post("/admissions", json={
+        first = api_post(client, "/admissions", json={
             "patient_id": patient["id"], "bed_id": bed["id"],
             "admitted_by": uid, "admission_datetime": _now_iso(),
         })
         assert first.status_code == 201, first.text
-        second = api_post("/admissions", json={
+        second = api_post(client, "/admissions", json={
             "patient_id": patient["id"], "bed_id": bed["id"],
             "admitted_by": uid, "admission_datetime": _now_iso(),
         })
@@ -268,11 +268,11 @@ def test_admission_rejects_non_available_bed():
 
 
 def test_admission_rejects_unknown_patient():
-    with make_client():
+    with make_client() as client:
         _seed_ipd_sequences()
         uid = seed_user()
-        bed = api_post("/beds", json={"bed_number": "QA-B4"}).json()
-        resp = api_post("/admissions", json={
+        bed = api_post(client, "/beds", json={"bed_number": "QA-B4"}).json()
+        resp = api_post(client, "/admissions", json={
             "patient_id": 999999, "bed_id": bed["id"],
             "admitted_by": uid, "admission_datetime": _now_iso(),
         })
