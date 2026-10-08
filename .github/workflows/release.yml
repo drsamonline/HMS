@@ -1,19 +1,22 @@
 # ---------------------------------------------------------------------------
-# HHMS release pipeline — Milestone 7 Batch 107.
+# HHMS release pipeline — Milestone 7 Batch 107; automatic dual-platform
+# releases completed in Batch 116.
 #
-# On pushes tagged v* (and manual dispatch) this builds the packaged server
-# on both platforms, runs the backend regression suite, produces the Windows
-# installer via scripts/deploy/build-installer.ps1 (Inno Setup is preinstalled
-# on GitHub windows runners), computes SHA-256 checksums, and attaches every
-# artifact to a GitHub Release.
+# On pushes tagged v* (and manual dispatch) this runs the backend regression
+# suite, then builds and smoke-tests BOTH platform artifacts in parallel:
+#   * Linux  — one-file server bundle via scripts/deploy/build-server.sh
+#   * Windows — server EXE + setup installer via scripts/deploy/build-installer.ps1
+# Finally the `release` job downloads every artifact, computes SHA-256
+# checksums, and attaches everything to a GitHub Release automatically.
 #
-# The Linux job doubles as the CI gate for ordinary pushes/PRs.
+# The test job doubles as the CI gate for ordinary pushes/PRs.
 # ---------------------------------------------------------------------------
 name: release
 
 on:
   push:
     tags: ["v*"]
+    branches: ["main", "master"]
   pull_request:
   workflow_dispatch:
 
@@ -56,12 +59,7 @@ jobs:
       - name: Build one-file bundle
         run: bash scripts/deploy/build-server.sh
       - name: Smoke-test bundle (first-run bootstrap + health)
-        run: |
-          ./build/dist/HHMS-Server --smoke-test || \
-          ( nohup ./build/dist/HHMS-Server >/tmp/hhms.log 2>&1 & \
-            for i in $(seq 1 30); do \
-              curl -fsS http://127.0.0.1:8000/api/v1/health && break; sleep 2; \
-            done; kill %1 )
+        run: ./build/dist/HHMS-Server --smoke-test
       - uses: actions/upload-artifact@v4
         with:
           name: hhms-server-linux
@@ -92,10 +90,17 @@ jobs:
       - name: Build installer (Inno Setup, NSIS fallback)
         shell: pwsh
         run: ./scripts/deploy/build-installer.ps1
+      - name: Smoke-test server EXE (first-run bootstrap + health)
+        shell: pwsh
+        run: ./build/dist/HHMS-Server.exe --smoke-test
       - uses: actions/upload-artifact@v4
         with:
           name: hhms-windows-installer
           path: dist/installer/HHMS-Setup-*.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hhms-server-windows
+          path: build/dist/HHMS-Server.exe
 
   release:
     name: GitHub Release + checksums

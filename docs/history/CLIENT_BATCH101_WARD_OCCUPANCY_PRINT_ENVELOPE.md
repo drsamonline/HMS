@@ -1,6 +1,6 @@
 # Batch 101 — Ward Occupancy Print Envelope & Operational Print Completion
 
-> Status: **Completed** · Branch milestone: Batch 101 · Tests: 372 passing (see [../README.md](../README.md))
+> Status: **Completed** · Branch milestone: Batch 101 · Tests: 372 passing (see [../README.md](../../README.md))
 
 ## Purpose
 
