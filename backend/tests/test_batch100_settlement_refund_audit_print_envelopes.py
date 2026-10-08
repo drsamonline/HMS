@@ -713,7 +713,10 @@ def test_batch97_overpayment_ghost_card_closed():
 
 
 def test_batch100_documentation_exists_and_indexed():
-    doc = ROOT / "docs" / "CLIENT_BATCH100_SETTLEMENT_REFUND_AUDIT_PRINT_ENVELOPES.md"
+    # Batch 116 moved historical batch pages under docs/history/
+    doc = ROOT / "docs" / "history" / "CLIENT_BATCH100_SETTLEMENT_REFUND_AUDIT_PRINT_ENVELOPES.md"
+    if not doc.is_file():
+        doc = ROOT / "docs" / "CLIENT_BATCH100_SETTLEMENT_REFUND_AUDIT_PRINT_ENVELOPES.md"
     assert doc.is_file()
     text = doc.read_text(encoding="utf-8")
     assert "/dashboard/invoice-settlement-audit" in text
