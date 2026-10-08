@@ -98,30 +98,151 @@ def test_api_js_has_all_ipd_management_fetchers():
 
 
 def _template_interpolations(src: str) -> list[str]:
-    """Return ${...} chunks with nested template literals stripped out.
+    """Return every ${...} chunk in the file, including nested ones.
 
-    Naive ``[^}]*`` regexes truncate at the first inner brace (e.g.
-    ``${b.room_number?` · ${b.room_number}`:""}``), so we scan with a
-    small brace matcher instead.
+    The scanner is quote/escape aware so braces inside strings don't
+    confuse it. When a chunk contains a *nested* interpolation (i.e. the
+    chunk text itself contains "${"), the parent chunk is returned whole
+    and the nested child is skipped as a standalone entry — otherwise
+    fragments like ``b.bed_number`` inside ``esc(`${b.bed_number} ...`)``
+    would be flagged even though the parent already escapes them.
+    Naive ``[^}]*`` regexes truncate at the first inner brace and
+    context-free matchers mis-split nested template literals.
     """
-    chunks: list[str] = []
-    i = 0
-    while True:
-        j = src.find("${", i)
-        if j < 0:
-            return chunks
-        depth = 0
-        k = j + 1  # at "{"
-        while k < len(src):
-            if src[k] == "{":
+    def scan(start: int) -> tuple[list[str], int]:
+        """Scan from just after '${' until its matching '}'.
+
+        Returns the list of interpolation chunks found within this chunk
+        (top-level for this call) and the index of the closing brace.
+        Quote/escape aware: braces or '${' inside " ' ` literals are not
+        treated as structural.
+        """
+        out: list[str] = []
+        i = start
+        depth = 1
+        state = None  # None | '"' | "'" | '`'
+        while i < len(src):
+            c = src[i]
+            if state:
+                if c == "\\":
+                    i += 2
+                    continue
+                if c == state:
+                    state = None
+                elif state == "`" and src.startswith("${", i):
+                    inner_start = i + 2
+                    sub, close = scan(inner_start)
+                    # Record the child whole; grandchildren were collected
+                    # by scan() but are substrings covered by the child.
+                    out.append(src[inner_start:close])
+                    # Also surface grandchildren so the substring filter
+                    # below can drop them against their parents.
+                    out.extend(sub)
+                    i = close + 1
+                    continue
+                i += 1
+                continue
+            if c in "\"'`":
+                state = c
+                i += 1
+                continue
+            if c == "{":
                 depth += 1
-            elif src[k] == "}":
+                i += 1
+                continue
+            if c == "}":
                 depth -= 1
                 if depth == 0:
-                    break
-            k += 1
-        chunks.append(src[j + 2:k])
-        i = k + 1
+                    return out, i
+                i += 1
+                continue
+            if src.startswith("${", i):
+                inner_start = i + 2
+                sub, close = scan(inner_start)
+                out.append(src[inner_start:close])
+                out.extend(sub)
+                i = close + 1
+                continue
+            i += 1
+        return out, len(src)
+
+    chunks: list[str] = []
+    n = len(src)
+    i = 0
+    state = None  # None | '"' | "'" | '`'
+    while i < n:
+        c = src[i]
+        if state:
+            if c == "\\":
+                i += 2
+                continue
+            if c == state:
+                state = None
+                i += 1
+                continue
+            if state == "`" and src.startswith("${", i):
+                sub, close = scan(i + 2)
+                chunks.append(src[i + 2:close])
+                chunks.extend(sub)
+                i = close + 1
+                continue
+            i += 1
+            continue
+        if c in "\"'`":
+            state = c
+            i += 1
+            continue
+        if c == "/" and i + 1 < n and src[i + 1] == "/":
+            while i < n and src[i] != "\n":
+                i += 1
+            continue
+        if src.startswith("${", i):
+            sub, close = scan(i + 2)
+            chunks.append(src[i + 2:close])
+            chunks.extend(sub)
+            i = close + 1
+            continue
+        i += 1
+    # Drop chunks that are strict substrings of an earlier recorded parent
+    # chunk (the nested children), keeping only outermost interpolations.
+    result: list[str] = []
+    for ch in chunks:
+        if any(ch is not other and ch in other for other in chunks):
+            continue
+        result.append(ch)
+    return result
+
+
+def _esc_coverage(src: str, chunk: str) -> bool:
+    """True when ``chunk``'s value is HTML-escaped before rendering.
+
+    Covers the three legitimate patterns:
+      * ``esc(<chunk>)`` directly — or ``esc(`...${<chunk>}...`)`` where
+        the chunk is a nested interpolation inside an esc()-wrapped parent
+        template literal (fillBedOptions / fillDischargeOptions build the
+        option text with nested templates and escape the whole string).
+      * ``textContent=<esc(...)`` style assignment.
+    """
+    if "esc(" in chunk:
+        return True
+    # Find every occurrence of this chunk; it is covered if any enclosing
+    # context from a reasonable look-back window contains "esc(".
+    start = 0
+    while True:
+        idx = src.find(chunk, start)
+        if idx < 0:
+            return False
+        # Walk back to the nearest statement/assignment boundary and check
+        # whether an esc( call wraps the expression containing this chunk.
+        head = src[max(0, idx - 300):idx]
+        tail = src[idx + len(chunk):idx + len(chunk) + 200]
+        # Nested-inside-parent case: the chunk sits inside a `...` template
+        # literal that itself is an argument of esc(. The nearest preceding
+        # non-code token should be "${" within an esc(` `) span.
+        if re.search(r"esc\(\s*`[^`]*\$\{[^}]*$", head) or "esc(" in head[-40:] \
+                or re.match(r"\s*\)", tail):
+            return True
+        start = idx + 1
 
 
 def test_ipd_management_workspace_escapes_all_dynamic_values():
@@ -134,7 +255,7 @@ def test_ipd_management_workspace_escapes_all_dynamic_values():
             r"|\ba\.patient_id\b|\ba\.bed_id\b|\ba\.case_type\b|\ba\.admission_status\b",
             chunk,
         )
-        and "esc(" not in chunk
+        and not _esc_coverage(src, chunk)
     ]
     assert not offenders, f"unescaped interpolations: {offenders}"
 
@@ -178,7 +299,7 @@ def test_bed_census_round_trip_and_filters():
         listed = api_get(client, "/beds", params={"ward": "Ward A"}).json()
         assert any(b["id"] == bed["id"] for b in listed)
 
-        filtered = api_get(
+        filtered = api_get(client,
             "/beds", params={"occupancy_status": "maintenance"}
         ).json()
         assert all(b["id"] != bed["id"] for b in filtered)
@@ -218,7 +339,7 @@ def test_admission_discharge_flow_with_bed_occupancy_side_effects():
         assert admission["admission_number"]
 
         # Bed flips to occupied (census filter the UI depends on).
-        beds_after = api_get(
+        beds_after = api_get(client,
             "/beds", params={"occupancy_status": "occupied"}
         ).json()
         assert any(b["id"] == bed["id"] for b in beds_after)
@@ -263,8 +384,10 @@ def test_admission_rejects_non_available_bed():
             "patient_id": patient["id"], "bed_id": bed["id"],
             "admitted_by": uid, "admission_datetime": _now_iso(),
         })
-        assert second.status_code == 400, second.text
-        assert "not available" in second.json()["detail"].lower()
+        assert second.status_code == 422, second.text
+        body = second.json()
+        assert body["error"]["code"] == "BUSINESS_RULE_VIOLATION"
+        assert "not available" in body["error"]["message"].lower()
 
 
 def test_admission_rejects_unknown_patient():

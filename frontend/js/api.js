@@ -258,6 +258,7 @@ export async function getHistoricalArchiveVisits(year,patientId){return request(
 export async function getHistoricalArchiveInvoices(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/invoices`);}
 export async function getHistoricalArchivePayments(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/payments`);}
 export async function getHistoricalArchiveDispenses(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/dispenses`);}
+export async function getHistoricalCases(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/cases`);}
 export async function getHistoricalArchivePrescriptions(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/prescriptions`);}
 export async function getHistoricalArchivePrescriptionItems(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/prescription-items`);}
 export async function getHistoricalArchiveInvestigations(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/investigations`);}

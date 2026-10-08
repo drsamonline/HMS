@@ -136,7 +136,11 @@ class DischargeService:
 
         if (
             admission.admission_datetime is not None
-            and data.discharge_datetime < admission.admission_datetime
+            and data.discharge_datetime < (
+                admission.admission_datetime
+                if admission.admission_datetime.tzinfo is not None
+                else admission.admission_datetime.replace(tzinfo=timezone.utc)
+            )
         ):
             raise BusinessRuleException(
                 "Discharge datetime cannot be earlier than admission datetime."
