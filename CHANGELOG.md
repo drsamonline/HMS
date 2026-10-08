@@ -9,6 +9,15 @@ Sessions are listed newest-first within each release; batch entries reflect the
 functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md).
 
 ## [Unreleased]
+### Added — Batch 113 · Milestone 7 (part 9) — Print Pipeline & Hardware-Readiness QA
+- **Last open functional print item closed** with an automated three-layer contract suite `tests/test_batch113_print_pipeline_qa.py` (11 tests):
+  - CSS layer: `frontend/css/print.css` A4 portrait geometry, chrome-hiding (`display:none!important` on nav/sidebar/action bars), break rules, toolbar exclusion from paper output.
+  - Client JS layer: fetcher↔renderer↔Reports-button consistency across all 16 POST print-envelope routes; HTML-escape-before-innerHTML contract (XSS-on-paper guard).
+  - Backend layer: every envelope answers 200 on a cold empty database (day-zero installs print standard forms without crashing), missing records surface handled 404/422 (never 500), and a paper-parity end-to-end test (Patient→Visit→Invoice→Item→Payment→`invoice-print-envelope`) verifies the packet reflects exact computed totals (250.00 billed / 100.00 paid / 150.00 balance / partial, receipt number + transaction reference preserved).
+- **Product fix:** refund-audit envelope crashed on cold databases — the shared scan rollup omits `total_overpaid` when the invoice list is empty while the envelope schema requires it; `app/services/reporting.py` now derives the field from rows (default `Decimal("0")`).
+- Harness fixes during verification: missing `seed_visit` import (latent NameError); the E2E test switched to a real login token via `token_for_login` because billing endpoints cast the JWT `sub` to int and the harness default subject correctly yields 401 since the Batch 110 auth hardening.
+- Physical-paper smoke remains an operational field checklist on target hardware. Full backend suite: **503 passed, 2 skipped** (up from 492; +11 Batch 113 tests). Remaining Milestone 7 scope: cross-module client integration polish, production release (secret rotation first — `data/secret.key` persists in git history).
+
 ### Added — Batch 112 · Milestone 7 (part 8) — WebView2 Offline Redistributable Bundling
 - **WebView2 runtime packaging closed** — the last open Milestone 7 packaging item, enabling fully offline installs on air-gapped clinic LANs (no internet at install time):
   - `scripts/deploy/stage_webview2_redist.ps1` (new) stages the official fixed-version Edge WebView2 runtime CAB into `build/redist/webview2/` under HTTPS with a Microsoft-host allow-list (`msedge.sf.dl.delivery.mp.microsoft.com`, `go.microsoft.com`, `download.microsoft.com`; off-list URL → exit 3), records SHA-256 per download, supports `-ExpectedSha256` pinning (mismatch → staged file deleted, exit 3), and emits an auditable `redist-manifest.json` (`hhms.webview2-redist/1`: version, architecture, cab name, sha256, source URL, timestamp).
