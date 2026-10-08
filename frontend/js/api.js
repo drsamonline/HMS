@@ -69,6 +69,9 @@ export async function createInvoice(payload){return request("/api/v1/billing/inv
 export async function listInvoicePayments(invoiceId){return request(`/api/v1/billing/invoices/${encodeURIComponent(invoiceId)}/payments?skip=0&limit=100`)}
 export async function createPayment(payload){return request("/api/v1/billing/payments",{method:"POST",body:JSON.stringify(payload)})}
 export async function listPatientFiles(patientId){return request(`/api/v1/patient-files?patient_id=${encodeURIComponent(patientId)}&skip=0&limit=100`)}
+export async function listMedicalDocuments(patientId){return request(`/api/v1/medical-documents?patient_id=${encodeURIComponent(patientId)}&skip=0&limit=100`)}
+export async function createMedicalDocument(payload){return request("/api/v1/medical-documents",{method:"POST",body:JSON.stringify(payload)})}
+
 export async function createPatientFile(payload){return request("/api/v1/patient-files",{method:"POST",body:JSON.stringify(payload)})}
 export async function listArchiveRecords(patientFileId){return request(`/api/v1/archive-records?patient_file_id=${encodeURIComponent(patientFileId)}&skip=0&limit=100`)}
 export async function createArchiveRecord(payload){return request("/api/v1/archive-records",{method:"POST",body:JSON.stringify(payload)})}

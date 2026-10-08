@@ -1,11 +1,1 @@
-# Python compiled files and caches
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Build artifacts
-build/
-dist/
-
-# Logs
-*.log
+(empty)
