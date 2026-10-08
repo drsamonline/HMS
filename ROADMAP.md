@@ -66,7 +66,7 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Performance testing
 - [x] Clean-machine installation testing (Batch 104 — fresh-directory migration-chain bootstrap, 0001→0028, verified green)
 
-## Milestone 7 – Release 🔶 (in progress — Batches 105–114 landed packaging, EXE build, installer & CI, backup/restore + client launcher, performance & security audit, role-aware UI QA, documentation & training finalization, WebView2 offline redistributable bundling, print pipeline & hardware-readiness QA, cross-module client integration polish)
+## Milestone 7 – Release 🔶 (in progress — Batches 105–115 landed packaging, EXE build, installer & CI, backup/restore + client launcher, performance & security audit, role-aware UI QA, documentation & training finalization, WebView2 offline redistributable bundling, print pipeline & hardware-readiness QA, cross-module client integration polish, secret-key rotation release gate)
 
 - [x] Client launcher packaging verification (Batch 108 — `client/HHMS.Client` single-file self-contained win-x64 `HHMS-Client.exe` contract locked by QA; WebView2 SDK pinned at 1.0.3856.49; frontend bundled; `-IncludeClient` installer switch; Batch 112 — offline redistributable CAB bundling closed)
 - [x] WebView2 runtime packaging *(launcher prerequisite check in `scripts/deploy/server-launch.ps1` done Batch 105; pinned SDK ships in the launcher EXE per Batch 108; Batch 112 — `stage_webview2_redist.ps1` fixed-version CAB staging with SHA-256 pinning + Microsoft-host allow-list, `-Webview2RedistDir` installer bundling via `expand.exe` unpack to `{app}\WebView2Runtime\<version>`, launcher `runtimeDirectory:` consumption; 14-test QA suite)*
@@ -78,7 +78,8 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Documentation finalization *(Batch 111 — docs/USER_GUIDE.md end-user manual, docs/ADMIN_TRAINING.md administrator handbook, docs/DEVELOPER_ONBOARDING.md contributor guide; all claims grounded in verified repo facts; indexed in docs/INDEX.md with audience reading-order pointers)*
 - [x] Deployment scripts (Batch 105 — `scripts/deploy/`: build-server.sh, install-first-run.sh, server-launch.ps1, usage README; syntax/integrity verified by QA suite)
 - [x] User training materials *(Batch 111 — USER_GUIDE.md role-driven workflow manual + ADMIN_TRAINING.md hands-on training handbook with day-1 checklist and quarterly restore drill)*
-- [ ] Production release *(secret rotation required first: `data/secret.key` exists in git history through Batch 104-era commits)*
+- [x] Secret-key rotation gate *(Batch 115 — runtime secrets untracked + ignored, enforced min-length validation, loader hardening, `rotate-secret-key.ps1` utility, `docs/SECRET_ROTATION_RUNBOOK.md`; executing the rotation per deployment before v1.0 remains an operational step)*
+- [ ] Production release *(execute the Batch 115 rotation runbook on the deployment environment, then tag-triggered pipeline)*
 
 ---
 
@@ -170,7 +171,8 @@ effects, discharge releases bed), RBAC gating executed through real node. Full b
 Correction during close: the Batch 114 code commits re-introduced the hygiene regression a fourth time (`.gitignore`
 emptied; `.pyc` + `hhms.log` committed) — reverted again before the closing commit.
 Remaining Milestone 7 scope: physical printer field-checklist execution on target hardware (operational, non-code)
-and production release (secret rotation first — `data/secret.key` persists in git history). Batch 102 itself (third mega-batch under
+and production release (code-side secret gate closed by Batch 115: secrets untracked/ignored, min-length validation enforced,
+rotation utility + runbook shipped; executing the rotation per deployment before tagging v1.0 is the remaining operational step). Batch 102 itself (third mega-batch under
 the amended D-008 policy: `GET /dashboard/investigation-billing-reconciliation` proves every open
 lab order from the Batch 84 pending-investigation vocabulary still carries its billed amount on a live non-cancelled invoice —
 billed amounts re-derived from `InvoiceItem` line totals in one grouped pass (`billed_amount == charged_total - credited_total`,

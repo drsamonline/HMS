@@ -98,7 +98,7 @@ Runs entirely on the local network with a server-owned database — *no internet
   fixed three release-blocking defects: StaticPool concurrency deadlock,
   migration-chain gaps incl. missing base tables in 0018, and 184 missing
   `CURRENT_TIMESTAMP` server defaults *(Batch 104)*
-- ✔ **516 backend tests passing** as of Batch 114 — see [CHANGELOG.md](CHANGELOG.md)
+- ✔ **531 backend tests passing** as of Batch 115 — see [CHANGELOG.md](CHANGELOG.md)
 
 ### 📦 Release Engineering (Milestone 7 — in progress)
 - ✔ Single-source versioning from the root `VERSION` file, resolved across
@@ -172,6 +172,7 @@ Runs entirely on the local network with a server-owned database — *no internet
 - ✅ WebView2 offline redistributable bundling *(Batch 112 — `stage_webview2_redist.ps1` CAB staging with SHA-256 pinning + host allow-list, installer `-Webview2RedistDir` unpack to `{app}\WebView2Runtime`, launcher `runtimeDirectory:` consumption; 14-test QA suite)*
 - ✅ Print pipeline & hardware-readiness QA *(Batch 113 — three-layer contract suite: CSS/JS/backend, cold-DB 200s, paper-parity E2E; refund-audit cold-DB crash fixed; physical-paper field checklist on target hardware remains an operational task)*
 - ✅ Cross-module client integration polish *(Batch 114 — IPD Management workspace wired end-to-end into the desktop client: nav button + RBAC vocabulary + `ipd_management.js` bed census/admissions/discharge module with HTML-escaped rendering + eight matching `api.js` fetchers; Pharmacy user-context fix; 13-test three-layer QA suite incl. `node --check` syntax gates and executed RBAC semantics)*
+- ✅ Secret-key rotation & production release gate *(Batch 115 — runtime secrets untracked/ignored, enforced `min_length` validation + loader hardening, `rotate-secret-key.ps1` utility, `docs/SECRET_ROTATION_RUNBOOK.md`; per-deployment rotation before v1.0 remains an operational step)*
 - ✅ Multi-client LAN tests *(Batch 104 — WAL SQLite concurrency + UDP discovery handshake)*
 - ✅ Clean-machine database installation *(Batch 104 — fresh-dir Alembic bootstrap 0001→0028)*
 
