@@ -98,7 +98,7 @@ Runs entirely on the local network with a server-owned database — *no internet
   fixed three release-blocking defects: StaticPool concurrency deadlock,
   migration-chain gaps incl. missing base tables in 0018, and 184 missing
   `CURRENT_TIMESTAMP` server defaults *(Batch 104)*
-- ✔ **503 backend tests passing** as of Batch 113 — see [CHANGELOG.md](CHANGELOG.md)
+- ✔ **516 backend tests passing** as of Batch 114 — see [CHANGELOG.md](CHANGELOG.md)
 
 ### 📦 Release Engineering (Milestone 7 — in progress)
 - ✔ Single-source versioning from the root `VERSION` file, resolved across
@@ -148,6 +148,10 @@ Runs entirely on the local network with a server-owned database — *no internet
   JS fetcher↔renderer↔button consistency over all 16 envelope routes + HTML-escape XSS guard, cold-DB 200s,
   paper-parity end-to-end invoice packet); refund-audit cold-DB crash fixed in `reporting.py`; 11-test suite
   *(Batch 113)*
+- ✔ Cross-module client integration polish: IPD Management workspace wired end-to-end into the desktop client
+  (nav button, RBAC vocabulary + permissions, `ipd_management.js` bed census/admissions/discharge module with
+  HTML-escaped rendering, eight matching `api.js` fetchers); Pharmacy authenticated-user context fixed;
+  13-test three-layer QA suite incl. `node --check` syntax gates and executed RBAC semantics *(Batch 114)*
 - ✔ Repository hygiene: linearized history, secret-hygiene sweep (334 stale
   runtime/cache artifacts untracked), hardened `.gitignore` *(Batches 105–cleanup)*
 
@@ -166,8 +170,8 @@ Runs entirely on the local network with a server-owned database — *no internet
 - ✅ Role-aware UI & cross-module navigation QA *(Batch 110 — /auth/me profile contract ↔ client RBAC gate locked by a 10-test suite; non-numeric-subject 401 fix)*
 - ✅ Documentation & training finalization *(Batch 111 — user/admin/developer audience guides, docs/INDEX.md reading-order pointers)*
 - ✅ WebView2 offline redistributable bundling *(Batch 112 — `stage_webview2_redist.ps1` CAB staging with SHA-256 pinning + host allow-list, installer `-Webview2RedistDir` unpack to `{app}\WebView2Runtime`, launcher `runtimeDirectory:` consumption; 14-test QA suite)*
-- ⬜ Cross-module client integration polish
 - ✅ Print pipeline & hardware-readiness QA *(Batch 113 — three-layer contract suite: CSS/JS/backend, cold-DB 200s, paper-parity E2E; refund-audit cold-DB crash fixed; physical-paper field checklist on target hardware remains an operational task)*
+- ✅ Cross-module client integration polish *(Batch 114 — IPD Management workspace wired end-to-end into the desktop client: nav button + RBAC vocabulary + `ipd_management.js` bed census/admissions/discharge module with HTML-escaped rendering + eight matching `api.js` fetchers; Pharmacy user-context fix; 13-test three-layer QA suite incl. `node --check` syntax gates and executed RBAC semantics)*
 - ✅ Multi-client LAN tests *(Batch 104 — WAL SQLite concurrency + UDP discovery handshake)*
 - ✅ Clean-machine database installation *(Batch 104 — fresh-dir Alembic bootstrap 0001→0028)*
 
