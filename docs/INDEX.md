@@ -96,10 +96,10 @@
 | [STATISTICS_REPORTING_DEDUP.md](STATISTICS_REPORTING_DEDUP.md) | Hospital statistics reporting and deduplication |
 | [STATISTICS_DEPARTMENT_SERVICE_BREAKDOWN.md](STATISTICS_DEPARTMENT_SERVICE_BREAKDOWN.md) | Department and service statistics breakdown |
 | [REPORTING_PRINT_DATA.md](REPORTING_PRINT_DATA.md) | Reporting and print-data foundation |
-| [REPORTING_PRINT_BATCH_02.md](REPORTING_PRINT_BATCH_02.md) | Reporting & print-data Batch 02 |
-| [REPORTING_PRINT_BATCH_03.md](REPORTING_PRINT_BATCH_03.md) | Reporting / print Batch 03 |
-| [REPORTING_PRINT_BATCH_04.md](REPORTING_PRINT_BATCH_04.md) | Reporting / print Batch 04 |
-| [REPORTING_PRINT_BATCH_05.md](REPORTING_PRINT_BATCH_05.md) | Reporting / print Batch 05 — print manifest |
+| [REPORTING_PRINT_BATCH_02.md](history/REPORTING_PRINT_BATCH_02.md) | Reporting & print-data Batch 02 |
+| [REPORTING_PRINT_BATCH_03.md](history/REPORTING_PRINT_BATCH_03.md) | Reporting / print Batch 03 |
+| [REPORTING_PRINT_BATCH_04.md](history/REPORTING_PRINT_BATCH_04.md) | Reporting / print Batch 04 |
+| [REPORTING_PRINT_BATCH_05.md](history/REPORTING_PRINT_BATCH_05.md) | Reporting / print Batch 05 — print manifest |
 
 ### RBAC & Audit
 
@@ -116,9 +116,9 @@
 | [HISTORICAL_DATA_ACCESS.md](HISTORICAL_DATA_ACCESS.md) | Historical archive access model |
 | [UNIFIED_PATIENT_HISTORY.md](UNIFIED_PATIENT_HISTORY.md) | Unified live + historical patient history |
 | [ANNUAL_CASE_ROLLOVER.md](ANNUAL_CASE_ROLLOVER.md) | Annual case rollover and archival workflow |
-| [BATCH_51_DATA_LIFECYCLE_CASE_RENEWAL.md](BATCH_51_DATA_LIFECYCLE_CASE_RENEWAL.md) | Batch 51 — data lifecycle, case renewal & maintenance |
-| [BATCH_56_CORRECT_PATIENT_HISTORY.md](BATCH_56_CORRECT_PATIENT_HISTORY.md) | Batch 56 — corrected unified patient history |
-| [BATCH_57_HISTORICAL_EVENT_INTEGRATION.md](BATCH_57_HISTORICAL_EVENT_INTEGRATION.md) | Batch 57 — historical event integration |
+| [BATCH_51_DATA_LIFECYCLE_CASE_RENEWAL.md](history/BATCH_51_DATA_LIFECYCLE_CASE_RENEWAL.md) | Batch 51 — data lifecycle, case renewal & maintenance |
+| [BATCH_56_CORRECT_PATIENT_HISTORY.md](history/BATCH_56_CORRECT_PATIENT_HISTORY.md) | Batch 56 — corrected unified patient history |
+| [BATCH_57_HISTORICAL_EVENT_INTEGRATION.md](history/BATCH_57_HISTORICAL_EVENT_INTEGRATION.md) | Batch 57 — historical event integration |
 
 ### IPD Bed Management
 
@@ -170,19 +170,19 @@
 | [CLIENT_INVOICE_OVERPAYMENT_LEDGER.md](CLIENT_INVOICE_OVERPAYMENT_LEDGER.md) | Invoice overpayment ledger dashboard feed + print envelope (Batch 97) |
 | [CLIENT_PAYMENT_METHOD_OVERPAYMENT_BREAKDOWN.md](CLIENT_PAYMENT_METHOD_OVERPAYMENT_BREAKDOWN.md) | Payment method overpayment breakdown + print envelope (Batch 98) |
 | [CLIENT_DISCHARGE_AUDIT_OPD_QUEUE_SUMMARY.md](CLIENT_DISCHARGE_AUDIT_OPD_QUEUE_SUMMARY.md) | Discharge audit & OPD queue daily summary dashboard feeds (Batch 99) |
-| [CLIENT_BATCH100_SETTLEMENT_REFUND_AUDIT_PRINT_ENVELOPES.md](CLIENT_BATCH100_SETTLEMENT_REFUND_AUDIT_PRINT_ENVELOPES.md) | Settlement/refund audit feeds, operational print envelopes & overpayment ghost-card fix (Batch 100) |
-| [CLIENT_BATCH101_WARD_OCCUPANCY_PRINT_ENVELOPE.md](CLIENT_BATCH101_WARD_OCCUPANCY_PRINT_ENVELOPE.md) | Ward occupancy dashboard feed + print envelope & OPD queue renderer (Batch 101) |
-| [CLIENT_BATCH102_INVESTIGATION_BILLING_RECONCILIATION.md](CLIENT_BATCH102_INVESTIGATION_BILLING_RECONCILIATION.md) | Investigation billing reconciliation dashboard feed + print envelope & Batch 100 restoration (Batch 102) |
-| [CLIENT_BATCH103_COMPREHENSIVE_QA.md](CLIENT_BATCH103_COMPREHENSIVE_QA.md) | Comprehensive QA Milestone 6 — full-stack E2E route suite, cross-module integration, performance benchmark & login regression fix (Batch 103) |
-| [CLIENT_BATCH104_LAN_MULTI_CLIENT_INSTALLATION_QA.md](CLIENT_BATCH104_LAN_MULTI_CLIENT_INSTALLATION_QA.md) | Multi-client LAN concurrency QA & clean-machine installation testing — Milestone 6 complete, three release-blocking fixes (Batch 104) |
-| [CLIENT_BATCH105_RELEASE_PACKAGING_DEPLOYMENT.md](CLIENT_BATCH105_RELEASE_PACKAGING_DEPLOYMENT.md) | Release packaging infrastructure & deployment scripts — single-source versioning, frozen-runtime Alembic hook, build/install/launch scripts, secret-hygiene completion (Batch 105) |
-| [CLIENT_BATCH108_BACKUP_RESTORE_RELEASE_QA.md](CLIENT_BATCH108_BACKUP_RESTORE_RELEASE_QA.md) | Backup/restore workflow verification, client launcher packaging contract (WebView2 pin, bundled frontend), installer -IncludeClient switch (Batch 108) |
-| [CLIENT_BATCH109_PERFORMANCE_SECURITY_AUDIT_QA.md](CLIENT_BATCH109_PERFORMANCE_SECURITY_AUDIT_QA.md) | Performance & security audit pass — login brute-force rate limiter (429 + Retry-After), pagination/health performance gates, JWT audit invariants (Batch 109) |
-| [CLIENT_BATCH110_ROLE_AWARE_UI_QA.md](CLIENT_BATCH110_ROLE_AWARE_UI_QA.md) | Role-aware UI & cross-module navigation QA — /auth/me profile contract, client RBAC navigation gate (deny-by-default, three-fold denial), non-numeric-sub 401 fix (Batch 110) |
-| [CLIENT_BATCH111_DOCUMENTATION_TRAINING_FINALIZATION.md](CLIENT_BATCH111_DOCUMENTATION_TRAINING_FINALIZATION.md) | Documentation & training finalization — user/admin/developer audience guides grounded in verified repo facts, INDEX reading-order pointers (Batch 111) |
-| [CLIENT_BATCH112_WEBVIEW2_OFFLINE_REDIST_QA.md](CLIENT_BATCH112_WEBVIEW2_OFFLINE_REDIST_QA.md) | WebView2 offline redistributable bundling — fixed-version CAB staging (host allow-list, SHA-256 pinning, manifest), installer `-Webview2RedistDir` unpack contract, launcher runtimeDirectory consumption (Batch 112) |
-| [CLIENT_BATCH113_PRINT_PIPELINE_HARDWARE_READINESS_QA.md](CLIENT_BATCH113_PRINT_PIPELINE_HARDWARE_READINESS_QA.md) | Print pipeline & hardware-readiness QA — three-layer contract suite (print.css geometry/chrome-hiding, JS fetcher↔renderer↔button consistency + HTML-escape guard, cold-DB envelope 200s, paper-parity E2E); refund-audit cold-DB crash fix (Batch 113) |
-| [CLIENT_BATCH114_CROSS_MODULE_INTEGRATION_QA.md](CLIENT_BATCH114_CROSS_MODULE_INTEGRATION_QA.md) | Cross-module client integration polish — IPD Management workspace wired into the desktop client (nav/RBAC/module/API fetchers), Pharmacy user-context fix; 13-test three-layer QA suite with `node --check` gates (Batch 114) |
+| [CLIENT_BATCH100_SETTLEMENT_REFUND_AUDIT_PRINT_ENVELOPES.md](history/CLIENT_BATCH100_SETTLEMENT_REFUND_AUDIT_PRINT_ENVELOPES.md) | Settlement/refund audit feeds, operational print envelopes & overpayment ghost-card fix (Batch 100) |
+| [CLIENT_BATCH101_WARD_OCCUPANCY_PRINT_ENVELOPE.md](history/CLIENT_BATCH101_WARD_OCCUPANCY_PRINT_ENVELOPE.md) | Ward occupancy dashboard feed + print envelope & OPD queue renderer (Batch 101) |
+| [CLIENT_BATCH102_INVESTIGATION_BILLING_RECONCILIATION.md](history/CLIENT_BATCH102_INVESTIGATION_BILLING_RECONCILIATION.md) | Investigation billing reconciliation dashboard feed + print envelope & Batch 100 restoration (Batch 102) |
+| [CLIENT_BATCH103_COMPREHENSIVE_QA.md](history/CLIENT_BATCH103_COMPREHENSIVE_QA.md) | Comprehensive QA Milestone 6 — full-stack E2E route suite, cross-module integration, performance benchmark & login regression fix (Batch 103) |
+| [CLIENT_BATCH104_LAN_MULTI_CLIENT_INSTALLATION_QA.md](history/CLIENT_BATCH104_LAN_MULTI_CLIENT_INSTALLATION_QA.md) | Multi-client LAN concurrency QA & clean-machine installation testing — Milestone 6 complete, three release-blocking fixes (Batch 104) |
+| [CLIENT_BATCH105_RELEASE_PACKAGING_DEPLOYMENT.md](history/CLIENT_BATCH105_RELEASE_PACKAGING_DEPLOYMENT.md) | Release packaging infrastructure & deployment scripts — single-source versioning, frozen-runtime Alembic hook, build/install/launch scripts, secret-hygiene completion (Batch 105) |
+| [CLIENT_BATCH108_BACKUP_RESTORE_RELEASE_QA.md](history/CLIENT_BATCH108_BACKUP_RESTORE_RELEASE_QA.md) | Backup/restore workflow verification, client launcher packaging contract (WebView2 pin, bundled frontend), installer -IncludeClient switch (Batch 108) |
+| [CLIENT_BATCH109_PERFORMANCE_SECURITY_AUDIT_QA.md](history/CLIENT_BATCH109_PERFORMANCE_SECURITY_AUDIT_QA.md) | Performance & security audit pass — login brute-force rate limiter (429 + Retry-After), pagination/health performance gates, JWT audit invariants (Batch 109) |
+| [CLIENT_BATCH110_ROLE_AWARE_UI_QA.md](history/CLIENT_BATCH110_ROLE_AWARE_UI_QA.md) | Role-aware UI & cross-module navigation QA — /auth/me profile contract, client RBAC navigation gate (deny-by-default, three-fold denial), non-numeric-sub 401 fix (Batch 110) |
+| [CLIENT_BATCH111_DOCUMENTATION_TRAINING_FINALIZATION.md](history/CLIENT_BATCH111_DOCUMENTATION_TRAINING_FINALIZATION.md) | Documentation & training finalization — user/admin/developer audience guides grounded in verified repo facts, INDEX reading-order pointers (Batch 111) |
+| [CLIENT_BATCH112_WEBVIEW2_OFFLINE_REDIST_QA.md](history/CLIENT_BATCH112_WEBVIEW2_OFFLINE_REDIST_QA.md) | WebView2 offline redistributable bundling — fixed-version CAB staging (host allow-list, SHA-256 pinning, manifest), installer `-Webview2RedistDir` unpack contract, launcher runtimeDirectory consumption (Batch 112) |
+| [CLIENT_BATCH113_PRINT_PIPELINE_HARDWARE_READINESS_QA.md](history/CLIENT_BATCH113_PRINT_PIPELINE_HARDWARE_READINESS_QA.md) | Print pipeline & hardware-readiness QA — three-layer contract suite (print.css geometry/chrome-hiding, JS fetcher↔renderer↔button consistency + HTML-escape guard, cold-DB envelope 200s, paper-parity E2E); refund-audit cold-DB crash fix (Batch 113) |
+| [CLIENT_BATCH114_CROSS_MODULE_INTEGRATION_QA.md](history/CLIENT_BATCH114_CROSS_MODULE_INTEGRATION_QA.md) | Cross-module client integration polish — IPD Management workspace wired into the desktop client (nav/RBAC/module/API fetchers), Pharmacy user-context fix; 13-test three-layer QA suite with `node --check` gates (Batch 114) |
 | [SECRET_ROTATION_RUNBOOK.md](SECRET_ROTATION_RUNBOOK.md) | Secret-key rotation runbook — why rotation is mandatory (historical key in git history), step-by-step procedure, impact, triggers/schedule, Batch 115 hardening table (Batch 115) |
 | [USER_GUIDE.md](USER_GUIDE.md) | End-user manual — daily workflows by role (registration, OPD, clinical, IPD, billing, pharmacy, reports), navigation & roles, data-entry conventions, client troubleshooting (Batch 111) |
 | [ADMIN_TRAINING.md](ADMIN_TRAINING.md) | Administrator training manual — server/client installation, day-1 configuration checklist, users & roles, backups, restore drill, escalation matrix, security hygiene (Batch 111) |

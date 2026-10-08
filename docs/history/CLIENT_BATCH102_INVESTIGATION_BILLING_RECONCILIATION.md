@@ -1,6 +1,6 @@
 # Batch 102 — Investigation Billing Reconciliation Feed & Print Envelope
 
-> Status: **Completed** · Branch milestone: Batch 102 · Tests: 381 passing (see [../README.md](../README.md))
+> Status: **Completed** · Branch milestone: Batch 102 · Tests: 381 passing (see [../README.md](../../README.md))
 
 ## Purpose
 
