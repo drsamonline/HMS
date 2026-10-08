@@ -9,6 +9,14 @@ Sessions are listed newest-first within each release; batch entries reflect the
 functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md).
 
 ## [Unreleased]
+### Added — Batch 116 · Milestone 7 (part 12) — Docs Consolidation & Automatic Dual-Platform GitHub Releases
+- **Release pipeline now builds and publishes BOTH platform artifacts automatically on `v*` tags** — `.github/workflows/release.yml` rewritten: regression-gate `test` job feeds parallel `build-server-linux` (ubuntu-latest → `scripts/deploy/build-server.sh` one-file bundle → `./build/dist/HHMS-Server --smoke-test`) and `build-installer-windows` (windows-latest → PyInstaller EXE → `build-installer.ps1` setup → `HHMS-Server.exe --smoke-test`); the `release` job downloads every artifact, computes `SHA256SUMS.txt`, and creates/publishes the GitHub Release automatically. Manual `workflow_dispatch` and PR CI gating retained; release builds are tag-gated only (plain branch pushes never build or post artifacts).
+- New `--smoke-test` flag in `backend/app/server.py`: boots the real server against a throwaway runtime root, polls `/health`, asserts the reported version matches `VERSION`, exits 0/1 — used by both CI build jobs as the automated first-run validation.
+- **Docs clutter consolidated**: 20 historical batch/reporting pages moved from `docs/` into `docs/history/` (git-tracked renames); `docs/INDEX.md` links updated; dangling-link guards added for all bookkeeping files.
+- Verification fixes during close: `.gitignore` restored after the Batch 116 commit re-introduced the hygiene regression (a fifth occurrence: emptied file, 449 tracked `.pyc`, `data/secret.key` + `data/server_id` + `hhms.log` committed again — all untracked; secret paths ignored); relative-link resolution corrected in `docs/INDEX.md` and `.ai/PROJECT_STATE.md`; Batch 100 doc-existence test pointed at the new `docs/history/` location.
+- QA suite `tests/test_batch116_docs_release_pipeline_qa.py` (15 tests): docs layout/link integrity, workflow contract (triggers, runners, job graph, smoke steps, checksums), `--smoke-test` source contract.
+- Full backend suite: **546 passed, 2 skipped** (531 prior + 15 Batch 116; skips remain the opt-in tier-2 EXE-build tests).
+
 ### Added — Batch 115 · Milestone 7 (part 11) — Secret-Key Rotation & Production Release Gate
 - **Last open Milestone 7 production-release gate item closed** — secret-handling hardened, rotation tooling shipped, and a full operator runbook documents the pre-v1.0 rotation:
   - Repo hygiene: `data/secret.key` and `data/server_id` untracked from git (`git rm --cached`; files remain on disk for local dev); `.gitignore` extended with `.env`, secret paths, all writable data subdirectories, sqlite files, and `*.bak-*`. The historically committed key remains reachable in old git objects — which is precisely why the runbook mandates rotation before any public deployment.

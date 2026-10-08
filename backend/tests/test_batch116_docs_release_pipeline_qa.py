@@ -114,6 +114,11 @@ def test_both_platform_builds_run_on_tag_pushes() -> None:
     wf = _workflow()
     triggers = wf.get("on", wf.get(True))
     assert "v*" in triggers["push"]["tags"]
+    # Release builds must fire ONLY on v* tags (or manual dispatch) — plain
+    # branch pushes run the test gate but never build/post artifacts.
+    assert "branches" not in triggers["push"], (
+        "push trigger must not include branches; releases are tag-gated only"
+    )
     for job in ("build-server-linux", "build-installer-windows"):
         cond = wf["jobs"][job]["if"]
         assert "startsWith(github.ref, 'refs/tags/v')" in cond, (
