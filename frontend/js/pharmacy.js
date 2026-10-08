@@ -33,7 +33,7 @@ async function load(host){
   if(!state.patient){status(host,"No patient selected.","error");return}
   try{
     const [profile]=await Promise.all([getCurrentUserProfile(), import("./clinical.js").then(()=>null)]);
-    state.userId=profile?.user?.id||profile?.id||null;
+    state.userId=Number(window.hhmsCurrentUserId||0)||profile?.id||null;
     const {listVisits,getPrescription}=await import("./api.js");
     const visits=await listVisits(state.patient.id);
     const cards=[];

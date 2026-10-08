@@ -4,6 +4,7 @@ const ACCESS={
  patients:["patients.read","patient.read","patients.view","patient.view"],
  clinical:["clinical.read","case_records.read","case_record.read","clinical.case.read"],
  ipd:["ipd.read","admission.read","ipd.view"],
+ "ipd-management":["beds.manage","bed.manage","wards.manage","ward.manage","admission.manage","ipd.manage"],
  investigations:["investigations.read","investigation.read","laboratory.read","xray.read"],
  billing:["billing.read","invoice.read","payments.read"],
  mrd:["mrd.read","patient_files.read","archive.read"],
