@@ -69,6 +69,9 @@ export async function createInvoice(payload){return request("/api/v1/billing/inv
 export async function listInvoicePayments(invoiceId){return request(`/api/v1/billing/invoices/${encodeURIComponent(invoiceId)}/payments?skip=0&limit=100`)}
 export async function createPayment(payload){return request("/api/v1/billing/payments",{method:"POST",body:JSON.stringify(payload)})}
 export async function listPatientFiles(patientId){return request(`/api/v1/patient-files?patient_id=${encodeURIComponent(patientId)}&skip=0&limit=100`)}
+export async function listMedicalDocuments(patientId){return request(`/api/v1/medical-documents?patient_id=${encodeURIComponent(patientId)}&skip=0&limit=100`)}
+export async function createMedicalDocument(payload){return request("/api/v1/medical-documents",{method:"POST",body:JSON.stringify(payload)})}
+
 export async function createPatientFile(payload){return request("/api/v1/patient-files",{method:"POST",body:JSON.stringify(payload)})}
 export async function listArchiveRecords(patientFileId){return request(`/api/v1/archive-records?patient_file_id=${encodeURIComponent(patientFileId)}&skip=0&limit=100`)}
 export async function createArchiveRecord(payload){return request("/api/v1/archive-records",{method:"POST",body:JSON.stringify(payload)})}
@@ -149,6 +152,15 @@ export async function updateMedicineBatch(id,payload){return request(`/api/v1/me
 
 export async function listIPDAssessments(admissionId){const q=new URLSearchParams({admission_id:String(admissionId),skip:"0",limit:"100"});return request(`/api/v1/ipd-assessments?${q.toString()}`)}
 export async function createIPDAssessment(payload){return request("/api/v1/ipd-assessments",{method:"POST",body:JSON.stringify(payload)})}
+
+export async function listPainAssessments(admissionId){const q=new URLSearchParams({admission_id:String(admissionId),skip:"0",limit:"100"});return request(`/api/v1/pain-assessments?${q.toString()}`)}
+export async function createPainAssessment(payload){return request("/api/v1/pain-assessments",{method:"POST",body:JSON.stringify(payload)})}
+export async function listNutritionalAssessments(admissionId){const q=new URLSearchParams({admission_id:String(admissionId),skip:"0",limit:"100"});return request(`/api/v1/nutritional-assessments?${q.toString()}`)}
+export async function createNutritionalAssessment(payload){return request("/api/v1/nutritional-assessments",{method:"POST",body:JSON.stringify(payload)})}
+export async function listDietCharts(admissionId){const q=new URLSearchParams({admission_id:String(admissionId),skip:"0",limit:"100"});return request(`/api/v1/diet-charts?${q.toString()}`)}
+export async function createDietChart(payload){return request("/api/v1/diet-charts",{method:"POST",body:JSON.stringify(payload)})}
+export async function listProgressNotes(admissionId){const q=new URLSearchParams({admission_id:String(admissionId),skip:"0",limit:"100"});return request(`/api/v1/progress-notes?${q.toString()}`)}
+export async function createProgressNote(payload){return request("/api/v1/progress-notes",{method:"POST",body:JSON.stringify(payload)})}
 export async function createDischarge(payload){return request("/api/v1/discharges",{method:"POST",body:JSON.stringify(payload)})}
 export async function getDischargeByAdmission(admissionId){return request(`/api/v1/discharges/admission/${encodeURIComponent(admissionId)}`)}
 export async function createBed(payload){return request("/api/v1/beds",{method:"POST",body:JSON.stringify(payload)})}
@@ -246,6 +258,7 @@ export async function getHistoricalArchiveVisits(year,patientId){return request(
 export async function getHistoricalArchiveInvoices(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/invoices`);}
 export async function getHistoricalArchivePayments(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/payments`);}
 export async function getHistoricalArchiveDispenses(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/dispenses`);}
+export async function getHistoricalCases(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/cases`);}
 export async function getHistoricalArchivePrescriptions(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/prescriptions`);}
 export async function getHistoricalArchivePrescriptionItems(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/prescription-items`);}
 export async function getHistoricalArchiveInvestigations(year,patientId){return request(`/maintenance/archives/${encodeURIComponent(year)}/patients/${encodeURIComponent(patientId)}/investigations`);}

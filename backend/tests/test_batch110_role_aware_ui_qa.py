@@ -117,7 +117,8 @@ def test_every_nav_access_key_has_rbac_vocabulary():
     rbac = _read("frontend/js/rbac.js")
     keys = set(re.findall(r'data-access="([^"]+)"', index))
     assert keys, "index.html must expose data-access markers"
-    vocab = set(re.findall(r"^\s+(\w+):\s*\[", rbac, re.MULTILINE))
+    vocab = {a or b for a, b in re.findall(
+        r'^\s*(?:"([\w-]+)"|(\w+))\s*:\s*\[', rbac, re.MULTILINE)}
     missing = keys - vocab
     assert not missing, f"nav keys without ACCESS vocabulary: {sorted(missing)}"
 

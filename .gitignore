@@ -1,1 +1,9 @@
-(empty)
+# Python compiled files
+__pycache__/
+*.pyc
+
+# Build artifacts
+build/
+
+# Logs
+*.log

@@ -1,6 +1,6 @@
 import { listArchives, getHistoricalCases } from "./api.js";
 
-const esc = v => String(v ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",""":"&quot;"}[c]));
+const esc = v => String(v ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[c]));
 
 export async function openHistoricalWorkspace(host, currentPatient = null) {
   host.innerHTML = `
