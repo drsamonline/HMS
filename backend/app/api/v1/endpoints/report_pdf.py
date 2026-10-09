@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 
 from app.dependencies.auth import CurrentUserDependency
 from app.dependencies.database import DatabaseSession
@@ -39,17 +39,16 @@ async def pdf_envelope_types(_: CurrentUserDependency) -> dict:
 @router.post("/pdf")
 async def render_pdf(
     payload: PdfRenderRequest, _: CurrentUserDependency
-) -> FileResponse:
+) -> Response:
     """Render a prepared print envelope into an A4 portrait PDF document."""
     try:
         pdf_bytes = render_envelope_pdf(payload.envelope)
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
-    return FileResponse(
-        None,
-        media_type="application/pdf",
-        filename="hhms-report.pdf",
+    return Response(
         content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="hhms-report.pdf"'},
     )
 
 
@@ -91,11 +90,11 @@ async def update_schedule(job_id: int, data: ReportScheduleUpdate, db: DatabaseS
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
 
 
-@schedule_router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=None)
+@schedule_router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_schedule(job_id: int, db: DatabaseSession, user: CurrentUserDependency):
     await _require_admin(db, actor_id(user))
     await report_scheduler_service.delete_job(db, job_id)
-    return None
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @schedule_router.post("/{job_id}/run", response_model=ReportScheduleRunRead)

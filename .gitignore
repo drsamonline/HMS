@@ -1,13 +1,2 @@
-# Python compiled files
-__pycache__/
-*.pyc
-
-# Build artifacts
-build/
-
-# Logs and runtime data
-data/logs/
-*.log
-
-# Sensitive files
-data/secret.key
+# Generated reports
+data/scheduled_reports/

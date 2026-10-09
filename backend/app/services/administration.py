@@ -3,7 +3,11 @@ from __future__ import annotations
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.password import hash_password
-from app.core.exceptions import DuplicateResourceException, ResourceNotFoundException
+from app.core.exceptions import (
+    AuthorizationException,
+    DuplicateResourceException,
+    ResourceNotFoundException,
+)
 from app.models.permission import Permission
 from app.models.role import Role
 from app.models.role_permission import RolePermission
@@ -20,7 +24,7 @@ async def _require_admin(db: AsyncSession, user_id: int) -> None:
         .where(UserRole.user_id == user_id, Role.is_active.is_(True))
     )
     if not any(str(name).strip().lower() in _ADMIN_ROLE_NAMES for name in rows.scalars().all()):
-        raise ResourceNotFoundException("Administrator access is required.")
+        raise AuthorizationException("Administrator access is required.")
 
 async def list_users(db: AsyncSession, actor_id: int) -> list[dict]:
     await _require_admin(db, actor_id)
