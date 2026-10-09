@@ -1,25 +1,10 @@
-# Python
+# Compiled/Binary files
 __pycache__/
-*.py[cod]
 *.pyc
-*$py.class
 
-# Build artifacts and distributions
+# Build artifacts
 build/
-dist/
-*.egg-info/
-.eggs/
 
-# Logs
-logs/
-*.log
-
-# Environment and secrets
-.env
-.env.*
-!.env.example
-
-# Sensitive runtime data (Batch 115 secret-rotation gate)
-data/secret.key
-data/server_id
+# Logs and temp files
 data/logs/
+*.log
