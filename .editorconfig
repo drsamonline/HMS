@@ -1,0 +1,54 @@
+# EditorConfig
+
+# EditorConfig is a file format for defining coding styles and an ecosystem of
+# text editor plugins that allow editors to read the configuration files and
+# apply them to individual projects. Learn more at https://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.yml]
+indent_size = 2
+
+[*.yaml]
+indent_size = 2
+
+[*.json]
+indent_size = 2
+
+[*.js]
+indent_size = 2
+
+[*.jsx]
+indent_size = 2
+
+[*.ts]
+indent_size = 2
+
+[*.tsx]
+indent_size = 2
+
+[*.py]
+indent_size = 4
+
+[*.html]
+indent_size = 2
+
+[*.css]
+indent_size = 2
+
+[*.scss]
+indent_size = 2
+
+[Makefile]
+indent_style = tab

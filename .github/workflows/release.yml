@@ -1,0 +1,158 @@
+# ---------------------------------------------------------------------------
+# HHMS release pipeline — Milestone 7 Batch 107; auto-release-on-push policy
+# requested by product owner (Batch 118): EVERY push to main builds,
+# smoke-tests and publishes downloadable artifacts. No tags required.
+#
+# Flow on each push to main (or manual dispatch / PR):
+#   1. `test`     — backend regression suite (CI gate).
+#   2. build jobs — dual-platform artifacts in parallel:
+#        * Linux   — one-file server bundle via scripts/deploy/build-server.sh
+#        * Windows — server EXE + setup installer via scripts/deploy/build-installer.ps1
+#   3. `release`  — computes SHA-256 checksums and publishes/updates the rolling
+#        "Latest Build" prerelease (permanently at https://github.com/OWNER/REPO/releases/tag/latest)
+#        plus per-commit snapshot releases named build-<sha>.
+#      Standalone binary+checksums are ALSO attached to every run as the
+#      `latest-build` artifact, downloadable from the Actions run page even
+#      if the repo is private (releases would be hidden there).
+#
+# Old snapshots can be pruned with: gh run list / gh release delete <tag> -y
+# ---------------------------------------------------------------------------
+name: release
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  test:
+    name: Backend regression (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+      - name: Run full backend suite
+        run: python -m pytest backend/tests -q
+
+  build-server-linux:
+    name: Server bundle (Linux)
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies + PyInstaller
+        run: pip install -r backend/requirements.txt pyinstaller==6.*
+      - name: Build one-file bundle
+        run: bash scripts/deploy/build-server.sh
+      - name: Smoke-test bundle (first-run bootstrap + health)
+        run: ./build/dist/HHMS-Server --smoke-test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hhms-server-linux
+          path: build/dist/HHMS-Server
+
+  build-installer-windows:
+    name: Windows EXE + installer
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies + PyInstaller
+        run: pip install -r backend/requirements.txt pyinstaller==6.*
+      - name: Build server EXE
+        shell: pwsh
+        run: |
+          Set-Location backend/packaging
+          python -m PyInstaller --noconfirm --clean `
+            --distpath ..\..\build\dist --workpath ..\..\build\work `
+            HHMS-Server.spec
+          Copy-Item ..\..\VERSION ..\..\build\dist\VERSION
+      - name: Build installer (Inno Setup, NSIS fallback)
+        shell: pwsh
+        run: ./scripts/deploy/build-installer.ps1
+      - name: Smoke-test server EXE (first-run bootstrap + health)
+        shell: pwsh
+        run: ./build/dist/HHMS-Server.exe --smoke-test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hhms-windows-installer
+          path: dist/installer/HHMS-Setup-*.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hhms-server-windows
+          path: build/dist/HHMS-Server.exe
+
+  release:
+    name: Auto-publish build artifacts
+    needs: [build-server-linux, build-installer-windows]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Compute SHA-256 checksums
+        run: |
+          cd artifacts
+          find . -type f -print0 | xargs -0 sha256sum > ../SHA256SUMS.txt
+          cd ..
+      # Bundle binaries + checksums into a single Actions artifact so they are
+      # always downloadable from the run page (works for private repos too).
+      - name: Upload combined latest-build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: latest-build
+          path: |
+            artifacts/hhms-server-linux/HHMS-Server
+            artifacts/hhms-server-windows/HHMS-Server.exe
+            artifacts/hhms-windows-installer/*.exe
+            SHA256SUMS.txt
+      # Rolling prerelease — ALWAYS at .../releases/tag/latest (stable download URL)
+      - name: Publish rolling "Latest Build" release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "HHMS Latest Build (${{ github.sha }})"
+          prerelease: true
+          make_latest: false
+          files: |
+            artifacts/**/*
+            SHA256SUMS.txt
+      # Per-commit snapshot release — keeps a permanent downloadable history.
+      - name: Publish snapshot release for this commit
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.sha }}
+          name: "Build ${{ github.sha }}"
+          body: "Automatic build from push '${{ github.event_name }}' to ${{ github.ref_name }} (${{ github.sha }})."
+          prerelease: true
+          make_latest: false
+          files: |
+            artifacts/**/*
+            SHA256SUMS.txt

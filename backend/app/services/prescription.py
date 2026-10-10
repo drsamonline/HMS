@@ -1,0 +1,231 @@
+"""
+HHMS Prescription Service.
+
+Project : Hospital Homoeopathic Management System (HHMS)
+Author  : Dr. Sohil Momin
+"""
+
+from __future__ import annotations
+
+from datetime import date, datetime, timezone
+
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from sqlalchemy import select
+
+from app.core.exceptions import (
+    DatabaseException,
+    DuplicateResourceException,
+    ResourceNotFoundException,
+)
+from app.models.case_record import CaseRecord
+from app.models.prescription import Prescription
+from app.models.prescription_item import PrescriptionItem
+from app.models.visit import Visit
+from app.repositories.prescription import (
+    PrescriptionRepository,
+    prescription_repository,
+)
+from app.schemas.prescription import (
+    PrescriptionCreate,
+    PrescriptionUpdate,
+)
+
+from app.services.number_sequence import number_sequence_service
+from app.services.operational_year import operational_year_service
+
+
+class PrescriptionService:
+    """Business operations for clinical prescriptions."""
+
+    def __init__(
+        self,
+        repository: PrescriptionRepository | None = None,
+    ) -> None:
+        self.repository = (
+            repository or prescription_repository
+        )
+
+    async def get(
+        self,
+        db: AsyncSession,
+        prescription_id: int,
+    ) -> Prescription:
+        prescription = await self.repository.get_by_id(
+            db,
+            prescription_id,
+        )
+
+        if prescription is None:
+            raise ResourceNotFoundException(
+                "Prescription not found."
+            )
+
+        return prescription
+
+    async def get_items(
+        self,
+        db: AsyncSession,
+        prescription_id: int,
+    ) -> list[PrescriptionItem]:
+        await self.get(
+            db,
+            prescription_id,
+        )
+
+        return await self.repository.get_items(
+            db,
+            prescription_id,
+        )
+
+    async def get_by_case(
+        self,
+        db: AsyncSession,
+        case_record_id: int,
+    ) -> list[Prescription]:
+        """All prescriptions across the encounters belonging to a case record.
+
+        Case continuity: a case's clinical history spans multiple visits (and
+        follow-up encounters); this reads the full prescription lineage for the
+        case via its primary visit and any visits that reference the case.
+        """
+        case = await db.get(CaseRecord, case_record_id)
+        if case is None:
+            raise ResourceNotFoundException("Case record not found.")
+
+        visit_result = await db.execute(
+            select(Visit.id).where(
+                (Visit.id == case.visit_id) | (Visit.case_record_id == case.id)
+            )
+        )
+        visit_ids = [row[0] for row in visit_result.all() if row[0] is not None]
+        return await self.repository.get_by_visits(db, visit_ids)
+
+    async def create(
+        self,
+        db: AsyncSession,
+        data: PrescriptionCreate,
+    ) -> Prescription:
+        now = datetime.now(timezone.utc)
+
+        # Derive the annual lifecycle fields from the prescription date so every
+        # prescription (and its items) carries its operational-year identity at
+        # creation, mirroring the dispense-record pattern (Batch 72).
+        prescription_local_date = (
+            data.prescription_datetime.astimezone(timezone.utc).date()
+            if data.prescription_datetime.tzinfo is not None
+            else data.prescription_datetime.date()
+        )
+        op_cfg = await operational_year_service.get_config(db)
+        prescription_year = operational_year_service.current_year(
+            prescription_local_date, op_cfg
+        )
+        current_year = operational_year_service.current_year(date.today(), op_cfg)
+
+        prescription = Prescription(
+            visit_id=data.visit_id,
+            prescription_number=await number_sequence_service.next_number(db, "prescription_number"),
+            diagnosis=data.diagnosis,
+            clinical_notes=data.clinical_notes,
+            treatment_plan=data.treatment_plan,
+            prescribed_by=data.prescribed_by,
+            prescription_datetime=data.prescription_datetime,
+            prescription_year=prescription_year,
+            storage_tier="live",
+            is_current_year=prescription_year == current_year,
+            created_at=now,
+            updated_at=now,
+        )
+
+        try:
+            db.add(prescription)
+            await db.flush()
+
+            for item_data in data.items:
+                item = PrescriptionItem(
+                    prescription_id=prescription.id,
+                    medicine_id=item_data.medicine_id,
+                    dosage=item_data.dosage,
+                    frequency=item_data.frequency,
+                    duration_days=item_data.duration_days,
+                    instructions=item_data.instructions,
+                    quantity=item_data.quantity,
+                    item_year=prescription_year,
+                    storage_tier="live",
+                    is_current_year=prescription_year == current_year,
+                    created_at=now,
+                    updated_at=now,
+                )
+
+                db.add(item)
+
+            await db.flush()
+            await db.commit()
+            await db.refresh(prescription)
+
+            return prescription
+
+        except IntegrityError as exc:
+            await db.rollback()
+
+            raise DuplicateResourceException(
+                "Prescription could not be created because "
+                "a referenced record is invalid or duplicated."
+            ) from exc
+
+        except SQLAlchemyError as exc:
+            await db.rollback()
+
+            raise DatabaseException(
+                "Prescription creation failed."
+            ) from exc
+
+    async def update(
+        self,
+        db: AsyncSession,
+        prescription_id: int,
+        data: PrescriptionUpdate,
+    ) -> Prescription:
+        prescription = await self.get(
+            db,
+            prescription_id,
+        )
+
+        values = data.model_dump(
+            exclude_unset=True
+        )
+
+        for field, value in values.items():
+            setattr(
+                prescription,
+                field,
+                value,
+            )
+
+        prescription.updated_at = (
+            datetime.now(timezone.utc)
+        )
+
+        try:
+            await db.flush()
+            await db.commit()
+            await db.refresh(prescription)
+
+            return prescription
+
+        except SQLAlchemyError as exc:
+            await db.rollback()
+
+            raise DatabaseException(
+                "Prescription update failed."
+            ) from exc
+
+
+prescription_service = PrescriptionService()
+
+
+__all__ = [
+    "PrescriptionService",
+    "prescription_service",
+]
