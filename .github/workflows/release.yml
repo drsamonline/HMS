@@ -60,7 +60,7 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - name: Install dependencies + PyInstaller
-        run: pip install -r backend/requirements.txt pyinstaller==6.*
+        run: pip install -r backend/requirements.txt -r backend/requirements-build.txt
       - name: Build one-file bundle
         run: bash scripts/deploy/build-server.sh
       - name: Smoke-test bundle (first-run bootstrap + health)
@@ -83,7 +83,7 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - name: Install dependencies + PyInstaller
-        run: pip install -r backend/requirements.txt pyinstaller==6.*
+        run: pip install -r backend/requirements.txt -r backend/requirements-build.txt
       - name: Build server EXE
         shell: pwsh
         run: |
