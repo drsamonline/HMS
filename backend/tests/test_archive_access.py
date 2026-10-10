@@ -1,0 +1,7 @@
+from datetime import date
+from app.services.operational_year import OperationalYearConfig, OperationalYearService
+
+def test_financial_year_archive_boundary():
+    cfg = OperationalYearConfig("financial", 4, 1)
+    assert OperationalYearService.current_year(date(2026, 3, 31), cfg) == 2025
+    assert OperationalYearService.current_year(date(2026, 4, 1), cfg) == 2026

@@ -1,0 +1,407 @@
+"""HHMS report-data selection endpoints."""
+from __future__ import annotations
+
+from fastapi import APIRouter
+
+from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.database import DatabaseSession
+from app.schemas.reporting import (
+    ClinicalReportBatchRead,
+    ClinicalReportBatchRequest,
+    ClinicalReportRead,
+    CollectionSummaryPrintEnvelope,
+    CollectionSummaryPrintRequest,
+    InvoicePrintEnvelope,
+    InvoicePrintRequest,
+    InvoicePaymentReconciliationPrintEnvelope,
+    InvoicePaymentReconciliationPrintRequest,
+    InvoiceOverpaymentPrintEnvelope,
+    InvoiceOverpaymentPrintRequest,
+    InvoiceSettlementAuditPrintEnvelope,
+    InvoiceSettlementAuditPrintRequest,
+    RefundAuditPrintEnvelope,
+    RefundAuditPrintRequest,
+    DischargeAuditPrintEnvelope,
+    DischargeAuditPrintRequest,
+    OPDQueueSummaryPrintEnvelope,
+    OPDQueueSummaryPrintRequest,
+    WardOccupancyPrintEnvelope,
+    WardOccupancyPrintRequest,
+    InvestigationBillingReconciliationPrintEnvelope,
+    InvestigationBillingReconciliationPrintRequest,
+    PaymentMethodOverpaymentPrintEnvelope,
+    PaymentMethodOverpaymentPrintRequest,
+    RefundAuditPrintEnvelope,
+    RefundAuditPrintRequest,
+    InvoiceReceiptContinuityPrintEnvelope,
+    InvoiceReceiptContinuityPrintRequest,
+    PaymentMethodSummaryPrintEnvelope,
+    PaymentMethodSummaryPrintRequest,
+    ReceivablesAgingPrintEnvelope,
+    ReceivablesAgingPrintRequest,
+    ReceiptNumberingContinuityPrintEnvelope,
+    ReceiptNumberingContinuityPrintRequest,
+    ReportPrintEnvelope,
+    ReportPrintManifestRead,
+    ReportPrintManifestRequest,
+    ReportPrintEnvelopeRequest,
+    ClinicalReportRequest,
+    ReportCatalogRead,
+)
+from app.services.reporting import reporting_service
+
+router = APIRouter(prefix="/reports", tags=["Reports"])
+
+@router.get("/catalog", response_model=ReportCatalogRead)
+async def get_report_catalog(_: CurrentUserDependency) -> ReportCatalogRead:
+    return reporting_service.catalog()
+
+@router.post("/clinical-data", response_model=ClinicalReportRead)
+async def build_clinical_report(
+    report_in: ClinicalReportRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> ClinicalReportRead:
+    return await reporting_service.build_clinical_report(db, report_in)
+
+@router.post("/clinical-data/print-manifest", response_model=ReportPrintManifestRead)
+async def build_clinical_print_manifest(
+    report_in: ReportPrintManifestRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> ReportPrintManifestRead:
+    return await reporting_service.build_print_manifest(db, report_in)
+
+@router.post("/clinical-data/print-envelope", response_model=ReportPrintEnvelope)
+async def build_clinical_print_envelope(
+    report_in: ReportPrintEnvelopeRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> ReportPrintEnvelope:
+    return await reporting_service.build_print_envelope(db, report_in)
+
+@router.post("/clinical-data/batch", response_model=ClinicalReportBatchRead)
+async def build_clinical_report_batch(
+    report_in: ClinicalReportBatchRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> ClinicalReportBatchRead:
+    return await reporting_service.build_case_batch(db, report_in)
+
+@router.post("/invoice-print-envelope", response_model=InvoicePrintEnvelope)
+async def build_invoice_print_envelope(
+    report_in: InvoicePrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvoicePrintEnvelope:
+    """Batch 85 — printable invoice packet (header, line items, receipts)."""
+    return await reporting_service.build_invoice_print_envelope(db, report_in)
+
+
+@router.post(
+    "/collection-summary-print-envelope",
+    response_model=CollectionSummaryPrintEnvelope,
+)
+async def build_collection_summary_print_envelope(
+    report_in: CollectionSummaryPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> CollectionSummaryPrintEnvelope:
+    """Batch 90 — printable per-patient collection summary packet.
+
+    Shares the dashboard's live-payment reconciliation scan and aggregation,
+    so printed totals always satisfy
+    ``total_collected + total_outstanding == total_billed``.
+    """
+    return await reporting_service.build_collection_summary_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/receivables-aging-print-envelope",
+    response_model=ReceivablesAgingPrintEnvelope,
+)
+async def build_receivables_aging_print_envelope(
+    report_in: ReceivablesAgingPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> ReceivablesAgingPrintEnvelope:
+    """Batch 91 — printable receivables aging packet.
+
+    Shares the dashboard's live-payment aging derivation
+    (``build_receivables_aging_result``), so printed bucket counts/totals
+    always sum back to the headline aggregates and reconcile line-for-line
+    with ``GET /dashboard/receivables-aging``.
+    """
+    return await reporting_service.build_receivables_aging_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/invoice-receipt-continuity-print-envelope",
+    response_model=InvoiceReceiptContinuityPrintEnvelope,
+)
+async def build_invoice_receipt_continuity_print_envelope(
+    report_in: InvoiceReceiptContinuityPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvoiceReceiptContinuityPrintEnvelope:
+    """Batch 92 — printable invoice receipt continuity packet.
+
+    Shares the dashboard's live scan and audit derivation
+    (``build_invoice_receipt_continuity_result``), so printed headline
+    aggregates always sum back to ``invoices_checked`` and reconcile
+    line-for-line with ``GET /dashboard/invoice-receipt-continuity``.
+    """
+    return await reporting_service.build_invoice_receipt_continuity_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/receipt-numbering-continuity-print-envelope",
+    response_model=ReceiptNumberingContinuityPrintEnvelope,
+)
+async def build_receipt_numbering_continuity_print_envelope(
+    report_in: ReceiptNumberingContinuityPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> ReceiptNumberingContinuityPrintEnvelope:
+    """Batch 93 — printable whole-receipt-book numbering audit packet.
+
+    Shares the dashboard's whole-book scan and series derivation
+    (``build_receipt_numbering_continuity_result``), so printed per-series
+    figures always satisfy ``expected_count == actual_count + gap_count``
+    and reconcile line-for-line with
+    ``GET /dashboard/receipt-numbering-continuity``.
+    """
+    return await reporting_service.build_receipt_numbering_continuity_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/invoice-payment-reconciliation-print-envelope",
+    response_model=InvoicePaymentReconciliationPrintEnvelope,
+)
+async def build_invoice_payment_reconciliation_print_envelope(
+    report_in: InvoicePaymentReconciliationPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvoicePaymentReconciliationPrintEnvelope:
+    """Batch 94 — printable invoice payment reconciliation packet.
+
+    Shares the dashboard's live-payment scan and aggregation
+    (``build_invoice_payment_reconciliation_ledger``), so printed headline
+    aggregates always satisfy ``paid_invoices + partially_paid_invoices +
+    unpaid_invoices == invoices_checked`` and ``total_billed == total_paid +
+    total_outstanding``, reconciling line-for-line with
+    ``GET /dashboard/invoice-payment-reconciliation``.
+    """
+    return await reporting_service.build_invoice_payment_reconciliation_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/payment-method-summary-print-envelope",
+    response_model=PaymentMethodSummaryPrintEnvelope,
+)
+async def build_payment_method_summary_print_envelope(
+    report_in: PaymentMethodSummaryPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> PaymentMethodSummaryPrintEnvelope:
+    """Batch 96 — printable payment-method collection summary packet.
+
+    Shares the dashboard's live-payment scan and per-method aggregation
+    (``build_payment_method_summary_result``), so printed figures always
+    satisfy ``sum(per-method collected) == total_collected`` and reconcile
+    line-for-line with ``GET /dashboard/payment-method-summary`` for the
+    same scan window.
+    """
+    return await reporting_service.build_payment_method_summary_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/invoice-overpayment-print-envelope",
+    response_model=InvoiceOverpaymentPrintEnvelope,
+)
+async def build_invoice_overpayment_print_envelope(
+    report_in: InvoiceOverpaymentPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvoiceOverpaymentPrintEnvelope:
+    """Batch 97 — printable invoice overpayment ledger packet.
+
+    Shares the dashboard's live-payment scan
+    (``build_overpayment_ledger``, built on the same reconciliation row
+    builder as ``GET /dashboard/invoice-payment-reconciliation``), so
+    printed rows always satisfy ``overpaid_amount == total_paid_raw -
+    total_amount`` and reconcile line-for-line with
+    ``GET /dashboard/invoice-overpayments`` for the same scan window.
+    """
+    return await reporting_service.build_invoice_overpayment_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/payment-method-overpayment-print-envelope",
+    response_model=PaymentMethodOverpaymentPrintEnvelope,
+)
+async def build_payment_method_overpayment_print_envelope(
+    report_in: PaymentMethodOverpaymentPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> PaymentMethodOverpaymentPrintEnvelope:
+    """Batch 98 — printable payment-method overpayment breakdown packet.
+
+    Shares the dashboard's live-payment scan and per-method rollup
+    (``build_payment_method_overpayment_result``, built on the same
+    Batch 68 clamp as ``GET /dashboard/payment-method-summary``), so
+    printed rows always satisfy ``gross_received == collected +
+    overpaid`` and reconcile line-for-line with
+    ``GET /dashboard/payment-method-overpayments`` for the same scan
+    window.
+    """
+    return await reporting_service.build_payment_method_overpayment_print_envelope(
+        db, report_in
+    )
+
+@router.post(
+    "/invoice-settlement-audit-print-envelope",
+    response_model=InvoiceSettlementAuditPrintEnvelope,
+)
+async def build_invoice_settlement_audit_print_envelope(
+    report_in: InvoiceSettlementAuditPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvoiceSettlementAuditPrintEnvelope:
+    """Batch 100 — printable invoice settlement audit packet.
+
+    Shares the dashboard's live-payment scan and settlement rollup
+    (``build_invoice_settlement_audit_scan``, built on the same Batch 68
+    clamp as ``GET /dashboard/invoice-settlement-audit``), so printed rows
+    always satisfy ``settled_amount + outstanding_amount == total_amount``
+    line-for-line and headlines reconcile with the dashboard feed for the
+    same scan window.
+    """
+    return await reporting_service.build_invoice_settlement_audit_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/refund-audit-print-envelope",
+    response_model=RefundAuditPrintEnvelope,
+)
+async def build_refund_audit_print_envelope(
+    report_in: RefundAuditPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> RefundAuditPrintEnvelope:
+    """Batch 100 — printable refund processing audit packet.
+
+    Shares the dashboard's negative-Payment scan and per-refund flag
+    rollup (``build_refund_audit_scan``), so printed rows carry the exact
+    same processing flags as ``GET /dashboard/refund-audit`` line-for-line
+    and headlines satisfy ``processed_count + drifted_count ==
+    total_refunds``.
+    """
+    return await reporting_service.build_refund_audit_print_envelope(db, report_in)
+
+
+@router.post(
+    "/discharge-audit-print-envelope",
+    response_model=DischargeAuditPrintEnvelope,
+)
+async def build_discharge_audit_print_envelope(
+    report_in: DischargeAuditPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> DischargeAuditPrintEnvelope:
+    """Batch 100 — printable ward-flow discharge audit packet.
+
+    Reuses the Batch 99 shared joined scan and reconciliation derivation
+    verbatim (``build_discharge_audit_scan`` +
+    ``build_discharge_audit_result``), so every printed row matches
+    ``GET /dashboard/discharge-audit`` and headlines satisfy
+    ``reconciled_count + drift_count == total_discharges``.
+    """
+    return await reporting_service.build_discharge_audit_print_envelope(db, report_in)
+
+
+@router.post(
+    "/opd-queue-summary-print-envelope",
+    response_model=OPDQueueSummaryPrintEnvelope,
+)
+async def build_opd_queue_summary_print_envelope(
+    report_in: OPDQueueSummaryPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> OPDQueueSummaryPrintEnvelope:
+    """Batch 100 — printable OPD queue daily summary packet.
+
+    Reuses the Batch 99 shared grouped scan and per-day rollup verbatim
+    (``build_opd_queue_summary_scan``), so each printed day's status split
+    sums back to that day's total tokens and the headline open backlog
+    matches ``GET /dashboard/opd-queue-summary`` for the same window.
+    """
+    return await reporting_service.build_opd_queue_summary_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/ward-occupancy-print-envelope",
+    response_model=WardOccupancyPrintEnvelope,
+)
+async def build_ward_occupancy_print_envelope(
+    report_in: WardOccupancyPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> WardOccupancyPrintEnvelope:
+    """Batch 101 — printable ward occupancy summary packet.
+
+    Reuses the Batch 101 shared bed scan and per-ward rollup verbatim
+    (``build_ward_occupancy_summary_scan`` +
+    ``build_ward_occupancy_summary_result``), so every printed ward row
+    keeps ``occupied_beds + reserved_beds + available_beds == total_beds``
+    and hospital-wide headlines match
+    ``GET /dashboard/ward-occupancy-summary`` ward-for-ward.
+    """
+    return await reporting_service.build_ward_occupancy_print_envelope(
+        db, report_in
+    )
+
+
+@router.post(
+    "/investigation-billing-reconciliation-print-envelope",
+    response_model=InvestigationBillingReconciliationPrintEnvelope,
+)
+async def build_investigation_billing_reconciliation_print_envelope(
+    report_in: InvestigationBillingReconciliationPrintRequest,
+    db: DatabaseSession,
+    _: CurrentUserDependency,
+) -> InvestigationBillingReconciliationPrintEnvelope:
+    """Batch 102 — printable investigation billing reconciliation packet.
+
+    Reuses the Batch 102 shared investigation scan and billing rollup
+    (``build_investigation_billing_reconciliation_scan`` +
+    ``build_investigation_billing_reconciliation_result``), so every printed
+    row keeps ``billed_amount == charged_total - credited_total`` and the
+    headlines match ``GET /dashboard/investigation-billing-reconciliation``
+    row-for-row. Unbilled open investigations stay on the page with
+    ``billed_amount == 0`` instead of disappearing.
+    """
+    return await reporting_service.build_investigation_billing_reconciliation_print_envelope(
+        db, report_in
+    )
+
+
+__all__ = ["router"]

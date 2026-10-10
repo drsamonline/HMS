@@ -1,0 +1,26 @@
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# --- Build outputs ---
+build/
+dist/
+
+# --- Runtime / secrets (never commit) ---
+data/secret.key
+data/server_id
+data/logs/
+hhms.log
+.env
+!.env.example
+backend/.env
+
+# --- OS/editor noise ---
+.DS_Store
+Thumbs.db
+*.db
