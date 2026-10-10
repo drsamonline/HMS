@@ -90,6 +90,14 @@ def run() -> None:
         ensure_default_admin()
     except Exception:  # pragma: no cover - never block boot on bootstrap
         logger.exception("default admin bootstrap failed (continuing startup)")
+    # Optional out-of-the-box demo dataset (year defaults to 2025). Enable with
+    # HHMS_SEED_DEMO_DATA=true; idempotent via a SystemSetting marker per year.
+    try:
+        from app.cli.seed_demo_data import maybe_seed_from_env
+
+        maybe_seed_from_env()
+    except Exception:  # pragma: no cover - never block boot on demo seeding
+        logger.exception("demo data seeding failed (continuing startup)")
     settings = get_settings()
     lan_discovery.start()
     logger.info("Starting HHMS server on %s:%s", settings.SERVER_HOST, settings.SERVER_PORT)
