@@ -23,7 +23,7 @@
 | 1 | Explore repo/runtime layout | ✅ DONE | see Findings F1–F7 |
 | 2 | Confirm prescription route bug | ✅ DONE | F8 verified in source |
 | 3 | Create this session log | ✅ DONE (this run) | file exists at `.ai/DEMO_DATA_SESSION.md` |
-| 4 | Fix POST /prescriptions kwarg bug | ⬜ TODO | patch spec in F8 |
+| 4 | Fix POST /prescriptions kwarg bug | 🔶 IN PROGRESS (verified, patch pending) | F8 corrected: file is `endpoints/prescriptions.py`; mismatch confirmed at lines 57–65 vs service `create(db, data)` |
 | 5 | Write `backend/app/cli/seed_demo_data.py` (idempotent, 2025 dataset) | ⬜ TODO | design in Plan P1 |
 | 6 | Startup integration (`HHMS_SEED_DEMO_DATA=true`) | ⬜ TODO | Plan P2 |
 | 7 | Execute seed against `data/hhms.sqlite3`; verify counts via API | ⬜ TODO | Plan P3 |
@@ -47,7 +47,7 @@
 - **F5 Routes/schemas needed for 2025 dataset** (all under `/api/v1`): patients (`PatientCreate`), visits (`VisitCreate`, tz-aware datetimes), opd tokens, cases, prescriptions (+items w/ medicine ids), medicines + batches, stock batches, dispenses, investigations + results, invoices (`InvoiceCreate`: patient+visit+total_amount), invoice items, payments (`PaymentCreate`), beds (`BedCreate`), admissions, discharges.
 - **F6 QA harness proof.** `backend/tests/_qa_harness.py` runs full ASGI stack incl. print envelopes over real routes — reference flows for the seeder.
 - **F7 .ai conventions.** Repo keeps `CODING_RULES.md`, `DECISIONS.md`, `PROJECT_STATE.md` etc. in `.ai/` — session log lives there.
-- **F8 CONFIRMED BUG — POST /prescriptions.** `backend/app/api/v1/routes/prescriptions.py` create route calls the prescription service with mismatched keyword arguments (kwarg-name mismatch vs service signature) → runtime TypeError/500 when creating prescriptions through HTTP. **Patch:** align route call kwargs with the service function signature exactly (verify by reading `PrescriptionService.create_*` def line before editing); add/extend a focused test that POSTs a prescription end-to-end. *(This blocked direct-HTTP seeding of prescriptions in prior exploration.)*
+- **F8 REAL PATH CORRECTION (supersedes earlier claim).** Prescription endpoint lives at `backend/app/api/v1/endpoints/prescriptions.py` (**not** `routes/prescriptions.py`). Verified this run: create route calls `prescription_service.create(db, prescription_in=...)` while service signature is `create(self, db, data: PrescriptionCreate)` → kwarg mismatch `TypeError` on every HTTP POST /prescriptions (confirms prior-run bug claim, now with exact location + patch). Service handles items internally (`for item_data in data.items:` at line ~145), so single-kwarg fix suffices. Same check needed for other endpoints' service calls during seeder work.
 - **F9 Prior-session summary claims** (from conversation, not re-verified this run): 546-test baseline clean; two non-code open items (printer QA field checklist, release tag push). Treat as context only until re-checked.
 
 ## Open problems
