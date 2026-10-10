@@ -76,6 +76,10 @@ def run() -> None:
     """Prepare the runtime and start the HHMS FastAPI server."""
     if "--smoke-test" in sys.argv:
         raise SystemExit(_smoke_test())
+    if len(sys.argv) > 1 and sys.argv[1] == "create-admin":
+        from app.cli.create_admin import main as create_admin_main
+
+        raise SystemExit(create_admin_main(sys.argv[2:]))
     prepare_runtime()
     settings = get_settings()
     lan_discovery.start()
