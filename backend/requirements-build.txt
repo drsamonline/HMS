@@ -1,0 +1,2 @@
+# PyInstaller packaging dependencies (CI build jobs only)
+pyinstaller>=6.0,<7.0
