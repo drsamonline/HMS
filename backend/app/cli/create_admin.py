@@ -40,6 +40,12 @@ from sqlalchemy import func, select
 
 MIN_PASSWORD_LENGTH = 8
 
+# Built-in default for evaluation/test installs: if no password is supplied
+# (flag or HHMS_ADMIN_INITIAL_PASSWORD env var), the bootstrap uses this so a
+# fresh build can be logged into immediately with admin/admin. A loud warning
+# is printed; change it before production use.
+DEFAULT_BOOTSTRAP_PASSWORD = "admin"
+
 
 def _parser(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -50,13 +56,17 @@ def _parser(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--full-name", default=os.environ.get("HHMS_ADMIN_FULL_NAME", "Hospital Administrator"))
     parser.add_argument("--email", default=os.environ.get("HHMS_ADMIN_EMAIL"))
     parser.add_argument("--password", default=os.environ.get("HHMS_ADMIN_INITIAL_PASSWORD"),
-                       help="Initial password. If omitted, an interactive prompt is shown.")
+                       help="Initial password. If omitted, the built-in default 'admin' "
+                            "is used so a fresh build can be tested immediately.")
     parser.add_argument("--no-change-warning", action="store_true",
                         help="Skip the mandatory password-change warning output.")
     parser.add_argument("--force", action="store_true",
                         help="Allow creating additional users even when accounts already exist.")
+    parser.add_argument("--prompt", action="store_true",
+                        help="Interactively prompt for the password instead of using the default 'admin'.")
     parser.add_argument("--confirm", action="store_true",
-                        help="Non-interactive mode: never ask questions (password must be supplied).")
+                        help="(deprecated, no-op) kept for backwards compatibility; the default "
+                             "password 'admin' is now used automatically when none is supplied.")
     return parser.parse_args(argv)
 
 
@@ -125,6 +135,39 @@ async def _create(args: argparse.Namespace, password: str) -> int:
         return 0
 
 
+def ensure_default_admin() -> int:
+    """Idempotently create the default ``admin``/``admin`` account at startup.
+
+    Called by the server after migrations so a freshly installed build can be
+    logged into immediately (username ``admin``, password ``admin``) without
+    any manual CLI step. Safe on every boot: does nothing when at least one
+    user already exists, and never overwrites an existing admin's password.
+    Opt out with ``HHMS_BOOTSTRAP_DEFAULT_ADMIN=false``. Returns the total
+    number of users afterwards.
+    """
+    import asyncio
+    import os
+
+    if os.environ.get("HHMS_BOOTSTRAP_DEFAULT_ADMIN", "").strip().lower() in {"false", "0", "no"}:
+        return 0
+
+    from sqlalchemy import func, select
+
+    from app.db.session import get_session_factory
+    from app.models.user import User
+
+    async def _count_users() -> int:
+        factory = get_session_factory()
+        async with factory() as db:
+            return await db.scalar(select(func.count()).select_from(User)) or 0
+
+    count = asyncio.run(_count_users())
+    if count:
+        return count
+    main([])
+    return asyncio.run(_count_users())
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parser(argv)
     username = args.username.strip()
@@ -136,30 +179,44 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     password = args.password
+    used_default = False
     if password is None:
-        if args.confirm:
-            print("error: no password supplied and interactive prompting disabled (--confirm)", file=sys.stderr)
-            return 1
-        try:
-            password = getpass(f"Password for '{username}' (min {MIN_PASSWORD_LENGTH} chars): ")
-            confirm = getpass("Repeat password: ")
-        except EOFError:
-            print("error: cannot prompt for password in a non-interactive terminal; "
-                  "set HHMS_ADMIN_INITIAL_PASSWORD or pass --password", file=sys.stderr)
-            return 1
-        if password != confirm:
-            print("error: passwords do not match", file=sys.stderr)
-            return 1
+        # No flag/env supplied: fall back to the built-in default 'admin' so a
+        # freshly downloaded build can be tested immediately. Interactive
+        # prompting remains available via --prompt (kept for scripted/CLI use).
+        if args.prompt:
+            try:
+                password = getpass(f"Password for '{username}' (min {MIN_PASSWORD_LENGTH} chars): ")
+                confirm = getpass("Repeat password: ")
+            except EOFError:
+                print("error: cannot prompt for password in a non-interactive terminal; "
+                      "set HHMS_ADMIN_INITIAL_PASSWORD or pass --password", file=sys.stderr)
+                return 1
+            if password != confirm:
+                print("error: passwords do not match", file=sys.stderr)
+                return 1
+        else:
+            password = DEFAULT_BOOTSTRAP_PASSWORD
+            used_default = True
 
-    if len(password) < MIN_PASSWORD_LENGTH:
+    if len(password) < MIN_PASSWORD_LENGTH and not used_default:
         print(f"error: password must be at least {MIN_PASSWORD_LENGTH} characters", file=sys.stderr)
         return 1
 
     try:
-        return asyncio.run(_create(args, password))
+        rc = asyncio.run(_create(args, password))
     except Exception as exc:  # pragma: no cover - defensive CLI boundary
         print(f"error: failed to create administrator: {exc}", file=sys.stderr)
         return 2
+    if used_default and rc == 0:
+        print("")
+        print("=" * 64)
+        print(f"  DEFAULT LOGIN ACTIVE:  username='{username}'  password='{DEFAULT_BOOTSTRAP_PASSWORD}'")
+        print("  This build uses a well-known default password intended for")
+        print("  testing only. Change it before exposing this server on any")
+        print("  network or using it with real patient data.")
+        print("=" * 64)
+    return rc
 
 
 if __name__ == "__main__":

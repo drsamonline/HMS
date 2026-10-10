@@ -81,6 +81,15 @@ def run() -> None:
 
         raise SystemExit(create_admin_main(sys.argv[2:]))
     prepare_runtime()
+    # First-run convenience: seed admin/admin so a fresh build is testable
+    # out of the box. No-op once any user exists; disable with
+    # HHMS_BOOTSTRAP_DEFAULT_ADMIN=false.
+    try:
+        from app.cli.create_admin import ensure_default_admin
+
+        ensure_default_admin()
+    except Exception:  # pragma: no cover - never block boot on bootstrap
+        logger.exception("default admin bootstrap failed (continuing startup)")
     settings = get_settings()
     lan_discovery.start()
     logger.info("Starting HHMS server on %s:%s", settings.SERVER_HOST, settings.SERVER_PORT)

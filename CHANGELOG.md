@@ -9,6 +9,11 @@ Sessions are listed newest-first within each release; batch entries reflect the
 functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md).
 
 ## [Unreleased]
+### Added — Batch 119 · Built-in Default Admin (admin/admin) for Instant Testing
+- **Server boot now auto-creates the default administrator** (`username=admin`, `password=admin`) after migrations whenever the users table is empty, so a freshly downloaded/installed build can be logged into immediately with zero CLI steps. Idempotent: no-op once any user exists; never touches existing accounts. Disable with env `HHMS_BOOTSTRAP_DEFAULT_ADMIN=false`.
+- **`create_admin` CLI defaults to password `admin`** when neither `--password` nor `HHMS_ADMIN_INITIAL_PASSWORD` is supplied (interactive prompt still available via `--prompt`). Prints a loud "DEFAULT LOGIN ACTIVE" warning banner on use.
+- Verified end-to-end in this workspace: fresh data dir → boot → `POST /api/v1/auth/login` with admin/admin returns an access token. Full suite green: **546 passed, 2 skipped**.
+
 ### Changed — Batch 118 · Auto-Release-On-Push Policy (no tags required)
 - **`.github/workflows/release.yml` now triggers on every push to `main`** (plus PRs as a test-only CI gate, and manual dispatch). Product-owner directive: every push must produce downloadable builds without creating tags.
 - Build jobs (`build-server-linux`, `build-installer-windows`) run on all pushes to main; the `release` job publishes:
