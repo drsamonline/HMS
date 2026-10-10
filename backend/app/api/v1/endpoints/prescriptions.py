@@ -61,7 +61,7 @@ async def create_prescription(
 ) -> PrescriptionRead:
     prescription = await prescription_service.create(
         db,
-        prescription_in=prescription_in,
+        data=prescription_in,
     )
 
     items = await prescription_service.get_items(

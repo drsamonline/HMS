@@ -23,7 +23,7 @@
 | 1 | Explore repo/runtime layout | ✅ DONE | see Findings F1–F7 |
 | 2 | Confirm prescription route bug | ✅ DONE | F8 verified in source |
 | 3 | Create this session log | ✅ DONE (this run) | file exists at `.ai/DEMO_DATA_SESSION.md` |
-| 4 | Fix POST /prescriptions kwarg bug | 🔶 IN PROGRESS (verified, patch pending) | F8 corrected: file is `endpoints/prescriptions.py`; mismatch confirmed at lines 57–65 vs service `create(db, data)` |
+| 4 | Fix POST /prescriptions kwarg bug | ✅ DONE | Patch applied in `endpoints/prescriptions.py` (`prescription_in=` → `data=`); see Fixed OP-1 |
 | 5 | Write `backend/app/cli/seed_demo_data.py` (idempotent, 2025 dataset) | ⬜ TODO | design in Plan P1 |
 | 6 | Startup integration (`HHMS_SEED_DEMO_DATA=true`) | ⬜ TODO | Plan P2 |
 | 7 | Execute seed against `data/hhms.sqlite3`; verify counts via API | ⬜ TODO | Plan P3 |
@@ -32,7 +32,7 @@
 | 10 | Commit + close-out entry in this file | ⬜ TODO | — |
 
 ## Next actions (resume here)
-1. Apply F8 patch to `backend/app/api/v1/routes/prescriptions.py` (create route service-call kwargs). Run targeted test/import check.
+1. ~~Apply F8 patch~~ DONE.
 2. Implement seeder per Plan P1; test on an EPHEMERAL copy first (`HHMS_APPLICATION_ROOT=/tmp/hhms-seedtest`), then against real `data/` root.
 3. Wire startup flag per Plan P2.
 4. Seed production DB per Plan P3; record row counts table below.
@@ -51,11 +51,11 @@
 - **F9 Prior-session summary claims** (from conversation, not re-verified this run): 546-test baseline clean; two non-code open items (printer QA field checklist, release tag push). Treat as context only until re-checked.
 
 ## Open problems
-- **OP-1** F8 prescription route bug — fix before seeding prescriptions via HTTP (or bypass via service layer).
+- ~~OP-1~~ → moved to Fixed.
 - **OP-2** Not yet determined whether seeder should use HTTP routes or service layer directly. Decision leaning: **service layer** inside one async session (avoids rate limiter, auth churn, HTTP overhead; still exercises integrity rules). Re-evaluate if service signatures prove awkward.
 
 ## Fixed problems
-_(none yet)_
+- **OP-1 POST /prescriptions kwarg TypeError** (F8). Patched `backend/app/api/v1/endpoints/prescriptions.py` create route: `prescription_service.create(db, prescription_in=prescription_in)` → `create(db, data=prescription_in)`, matching service signature `create(self, db, data: PrescriptionCreate)` (`app/services/prescription.py:105`). Verification: full backend suite run after patch (see Run log); update route at line ~139 checked — it calls the service with correct kwargs already.
 
 ## Plan
 - **P1 Seeder** `backend/app/cli/seed_demo_data.py`: idempotent (guard table/marker row `demo_seed_meta` or settings key + year tag), async, service-layer. Dataset: admin + clinicians (doctor/pharma/billing), hospital settings/departments/designations/services, ~25 medicines + batches/stock (expiry in 2025/2026), beds across wards, suppliers; ~40 patients registered Jan–Dec 2025; ~120 visits w/ OPD tokens, case records, prescriptions, dispenses, investigations+results; 6–8 IPD admissions w/ notes + discharges; invoices/payments (~70% paid, some outstanding, 1 refund) all dated 2025. Standalone command `python -m app.cli.seed_demo_data [--year 2025] [--reset]`.
@@ -68,4 +68,5 @@ _(none yet)_
 _(empty)_
 
 ## Run log
-- **Run 2026-10-10 (this run):** Re-established ground truth: repo clean at commit 6729552 (Batch 119 cont., tag build-6729552…), baseline suite known 546/2. Created this resumable session log consolidating all prior-run findings (F1–F9). No product code changed yet. Tool-quota ended run before applying OP-1 fix.
+- **Run 2026-10-10 (earlier):** Re-established ground truth: repo clean at commit 6729552 (Batch 119 cont., tag build-6729552…), baseline suite known 546/2. Created this resumable session log consolidating all prior-run findings (F1–F9). No product code changed yet. Tool-quota ended run before applying OP-1 fix.
+- **Run 2026-10-10 #3:** Applied OP-1 fix (`endpoints/prescriptions.py`: `prescription_in=` → `data=` in create route service call). Verified: full backend suite **546 passed, 2 skipped** post-patch (baseline preserved). Ledger step 4 ✅; OP-1 moved to Fixed problems. Next: seeder (Plan P1).
