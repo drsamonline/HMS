@@ -99,3 +99,12 @@ _(empty)_
 ## Run log — 2026-10-11 #E (release pipeline QA follow-through)
 - **OP-5 regression found & fixed.** Full-suite run after the OP-5 workflow change exposed one stale doc-contract test: `test_batch116_docs_release_pipeline_qa.py::test_release_job_publishes_both_platform_artifacts` still asserted the OLD Batch-118 policy (`tag_name: latest` + per-commit `build-${{ github.sha }}` snapshot release). Updated the test to enforce the NEW tag-driven policy instead: exactly one publish step, snapshot releases banned, rolling `nightly` target required, version-tag resolution (`refs/tags/v*`) required.
 - Verification: targeted QA files 25 passed; full backend suite **546 passed, 2 skipped** (baseline preserved). Working tree otherwise untouched; workflow itself unchanged this run.
+
+## Run log — 2026-10-11 #F (Swagger UI: "Failed to load API definition")
+- **OP-6 Root cause found.** User report: openapi.json failed to load. Reproduced deterministically: `app.openapi()` raised `AssertionError: A response class is needed to generate OpenAPI`. Bisected via monkeypatch of `fastapi.openapi.utils.get_openapi_path` → offending route was `DELETE /api/v1/maintenance/report-schedules/{job_id}` in `backend/app/api/v1/endpoints/report_pdf.py`, which passed an explicit `response_class=None` on the decorator, defeating FastAPI's default-response-class fallback and breaking schema generation for the ENTIRE spec (hence /openapi.json 500 and Swagger UI error).
+- **Fix applied.** Removed `response_class=None` from the delete route (204 status retained; handler still returns None). Added explanatory NOTE comment at the site so the pattern isn't reintroduced.
+- **Regression guard added.** New `backend/tests/test_openapi_generation.py`: (1) `app.openapi()` must not raise and exposes >100 paths, (2) GET /openapi.json returns 200 with the report-schedules delete op + 204 response, (3) GET /docs returns 200.
+- Verification: targeted file 3 passed; full backend suite **549 passed, 2 skipped** (baseline 546 + 3 new guards). Changed files: `backend/app/api/v1/endpoints/report_pdf.py`, `backend/tests/test_openapi_generation.py`.
+
+## Fixed problems (append when resolved)
+- **OP-6 /openapi.json broken ("Failed to load API definition")** (see run #F). Patched `endpoints/report_pdf.py` DELETE route (dropped `response_class=None`). Verified by fresh-schema generation (182 paths) + new test_openapi_generation.py + full suite green (549/2).
