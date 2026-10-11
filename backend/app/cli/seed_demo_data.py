@@ -216,6 +216,14 @@ async def _seed_masters(db, year: int) -> dict:
     """Departments/services/designations, medicines+stock batches, beds."""
     from uuid import uuid4
 
+    from sqlalchemy import func, select
+
+    from app.models.bed import Bed
+    from app.models.department import Department
+    from app.models.department_service import DepartmentService
+    from app.models.designation import Designation
+    from app.models.medicine import Medicine
+    from app.models.stock_batch import StockBatch
     from app.schemas.bed import BedCreate
     from app.schemas.department import DepartmentCreate
     from app.schemas.department_service import DepartmentServiceCreate
@@ -229,6 +237,11 @@ async def _seed_masters(db, year: int) -> dict:
     from app.services.medicine import medicine_service
     from app.services.stock_batch import stock_batch_service
 
+    async def _exists(model, column, value) -> bool:
+        return (await db.execute(
+            select(func.count()).select_from(model).where(column == value)
+        )).scalar_one() > 0
+
     ids: dict = {}
 
     departments = [
@@ -240,10 +253,14 @@ async def _seed_masters(db, year: int) -> dict:
     ]
     dept_ids = {}
     for code, name, dtype in departments:
-        dept = await department_service.create(db, DepartmentCreate(
-            code=code, name=name, description=f"Demo {name}", department_type=dtype,
-        ))
-        dept_ids[code] = dept.id
+        if not await _exists(Department, Department.code, code):
+            await department_service.create(db, DepartmentCreate(
+                code=code, name=name, description=f"Demo {name}", department_type=dtype,
+            ))
+        row = (await db.execute(
+            select(Department.id).where(Department.code == code)
+        )).scalars().first()
+        dept_ids[code] = row
     ids["departments"] = dept_ids
 
     service_map = {
@@ -254,11 +271,19 @@ async def _seed_masters(db, year: int) -> dict:
     svc_ids = {}
     for dept_code, services in service_map.items():
         for scode, sname in services:
-            svc = await department_service_manager.create(db, DepartmentServiceCreate(
-                department_id=dept_ids[dept_code], parent_service_id=None,
-                code=scode, name=sname, description=f"Demo service {sname}",
-            ))
-            svc_ids[f"{dept_code}:{scode}"] = svc.id
+            existing = (await db.execute(
+                select(DepartmentService.id).where(
+                    DepartmentService.code == scode,
+                    DepartmentService.department_id == dept_ids[dept_code],
+                )
+            )).scalars().first()
+            if existing is None:
+                svc = await department_service_manager.create(db, DepartmentServiceCreate(
+                    department_id=dept_ids[dept_code], parent_service_id=None,
+                    code=scode, name=sname, description=f"Demo service {sname}",
+                ))
+                existing = svc.id
+            svc_ids[f"{dept_code}:{scode}"] = existing
     ids["services"] = svc_ids
 
     for code, name, dtype in [
@@ -268,23 +293,37 @@ async def _seed_masters(db, year: int) -> dict:
         ("CLERK", "Billing Clerk", "administrative"),
         ("HEADNURSE", "Head Nurse", "nursing"),
     ]:
-        await designation_service.create(db, DesignationCreate(
-            code=code, name=name, description=f"Demo designation {name}", designation_type=dtype,
-        ))
+        if not await _exists(Designation, Designation.code, code):
+            await designation_service.create(db, DesignationCreate(
+                code=code, name=name, description=f"Demo designation {name}", designation_type=dtype,
+            ))
 
     medicines = []
-    for i, (code, sci_name, mtype) in enumerate(MEDICINES):
-        med = await medicine_service.create(db, MedicineCreate(
-            medicine_code=f"{code}-{year}", medicine_name=code.title(),
-            scientific_name=sci_name, medicine_type=mtype,
-            description=f"Demo master entry for {code.title()}",
-        ))
+    for code, sci_name, mtype in MEDICINES:
+        med_code = f"{code}-{year}"
+        if not await _exists(Medicine, Medicine.medicine_code, med_code):
+            med = await medicine_service.create(db, MedicineCreate(
+                medicine_code=med_code, medicine_name=code.title(),
+                scientific_name=sci_name, medicine_type=mtype,
+                description=f"Demo master entry for {code.title()}",
+            ))
+        else:
+            med = (await db.execute(
+                select(Medicine).where(Medicine.medicine_code == med_code)
+            )).scalar_one()
         medicines.append(med)
     ids["medicines"] = medicines
 
     rng = random.Random(year * 7 + 11)
-    stock_batches = []
+    existing_batch_meds = set((await db.execute(
+        select(StockBatch.medicine_id)
+    )).scalars().all())
+    stock_batches = list((await db.execute(
+        select(StockBatch).where(StockBatch.medicine_id.in_({m.id for m in medicines}))
+    )).scalars().all()) if existing_batch_meds else []
     for med in medicines:
+        if med.id in existing_batch_meds:
+            continue
         for potency in rng.sample(POTENCIES, k=rng.randint(1, 2)):
             mfg = date(year, rng.randint(1, 6), rng.randint(1, 28))
             expiry = date(year + 2, rng.randint(1, 12), rng.randint(1, 28))
@@ -299,17 +338,18 @@ async def _seed_masters(db, year: int) -> dict:
             stock_batches.append(batch)
     ids["stock_batches"] = stock_batches
 
-    beds = []
-    wards = [("General Ward A", 8), ("General Ward B", 8), ("Day Care", 4)]
-    ward_no = 1
-    for ward, count in wards:
-        for n in range(1, count + 1):
-            bed = await bed_service.create(db, BedCreate(
-                bed_number=f"W{ward_no}-B{n}", ward=ward,
-                room_number=f"R{ward_no}", bed_type="standard",
-            ))
-            beds.append(bed)
-        ward_no += 1
+    beds = list((await db.execute(select(Bed))).scalars().all())
+    if not beds:
+        wards = [("General Ward A", 8), ("General Ward B", 8), ("Day Care", 4)]
+        ward_no = 1
+        for ward, count in wards:
+            for n in range(1, count + 1):
+                bed = await bed_service.create(db, BedCreate(
+                    bed_number=f"W{ward_no}-B{n}", ward=ward,
+                    room_number=f"R{ward_no}", bed_type="standard",
+                ))
+                beds.append(bed)
+            ward_no += 1
     ids["beds"] = beds
     return ids
 
@@ -366,7 +406,7 @@ async def _seed_transactions(db, year: int, staff: dict, masters: dict) -> dict:
     patients = []
     for i in range(40):
         dob_year = year - rng.randint(6, 78)
-        p = await patient_service.create(db, PatientCreate(
+        p = await patient_service.create(db, patient_in=PatientCreate(
             first_name=rng.choice(FIRST_NAMES),
             last_name=rng.choice(LAST_NAMES),
             gender=rng.choice(["Male", "Female"]),
@@ -391,7 +431,7 @@ async def _seed_transactions(db, year: int, staff: dict, masters: dict) -> dict:
         complaint = COMPLAINTS[i % len(COMPLAINTS)]
         visit_time = dt(day, 9 + (i % 8), (i * 7) % 60)
 
-        visit = await visit_service.create(db, VisitCreate(
+        visit = await visit_service.create(db, visit_in=VisitCreate(
             patient_id=patient.id,
             visit_type="new" if i % 3 == 0 else "follow_up",
             visit_datetime=visit_time,
@@ -438,8 +478,18 @@ async def _seed_transactions(db, year: int, staff: dict, masters: dict) -> dict:
         ))
         counters["prescriptions"] += 1
 
-        # Refresh to load items relationship.
-        item_rows = [(item, med) for item, med in zip(prescription.items, chosen)]
+        # The Prescription model has no ORM relationship to its items;
+        # fetch them by foreign key and pair each with its medicine master.
+        from app.models.prescription_item import PrescriptionItem
+
+        item_models = list((await db.execute(
+            select(PrescriptionItem).where(
+                PrescriptionItem.prescription_id == prescription.id
+            ).order_by(PrescriptionItem.id)
+        )).scalars().all())
+        med_by_id = {med.id: med for med in chosen}
+        item_rows = [(item, med_by_id[item.medicine_id])
+                     for item in item_models if item.medicine_id in med_by_id]
         amount = Decimal("0")
         for item, med in item_rows:
             candidates = [b for b in stock_batches if b.medicine_id == med.id]
@@ -610,18 +660,34 @@ async def _seed_transactions(db, year: int, staff: dict, masters: dict) -> dict:
 
 
 async def _seed(year: int, force: bool) -> int:
-    from sqlalchemy import select
+    from sqlalchemy import func, select
 
     from app.db.session import get_session_factory
     from app.models.system_setting import SystemSetting
+    from app.models.user import User
 
     factory = get_session_factory()
     marker_key = f"demo_seed.year.{year}"
 
     async with factory() as db:
+        # Safety gate: demo data must never be injected into a live hospital
+        # database that already has real patients.  Seeding proceeds only on
+        # an empty database or one previously seeded by this CLI (marker set).
         marker = (await db.execute(
             select(SystemSetting).where(SystemSetting.setting_key == marker_key)
         )).scalar_one_or_none()
+        from app.models.patient import Patient
+
+        patient_count = (await db.execute(
+            select(func.count()).select_from(Patient)
+        )).scalar_one()
+        if patient_count > 0 and marker is None and not force:
+            print(
+                f"Refusing to seed: database already contains {patient_count} "
+                f"real patient record(s) and no '{marker_key}' marker. "
+                "Use --force to override."
+            )
+            return 2
         if marker is not None and not force:
             print(f"Demo data for {year} already seeded ({marker_key}); use --force to re-seed.")
             return 0
