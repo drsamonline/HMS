@@ -27,6 +27,9 @@ a = Analysis(
         # Single-source release version: bundled at the archive root so
         # app.release_version resolves it inside the frozen executable.
         (str(project_root / "VERSION"), "."),
+        # HHMS browser GUI served by the server itself ("/" -> index.html)
+        # so portable builds are usable without any separate client launch.
+        (str(project_root / "frontend"), "frontend"),
     ],
     hiddenimports=hidden_app_imports,
     hookspath=[],

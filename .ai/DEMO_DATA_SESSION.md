@@ -108,3 +108,29 @@ _(empty)_
 
 ## Fixed problems (append when resolved)
 - **OP-6 /openapi.json broken ("Failed to load API definition")** (see run #F). Patched `endpoints/report_pdf.py` DELETE route (dropped `response_class=None`). Verified by fresh-schema generation (182 paths) + new test_openapi_generation.py + full suite green (549/2).
+
+## Run log — 2026-10-11 #G (user still saw openapi.json 500 after OP-6 fix)
+- **Diagnosis: stale deployment, not a code regression.** User pasted server logs showing `AssertionError: A response class is needed to generate OpenAPI` at `/openapi.json`. Verified the current workspace is clean:
+  - Static grep: no `response_class=None` anywhere in `backend/app` (only legitimate `FileResponse` usages + the guard NOTE comment).
+  - In-process: `app.openapi()` builds OK — **182 paths**.
+  - Live boot test: spawned `python -m app.server` on an ephemeral root → `GET /openapi.json` returned **HTTP 200** with 182 paths.
+  - Reproduced the user's exact error by re-adding `response_class=None` to a toy 204 route → same AssertionError string, confirming the old build was running pre-fix code.
+  - Regression guards `tests/test_openapi_generation.py`: 3 passed.
+- **Root cause of "not fixed": the fix lives only on branch `qwen-code-…` (commits 18b6a60 + later). The repo's `main` tip (7e023fa) contains the report_pdf fix but NOT the demo-data/OOBE/docs work; and the user's Windows server (traceback shows `starlette\...` packaged paths) is an older EXE/bundle built before OP-6.** No git remote configured, so nothing was ever pushed/rebuilt.
+- **Action required (user side):** either run from this updated source tree (`cd backend && python -m app.server`) or push the branch and let the release workflow rebuild the EXE; then restart. Old process must be stopped first (port 8000 conflict explains health-probe timeout in the harness while openapi served fine from a lingering instance).
+
+## Run log #H — GUI served by the server itself (http://localhost:8000/)
+
+**User report:** `/docs` only shows API entries; there is no HHMS client launcher and `localhost:8000/ui` errors.
+
+**Findings:**
+- F11: The FastAPI server never served the static GUI (`frontend/`). It exists in the repo but nothing mounted it; the Windows WebView2 host (`client/HHMS.Client`) is a separate .NET build not shipped in server releases. `/ui` does not exist at all.
+- F12: First mount attempt failed on 404 because `frontend_directory()` keyed off `application_root()`, which `HHMS_APPLICATION_ROOT` overrides to a *data* directory — hiding the read-only repo/bundle GUI path. Fixed by deriving repo root from the module location, with exe-adjacent + `_MEIPASS` candidates for frozen builds.
+
+**Fixed:**
+- `backend/app/app.py`: `_mount_frontend()` mounts `frontend/` at `/` (html=True) after the API router — API routes still win; graceful no-op when no bundle present.
+- `backend/app/config/runtime_paths.py`: new `frontend_directory()` (env override `HHMS_FRONTEND_ROOT`, frozen-bundle aware).
+- `backend/app/config/settings.py`: CORS defaults now include `http://localhost:8000` / `http://127.0.0.1:8000` (file:// or sidecar usage).
+- `backend/packaging/HHMS-Server.spec` + `scripts/deploy/build-server.sh`: GUI bundled into EXE datas and copied next to Linux/Windows bundle so portable builds serve the UI out of the box.
+
+**Verified:** fresh ephemeral root → `GET /` returns HHMS index.html (200), `/css/app.css` 200, `/js/app.js` 200, `/api/v1/health` 200, `/openapi.json` 200; admin/admin login via same-origin API returns JWT and patients list shows seeded 2025 data (Rakesh Kulkarni...). TestClient + real uvicorn both green.

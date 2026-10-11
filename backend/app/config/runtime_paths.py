@@ -92,6 +92,38 @@ def secret_key_path() -> Path:
     """Return the persisted local JWT secret path."""
     return data_directory() / "secret.key"
 
+
+def frontend_directory() -> Path | None:
+    """Return the bundled HHMS GUI directory, if present.
+
+    Checks (in order) the ``HHMS_FRONTEND_ROOT`` override, the exe-adjacent
+    ``frontend/`` folder shipped with portable builds, the frozen bundle's
+    embedded datas, and the repository layout.  Returns ``None`` when no
+    static client is available so the server degrades gracefully to a
+    pure-API deployment.
+    """
+    import os
+
+    candidates: list[Path] = []
+    override = os.environ.get("HHMS_FRONTEND_ROOT")
+    if override:
+        candidates.append(Path(override))
+    if getattr(sys, "frozen", False):
+        base = Path(getattr(sys, "_MEIPASS", application_root()))
+        candidates += [application_root() / "frontend", base / "frontend"]
+    else:
+        # Source checkout: the GUI lives at the repository root.  Derive it
+        # from this module's own location (backend/app/config/ here, or the
+        # bundle archive root when frozen) so an HHMS_APPLICATION_ROOT that
+        # only redirects *data* does not hide the read-only client files.
+        here = Path(__file__).resolve()
+        repo_root = here.parents[3]
+        candidates += [repo_root / "frontend", application_root() / "frontend"]
+    for candidate in candidates:
+        if (candidate / "index.html").is_file():
+            return candidate.resolve()
+    return None
+
 __all__ = [
     "application_root",
     "data_directory",
@@ -105,6 +137,7 @@ __all__ = [
     "config_file_path",
     "database_path",
     "secret_key_path",
+    "frontend_directory",
 ]
 
 
