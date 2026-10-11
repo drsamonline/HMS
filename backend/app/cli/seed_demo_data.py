@@ -746,5 +746,77 @@ def maybe_seed_from_env() -> None:
     main(["--year", str(year)])
 
 
+def seed_demo_on_first_run(year: int = 2025) -> bool:
+    """Startup hook for portable/demo builds: seed automatically on first run.
+
+    Returns True when seeding actually happened (i.e. the database was empty
+    apart from bootstrap artefacts).  Any database that already contains real
+    transactional data — patients, users beyond the default admin, or a
+    previous seed marker — is left completely untouched, so this hook is safe
+    to leave enabled in shipped builds.  Disable with
+    ``HHMS_SEED_DEMO_DATA=false``.
+    """
+    from sqlalchemy import func, select
+
+    from app.db.session import get_session_factory
+    from app.config.runtime_paths import database_path
+    from app.models.audit_log import AuditLog
+    from app.models.number_sequence import NumberSequence
+    from app.models.patient import Patient
+    from app.models.system_setting import SystemSetting
+    from app.models.user import User
+
+    factory = get_session_factory()
+
+    async def _is_pristine() -> bool:
+        async with factory() as db:
+            async def _count(model) -> int:
+                return (await db.execute(
+                    select(func.count()).select_from(model)
+                )).scalar_one()
+
+            # A pristine (fresh-install) database has only the bootstrap rows
+            # created by startup/migrations: the default admin user, the
+            # operational-year settings, the first-login flag and the five
+            # number sequences shipped by migration 0010.  Anything beyond
+            # that is real data.
+            if await _count(Patient) or await _count(AuditLog):
+                return False
+            remaining_users = (await db.execute(
+                select(func.count()).select_from(User).where(User.username != "admin")
+            )).scalar_one()
+            if remaining_users:
+                return False
+            remaining_settings = (await db.execute(
+                select(func.count()).select_from(SystemSetting).where(
+                    SystemSetting.setting_key.notin_([
+                        "operational_year_basis",
+                        "financial_year_start_month",
+                        "financial_year_start_day",
+                        "auth.first_login_pending_for_user_id",
+                    ])
+                )
+            )).scalar_one()
+            if remaining_settings:
+                return False
+            # NumberSequence ships five bootstrap rows from migration 0010;
+            # extra sequences mean a previous seed run added them.
+            seq_count = await _count(NumberSequence)
+            if seq_count > 5:
+                return False
+            return True
+
+    try:
+        if not database_path().exists():
+            return False  # schema not created yet - nothing to seed into
+        pristine = asyncio.run(_is_pristine())
+    except Exception:  # pragma: no cover - never block boot on detection
+        return False
+    if not pristine:
+        return False
+    rc = main(["--year", str(year)])
+    return rc == 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
