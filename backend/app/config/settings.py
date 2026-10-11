@@ -120,7 +120,8 @@ class Settings(BaseSettings):
 
     DISCOVERY_ENABLED: bool = Field(default=True)
 
-    DISCOVERY_PORT: int = Field(default=39555, ge=1024, le=65535)
+    # Must match the UDP probe port in client/HHMS.Client/Bridge/DiscoveryBridge.cs.
+    DISCOVERY_PORT: int = Field(default=38541, ge=1024, le=65535)
 
     DISCOVERY_NAME: str = Field(default="HHMS")
 
