@@ -84,7 +84,7 @@ def test_prepare_runtime_bootstraps_empty_machine(clean_root: Path) -> None:
             )
         }
 
-    assert version == "0028_prescription_operational_year_lifecycle"
+    assert version == "0029_department_service_is_active"
     # Core domain tables must all be present after a fresh upgrade chain.
     # (Table names follow the project's declared __tablename__ values.)
     for required in (
@@ -118,7 +118,7 @@ def test_prepare_runtime_is_idempotent(clean_root: Path) -> None:
         version = conn.execute("SELECT version_num FROM alembic_version").fetchone()[0]
 
     assert after == before
-    assert version == "0028_prescription_operational_year_lifecycle"
+    assert version == "0029_department_service_is_active"
 
 
 def test_migration_chain_head_matches_model_metadata(clean_root: Path) -> None:
@@ -128,7 +128,7 @@ def test_migration_chain_head_matches_model_metadata(clean_root: Path) -> None:
     run_pending_migrations()
 
     script = ScriptDirectory.from_config(migration_config())
-    assert script.get_heads() == ["0028_prescription_operational_year_lifecycle"]
+    assert script.get_heads() == ["0029_department_service_is_active"]
 
     engine = create_engine(f"sqlite:///{_db_file(clean_root)}")
     with engine.connect() as conn:

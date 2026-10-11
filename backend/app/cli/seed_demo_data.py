@@ -761,7 +761,6 @@ def seed_demo_on_first_run(year: int = 2025) -> bool:
     from app.db.session import get_session_factory
     from app.config.runtime_paths import database_path
     from app.models.audit_log import AuditLog
-    from app.models.number_sequence import NumberSequence
     from app.models.patient import Patient
     from app.models.system_setting import SystemSetting
     from app.models.user import User
@@ -775,11 +774,23 @@ def seed_demo_on_first_run(year: int = 2025) -> bool:
                     select(func.count()).select_from(model)
                 )).scalar_one()
 
+            # Already seeded by this hook/CLI?  The demo marker setting makes
+            # detection exact - no fragile row-count heuristics (migrations
+            # legitimately create NumberSequence/SystemSetting bootstrap rows
+            # whose counts vary between releases).
+            marker = (await db.execute(
+                select(SystemSetting).where(
+                    SystemSetting.setting_key == f"demo_seed.year.{year}"
+                )
+            )).scalar_one_or_none()
+            if marker is not None:
+                return False
+
             # A pristine (fresh-install) database has only the bootstrap rows
             # created by startup/migrations: the default admin user, the
-            # operational-year settings, the first-login flag and the five
-            # number sequences shipped by migration 0010.  Anything beyond
-            # that is real data.
+            # operational-year settings, the first-login flag and the number
+            # sequences shipped by migrations.  Anything beyond that is real
+            # data.
             if await _count(Patient) or await _count(AuditLog):
                 return False
             remaining_users = (await db.execute(
@@ -787,6 +798,8 @@ def seed_demo_on_first_run(year: int = 2025) -> bool:
             )).scalar_one()
             if remaining_users:
                 return False
+            # Extra settings beyond the migration-shipped bootstrap keys mean
+            # someone configured the hospital for real use - leave it alone.
             remaining_settings = (await db.execute(
                 select(func.count()).select_from(SystemSetting).where(
                     SystemSetting.setting_key.notin_([
@@ -799,11 +812,10 @@ def seed_demo_on_first_run(year: int = 2025) -> bool:
             )).scalar_one()
             if remaining_settings:
                 return False
-            # NumberSequence ships five bootstrap rows from migration 0010;
-            # extra sequences mean a previous seed run added them.
-            seq_count = await _count(NumberSequence)
-            if seq_count > 5:
-                return False
+            # NumberSequence bootstrap rows are created by migrations and by
+            # the seeder itself; their count varies per release, so it is NOT
+            # used for pristineness.  With no patients/audit logs, no extra
+            # users/settings and no demo marker above, seeding is safe.
             return True
 
     try:

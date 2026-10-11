@@ -24,11 +24,11 @@
 | 2 | Confirm prescription route bug | ✅ DONE | F8 verified in source |
 | 3 | Create this session log | ✅ DONE (this run) | file exists at `.ai/DEMO_DATA_SESSION.md` |
 | 4 | Fix POST /prescriptions kwarg bug | ✅ DONE | Patch applied in `endpoints/prescriptions.py` (`prescription_in=` → `data=`); see Fixed OP-1 |
-| 5 | Write `backend/app/cli/seed_demo_data.py` (idempotent, 2025 dataset) | ⬜ TODO | design in Plan P1 |
-| 6 | Startup integration (`HHMS_SEED_DEMO_DATA=true`) | ⬜ TODO | Plan P2 |
-| 7 | Execute seed against `data/hhms.sqlite3`; verify counts via API | ⬜ TODO | Plan P3 |
-| 8 | Docs cleanup: rewrite README (no batch narration), trim ROADMAP/CHANGELOG noise, move batch docs → `docs/history/`, update `docs/INDEX.md` | ⬜ TODO | Plan P4 |
-| 9 | Regression: full backend suite ≥546 pass; hygiene pre-commit check | ⬜ TODO | Plan P5 |
+| 5 | Write `backend/app/cli/seed_demo_data.py` (idempotent, 2025 dataset) | ✅ DONE | seeds 40 patients/120 visits/…; marker-based idempotency |
+| 6 | Startup integration + GUI-first OOBE | ✅ DONE | auto-seed on first run (no commands); `seed-demo-data` subcommand; opt-out `HHMS_SEED_DEMO_DATA=false` |
+| 7 | Execute seed against `data/hhms.sqlite3`; verify counts via API | ✅ DONE | repo DB seeded; login+patients list verified over HTTP |
+| 8 | Docs cleanup: rewrite README (no batch narration), trim ROADMAP/CHANGELOG noise, move batch docs → `docs/history/`, update `docs/INDEX.md` | ✅ DONE | README 225→139 lines; ROADMAP 241→95; docs/DEMO_DATA.md added |
+| 9 | Regression: full backend suite ≥546 pass; hygiene pre-commit check | ✅ DONE | 546 passed, 2 skipped (fixed stale 0028→0029 head assertions in test_batch104) |
 | 10 | Commit + close-out entry in this file | ⬜ TODO | — |
 
 ## Next actions (resume here)
@@ -70,3 +70,14 @@ _(empty)_
 ## Run log
 - **Run 2026-10-10 (earlier):** Re-established ground truth: repo clean at commit 6729552 (Batch 119 cont., tag build-6729552…), baseline suite known 546/2. Created this resumable session log consolidating all prior-run findings (F1–F9). No product code changed yet. Tool-quota ended run before applying OP-1 fix.
 - **Run 2026-10-10 #3:** Applied OP-1 fix (`endpoints/prescriptions.py`: `prescription_in=` → `data=` in create route service call). Verified: full backend suite **546 passed, 2 skipped** post-patch (baseline preserved). Ledger step 4 ✅; OP-1 moved to Fixed problems. Next: seeder (Plan P1).
+
+## Run log — 2026-10-11 #A (GUI-first OOBE)
+- **F10 Pristine-check bug FIXED (OP-3).** `seed_demo_on_first_run()` used a fragile `NumberSequence` row-count heuristic (>5 ⇒ not pristine) that failed because migrations legitimately ship more than five bootstrap sequences on current head. Replaced with exact detection: demo marker setting `demo_seed.year.<YEAR>` short-circuits re-seeding; sequence count is no longer consulted. Verified on ephemeral root `/tmp/hhms-firstrun`: first call seeds (True), second call no-ops (False).
+- **Full boot verification.** Real server start (`python -m app.server`, fresh `HHMS_APPLICATION_ROOT=/tmp/hhms-boot2`) auto-seeded 2025 demo data with zero user commands; admin/admin login returned a JWT and the patients endpoint served seeded records. GUI-only OOBE achieved: unzip build → double-click/run server → dashboard populated.
+- **Portability note.** `data/*.sqlite3` remains gitignored (runtime artifacts). Portability is delivered by the deterministic first-run auto-seed rather than shipping a binary DB; users who want a literal pre-built file can copy their local `data/hhms.sqlite3`.
+- Ledger updated (steps 5–8 ✅, step 9 in progress). Next: full regression suite + commit.
+
+## Fixed problems (append when resolved)
+- **OP-3 First-run auto-seed never fired** (see F10). Patched `app/cli/seed_demo_data.py::seed_demo_on_first_run._is_pristine` (marker-based detection; dropped seq-count heuristic). Verification: ephemeral-root double-call test + real server boot with HTTP login/patients check (this run's log).
+
+- **Run 2026-10-11 #B:** Full suite green: **546 passed, 2 skipped**. Repaired three stale migration-head assertions (`0028_prescription_operational_year_lifecycle` → `0029_department_service_is_active`) in `tests/test_batch104_clean_install_simulation.py`. Ledger step 9 ✅.
