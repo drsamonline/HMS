@@ -355,6 +355,8 @@ async def _seed_masters(db, year: int) -> dict:
 
 
 async def _seed_transactions(db, year: int, staff: dict, masters: dict) -> dict:
+    from sqlalchemy import select
+
     from app.schemas.admission import AdmissionCreate
     from app.schemas.billing import InvoiceCreate, InvoiceItemCreate, PaymentCreate
     from app.schemas.case_record import CaseRecordCreate
@@ -661,6 +663,12 @@ async def _seed_transactions(db, year: int, staff: dict, masters: dict) -> dict:
 
 async def _seed(year: int, force: bool) -> int:
     from sqlalchemy import func, select
+
+    # Ensure schema exists (Alembic migrations) before touching any table so
+    # the CLI works on a fresh install without first booting the server.
+    from app.startup import prepare_runtime
+
+    prepare_runtime()
 
     from app.db.session import get_session_factory
     from app.models.system_setting import SystemSetting

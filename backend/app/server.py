@@ -80,6 +80,20 @@ def run() -> None:
         from app.cli.create_admin import main as create_admin_main
 
         raise SystemExit(create_admin_main(sys.argv[2:]))
+    if len(sys.argv) > 1 and sys.argv[1] == "seed-demo-data":
+        # OOBE shortcut: bootstrap migrations + default admin, then seed the
+        # demo dataset (idempotent; refuses to touch databases with real data
+        # unless --force is given).
+        prepare_runtime()
+        try:
+            from app.cli.create_admin import ensure_default_admin
+
+            ensure_default_admin()
+        except Exception:  # pragma: no cover - never block seeding on bootstrap
+            logger.exception("default admin bootstrap failed (continuing)")
+        from app.cli.seed_demo_data import main as seed_demo_main
+
+        raise SystemExit(seed_demo_main(sys.argv[2:]))
     prepare_runtime()
     # First-run convenience: seed admin/admin so a fresh build is testable
     # out of the box. No-op once any user exists; disable with
