@@ -134,3 +134,18 @@ _(empty)_
 - `backend/packaging/HHMS-Server.spec` + `scripts/deploy/build-server.sh`: GUI bundled into EXE datas and copied next to Linux/Windows bundle so portable builds serve the UI out of the box.
 
 **Verified:** fresh ephemeral root → `GET /` returns HHMS index.html (200), `/css/app.css` 200, `/js/app.js` 200, `/api/v1/health` 200, `/openapi.json` 200; admin/admin login via same-origin API returns JWT and patients list shows seeded 2025 data (Rakesh Kulkarni...). TestClient + real uvicorn both green.
+
+## Run log #I — Wi-Fi LAN discovery + port-mismatch fix (user: "it should work on wireless lan too, no files edited")
+
+**User report:** Automatic discovery must work over wireless LAN; user could not see any edited files because the discovery/client-launcher work from earlier chat turns was never written to disk.
+
+**Findings:**
+- F13: Server UDP responder (`backend/app/network/discovery.py`, wired into `server.py` startup) and browser GUI auto-discover flow (`frontend/js/discovery.js` → bridge, manual fallback) already existed in source and were committed. But the C# client probe (`client/HHMS.Client/Bridge/DiscoveryBridge.cs`) broadcast to UDP **38541** while the server default `DISCOVERY_PORT` was **39555** — HHMS.exe could never find a default-configured server. This is why the user's earlier request ("no files edited that I can push") had no matching deliverable for the EXE path.
+- F14: The C# probe used only the global broadcast 255.255.255.255, which many Wi-Fi APs drop (limited/broadcast-address filtering), so discovery failed on wireless even with matching ports.
+
+**Fixed (this run):**
+- `backend/app/config/settings.py`: `DISCOVERY_PORT` default 39555 → **38541**, aligned with the client probe; comment added requiring both sides stay in sync.
+- `client/HHMS.Client/Bridge/DiscoveryBridge.cs`: rewritten to enumerate all up/non-loopback IPv4 interfaces and probe each subnet-directed broadcast (ip | ~mask) plus the global broadcast in one round (900 ms deadline), tolerating per-interface SocketExceptions. Works on Wi-Fi, Ethernet, and multi-NIC machines without manual IP entry; dynamic IPs are irrelevant since probes go to the local subnet broadcast each launch.
+- `docs/LAN_DISCOVERY.md`: documented port updated to 38541.
+
+**Verified:** backend suite **549 passed, 2 skipped** (incl. test_lan_discovery.py + test_batch104_multi_client_lan_qa.py green against new default). No remaining references to 39555 anywhere. Note: HHMS.exe itself is built by CI (.github release workflow) — rebuild/tag required to ship the fixed client.

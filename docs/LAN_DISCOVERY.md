@@ -4,7 +4,7 @@ HHMS server discovery uses a small native UDP protocol so the client does not re
 
 ## Protocol
 
-- UDP port: `DISCOVERY_PORT` (default `39555`)
+- UDP port: `DISCOVERY_PORT` (default `38541`)
 - Request payload: `HHMS_DISCOVER_V1`
 - Response protocol: `hhms-lan-v1`
 - Response contains server ID, server name, HTTP port and API base.
