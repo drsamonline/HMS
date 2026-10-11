@@ -81,3 +81,11 @@ _(empty)_
 - **OP-3 First-run auto-seed never fired** (see F10). Patched `app/cli/seed_demo_data.py::seed_demo_on_first_run._is_pristine` (marker-based detection; dropped seq-count heuristic). Verification: ephemeral-root double-call test + real server boot with HTTP login/patients check (this run's log).
 
 - **Run 2026-10-11 #B:** Full suite green: **546 passed, 2 skipped**. Repaired three stale migration-head assertions (`0028_prescription_operational_year_lifecycle` → `0029_department_service_is_active`) in `tests/test_batch104_clean_install_simulation.py`. Ledger step 9 ✅.
+
+## Run log — 2026-10-11 #C (auto-release build failure)
+- **OP-4 CI smoke test blind to OOBE regressions.** Auto-build release failed because `release.yml` gates the Linux/Windows bundles on `HHMS-Server --smoke-test`, which previously only probed `/health` — first-run bootstrap/seeding errors shipped silently and broke builds. Fixed by making `_smoke_test()` mirror the real `run()` path: `prepare_runtime()` → `ensure_default_admin()` → `seed_demo_on_first_run()` before the health probe; `create_admin.py` CLI now also calls `prepare_runtime()` so it works standalone on fresh installs.
+- Verification (this run): full backend suite **546 passed, 2 skipped**; clean ephemeral root (`/tmp/hhms-smoke`) `python -m app.server --smoke-test` → migrations 0001→0029 applied, default admin created, 2025 demo data auto-seeded (40 patients / 120 visits / 120 prescriptions / 241 dispenses / 40 investigations / 8 admissions / 128 invoices / 118 payments), `smoke-test ok: health 0.0.1`, exit 0. Same command is what CI runs for both platform bundles, so a broken OOBE now fails the build instead of shipping.
+- Changed files staged: `backend/app/server.py`, `backend/app/cli/create_admin.py`.
+
+## Fixed problems (append when resolved)
+- **OP-4 Auto-release build failure** (see run #C). Patched `app/server.py::_smoke_test` to exercise the full first-run path and `app/cli/create_admin.py` to run migrations before bootstrapping. Verification: ephemeral-root `--smoke-test` exit 0 with seeded dataset + full suite green (546/2). Commit: see ledger below.
