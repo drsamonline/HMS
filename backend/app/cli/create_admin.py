@@ -203,6 +203,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: password must be at least {MIN_PASSWORD_LENGTH} characters", file=sys.stderr)
         return 1
 
+    # Standalone CLI entry points must bootstrap the schema themselves; the
+    # server calls this after prepare_runtime(), but running `create-admin`
+    # directly on a fresh install would otherwise fail with "no such table".
+    from app.startup import prepare_runtime
+
+    prepare_runtime()
+
     try:
         rc = asyncio.run(_create(args, password))
     except Exception as exc:  # pragma: no cover - defensive CLI boundary

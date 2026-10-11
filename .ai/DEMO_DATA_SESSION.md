@@ -24,11 +24,11 @@
 | 2 | Confirm prescription route bug | ✅ DONE | F8 verified in source |
 | 3 | Create this session log | ✅ DONE (this run) | file exists at `.ai/DEMO_DATA_SESSION.md` |
 | 4 | Fix POST /prescriptions kwarg bug | ✅ DONE | Patch applied in `endpoints/prescriptions.py` (`prescription_in=` → `data=`); see Fixed OP-1 |
-| 5 | Write `backend/app/cli/seed_demo_data.py` (idempotent, 2025 dataset) | ⬜ TODO | design in Plan P1 |
-| 6 | Startup integration (`HHMS_SEED_DEMO_DATA=true`) | ⬜ TODO | Plan P2 |
-| 7 | Execute seed against `data/hhms.sqlite3`; verify counts via API | ⬜ TODO | Plan P3 |
-| 8 | Docs cleanup: rewrite README (no batch narration), trim ROADMAP/CHANGELOG noise, move batch docs → `docs/history/`, update `docs/INDEX.md` | ⬜ TODO | Plan P4 |
-| 9 | Regression: full backend suite ≥546 pass; hygiene pre-commit check | ⬜ TODO | Plan P5 |
+| 5 | Write `backend/app/cli/seed_demo_data.py` (idempotent, 2025 dataset) | ✅ DONE | seeds 40 patients/120 visits/…; marker-based idempotency |
+| 6 | Startup integration + GUI-first OOBE | ✅ DONE | auto-seed on first run (no commands); `seed-demo-data` subcommand; opt-out `HHMS_SEED_DEMO_DATA=false` |
+| 7 | Execute seed against `data/hhms.sqlite3`; verify counts via API | ✅ DONE | repo DB seeded; login+patients list verified over HTTP |
+| 8 | Docs cleanup: rewrite README (no batch narration), trim ROADMAP/CHANGELOG noise, move batch docs → `docs/history/`, update `docs/INDEX.md` | ✅ DONE | README 225→139 lines; ROADMAP 241→95; docs/DEMO_DATA.md added |
+| 9 | Regression: full backend suite ≥546 pass; hygiene pre-commit check | ✅ DONE | 546 passed, 2 skipped (fixed stale 0028→0029 head assertions in test_batch104) |
 | 10 | Commit + close-out entry in this file | ⬜ TODO | — |
 
 ## Next actions (resume here)
@@ -70,3 +70,22 @@ _(empty)_
 ## Run log
 - **Run 2026-10-10 (earlier):** Re-established ground truth: repo clean at commit 6729552 (Batch 119 cont., tag build-6729552…), baseline suite known 546/2. Created this resumable session log consolidating all prior-run findings (F1–F9). No product code changed yet. Tool-quota ended run before applying OP-1 fix.
 - **Run 2026-10-10 #3:** Applied OP-1 fix (`endpoints/prescriptions.py`: `prescription_in=` → `data=` in create route service call). Verified: full backend suite **546 passed, 2 skipped** post-patch (baseline preserved). Ledger step 4 ✅; OP-1 moved to Fixed problems. Next: seeder (Plan P1).
+
+## Run log — 2026-10-11 #A (GUI-first OOBE)
+- **F10 Pristine-check bug FIXED (OP-3).** `seed_demo_on_first_run()` used a fragile `NumberSequence` row-count heuristic (>5 ⇒ not pristine) that failed because migrations legitimately ship more than five bootstrap sequences on current head. Replaced with exact detection: demo marker setting `demo_seed.year.<YEAR>` short-circuits re-seeding; sequence count is no longer consulted. Verified on ephemeral root `/tmp/hhms-firstrun`: first call seeds (True), second call no-ops (False).
+- **Full boot verification.** Real server start (`python -m app.server`, fresh `HHMS_APPLICATION_ROOT=/tmp/hhms-boot2`) auto-seeded 2025 demo data with zero user commands; admin/admin login returned a JWT and the patients endpoint served seeded records. GUI-only OOBE achieved: unzip build → double-click/run server → dashboard populated.
+- **Portability note.** `data/*.sqlite3` remains gitignored (runtime artifacts). Portability is delivered by the deterministic first-run auto-seed rather than shipping a binary DB; users who want a literal pre-built file can copy their local `data/hhms.sqlite3`.
+- Ledger updated (steps 5–8 ✅, step 9 in progress). Next: full regression suite + commit.
+
+## Fixed problems (append when resolved)
+- **OP-3 First-run auto-seed never fired** (see F10). Patched `app/cli/seed_demo_data.py::seed_demo_on_first_run._is_pristine` (marker-based detection; dropped seq-count heuristic). Verification: ephemeral-root double-call test + real server boot with HTTP login/patients check (this run's log).
+
+- **Run 2026-10-11 #B:** Full suite green: **546 passed, 2 skipped**. Repaired three stale migration-head assertions (`0028_prescription_operational_year_lifecycle` → `0029_department_service_is_active`) in `tests/test_batch104_clean_install_simulation.py`. Ledger step 9 ✅.
+
+## Run log — 2026-10-11 #C (auto-release build failure)
+- **OP-4 CI smoke test blind to OOBE regressions.** Auto-build release failed because `release.yml` gates the Linux/Windows bundles on `HHMS-Server --smoke-test`, which previously only probed `/health` — first-run bootstrap/seeding errors shipped silently and broke builds. Fixed by making `_smoke_test()` mirror the real `run()` path: `prepare_runtime()` → `ensure_default_admin()` → `seed_demo_on_first_run()` before the health probe; `create_admin.py` CLI now also calls `prepare_runtime()` so it works standalone on fresh installs.
+- Verification (this run): full backend suite **546 passed, 2 skipped**; clean ephemeral root (`/tmp/hhms-smoke`) `python -m app.server --smoke-test` → migrations 0001→0029 applied, default admin created, 2025 demo data auto-seeded (40 patients / 120 visits / 120 prescriptions / 241 dispenses / 40 investigations / 8 admissions / 128 invoices / 118 payments), `smoke-test ok: health 0.0.1`, exit 0. Same command is what CI runs for both platform bundles, so a broken OOBE now fails the build instead of shipping.
+- Changed files staged: `backend/app/server.py`, `backend/app/cli/create_admin.py`.
+
+## Fixed problems (append when resolved)
+- **OP-4 Auto-release build failure** (see run #C). Patched `app/server.py::_smoke_test` to exercise the full first-run path and `app/cli/create_admin.py` to run migrations before bootstrapping. Verification: ephemeral-root `--smoke-test` exit 0 with seeded dataset + full suite green (546/2). Commit: see ledger below.

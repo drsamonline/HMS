@@ -36,6 +36,16 @@ def _smoke_test() -> int:
         return 2
 
     prepare_runtime()
+    # Mirror the real first-run path (run()) so the smoke probe validates
+    # exactly what a portable build does on launch: bootstrap admin and seed
+    # the demo dataset automatically.  Failures here must surface as a
+    # non-zero smoke-test exit instead of silently shipping broken builds.
+    from app.cli.create_admin import ensure_default_admin
+
+    ensure_default_admin()
+    from app.cli.seed_demo_data import seed_demo_on_first_run
+
+    seed_demo_on_first_run()
     settings = get_settings()
     host, port = settings.SERVER_HOST, int(settings.SERVER_PORT)
     config = uvicorn.Config(app, host=host, port=port, log_level="warning")
