@@ -1,27 +1,37 @@
 # ---------------------------------------------------------------------------
-# HHMS release pipeline — Milestone 7 Batch 107; auto-release-on-push policy
-# requested by product owner (Batch 118): EVERY push to main builds,
-# smoke-tests and publishes downloadable artifacts. No tags required.
+# HHMS release pipeline — tag-driven releases (product-owner policy update:
+# builds must appear as proper Releases, not clutter of per-commit snapshots).
 #
-# Flow on each push to main (or manual dispatch / PR):
+# Triggers:
+#   * push of a version tag (vX.Y.Z)  -> stable Release vX.Y.Z
+#   * push to main                    -> rolling nightly prerelease (tag: nightly)
+#   * manual workflow_dispatch        -> rolling nightly prerelease
+#   * pull_request                    -> test + build only (no publishing)
+#
+# Flow:
 #   1. `test`     — backend regression suite (CI gate).
 #   2. build jobs — dual-platform artifacts in parallel:
 #        * Linux   — one-file server bundle via scripts/deploy/build-server.sh
 #        * Windows — server EXE + setup installer via scripts/deploy/build-installer.ps1
-#   3. `release`  — computes SHA-256 checksums and publishes/updates the rolling
-#        "Latest Build" prerelease (permanently at https://github.com/OWNER/REPO/releases/tag/latest)
-#        plus per-commit snapshot releases named build-<sha>.
-#      Standalone binary+checksums are ALSO attached to every run as the
+#   3. `release`  — computes SHA-256 checksums and publishes ONE release:
+#        * version-tag push  -> real (non-prerelease) GitHub Release at the tag,
+#          marked "latest", named "HHMS <version>".
+#        * main push / dispatch -> single rolling prerelease permanently at
+#          .../releases/tag/nightly (stable download URL, always overwritten).
+#      Binaries + checksums are ALSO attached to every run as the
 #      `latest-build` artifact, downloadable from the Actions run page even
 #      if the repo is private (releases would be hidden there).
 #
-# Old snapshots can be pruned with: gh run list / gh release delete <tag> -y
+# Publish a version:  git tag v1.0.0 && git push origin v1.0.0
+# Old nightlies never accumulate — there is exactly one. Version releases are
+# permanent milestones and should be kept.
 # ---------------------------------------------------------------------------
 name: release
 
 on:
   push:
     branches: ["main"]
+    tags: ["v*.*.*"]
   pull_request:
   workflow_dispatch:
 
@@ -108,12 +118,14 @@ jobs:
           path: build/dist/HHMS-Server.exe
 
   release:
-    name: Auto-publish build artifacts
+    name: Publish GitHub Release
     needs: [build-server-linux, build-installer-windows]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -133,26 +145,47 @@ jobs:
             artifacts/hhms-server-windows/HHMS-Server.exe
             artifacts/hhms-windows-installer/*.exe
             SHA256SUMS.txt
-      # Rolling prerelease — ALWAYS at .../releases/tag/latest (stable download URL)
-      - name: Publish rolling "Latest Build" release
+      # Resolve what to publish: version-tag push -> stable Release vX.Y.Z;
+      # anything else (main push / dispatch) -> one rolling nightly prerelease.
+      - name: Resolve release target
+        id: target
+        run: |
+          REF="${GITHUB_REF:-}"
+          if [[ "$REF" == refs/tags/v* ]]; then
+            VERSION="${REF#refs/tags/}"
+            echo "tag=$VERSION"      >> "$GITHUB_OUTPUT"
+            echo "prerelease=false"  >> "$GITHUB_OUTPUT"
+            echo "make_latest=true"  >> "$GITHUB_OUTPUT"
+            echo "name=HHMS $VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=nightly"       >> "$GITHUB_OUTPUT"
+            echo "prerelease=true"   >> "$GITHUB_OUTPUT"
+            echo "make_latest=false" >> "$GITHUB_OUTPUT"
+            echo "name=HHMS Nightly Build" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Generate release notes
+        run: |
+          {
+            echo ""
+            echo "| File | Platform |"
+            echo "| --- | --- |"
+            echo "| \`HHMS-Server\` | Linux x86-64 (one-file bundle) |"
+            echo "| \`HHMS-Server.exe\` | Windows x64 (portable EXE) |"
+            echo "| \`HHMS-Setup-*.exe\` | Windows installer |"
+            echo "| \`SHA256SUMS.txt\` | integrity checksums |"
+            echo ""
+            echo "First run bootstraps the database and loads 2025 demo data automatically."
+            echo "Commit: ${{ github.sha }}"
+          } > RELEASE_NOTES.md
+      # Exactly ONE release per pipeline run — no per-commit snapshot clutter.
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: latest
-          name: "HHMS Latest Build (${{ github.sha }})"
-          prerelease: true
-          make_latest: false
-          files: |
-            artifacts/**/*
-            SHA256SUMS.txt
-      # Per-commit snapshot release — keeps a permanent downloadable history.
-      - name: Publish snapshot release for this commit
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: build-${{ github.sha }}
-          name: "Build ${{ github.sha }}"
-          body: "Automatic build from push '${{ github.event_name }}' to ${{ github.ref_name }} (${{ github.sha }})."
-          prerelease: true
-          make_latest: false
+          tag_name: ${{ steps.target.outputs.tag }}
+          name: ${{ steps.target.outputs.name }}
+          body_path: RELEASE_NOTES.md
+          prerelease: ${{ steps.target.outputs.prerelease }}
+          make_latest: ${{ steps.target.outputs.make_latest }}
           files: |
             artifacts/**/*
             SHA256SUMS.txt

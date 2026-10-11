@@ -89,3 +89,9 @@ _(empty)_
 
 ## Fixed problems (append when resolved)
 - **OP-4 Auto-release build failure** (see run #C). Patched `app/server.py::_smoke_test` to exercise the full first-run path and `app/cli/create_admin.py` to run migrations before bootstrapping. Verification: ephemeral-root `--smoke-test` exit 0 with seeded dataset + full suite green (546/2). Commit: see ledger below.
+
+## Run log — 2026-10-11 #D (builds appeared under tags, not as Releases)
+- **OP-5 Release pipeline clutter.** User report: "the build releases under tags and not as releases". Root cause in `.github/workflows/release.yml`: every push to main published TWO prereleases (`latest` rolling + `build-<sha>` per-commit snapshot), so the repo's Tags page filled with `build-*` entries while nothing was ever a real, stable Release.
+- Fix applied (tag-driven policy): removed the per-commit snapshot release entirely; added `tags: ["v*.*.*"]` push trigger; single "Publish release" step now resolves its target — version-tag push → stable non-prerelease GitHub Release named "HHMS <version>" with `make_latest: true`; main push / workflow_dispatch → one rolling prerelease permanently at tag `nightly` (overwritten each run, never accumulates). Added generated release notes (download table + first-run demo-data note) via `body_path`.
+- Verification (this run): YAML parses; triggers = branches main + tags v*.*.*; exactly one softprops publish step; branch logic bash simulation: `refs/tags/v1.0.0` → tag=v1.0.0 prerelease=false latest=true; `refs/heads/main` → tag=nightly prerelease=true latest=false. Docs grep: no stale references to removed snapshot flow (README already says releases publish on `v*` tags). Backend suite unaffected (workflow-only change).
+- To get a proper Release: `git tag v1.0.0 && git push origin v1.0.0` (remote still not configured in this workspace).
