@@ -91,7 +91,11 @@ async def update_schedule(job_id: int, data: ReportScheduleUpdate, db: DatabaseS
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
 
 
-@schedule_router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=None)
+# NOTE: do NOT pass response_class=None here — FastAPI falls back to the
+# router/app default response class for OpenAPI generation; an explicit None
+# makes app.openapi() raise "A response class is needed to generate OpenAPI",
+# which breaks /openapi.json and the Swagger UI ("Failed to load API definition").
+@schedule_router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_schedule(job_id: int, db: DatabaseSession, user: CurrentUserDependency):
     await _require_admin(db, actor_id(user))
     await report_scheduler_service.delete_job(db, job_id)

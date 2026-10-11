@@ -131,9 +131,16 @@ def test_release_job_publishes_both_platform_artifacts() -> None:
     text = yaml.dump(rel)
     assert "sha256sum" in text, "checksums required"
     assert "softprops/action-gh-release" in text, "GitHub Release auto-publish required"
-    # Batch 118: rolling 'latest' prerelease + per-commit snapshot tag.
-    assert "tag_name: latest" in text, "rolling latest release required"
-    assert "build-${{ github.sha }}" in text, "per-commit snapshot release required"
+    # Batch 119 policy (product owner): builds must appear as proper Releases,
+    # not clutter under tags. Exactly ONE publish step; version-tag pushes ->
+    # stable Release vX.Y.Z, everything else -> single rolling nightly tag.
+    # Per-commit `build-<sha>` snapshot releases are removed on purpose.
+    steps = rel["steps"]
+    publish_steps = [s for s in steps if "softprops/action-gh-release" in str(s.get("uses", ""))]
+    assert len(publish_steps) == 1, "release job must have exactly one publish step"
+    assert "build-${{ github.sha }}" not in text, "per-commit snapshot releases banned"
+    assert "tag=nightly" in text, "rolling nightly prerelease target required"
+    assert "refs/tags/v*" in text, "version-tag pushes must resolve to stable releases"
 
 
 def test_linux_job_uploads_bundle_after_smoke_gate() -> None:
