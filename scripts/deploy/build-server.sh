@@ -56,5 +56,10 @@ chmod +x "${BUNDLE_EXE}"
 # Ship the release VERSION next to the bundle for application-root resolution.
 cp "${PROJECT_ROOT}/VERSION" "${OUT_DIR}/VERSION"
 
+# Ship the GUI folder next to the bundle as well: the server prefers the
+# exe-adjacent frontend/ copy, which makes hot-swapping UI files possible
+# without rebuilding the executable.
+cp -R "${PROJECT_ROOT}/frontend" "${OUT_DIR}/frontend"
+
 echo "==> Build complete: ${BUNDLE_EXE}"
 echo "    Start with: ${BUNDLE_EXE}   (first run bootstraps data/ and migrations)"

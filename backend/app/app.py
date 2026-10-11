@@ -98,7 +98,29 @@ def create_application() -> FastAPI:
         prefix=settings.API_V1_PREFIX,
     )
 
+    _mount_frontend(application)
+
     return application
+
+
+def _mount_frontend(application: FastAPI) -> None:
+    """Serve the bundled HHMS GUI so the app is usable from a browser.
+
+    The static client (``frontend/``) talks to the same origin under
+    ``/api/v1``, which also keeps CORS irrelevant for the portable
+    single-machine deployment.  When no bundle is present the server
+    simply stays API-only.
+    """
+    from app.config.runtime_paths import frontend_directory
+
+    root = frontend_directory()
+    if root is None:
+        return
+
+    from fastapi.staticfiles import StaticFiles
+
+    # html=True => "/" serves index.html and unknown paths fall back to it.
+    application.mount("/", StaticFiles(directory=str(root), html=True), name="hhms-ui")
 
 
 app = create_application()
