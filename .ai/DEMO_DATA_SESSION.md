@@ -108,3 +108,13 @@ _(empty)_
 
 ## Fixed problems (append when resolved)
 - **OP-6 /openapi.json broken ("Failed to load API definition")** (see run #F). Patched `endpoints/report_pdf.py` DELETE route (dropped `response_class=None`). Verified by fresh-schema generation (182 paths) + new test_openapi_generation.py + full suite green (549/2).
+
+## Run log — 2026-10-11 #G (user still saw openapi.json 500 after OP-6 fix)
+- **Diagnosis: stale deployment, not a code regression.** User pasted server logs showing `AssertionError: A response class is needed to generate OpenAPI` at `/openapi.json`. Verified the current workspace is clean:
+  - Static grep: no `response_class=None` anywhere in `backend/app` (only legitimate `FileResponse` usages + the guard NOTE comment).
+  - In-process: `app.openapi()` builds OK — **182 paths**.
+  - Live boot test: spawned `python -m app.server` on an ephemeral root → `GET /openapi.json` returned **HTTP 200** with 182 paths.
+  - Reproduced the user's exact error by re-adding `response_class=None` to a toy 204 route → same AssertionError string, confirming the old build was running pre-fix code.
+  - Regression guards `tests/test_openapi_generation.py`: 3 passed.
+- **Root cause of "not fixed": the fix lives only on branch `qwen-code-…` (commits 18b6a60 + later). The repo's `main` tip (7e023fa) contains the report_pdf fix but NOT the demo-data/OOBE/docs work; and the user's Windows server (traceback shows `starlette\...` packaged paths) is an older EXE/bundle built before OP-6.** No git remote configured, so nothing was ever pushed/rebuilt.
+- **Action required (user side):** either run from this updated source tree (`cd backend && python -m app.server`) or push the branch and let the release workflow rebuild the EXE; then restart. Old process must be stopped first (port 8000 conflict explains health-probe timeout in the harness while openapi served fine from a lingering instance).
