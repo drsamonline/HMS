@@ -72,26 +72,26 @@ python -m app.server
 ```
 
 The server runs migrations automatically, creates the default administrator
-(`admin` / `admin` — change it immediately), and listens on the configured LAN
-port. See [SERVER_STARTUP](docs/SERVER_STARTUP.md) and
+(`admin` / `admin` — change it immediately), seeds a full **2025 demo dataset**
+on first run (no commands needed — see below), and listens on the configured
+LAN port. See [SERVER_STARTUP](docs/SERVER_STARTUP.md) and
 [DEPLOYMENT_ARCHITECTURE](docs/DEPLOYMENT_ARCHITECTURE.md) for production setup.
 
-### Demo data (out-of-the-box 2025 dataset)
+### Demo data (automatic on first run — no commands)
 
-Want a populated hospital to explore? One command seeds a full year of
-realistic demo data — patients, OPD tokens, cases, prescriptions, dispenses,
-lab results, admissions, invoices and payments — all through the real service
-layer so every dashboard and report shows meaningful figures:
+On a brand-new install the server seeds a full year of realistic demo data by
+itself at startup — patients, OPD tokens, cases, prescriptions, dispenses, lab
+results, admissions, invoices and payments — so the GUI is populated the
+moment you open it. Portable builds (folder or EXE) work out of the box:
+copy → run → log in as `admin` / `admin`.
 
-```bash
-cd backend
-python -m app.server seed-demo-data          # bootstraps + seeds year 2025
-python -m app.server seed-demo-data --year 2025 --force   # re-seed
-```
-
-Or auto-seed at startup with `HHMS_SEED_DEMO_DATA=true`. The seeder is
-idempotent and refuses to touch databases that already contain real data
-(unless `--force`). Details: [docs/DEMO_DATA.md](docs/DEMO_DATA.md).
+- The seed runs **only** when the database is pristine; any install that
+  already contains real data is never touched.
+- Opt out with environment variable `HHMS_SEED_DEMO_DATA=false` (recommended
+  for production deployments).
+- Optional manual commands (not required): `python -m app.server
+  seed-demo-data` supports `--year` and `--force`. Details:
+  [docs/DEMO_DATA.md](docs/DEMO_DATA.md).
 
 ---
 
