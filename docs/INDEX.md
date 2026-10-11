@@ -151,6 +151,7 @@
 | [CLIENT_PROCUREMENT_WORKSPACE.md](CLIENT_PROCUREMENT_WORKSPACE.md) | Client procurement workspace (Batch 41) |
 | [CLIENT_AUDIT_ACTIVITY.md](CLIENT_AUDIT_ACTIVITY.md) | Client audit and activity trail (Batch 45) |
 | [CLIENT_CLINICAL_WORKFLOW_INTEGRATION.md](CLIENT_CLINICAL_WORKFLOW_INTEGRATION.md) | Client clinical workflow integration |
+| [CLIENT_CLINICAL_WORKFLOW_CONTINUITY.md](history/CLIENT_CLINICAL_WORKFLOW_CONTINUITY.md) | Client clinical workflow continuity (historical batch page) |
 | [CLIENT_CLINICIAN_DASHBOARD_DUE_FOLLOWUPS.md](CLIENT_CLINICIAN_DASHBOARD_DUE_FOLLOWUPS.md) | Clinician dashboard due-follow-up continuity (Batch 79) |
 | [CLIENT_DASHBOARD_OUTSTANDING_INVOICES.md](CLIENT_DASHBOARD_OUTSTANDING_INVOICES.md) | Dashboard outstanding billing continuity (Batch 82) |
 | [CLIENT_DASHBOARD_BED_OCCUPANCY.md](CLIENT_DASHBOARD_BED_OCCUPANCY.md) | Dashboard IPD bed-occupancy continuity feed (Batch 83) |
@@ -187,6 +188,7 @@
 | [USER_GUIDE.md](USER_GUIDE.md) | End-user manual — daily workflows by role (registration, OPD, clinical, IPD, billing, pharmacy, reports), navigation & roles, data-entry conventions, client troubleshooting (Batch 111) |
 | [ADMIN_TRAINING.md](ADMIN_TRAINING.md) | Administrator training manual — server/client installation, day-1 configuration checklist, users & roles, backups, restore drill, escalation matrix, security hygiene (Batch 111) |
 | [DEVELOPER_ONBOARDING.md](DEVELOPER_ONBOARDING.md) | Developer onboarding guide — repository map, environment setup, testing contract, batch closing ritual, conventions, first-week exercise (Batch 111) |
+| [DEMO_DATA.md](DEMO_DATA.md) | Out-of-the-box demo dataset (year 2025) — seeding commands, `HHMS_SEED_DEMO_DATA` flag, safety/idempotency guarantees, reset procedure |
 | [CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md](CLIENT_OPERATIONAL_WORKSPACE_INTEGRATION.md) | Client operational workspace integration |
 | [CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md](CLIENT_OPERATIONAL_NAVIGATION_CONVERGENCE.md) | Client operational navigation convergence |
 | [CLIENT_RBAC_NAVIGATION.md](CLIENT_RBAC_NAVIGATION.md) | Client RBAC-aware navigation |
@@ -296,4 +298,4 @@ Specification → Review → Implementation → Code Review → Testing → Git 
 
 ---
 
-*124 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
+*125 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*

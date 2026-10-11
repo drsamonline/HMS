@@ -355,6 +355,8 @@ async def _seed_masters(db, year: int) -> dict:
 
 
 async def _seed_transactions(db, year: int, staff: dict, masters: dict) -> dict:
+    from sqlalchemy import select
+
     from app.schemas.admission import AdmissionCreate
     from app.schemas.billing import InvoiceCreate, InvoiceItemCreate, PaymentCreate
     from app.schemas.case_record import CaseRecordCreate
@@ -478,8 +480,18 @@ async def _seed_transactions(db, year: int, staff: dict, masters: dict) -> dict:
         ))
         counters["prescriptions"] += 1
 
-        # Refresh to load items relationship.
-        item_rows = [(item, med) for item, med in zip(prescription.items, chosen)]
+        # The Prescription model has no ORM relationship to its items;
+        # fetch them by foreign key and pair each with its medicine master.
+        from app.models.prescription_item import PrescriptionItem
+
+        item_models = list((await db.execute(
+            select(PrescriptionItem).where(
+                PrescriptionItem.prescription_id == prescription.id
+            ).order_by(PrescriptionItem.id)
+        )).scalars().all())
+        med_by_id = {med.id: med for med in chosen}
+        item_rows = [(item, med_by_id[item.medicine_id])
+                     for item in item_models if item.medicine_id in med_by_id]
         amount = Decimal("0")
         for item, med in item_rows:
             candidates = [b for b in stock_batches if b.medicine_id == med.id]
@@ -650,18 +662,40 @@ async def _seed_transactions(db, year: int, staff: dict, masters: dict) -> dict:
 
 
 async def _seed(year: int, force: bool) -> int:
-    from sqlalchemy import select
+    from sqlalchemy import func, select
+
+    # Ensure schema exists (Alembic migrations) before touching any table so
+    # the CLI works on a fresh install without first booting the server.
+    from app.startup import prepare_runtime
+
+    prepare_runtime()
 
     from app.db.session import get_session_factory
     from app.models.system_setting import SystemSetting
+    from app.models.user import User
 
     factory = get_session_factory()
     marker_key = f"demo_seed.year.{year}"
 
     async with factory() as db:
+        # Safety gate: demo data must never be injected into a live hospital
+        # database that already has real patients.  Seeding proceeds only on
+        # an empty database or one previously seeded by this CLI (marker set).
         marker = (await db.execute(
             select(SystemSetting).where(SystemSetting.setting_key == marker_key)
         )).scalar_one_or_none()
+        from app.models.patient import Patient
+
+        patient_count = (await db.execute(
+            select(func.count()).select_from(Patient)
+        )).scalar_one()
+        if patient_count > 0 and marker is None and not force:
+            print(
+                f"Refusing to seed: database already contains {patient_count} "
+                f"real patient record(s) and no '{marker_key}' marker. "
+                "Use --force to override."
+            )
+            return 2
         if marker is not None and not force:
             print(f"Demo data for {year} already seeded ({marker_key}); use --force to re-seed.")
             return 0
@@ -710,6 +744,78 @@ def maybe_seed_from_env() -> None:
         return
     year = int(os.environ.get("HHMS_SEED_DEMO_YEAR", "2025"))
     main(["--year", str(year)])
+
+
+def seed_demo_on_first_run(year: int = 2025) -> bool:
+    """Startup hook for portable/demo builds: seed automatically on first run.
+
+    Returns True when seeding actually happened (i.e. the database was empty
+    apart from bootstrap artefacts).  Any database that already contains real
+    transactional data — patients, users beyond the default admin, or a
+    previous seed marker — is left completely untouched, so this hook is safe
+    to leave enabled in shipped builds.  Disable with
+    ``HHMS_SEED_DEMO_DATA=false``.
+    """
+    from sqlalchemy import func, select
+
+    from app.db.session import get_session_factory
+    from app.config.runtime_paths import database_path
+    from app.models.audit_log import AuditLog
+    from app.models.number_sequence import NumberSequence
+    from app.models.patient import Patient
+    from app.models.system_setting import SystemSetting
+    from app.models.user import User
+
+    factory = get_session_factory()
+
+    async def _is_pristine() -> bool:
+        async with factory() as db:
+            async def _count(model) -> int:
+                return (await db.execute(
+                    select(func.count()).select_from(model)
+                )).scalar_one()
+
+            # A pristine (fresh-install) database has only the bootstrap rows
+            # created by startup/migrations: the default admin user, the
+            # operational-year settings, the first-login flag and the five
+            # number sequences shipped by migration 0010.  Anything beyond
+            # that is real data.
+            if await _count(Patient) or await _count(AuditLog):
+                return False
+            remaining_users = (await db.execute(
+                select(func.count()).select_from(User).where(User.username != "admin")
+            )).scalar_one()
+            if remaining_users:
+                return False
+            remaining_settings = (await db.execute(
+                select(func.count()).select_from(SystemSetting).where(
+                    SystemSetting.setting_key.notin_([
+                        "operational_year_basis",
+                        "financial_year_start_month",
+                        "financial_year_start_day",
+                        "auth.first_login_pending_for_user_id",
+                    ])
+                )
+            )).scalar_one()
+            if remaining_settings:
+                return False
+            # NumberSequence ships five bootstrap rows from migration 0010;
+            # extra sequences mean a previous seed run added them.
+            seq_count = await _count(NumberSequence)
+            if seq_count > 5:
+                return False
+            return True
+
+    try:
+        if not database_path().exists():
+            return False  # schema not created yet - nothing to seed into
+        pristine = asyncio.run(_is_pristine())
+    except Exception:  # pragma: no cover - never block boot on detection
+        return False
+    if not pristine:
+        return False
+    rc = main(["--year", str(year)])
+    return rc == 0
 
 
 if __name__ == "__main__":

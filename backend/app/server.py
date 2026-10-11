@@ -80,6 +80,20 @@ def run() -> None:
         from app.cli.create_admin import main as create_admin_main
 
         raise SystemExit(create_admin_main(sys.argv[2:]))
+    if len(sys.argv) > 1 and sys.argv[1] == "seed-demo-data":
+        # OOBE shortcut: bootstrap migrations + default admin, then seed the
+        # demo dataset (idempotent; refuses to touch databases with real data
+        # unless --force is given).
+        prepare_runtime()
+        try:
+            from app.cli.create_admin import ensure_default_admin
+
+            ensure_default_admin()
+        except Exception:  # pragma: no cover - never block seeding on bootstrap
+            logger.exception("default admin bootstrap failed (continuing)")
+        from app.cli.seed_demo_data import main as seed_demo_main
+
+        raise SystemExit(seed_demo_main(sys.argv[2:]))
     prepare_runtime()
     # First-run convenience: seed admin/admin so a fresh build is testable
     # out of the box. No-op once any user exists; disable with
@@ -90,14 +104,27 @@ def run() -> None:
         ensure_default_admin()
     except Exception:  # pragma: no cover - never block boot on bootstrap
         logger.exception("default admin bootstrap failed (continuing startup)")
-    # Optional out-of-the-box demo dataset (year defaults to 2025). Enable with
-    # HHMS_SEED_DEMO_DATA=true; idempotent via a SystemSetting marker per year.
+    # Out-of-the-box demo dataset (year 2025) for portable builds: seeds
+    # automatically on a pristine database so the GUI is populated without
+    # any commands.  Databases that already contain real data are never
+    # touched; disable with HHMS_SEED_DEMO_DATA=false.
+    try:
+        import os as _os
+
+        _flag = _os.environ.get("HHMS_SEED_DEMO_DATA", "").strip().lower()
+        if _flag not in {"false", "0", "no"}:
+            from app.cli.seed_demo_data import seed_demo_on_first_run
+
+            if seed_demo_on_first_run():
+                logger.info("Demo data (year 2025) seeded automatically on first run.")
+    except Exception:  # pragma: no cover - never block boot on demo seeding
+        logger.exception("demo data seeding failed (continuing startup)")
     try:
         from app.cli.seed_demo_data import maybe_seed_from_env
 
         maybe_seed_from_env()
     except Exception:  # pragma: no cover - never block boot on demo seeding
-        logger.exception("demo data seeding failed (continuing startup)")
+        logger.exception("demo data env seeding failed (continuing startup)")
     settings = get_settings()
     lan_discovery.start()
     logger.info("Starting HHMS server on %s:%s", settings.SERVER_HOST, settings.SERVER_PORT)
