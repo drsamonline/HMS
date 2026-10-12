@@ -34,12 +34,17 @@ HHMS-Server.exe (one Windows PC)  ◄── LAN HTTP/JSON + UDP discovery ──
    launcher with the `-IncludeClient` switch at build time). No administrator
    rights are required.
 2. Start **HHMS Server** from the Start Menu. First launch runs all database
-   migrations automatically (fresh install bootstraps the full chain to head)
-   and starts the HTTP listener on the LAN port (default 8000).
+   migrations automatically (fresh install bootstraps the full chain to head),
+   creates the built-in default administrator (`admin` / `admin` — change it
+   immediately; suppress with `HHMS_BOOTSTRAP_DEFAULT_ADMIN=false`), serves the
+   web GUI at `http://<server>:8000/`, and starts the HTTP listener on the LAN
+   port (default 8000). A pristine database also auto-seeds the 2025 demo
+   dataset for instant evaluation — set `HHMS_SEED_DEMO_DATA=false` before
+   first boot for production installations (see DEMO_DATA.md).
 3. Verify health: open `http://<server-ip>:8000/api/v1/health` in any browser —
    expect `status: ok` and the release version matching the `VERSION` file.
-4. Firewall: allow inbound TCP 8000 (HTTP) and UDP discovery on the private
-   network profile only.
+4. Firewall: allow inbound TCP 8000 (HTTP) and UDP 38541 (discovery) on the
+   private network profile only.
 
 ### Client workstations
 1. Copy/install **HHMS-Client.exe** (bundled frontend content sits beside the EXE).

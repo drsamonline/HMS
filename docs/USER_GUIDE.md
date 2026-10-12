@@ -20,9 +20,13 @@ Related documents: [ADMIN_TRAINING.md](ADMIN_TRAINING.md) (setup & operations),
 
 ### 1.1 Launching the client
 1. Double-click **HHMS-Client.exe** (Start Menu shortcut created by the installer).
+   Alternatively, any workstation can open the same interface in a web browser
+   at `http://<server-ip>:8000/` — the server hosts the GUI itself; the desktop
+   client is an optional WebView2 shell over the identical UI.
 2. The login screen appears. If the server is running on the LAN, the client
-   discovers it automatically via UDP broadcast (`HHMS_DISCOVER_V1`) — you normally
-   never type an address.
+   discovers it automatically via UDP broadcast (`HHMS_DISCOVER_V1`, port
+   38541, sent to every network interface's subnet broadcast so Wi-Fi works) —
+   you normally never type an address.
 3. If discovery does not find the server, use **Connect manually** and enter the
    server machine's LAN address, e.g. `http://192.168.1.10:8000`.
 
@@ -30,8 +34,15 @@ Related documents: [ADMIN_TRAINING.md](ADMIN_TRAINING.md) (setup & operations),
 > WebView2 Runtime. Follow the prompt, or ask your administrator to deploy the
 > offline redistributable (see ADMIN_TRAINING.md §2).
 
+> A brand-new server comes pre-populated with a full year of **2025 demo data**
+> so every dashboard and report shows figures immediately. On a production
+> installation the administrator seeds this off (`HHMS_SEED_DEMO_DATA=false`)
+> and enters real data instead — see DEMO_DATA.md.
+
 ### 1.2 Signing in
-Enter your **username** and **password** given by your administrator. A wrong
+Enter your **username** and **password** given by your administrator (on a
+fresh evaluation install the built-in default is `admin` / `admin` — change it
+immediately). A wrong
 password shows an inline error. After repeated failed attempts (default: 10 per
 minute per workstation) sign-in is briefly blocked with a "too many attempts"
 message — this is the brute-force protection; wait about a minute and try again.

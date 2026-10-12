@@ -59,7 +59,7 @@ Runs entirely on the local network with a server-owned database — *no internet
 
 **Reporting & printing** — statistics engine, 16 screen/paper-parity print envelopes (receivables aging, collection summaries, receipt continuity, settlement/refund audits, ward occupancy, investigation billing reconciliation), PDF generation, report scheduling, batch printing.
 
-**Release-ready infrastructure** — LAN server discovery, single-file Windows/Linux server binaries, Inno/NSIS installers, automatic dual-platform GitHub releases on `v*` tags, backup/restore workflows, login rate limiting, JWT hardening, secret-key rotation runbook. **546 backend tests passing.**
+**Release-ready infrastructure** — LAN server discovery (UDP port 38541), single-file Windows/Linux server binaries, Inno/NSIS installers, automatic dual-platform GitHub releases (rolling `nightly` prerelease on every push to `main`, stable Release on `v*.*.*` tags), backup/restore workflows, login rate limiting, JWT hardening, secret-key rotation runbook. **553 backend tests passing.**
 
 ---
 
@@ -72,9 +72,11 @@ python -m app.server
 ```
 
 The server runs migrations automatically, creates the default administrator
-(`admin` / `admin` — change it immediately), seeds a full **2025 demo dataset**
-on first run (no commands needed — see below), and listens on the configured
-LAN port. See [SERVER_STARTUP](docs/SERVER_STARTUP.md) and
+(`admin` / `admin` — change it immediately; disable with
+`HHMS_BOOTSTRAP_DEFAULT_ADMIN=false`), seeds a full **2025 demo dataset**
+on first run (no commands needed — see below), serves the built-in web GUI at
+`http://localhost:8000/`, and listens on the configured LAN port. See
+[SERVER_STARTUP](docs/SERVER_STARTUP.md) and
 [DEPLOYMENT_ARCHITECTURE](docs/DEPLOYMENT_ARCHITECTURE.md) for production setup.
 
 ### Demo data (automatic on first run — no commands)
