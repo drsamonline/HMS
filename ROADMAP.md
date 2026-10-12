@@ -48,7 +48,7 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Client print renderer and batch printing
 - [x] Prescription template final QA *(Batch 113 — automated print-pipeline contract suite locks CSS geometry/chrome-hiding, JS fetcher↔renderer↔button consistency over all 16 envelope routes, HTML-escape XSS guard, cold-DB 200s and paper-parity end-to-end)*
 - [ ] Printer hardware QA *(automated readiness locked by Batch 113; physical-paper field checklist on target hardware remains an operational task)*
-- [x] PDF generation verification *(Batch 117 — verified: server-side deterministic PDF engine `backend/app/services/report_pdf.py` (ReportLab) renders all 16 print-envelope types registered under `/api/v1/reports/*`; unknown/malformed payloads fail loudly; suite green at 546 passed / 2 skipped with `reportlab` now pinned in `requirements.txt`.)*
+- [x] PDF generation verification *(Batch 117 — verified: server-side deterministic PDF engine `backend/app/services/report_pdf.py` (ReportLab) renders all 16 print-envelope types registered under `/api/v1/reports/*`; unknown/malformed payloads fail loudly; suite green with `reportlab` now pinned in `requirements.txt`.)*
 
 ## Milestone 5 – Reports ✅
 
@@ -66,7 +66,7 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Performance testing
 - [x] Clean-machine installation testing (Batch 104 — fresh-directory migration-chain bootstrap, 0001→0028, verified green)
 
-## Milestone 7 – Release 🔶 (in progress — Batches 105–116 landed packaging, EXE build, installer & CI, backup/restore + client launcher, performance & security audit, role-aware UI QA, documentation & training finalization, WebView2 offline redistributable bundling, print pipeline & hardware-readiness QA, cross-module client integration polish, secret-key rotation release gate, docs consolidation + automatic dual-platform GitHub releases)
+## Milestone 7 – Release 🔶 (in progress — Batches 105–119 landed packaging, EXE build, installer & CI, backup/restore + client launcher, performance & security audit, role-aware UI QA, documentation & training finalization, WebView2 offline redistributable bundling, print pipeline & hardware-readiness QA, cross-module client integration polish, secret-key rotation release gate, docs consolidation, out-of-the-box demo data + default-admin OOBE, tag-driven dual-platform GitHub releases, GUI served by the server itself, Wi-Fi LAN discovery fix, OpenAPI-generation fix and deprecated-utcnow cleanup)
 
 - [x] Client launcher packaging verification (Batch 108 — `client/HHMS.Client` single-file self-contained win-x64 `HHMS-Client.exe` contract locked by QA; WebView2 SDK pinned at 1.0.3856.49; frontend bundled; `-IncludeClient` installer switch; Batch 112 — offline redistributable CAB bundling closed)
 - [x] WebView2 runtime packaging *(launcher prerequisite check in `scripts/deploy/server-launch.ps1` done Batch 105; pinned SDK ships in the launcher EXE per Batch 108; Batch 112 — `stage_webview2_redist.ps1` fixed-version CAB staging with SHA-256 pinning + Microsoft-host allow-list, `-Webview2RedistDir` installer bundling via `expand.exe` unpack to `{app}\WebView2Runtime\<version>`, launcher `runtimeDirectory:` consumption; 14-test QA suite)*
@@ -79,17 +79,18 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 - [x] Deployment scripts (Batch 105 — `scripts/deploy/`: build-server.sh, install-first-run.sh, server-launch.ps1, usage README; syntax/integrity verified by QA suite)
 - [x] User training materials *(Batch 111 — USER_GUIDE.md role-driven workflow manual + ADMIN_TRAINING.md hands-on training handbook with day-1 checklist and quarterly restore drill)*
 - [x] Secret-key rotation gate *(Batch 115 — runtime secrets untracked + ignored, enforced min-length validation, loader hardening, `rotate-secret-key.ps1` utility, `docs/SECRET_ROTATION_RUNBOOK.md`; executing the rotation per deployment before v1.0 remains an operational step)*
-- [x] Automatic dual-platform GitHub releases *(Batch 116 — `release.yml` builds + smoke-tests Linux server bundle and Windows EXE/installer in parallel on `v*` tags, computes SHA-256 checksums, publishes a GitHub Release automatically; `--smoke-test` first-run probe added to `server.py`; historical docs consolidated under `docs/history/`)*
-- [ ] Production release *(execute the Batch 115 rotation runbook on the deployment environment, then push a `v*` tag — the Batch 116 pipeline now publishes both platform artifacts automatically)*
+- [x] Automatic dual-platform GitHub releases *(Batch 116 — `release.yml` builds + smoke-tests Linux server bundle and Windows EXE/installer in parallel, computes SHA-256 checksums, publishes a GitHub Release automatically; `--smoke-test` first-run probe added to `server.py`; historical docs consolidated under `docs/history/`. Policy refined in Batches 118–119 and re-closed after Run #D: tag-driven — every push to `main` publishes ONE rolling `nightly` prerelease (stable URL, never accumulates), a `vX.Y.Z` tag publishes the stable "latest" Release; per-commit snapshot releases banned; combined `latest-build` artifact always downloadable from the Actions run page)*
+- [x] Out-of-the-box experience (OOBE) *(Batches 117–119 + Runs #H/#I/#F — fresh install is immediately usable with zero commands: migrations → default admin (`admin`/`admin`, opt-out `HHMS_BOOTSTRAP_DEFAULT_ADMIN=false`) → 2025 demo dataset auto-seed on pristine DB only (`HHMS_SEED_DEMO_DATA=false` to disable); web GUI served by the server itself at `/`; LAN discovery port aligned with the C# client probe (38541) with per-subnet Wi-Fi broadcast; `--smoke-test` now exercises the full first-run path so broken OOBE fails CI; OpenAPI/Swagger generation regression guard added; deprecated `datetime.utcnow()` fully removed from `backend/app`)*
+- [ ] Production release *(execute the Batch 115 rotation runbook on the deployment environment, bump `VERSION`, then push a `v*.*.*` tag — the pipeline publishes both platform artifacts as a stable GitHub Release automatically)*
 
 ---
 
 ## Current Position
 
-Functional build complete (Milestones 0–6 ✅). Milestone 7 is nearly done: packaging, installers, CI releases, backup/restore, security & performance hardening, role-aware UI, training docs, print-pipeline QA, cross-module integration, secret-rotation gate and automatic dual-platform GitHub releases have all landed and are verified by the full backend suite (**546 passed, 2 skipped**). Demo dataset seeding shipped as an OOBE convenience (`python -m app.server seed-demo-data`; see [docs/DEMO_DATA.md](docs/DEMO_DATA.md)).
+Functional build complete (Milestones 0–6 ✅). Milestone 7 is nearly done: packaging, installers, CI releases, backup/restore, security & performance hardening, role-aware UI, training docs, print-pipeline QA, cross-module integration, secret-rotation gate, automatic dual-platform GitHub releases, and the zero-command out-of-the-box experience (default admin + 2025 demo data + server-served GUI) have all landed and are verified by the full backend suite (**557 passed, 2 skipped**). Demo dataset seeding ships as an OOBE convenience (auto on first run; manual: `python -m app.server seed-demo-data`; see [docs/DEMO_DATA.md](docs/DEMO_DATA.md)).
 
 Remaining before v1.0 (both operational, non-code):
 - Printer hardware field checklist on target clinic hardware.
-- Execute the [secret rotation runbook](docs/SECRET_ROTATION_RUNBOOK.md) per deployment, bump `VERSION` to 1.0.0, push a `v1.0.0` tag — the release pipeline publishes both platform artifacts automatically.
+- Execute the [secret rotation runbook](docs/SECRET_ROTATION_RUNBOOK.md) per deployment, bump `VERSION` to 1.0.0, push a `v1.0.0` tag — the release pipeline publishes both platform artifacts as a stable GitHub Release automatically.
 
 Per-batch history lives in [CHANGELOG.md](CHANGELOG.md), [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md) and [docs/history/](docs/history/).

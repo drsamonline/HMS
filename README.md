@@ -6,9 +6,11 @@
 
 Runs entirely on the local network with a server-owned database — *no internet dependency, no cloud lock-in.*
 
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/drsamonline/hhms?label=release&color=blue)](CHANGELOG.md)
+[![Release policy](https://img.shields.io/badge/releases-nightly%20%2B%20stable-blueviolet)](CHANGELOG.md)
 [![Version](https://img.shields.io/badge/version-0.0.1-informational)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-557%20passed-brightgreen)](backend/tests)
+[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-blue?logo=githubactions&logoColor=white)](.github/workflows/release.yml)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue?logo=python&logoColor=white)](backend/pyproject.toml)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![SQLite](https://img.shields.io/badge/database-SQLite%20%2B%20Alembic-003b57?logo=sqlite&logoColor=white)](docs/DATABASE_SCHEMA.md)
@@ -59,7 +61,7 @@ Runs entirely on the local network with a server-owned database — *no internet
 
 **Reporting & printing** — statistics engine, 16 screen/paper-parity print envelopes (receivables aging, collection summaries, receipt continuity, settlement/refund audits, ward occupancy, investigation billing reconciliation), PDF generation, report scheduling, batch printing.
 
-**Release-ready infrastructure** — LAN server discovery, single-file Windows/Linux server binaries, Inno/NSIS installers, automatic dual-platform GitHub releases on `v*` tags, backup/restore workflows, login rate limiting, JWT hardening, secret-key rotation runbook. **546 backend tests passing.**
+**Release-ready infrastructure** — LAN server discovery (UDP port 38541), single-file Windows/Linux server binaries, Inno/NSIS installers, automatic dual-platform GitHub releases (rolling `nightly` prerelease on every push to `main`, stable Release on `v*.*.*` tags), backup/restore workflows, login rate limiting, JWT hardening, secret-key rotation runbook. **557 backend tests passing.**
 
 ---
 
@@ -72,9 +74,11 @@ python -m app.server
 ```
 
 The server runs migrations automatically, creates the default administrator
-(`admin` / `admin` — change it immediately), seeds a full **2025 demo dataset**
-on first run (no commands needed — see below), and listens on the configured
-LAN port. See [SERVER_STARTUP](docs/SERVER_STARTUP.md) and
+(`admin` / `admin` — change it immediately; disable with
+`HHMS_BOOTSTRAP_DEFAULT_ADMIN=false`), seeds a full **2025 demo dataset**
+on first run (no commands needed — see below), serves the built-in web GUI at
+`http://localhost:8000/`, and listens on the configured LAN port. See
+[SERVER_STARTUP](docs/SERVER_STARTUP.md) and
 [DEPLOYMENT_ARCHITECTURE](docs/DEPLOYMENT_ARCHITECTURE.md) for production setup.
 
 ### Demo data (automatic on first run — no commands)

@@ -82,13 +82,28 @@ class BackupService:
             })
         return rows
 
-    async def create_backup(self, requested_name: str | None = None) -> dict[str, object]:
+    async def create_backup(
+        self, requested_name: str | None = None, *, overwrite: bool = False
+    ) -> dict[str, object]:
         source = self._ensure_sqlite()
         now = datetime.now(timezone.utc)
         suffix = now.strftime("%Y%m%d-%H%M%S")
         name = _normalise_name(requested_name or f"hhms-backup-{suffix}")
         if requested_name and name == "hhms-backup.sqlite3":
             name = f"hhms-backup-{suffix}.sqlite3"
+        if overwrite:
+            # Rolling snapshots (e.g. the shutdown "data draft saver") reuse
+            # one slot; stamp the name so each save is unique while keeping
+            # the requested stem for easy identification.  Two drafts saved
+            # inside the same second still collide on an exact-second stamp,
+            # so disambiguate with a counter suffix instead of failing.
+            stem = name[: -len(".sqlite3")]
+            candidate = f"{stem}-{suffix}.sqlite3"
+            attempt = 1
+            while (backups_directory() / candidate).exists():
+                candidate = f"{stem}-{suffix}-{attempt}.sqlite3"
+                attempt += 1
+            name = candidate
         target = backups_directory() / name
         if target.resolve() == source.resolve():
             raise BusinessRuleException("Backup target cannot overwrite the live database.")

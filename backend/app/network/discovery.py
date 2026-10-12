@@ -90,6 +90,19 @@ class LanDiscoveryResponder:
         self._socket = sock
         try:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            # Windows clients send the global broadcast (255.255.255.255) as a
+            # *unicast* datagram to this host when the server runs on the same
+            # machine (loopback probe) and some NICs/APs deliver directed
+            # broadcasts the same way.  SO_BROADCAST lets the bound socket
+            # both receive those broadcast-flagged datagrams and use
+            # sendto/broadcast replies back to probing clients.  Without it,
+            # local-machine discovery silently fails on Windows while still
+            # working in Linux test containers — exactly the "client cannot
+            # auto-discover the server" symptom reported from packaged builds.
+            try:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            except OSError:
+                pass
             sock.bind(("0.0.0.0", int(settings.DISCOVERY_PORT)))
             sock.settimeout(0.5)
             while not stop_event.is_set():

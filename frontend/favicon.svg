@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="HHMS">
+  <defs>
+    <linearGradient id="hhmsShield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f5f8b"/>
+      <stop offset="1" stop-color="#174d70"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#hhmsShield)" stroke="#ffffff" stroke-width="3" d="M32 3l24 8v16c0 15.5-9.8 27.6-24 34C17.8 54.6 8 42.5 8 27V11z"/>
+  <path fill="#ffffff" d="M28 14h8v14h14v8H36v14h-8V36H14v-8h14z"/>
+</svg>

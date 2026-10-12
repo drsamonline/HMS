@@ -9,6 +9,11 @@ Sessions are listed newest-first within each release; batch entries reflect the
 functional build batches tracked in [.ai/PROJECT_STATE.md](.ai/PROJECT_STATE.md).
 
 ## [Unreleased]
+### Fixed — Session follow-ups · LAN auto-discovery, full-screen UI, favicon 404
+- **Server auto-discovery on LAN and local machine:** backend UDP discovery responder now sets `SO_BROADCAST` (Windows silently dropped broadcast datagrams without it); the WPF client bridge adds a loopback (127.0.0.1) unicast probe fallback with up to 3 retry rounds; the browser GUI probes `http://<host>:8000/api/v1/system/info` directly when no native bridge is present, so opening the served page or running server+client on one machine connects with zero configuration.
+- **UI polish / full-screen layout:** `.app-shell` no longer caps at a middle column (fluid width with clamp padding), sticky sidebar, stronger button hover/active affordance, wider patient grids, responsive breakpoints for large displays; CSS cache-busting query forces style refresh. Connection panel reliably re-shows (`ensureVisibleView()`) so buttons are never left unclickable behind a blank state.
+- **Favicon 404 eliminated:** new bundled HHMS shield icon (`frontend/favicon.svg`, also copied to `favicon.ico`), linked from `index.html` (`icon`, `alternate icon`, `shortcut icon`, `apple-touch-icon`), plus an explicit `/favicon.ico` route registered in `create_application()` that serves the SVG with `image/svg+xml` + 1-day cache header even in API-only deployments (excluded from the OpenAPI schema). New regression tests: `backend/tests/test_favicon.py` (4 cases).
+
 ### Added — Batch 119 · Built-in Default Admin (admin/admin) for Instant Testing
 - **Server boot now auto-creates the default administrator** (`username=admin`, `password=admin`) after migrations whenever the users table is empty, so a freshly downloaded/installed build can be logged into immediately with zero CLI steps. Idempotent: no-op once any user exists; never touches existing accounts. Disable with env `HHMS_BOOTSTRAP_DEFAULT_ADMIN=false`.
 - **`create_admin` CLI defaults to password `admin`** when neither `--password` nor `HHMS_ADMIN_INITIAL_PASSWORD` is supplied (interactive prompt still available via `--prompt`). Prints a loud "DEFAULT LOGIN ACTIVE" warning banner on use.
