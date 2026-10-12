@@ -8,7 +8,7 @@ Runs entirely on the local network with a server-owned database — *no internet
 
 [![Release policy](https://img.shields.io/badge/releases-nightly%20%2B%20stable-blueviolet)](CHANGELOG.md)
 [![Version](https://img.shields.io/badge/version-0.0.1-informational)](VERSION)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-566%20passed-brightgreen)](backend/tests)
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-blue?logo=githubactions&logoColor=white)](.github/workflows/release.yml)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue?logo=python&logoColor=white)](backend/pyproject.toml)
@@ -134,7 +134,18 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) and fo
 
 ## 📄 License
 
-Released under the [MIT License](LICENSE). See [CHANGELOG.md](CHANGELOG.md) for release history.
+HHMS is **proprietary software** — see the full [License Agreement](LICENSE) (EULA v1.0, effective 12 Oct 2026). Summary of terms:
+
+| Use | Terms |
+|-----|-------|
+| 🧑 **Personal use** | ✅ Free of charge |
+| 🏛️ **Non-profit organisations** (charitable hospitals/clinics, trusts, societies, Section 8 companies, small educational institutions) | ✅ Free of charge — **only after prior written permission** from the author |
+| 🏢 **Business / commercial use** (private hospitals, nursing homes, clinics, resale, hosting, any revenue-generating activity) | 💰 Separate paid license — license fees required before installation or use |
+| 🎓 **Large educational institutions** (universities, medical/homeopathic colleges, >500 students/staff or >10 machines/campus deployments) | 💰 Separate institutional license with license fees (concessions at author's discretion, in writing only) |
+
+⚖️ Governing law: laws of India (Copyright Act 1957, IT Act 2000, DPDP Act 2023, Bharatiya Nyaya Sanhita 2023, Consumer Protection Act 2019). Disputes: arbitration and **exclusive jurisdiction of the courts at Vadodara, Gujarat**. Unauthorized use invites civil *and* criminal action per Clause 9 of the [LICENSE](LICENSE).
+
+The former MIT License is withdrawn and superseded by this agreement. See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 <div align="center">
 
