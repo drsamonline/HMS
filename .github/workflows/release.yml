@@ -5,7 +5,7 @@
 #   * push of a version tag (vX.Y.Z)  -> stable Release vX.Y.Z
 #   * push to main                    -> rolling nightly prerelease (tag: nightly)
 #   * manual workflow_dispatch        -> rolling nightly prerelease
-#   * pull_request                    -> test + build only (no publishing)
+#   * pull_request                    -> test gate ONLY (no build, no publishing)
 #
 # Flow:
 #   1. `test`     — backend regression suite (CI gate).
@@ -47,7 +47,6 @@ permissions:
 
 env:
   PYTHON_VERSION: "3.12"
-  # Non-interactive, quiet pip — avoids hangs and version-check noise.
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PIP_NO_INPUT: "1"
 
@@ -75,6 +74,8 @@ jobs:
   build-server-linux:
     name: Server bundle (Linux)
     needs: test
+    # PRs run the test gate only — no artifact builds, no publishing.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -104,6 +105,8 @@ jobs:
   build-installer-windows:
     name: Windows EXE + installer
     needs: test
+    # PRs run the test gate only — no artifact builds, no publishing.
+    if: github.event_name != 'pull_request'
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
@@ -157,7 +160,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # full history for release-note generation / compare
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
