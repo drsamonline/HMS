@@ -137,7 +137,7 @@ def _register_favicon_route(application: FastAPI) -> None:
         return Response(
             content=icon_bytes,
             media_type="image/svg+xml",
-            headers={"Cache-Control": "public, max-age=86400"},
+            headers={"Cache-Control": "no-cache"},
         )
 
 
@@ -157,8 +157,24 @@ def _mount_frontend(application: FastAPI) -> None:
 
     from fastapi.staticfiles import StaticFiles
 
+    class _NoCacheStaticFiles(StaticFiles):
+        """Static files served with ``no-cache`` revalidation headers.
+
+        The hospital PC may run an older packaged build whose bundled GUI
+        predates the latest layout fixes; more importantly, browsers cache
+        index.html/CSS aggressively, which made every "the UI didn't
+        change" report impossible to fix remotely.  With ``no-cache`` the
+        browser always revalidates (ETag/Last-Modified), so a rebuilt EXE
+        or edited frontend shows up on plain refresh — no Ctrl+F5 needed.
+        """
+
+        async def get_response(self, path: str, scope):
+            response = await super().get_response(path, scope)
+            response.headers["Cache-Control"] = "no-cache"
+            return response
+
     # html=True => "/" serves index.html and unknown paths fall back to it.
-    application.mount("/", StaticFiles(directory=str(root), html=True), name="hhms-ui")
+    application.mount("/", _NoCacheStaticFiles(directory=str(root), html=True), name="hhms-ui")
 
 
 app = create_application()

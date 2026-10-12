@@ -36,9 +36,9 @@ IS_WINDOWS = sys.platform == "win32"
 # shared libraries may not even be installed — can still import this module.
 _TK_IMPORT_ERROR: Exception | None = None
 try:  # pragma: no cover - exercised on machines without Tk
-    from tkinter import Text, Tk, Toplevel
+    from tkinter import Label, Text, Tk, Toplevel
 except Exception as _exc:  # noqa: BLE001
-    Text = Tk = Toplevel = None  # type: ignore[assignment]
+    Label = Text = Tk = Toplevel = None  # type: ignore[assignment]
     _TK_IMPORT_ERROR = _exc
 
 try:  # pragma: no cover - optional dependency
@@ -124,10 +124,27 @@ class DesktopConsole:
         root.withdraw()  # invisible anchor; the visible surface is Toplevel
         window = Toplevel(root)
         window.title("HHMS Server — live log")
-        window.geometry("640x320")
+        window.geometry("640x320+80+80")
+        window.minsize(420, 200)
+        window.resizable(True, True)
+        try:
+            window.state("normal")  # never start life minimised
+        except Exception:  # pragma: no cover - WM quirk
+            pass
+        window.lift()
         window.attributes("-topmost", True)
         text = Text(window, state="disabled", wrap="word", bg="#10151c", fg="#d7e2ee")
         text.pack(fill="both", expand=True)
+        hint = Label(
+            window,
+            anchor="w",
+            padx=8,
+            text=(
+                "Closing this window keeps the server running in the system "
+                "tray — right-click the tray icon for 'Exit Server'."
+            ),
+        )
+        hint.pack(fill="x")
         window.protocol("WM_DELETE_WINDOW", self._on_close)
         self._root, self._window, self._text = root, window, text
         self._pump()
@@ -159,8 +176,24 @@ class DesktopConsole:
         """Closing the window minimises to tray (or just hides without tray)."""
         if self._window is not None:
             self._window.withdraw()
-        if self._tray is None:
-            logger.info("log window closed; server keeps running (re-launch to view)")
+        if self._tray is not None:
+            # Show a non-blocking toast so the operator knows where the app went
+            # instead of thinking the server crashed/closed.
+            try:
+                self._tray.notify(
+                    "HHMS Server is still running",
+                    "Look for the HHMS shield icon in the system tray "
+                    "(bottom-right, near the clock). Right-click it for "
+                    "'Show log window' or 'Exit Server'.",
+                )
+            except Exception:  # pragma: no cover - notify is best-effort
+                pass
+        else:  # pragma: no cover - pystray missing in the build env
+            logger.warning(
+                "Log window closed and no system-tray icon is available: the "
+                "server keeps running but there is no way to reopen this "
+                "window. Install pystray+Pillow in the build environment."
+            )
 
     # ----------------------------------------------------------------- tray
     def _tray_image(self):
@@ -175,7 +208,7 @@ class DesktopConsole:
             pystray.MenuItem("Open HHMS GUI", lambda: self._show_browser(), default=True),
             pystray.MenuItem("Show log window", self._restore_window),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Exit Server", self.request_exit),
+            pystray.MenuItem("Exit Server", self._exit_server),
         )
 
     def _show_browser(self) -> None:
@@ -192,6 +225,15 @@ class DesktopConsole:
     def _restore_window(self, *_args) -> None:
         if self._root is not None and self._window is not None:
             self._root.after(0, self._window.deiconify)
+
+    def _exit_server(self, *_args) -> None:
+        # pystray invokes menu callbacks on the tray thread; marshalling the
+        # shutdown request through Tk's event loop avoids any cross-thread
+        # widget access before we tear everything down.
+        if self._root is not None:
+            self._root.after(0, self.request_exit)
+        else:  # pragma: no cover - root always exists when a menu is shown
+            self.request_exit()
 
     def request_exit(self, *_args) -> None:
         """Tray-menu 'Exit Server': graceful shutdown, then terminate."""
