@@ -9,7 +9,7 @@ Runs entirely on the local network with a server-owned database — *no internet
 [![Release policy](https://img.shields.io/badge/releases-nightly%20%2B%20stable-blueviolet)](CHANGELOG.md)
 [![Version](https://img.shields.io/badge/version-0.0.1-informational)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-565%20passed-brightgreen)](backend/tests)
+[![Tests](https://img.shields.io/badge/tests-566%20passed-brightgreen)](backend/tests)
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-blue?logo=githubactions&logoColor=white)](.github/workflows/release.yml)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue?logo=python&logoColor=white)](backend/pyproject.toml)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
@@ -61,7 +61,7 @@ Runs entirely on the local network with a server-owned database — *no internet
 
 **Reporting & printing** — statistics engine, 16 screen/paper-parity print envelopes (receivables aging, collection summaries, receipt continuity, settlement/refund audits, ward occupancy, investigation billing reconciliation), PDF generation, report scheduling, batch printing.
 
-**Release-ready infrastructure** — LAN server discovery (UDP port 38541), single-file Windows/Linux server binaries, Inno/NSIS installers, automatic dual-platform GitHub releases (rolling `nightly` prerelease on every push to `main`, stable Release on `v*.*.*` tags), backup/restore workflows, login rate limiting, JWT hardening, secret-key rotation runbook. **565 backend tests passing.**
+**Release-ready infrastructure** — LAN server discovery (UDP port 38541), single-file Windows/Linux server binaries, Inno/NSIS installers, automatic dual-platform GitHub releases (rolling `nightly` prerelease on every push to `main`, stable Release on `v*.*.*` tags), backup/restore workflows, login rate limiting, JWT hardening, secret-key rotation runbook. **566 backend tests passing.**
 
 ---
 

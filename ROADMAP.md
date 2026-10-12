@@ -88,7 +88,7 @@ High-level development milestones for HHMS — a LAN-based Homeopathic Hospital 
 
 ## Current Position
 
-Functional build complete (Milestones 0–6 ✅). Milestone 7 is nearly done: packaging, installers, CI releases, backup/restore, security & performance hardening, role-aware UI, training docs, print-pipeline QA, cross-module integration, secret-rotation gate, automatic dual-platform GitHub releases, and the zero-command out-of-the-box experience (default admin + 2025 demo data + server-served GUI) have all landed and are verified by the full backend suite (**565 passed, 2 skipped**). Demo dataset seeding ships as an OOBE convenience (auto on first run; manual: `python -m app.server seed-demo-data`; see [docs/DEMO_DATA.md](docs/DEMO_DATA.md)).
+Functional build complete (Milestones 0–6 ✅). Milestone 7 is nearly done: packaging, installers, CI releases, backup/restore, security & performance hardening, role-aware UI, training docs, print-pipeline QA, cross-module integration, secret-rotation gate, automatic dual-platform GitHub releases, and the zero-command out-of-the-box experience (default admin + 2025 demo data + server-served GUI) have all landed and are verified by the full backend suite (**566 passed, 2 skipped**). Demo dataset seeding ships as an OOBE convenience (auto on first run; manual: `python -m app.server seed-demo-data`; see [docs/DEMO_DATA.md](docs/DEMO_DATA.md)).
 
 Remaining before v1.0 (both operational, non-code):
 - Printer hardware field checklist on target clinic hardware.
