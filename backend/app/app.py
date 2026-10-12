@@ -98,9 +98,47 @@ def create_application() -> FastAPI:
         prefix=settings.API_V1_PREFIX,
     )
 
+    _register_favicon_route(application)
     _mount_frontend(application)
 
     return application
+
+
+def _register_favicon_route(application: FastAPI) -> None:
+    """Serve the HHMS favicon at /favicon.ico.
+
+    Browsers request ``/favicon.ico`` automatically; without an explicit
+    handler this produced a noisy 404.  The bundled SVG icon is served
+    with the correct media type regardless of whether the static GUI
+    bundle is mounted, and every other common browser icon path falls
+    back to the same file via the frontend mount below.
+    """
+    from pathlib import Path
+
+    from fastapi import Response
+
+    from app.config.runtime_paths import frontend_directory
+
+    candidates = []
+    root = frontend_directory()
+    if root is not None:
+        candidates.append(Path(root) / "favicon.svg")
+    # Fallback for API-only deployments that still ship the repo layout.
+    candidates.append(Path(__file__).resolve().parents[2] / "frontend" / "favicon.svg")
+
+    icon_path = next((p for p in candidates if p.is_file()), None)
+    if icon_path is None:  # pragma: no cover - icon missing from checkout
+        return
+
+    icon_bytes = icon_path.read_bytes()
+
+    @application.get("/favicon.ico", include_in_schema=False)
+    async def favicon() -> Response:
+        return Response(
+            content=icon_bytes,
+            media_type="image/svg+xml",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
 
 
 def _mount_frontend(application: FastAPI) -> None:
