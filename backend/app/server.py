@@ -138,16 +138,52 @@ def run() -> None:
     settings = get_settings()
     lan_discovery.start()
     logger.info("Starting HHMS server on %s:%s", settings.SERVER_HOST, settings.SERVER_PORT)
+
+    # Packaged Windows builds: hide the raw command window and replace it
+    # with the tray + live-log desktop console (close → minimise to tray,
+    # right-click "Exit Server" → graceful shutdown + data draft saver).
+    from app.desktop_console import maybe_start_desktop_console, save_draft_on_exit
+
+    desktop = maybe_start_desktop_console()
+    config = uvicorn.Config(
+        app,
+        host=settings.SERVER_HOST,
+        port=int(settings.SERVER_PORT),
+        log_level=settings.LOG_LEVEL.lower(),
+        reload=False,
+    )
+    server = uvicorn.Server(config)
+
+    if desktop is not None:
+        def _graceful_exit() -> None:
+            # 1. Ask uvicorn to stop accepting work and shut down cleanly.
+            try:
+                server.should_exit = True
+            except Exception:  # pragma: no cover - defensive
+                pass
+            # 2. Wait (bounded) for the serve loop to unwind so in-flight
+            #    writes commit before we snapshot the database.
+            deadline = time.time() + 8
+            while time.time() < deadline and server.started:
+                time.sleep(0.2)
+            # 3. Data draft saver: rolling backup of the live DB on exit.
+            save_draft_on_exit()
+            # 4. Stop the UDP discovery responder.
+            lan_discovery.stop()
+
+        desktop.on_exit = _graceful_exit
+        threading.Thread(
+            target=desktop.start, name="hhms-desktop-console", daemon=True
+        ).start()
+
     try:
-        uvicorn.run(
-            app,
-            host=settings.SERVER_HOST,
-            port=int(settings.SERVER_PORT),
-            log_level=settings.LOG_LEVEL.lower(),
-            reload=False,
-        )
+        server.run()
     finally:
         lan_discovery.stop()
+        if desktop is not None:
+            # Process is exiting by other means (Ctrl+C, service stop):
+            # still save a final data draft so nothing entered is lost.
+            save_draft_on_exit()
 
 
 if __name__ == "__main__":
