@@ -149,3 +149,40 @@ _(empty)_
 - `docs/LAN_DISCOVERY.md`: documented port updated to 38541.
 
 **Verified:** backend suite **549 passed, 2 skipped** (incl. test_lan_discovery.py + test_batch104_multi_client_lan_qa.py green against new default). No remaining references to 39555 anywhere. Note: HHMS.exe itself is built by CI (.github release workflow) — rebuild/tag required to ship the fixed client.
+
+## Run #P (2026-10-12) — OP-3 utcnow sweep on clean branch cut from origin/main
+- Context: user asked to push work to a new branch for PR merge. Previous rebuild branch
+  (rebuild/scratch-rebuild, 2142988) contained a duplicate simplified stack vs the real
+  async stack (Run #O finding). Per plan, created fresh branch `fix/op3-utcnow-cleanup`
+  directly from origin/main (68f4d79) — no rebuild code included.
+- Change: replaced all 21 deprecated `datetime.utcnow()` call sites in
+  backend/app/services/reporting.py with tz-aware `utc_now()` from app.core.utils
+  (added import). Zero remaining utcnow() call sites in backend/app/**/*.py.
+- Verification: `from app.services import reporting` imports OK; full suite
+  `cd backend && python -m pytest`: 553 passed, 2 skipped (baseline preserved).
+- OP-3 -> Fixed (this commit). Pushed to origin as fix/op3-utcnow-cleanup for PR.
+- Note: token used for push was exposed in chat; user advised to revoke (done pending).
+
+## Run #Q (2026-10-12) — Push of fix/op3-utcnow-cleanup; token state observations
+- Pushed a1ac6cb to origin as refs/heads/fix/op3-utcnow-cleanup (verified via ls-remote).
+  PR link: https://github.com/drsamonline/HMS/pull/new/fix/op3-utcnow-cleanup
+- Diff vs origin/main is exactly the OP-3 sweep + ledger entry (2 files, +35/-21). No
+  duplicate-stack code included. Tests on this branch: 553 passed, 2 skipped.
+- OBSERVATION 1: the chat-provided classic token now returns "Repository not found"
+  (classic tokens show 404 rather than 401 when revoked) -> consistent with user having
+  revoked it mid-session. A previously cached credential was used for this push and still
+  has Contents:write. User should revoke THAT one too (Settings > Developer settings >
+  Tokens) since it was also exposed in chat earlier.
+- OBSERVATION 2: origin/main == 68f4d79 (PR #70). rebuild/scratch-rebuild (2142988) is
+  superseded by this clean branch; recommend deleting it after merge to avoid confusion.
+- Next after merge: tag v1.0.0 on main, push tag to trigger release pipeline (OP-1 close),
+  then UI Phase 2+ per docs/UI_ENHANCEMENTS.md (OP-5).
+
+## Run #R (2026-10-12) — Cleanup: superseded rebuild branch deleted; final state verified
+- Deleted rebuild/scratch-rebuild locally and on origin (was 2142988, later 6c70b7a after a
+  stray amend/push from the earlier interrupted session). Superseded by fix/op3-utcnow-cleanup.
+- Final remote heads: main=68f4d79, fix/op3-utcnow-cleanup=0730c15 (verified ls-remote).
+- Working tree clean; no stashes; no duplicate-stack residue (backend/app/routers absent;
+  only app/cli/seed_demo_data.py + create_admin.py as in real project).
+- datetime.utcnow() call sites in backend/app: 0. Suite on branch: 553 passed, 2 skipped.
+- Awaiting user PR merge of fix/op3-utcnow-cleanup -> main; then tag v1.0.0 (OP-1 close).
