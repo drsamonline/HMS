@@ -1,6 +1,5 @@
 # ---------------------------------------------------------------------------
-# HHMS release pipeline — tag-driven releases (product-owner policy update:
-# builds must appear as proper Releases, not clutter of per-commit snapshots).
+# HHMS release pipeline — tag-driven releases
 #
 # Triggers:
 #   * push of a version tag (vX.Y.Z)  -> stable Release vX.Y.Z
@@ -17,7 +16,8 @@
 #        * version-tag push  -> real (non-prerelease) GitHub Release at the tag,
 #          marked "latest", named "HHMS <version>".
 #        * main push / dispatch -> single rolling prerelease permanently at
-#          .../releases/tag/nightly (stable download URL, always overwritten).
+#          .../releases/tag/nightly (stable download URL, always overwritten
+#          AND always re-pointed at the current commit).
 #      Binaries + checksums are ALSO attached to every run as the
 #      `latest-build` artifact, downloadable from the Actions run page even
 #      if the repo is private (releases would be hidden there).
@@ -35,42 +35,61 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Cancel superseded runs on the same ref, but NEVER cancel a tag release
+# midway through publishing — those are permanent milestones.
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+# Least privilege at the top; the release job elevates to `contents: write`.
 permissions:
-  contents: write
+  contents: read
 
 env:
   PYTHON_VERSION: "3.12"
+  # Non-interactive, quiet pip — avoids hangs and version-check noise.
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PIP_NO_INPUT: "1"
 
 jobs:
   test:
     name: Backend regression (ubuntu-latest)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
       - name: Install dependencies
-        run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt -r backend/requirements-dev.txt
       - name: Run full backend suite
         run: python -m pytest backend/tests -q
 
   build-server-linux:
     name: Server bundle (Linux)
     needs: test
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-build.txt
       - name: Install dependencies + PyInstaller
-        run: pip install -r backend/requirements.txt -r backend/requirements-build.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt -r backend/requirements-build.txt
       - name: Build one-file bundle
         run: bash scripts/deploy/build-server.sh
       - name: Smoke-test bundle (first-run bootstrap + health)
@@ -79,21 +98,27 @@ jobs:
         with:
           name: hhms-server-linux
           path: build/dist/HHMS-Server
+          if-no-files-found: error
+          retention-days: 14
 
   build-installer-windows:
     name: Windows EXE + installer
     needs: test
-    if: github.event_name != 'pull_request'
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-build.txt
       - name: Install dependencies + PyInstaller
-        run: pip install -r backend/requirements.txt -r backend/requirements-build.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt -r backend/requirements-build.txt
       - name: Build server EXE
         shell: pwsh
         run: |
@@ -112,39 +137,53 @@ jobs:
         with:
           name: hhms-windows-installer
           path: dist/installer/HHMS-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         with:
           name: hhms-server-windows
           path: build/dist/HHMS-Server.exe
+          if-no-files-found: error
+          retention-days: 14
 
   release:
     name: Publish GitHub Release
     needs: [build-server-linux, build-installer-windows]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write   # required: create/delete releases and tags
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0   # full history for release-note generation / compare
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+
       - name: Compute SHA-256 checksums
         run: |
           cd artifacts
-          find . -type f -print0 | xargs -0 sha256sum > ../SHA256SUMS.txt
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > ../SHA256SUMS.txt
           cd ..
+          echo "---- SHA256SUMS.txt ----"
+          cat SHA256SUMS.txt
+
       # Bundle binaries + checksums into a single Actions artifact so they are
       # always downloadable from the run page (works for private repos too).
       - name: Upload combined latest-build artifact
         uses: actions/upload-artifact@v4
         with:
           name: latest-build
+          if-no-files-found: error
+          retention-days: 30
           path: |
             artifacts/hhms-server-linux/HHMS-Server
             artifacts/hhms-server-windows/HHMS-Server.exe
             artifacts/hhms-windows-installer/*.exe
             SHA256SUMS.txt
+
       # Resolve what to publish: version-tag push -> stable Release vX.Y.Z;
       # anything else (main push / dispatch) -> one rolling nightly prerelease.
       - name: Resolve release target
@@ -153,16 +192,37 @@ jobs:
           REF="${GITHUB_REF:-}"
           if [[ "$REF" == refs/tags/v* ]]; then
             VERSION="${REF#refs/tags/}"
-            echo "tag=$VERSION"      >> "$GITHUB_OUTPUT"
-            echo "prerelease=false"  >> "$GITHUB_OUTPUT"
-            echo "make_latest=true"  >> "$GITHUB_OUTPUT"
-            echo "name=HHMS $VERSION" >> "$GITHUB_OUTPUT"
+            {
+              echo "tag=$VERSION"
+              echo "prerelease=false"
+              echo "make_latest=true"
+              echo "name=HHMS $VERSION"
+              echo "rolling=false"
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "tag=nightly"       >> "$GITHUB_OUTPUT"
-            echo "prerelease=true"   >> "$GITHUB_OUTPUT"
-            echo "make_latest=false" >> "$GITHUB_OUTPUT"
-            echo "name=HHMS Nightly Build" >> "$GITHUB_OUTPUT"
+            {
+              echo "tag=nightly"
+              echo "prerelease=true"
+              echo "make_latest=false"
+              echo "name=HHMS Nightly Build"
+              echo "rolling=true"
+            } >> "$GITHUB_OUTPUT"
           fi
+
+      # Rolling nightly needs a *moving* ref. GitHub tags are immutable, so
+      # delete the previous nightly release (and its tag) before publishing the
+      # new one — otherwise the action updates the release body but leaves the
+      # tag pinned to the first-ever main push.
+      - name: Reset rolling nightly release + tag
+        if: steps.target.outputs.rolling == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete nightly --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+          # Belt-and-braces: also delete a stale tag if the release was already
+          # gone but the tag somehow remained.
+          git push origin :refs/tags/nightly || true
+
       - name: Generate release notes
         run: |
           {
@@ -175,17 +235,21 @@ jobs:
             echo "| \`SHA256SUMS.txt\` | integrity checksums |"
             echo ""
             echo "First run bootstraps the database and loads 2025 demo data automatically."
-            echo "Commit: ${{ github.sha }}"
+            echo ""
+            echo "Commit: \`${{ github.sha }}\`"
           } > RELEASE_NOTES.md
+
       # Exactly ONE release per pipeline run — no per-commit snapshot clutter.
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.target.outputs.tag }}
+          target_commitish: ${{ github.sha }}   # pin rolling nightly to current commit
           name: ${{ steps.target.outputs.name }}
           body_path: RELEASE_NOTES.md
           prerelease: ${{ steps.target.outputs.prerelease }}
           make_latest: ${{ steps.target.outputs.make_latest }}
+          generate_release_notes: ${{ steps.target.outputs.rolling == 'false' }}
           files: |
             artifacts/**/*
             SHA256SUMS.txt
