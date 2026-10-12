@@ -257,14 +257,13 @@ def maybe_start_desktop_console() -> DesktopConsole | None:
     flag = os.environ.get("HHMS_DESKTOP_CONSOLE", "").strip().lower()
     if flag in {"false", "0", "no"}:
         return None
-    if flag not in {"true", "1", "yes"}:
-        # Auto-start only when stdout is not an interactive terminal — i.e.
-        # double-clicked from Explorer rather than launched from PowerShell.
-        try:
-            if os.isatty(1):
-                return None
-        except Exception:  # pragma: no cover
-            pass
+    # Otherwise the desktop console auto-starts for every packaged Windows
+    # run (double-click *and* launches from a terminal).  The raw cmd.exe
+    # window is hidden via FreeConsole and replaced by the tray + live-log
+    # window, so operators always get the desktop-app experience they asked
+    # for instead of a flashing console that then disappears behind a TTY
+    # check.  Set HHMS_DESKTOP_CONSOLE=false to opt out (e.g. running as a
+    # Windows service where the SCM owns the process lifecycle).
     from app.config.runtime_paths import logs_directory
 
     if _TK_IMPORT_ERROR is not None:  # pragma: no cover - broken Tk install
