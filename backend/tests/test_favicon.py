@@ -21,7 +21,18 @@ def test_favicon_ico_route_serves_icon():
         assert resp.status_code == 200
         assert resp.headers["content-type"].startswith("image/svg+xml")
         assert b"<svg" in resp.content
-        assert "max-age" in resp.headers.get("cache-control", "")
+        # no-cache so icon updates show up without a hard refresh
+        assert "no-cache" in resp.headers.get("cache-control", "")
+
+
+def test_frontend_static_serves_no_cache_headers():
+    """GUI assets must always revalidate so layout fixes appear on plain F5."""
+    application = create_application()
+    with TestClient(application) as client:
+        for path in ("/", "/index.html", "/css/app.css"):
+            resp = client.get(path)
+            assert resp.status_code == 200, path
+            assert "no-cache" in resp.headers.get("cache-control", ""), path
 
 
 def test_favicon_svg_available_via_frontend_mount():

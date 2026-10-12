@@ -20,7 +20,7 @@ HHMS/
 ├── templates/              # Print and report templates
 ├── tools/                  # Development tools
 ├── README.md               # Project overview
-├── LICENSE                 # MIT License
+├── LICENSE                 # Proprietary EULA v1.0
 ├── CHANGELOG.md            # Version history
 ├── ROADMAP.md              # Project milestones
 ├── CONTRIBUTING.md         # Contribution guidelines
@@ -149,7 +149,7 @@ Development utilities and helpers.
 | File | Purpose |
 |------|---------|
 | `README.md` | Project overview, objectives, quick start |
-| `LICENSE` | MIT License terms |
+| `LICENSE` | Proprietary EULA v1.0 — free personal use, non-profit by written permission, paid commercial/institutional licenses |
 | `CHANGELOG.md` | Version history and changes |
 | `ROADMAP.md` | Project milestones and timeline |
 | `CONTRIBUTING.md` | Guidelines for contributors |

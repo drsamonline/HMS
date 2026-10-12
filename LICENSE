@@ -1,21 +1,279 @@
-MIT License
+HHMS — HOMEOPATHIC HOSPITAL MANAGEMENT SYSTEM
+PROPRIETARY SOFTWARE LICENSE AGREEMENT (EULA)
 
-Copyright (c) 2025 HHMS Project
+Version 1.0 — effective 12 October 2026
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Copyright (c) 2026 Dr. Sohil Momin, Vadodara, Gujarat, India ("Licensor").
+All rights reserved. "HHMS", the HHMS source code, binaries, installers,
+documentation, user interface, database schemas, and all associated files in
+this repository are the exclusive property of the Licensor and are protected
+under the Copyright Act, 1957 (as amended, including by the Finance Act, 2018
+and the Copyright (Amendment) Rules, 2021), the Information Technology Act,
+2000 (as amended, including the Information Technology (Intermediary Guidelines
+and Digital Media Ethics Code) Rules, 2021), and applicable international
+copyright treaties (Berne Convention, TRIPS/WTO).
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+IMPORTANT — READ BEFORE INSTALLING OR USING THIS SOFTWARE.
+This is NOT an open-source or free-software license. The MIT License previously
+applied to earlier versions of this repository is expressly withdrawn and
+superseded in its entirety by this Agreement. Any copy, distribution, or use
+made in reliance on the withdrawn MIT grant after the effective date of this
+Agreement is unlicensed and infringing.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+
+1. DEFINITIONS
+   1.1 "Software" means the HHMS hospital management system in any form —
+       source code, object code, executables (including HHMS-Server.exe and
+       HHMS-Client.exe), installers, updates, patches, documentation, UI
+       designs, icons, database schemas, and derivative or modified works.
+   1.2 "Personal Use" means non-commercial use by a single natural person on
+       devices they own or control, for personal learning, evaluation, or
+       home-record keeping, with no fee, revenue, patient-billing, or
+       organizational deployment of any kind.
+   1.3 "Non-Profit Organization" means a trust, society (Societies Registration
+       Act, 1860 or the Gujarat Public Trusts Act, 1950), Section 8 company
+       (Companies Act, 2013), NGO, charitable hospital, or government/aided
+       medical institution whose profits, if any, are applied solely towards
+       promoting its objects and are not distributed to its members.
+   1.4 "Commercial User" means any person or entity that uses the Software for
+       or in connection with any business, trade, profession, private
+       hospital/clinic, for-profit educational activity, consultancy, service
+       bureau, hosting, resale, or any activity generating revenue or monetary
+       consideration, directly or indirectly.
+   1.5 "Large Educational Institution" means any university, deemed university,
+       medical/dental/homeopathic college, polytechnic, school of management or
+       IT, or training institute (whether government or private, Aided or
+       Un-Aided) that (a) has more than 500 enrolled students/staff, or
+       (b) deploys the Software across more than 10 machines or multiple
+       campuses, or (c) uses the Software in any paid program, workshop, lab,
+       or for revenue-generating activity.
+   1.6 "Written Permission" means a signed letter or email from the Licensor
+       (or the Licensor's authorized representative) granting specific usage
+       rights, obtained in advance, at licenses@hhms[dot]project[dot]example
+       (replace with the Licensor's current published contact). An application,
+       silence, or lapse of time never constitutes permission.
+   1.7 "License Fees" means the fees quoted in a valid commercial proposal /
+       purchase order accepted in writing by the Licensor, exclusive of GST at
+       the prevailing rate.
+
+
+2. GRANT OF LICENSE — CONDITIONAL AND TIERED
+   2.1 PERSONAL USE. Personal Use is permitted free of charge provided the
+        conditions of Clause 3 are met. No Written Permission is required for
+        bona fide Personal Use; however, any doubt as to whether a use is
+        Personal Use shall be resolved against the user until Written
+        Permission is obtained.
+   2.2 NON-PROFIT ORGANIZATIONS. Use by a Non-Profit Organization (including
+        non-profit hospitals, charitable clinics, and small educational
+        institutions below the Large-Educational threshold in Clause 1.5) is
+        permitted WITHOUT License Fees ONLY AFTER the organization has applied
+        for and RECEIVED WRITTEN PERMISSION from the Licensor. The permission
+        letter is personal to the named organization, site, and machine count,
+        is non-transferable, and may impose reasonable conditions (e.g.,
+        acknowledgment of the Licensor in printed reports). Operating without
+        prior written permission is a breach and infringement.
+   2.3 COMMERCIAL / BUSINESS USE. All Commercial Use — including private
+        homeopathic hospitals, nursing homes, multi-doctor clinics, pharmacies,
+        diagnostic centres, telemedicine operations, reselling, hosting the
+        Software for third parties, or using it internally in any
+        revenue-generating enterprise — REQUIRES a separate paid commercial
+        license agreement and payment of License Fees before installation or
+        use. Contact the Licensor for a quotation.
+   2.4 LARGE EDUCATIONAL INSTITUTIONS. Use by Large Educational Institutions
+        (Clause 1.5) — including classroom/lab deployment, campus-wide
+        installation, research projects run on funded/paid programs, and
+        examination use — REQUIRES a separate institutional license and payment
+        of License Fees, irrespective of whether the institution is government
+        or private, and irrespective of whether fees are charged to students.
+        Concession rates may be offered at the Licensor's sole discretion via
+        written agreement only.
+   2.5 NO IMPLIED RIGHTS. Nothing in this Agreement grants rights by
+        implication, estoppel, exhaustion, or otherwise. Any use not expressly
+        permitted above is prohibited.
+
+
+3. CONDITIONS OF ALL PERMITTED USE
+   3.1 Retain all copyright notices, this License file, and attribution/legal
+       notices in every copy, build, and derivative work.
+   3.2 Do not remove, obscure, or alter the "© Licensor" or branding screens,
+       about-box, or footer attributions.
+   3.3 Do not sublicense, sell, rent, lease, host-as-a-service, distribute
+       publicly (e.g., via GitHub/GitLab mirrors, file-sharing, or package
+       indexes), or make the Software available to third parties except as
+       expressly permitted in writing.
+   3.4 Do not reverse-engineer, decompile, or disassemble any binary except to
+       the limited extent such restriction is prohibited by Indian law for
+       interoperability, and only after a written request to the Licensor.
+   3.5 Do not use the Software for any unlawful purpose, and comply with all
+       applicable laws while operating it, including:
+         - the Digital Personal Data Protection Act, 2023 (DPDP Act) — as the
+           Data Fiduciary, obtain lawful consent for patient data, honor Data
+           Principal rights, implement reasonable security safeguards, and
+           report personal data breaches to the Data Protection Board of India
+           as prescribed under the DPDP Rules;
+         - the Information Technology Act, 2000 and SPDI Rules, 2011 (to the
+           extent still applicable) for sensitive personal data;
+         - the Clinical Establishments (Registration and Regulation) Act, 2010
+           and applicable Gujarat state clinical-establishment rules;
+         - the Homeopathy National Commission Act, 2020 and related NCISM/HNC
+           regulations governing practice and record-keeping;
+         - the Drugs and Cosmetics Act, 1940 and Rules thereunder for
+           pharmacy/inventory modules;
+         - the Biomedical Waste Management Rules, 2016, and state epidemic
+           notification duties under the Epidemic Diseases Act, 1897 and
+           Gujarat state notifications thereunder, where relevant;
+         - the Consumer Protection Act, 2019 (including e-commerce and product
+           liability provisions) for services rendered to patients using this
+           Software;
+         - the Goods and Services Tax (CGST Act, 2017) — License Fees are
+           exclusive of GST; the licensee bears any applicable tax.
+   3.6 Do not use the Software to store, process, or transmit patient health
+       data unless you have a lawful basis and appropriate technical and
+       organizational measures (access control, encryption at rest for backups,
+       audit logging) in place. The Software ships with such features; enabling
+       them is your responsibility.
+
+
+4. INTELLECTUAL PROPERTY; CONTRIBUTIONS
+   4.1 The Software and all modifications, enhancements, translations, bug
+       fixes, and derivative works created by you remain the exclusive property
+       of the Licensor or are assigned to the Licensor upon creation to the
+       fullest extent permitted by the Copyright Act, 1957 (Section 19 formalities observed).
+   4.2 Contributions submitted to the project repository are licensed to the
+       Licensor perpetually, irrevocably, worldwide, royalty-free, with the
+       right to sublicense and relicense, and the contributor waives moral
+       rights under Section 114 of the Copyright Act, 1957 to the extent
+       permitted by law. The Licensor may continue to accept contributions for
+       Personal-Use/non-profit improvement under these terms even though the
+       overall project is no longer open source.
+   4.3 Trademarks, logos, and the name "HHMS" are owned by the Licensor; no
+       trademark rights are granted.
+
+
+5. TERM, TERMINATION, AND REVOCATION
+   5.1 This license is effective until terminated. Written Permission under
+       Clause 2.2 may be revoked for material breach with 30 days' notice and
+       opportunity to cure.
+   5.2 Upon termination you must cease all use and delete/destroy all copies
+       within 15 days and certify destruction in writing on request.
+   5.3 Clauses 3.5, 4, 6, 7, 8, and 9 survive termination.
+
+
+6. DISCLAIMER OF WARRANTY
+   THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE", WITH ALL FAULTS,
+   WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY
+   (Section 14(2)(d), Sale of Goods Act, 1930 read with the Consumer Protection
+   Act, 2019), FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, TITLE, AND
+   ANY WARRANTY ARISING FROM COURSE OF DEALING OR USAGE OF TRADE. THE LICENSOR
+   DOES NOT WARRANT UNINTERRUPTED, ERROR-FREE, OR MEDICALLY SAFE OPERATION.
+   CLINICAL DECISIONS REMAIN THE SOLE RESPONSIBILITY OF THE TREATING PRACTITIONER.
+
+
+7. LIMITATION OF LIABILITY
+   TO THE MAXIMUM EXTENT PERMITTED BY INDIAN LAW, IN NO EVENT SHALL THE
+   LICENSOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+   CONSEQUENTIAL, PUNITIVE, OR EXEMPLARY DAMAGES — INCLUDING LOSS OF PROFITS,
+   DATA, GOODWILL, MEDICAL RECORDS, BUSINESS OPPORTUNITY, OR COST OF
+   PROCUREMENT OF SUBSTITUTE GOODS/SERVICES — WHETHER IN CONTRACT, TORT
+   (INCLUDING NEGLIGENCE), PRODUCT LIABILITY (Section 2(36)/97, Consumer
+   Protection Act, 2019), RESTITUTION, OR OTHERWISE, EVEN IF ADVISED OF THE
+   POSSIBILITY OF SUCH DAMAGES. WHERE ANY STATUTE (FOR EXAMPLE THE CONSUMER
+   PROTECTION ACT, 2019 OR THE DPDP ACT, 2023) PROHIBITS EXCLUSION OR
+   LIMITATION OF CERTAIN LIABILITY, THE LICENSOR'S LIABILITY IS LIMITED TO THE
+   GREATEST EXTENT PERMITTED BY SUCH LAW, AND IN NO EVENT SHALL AGGREGATE
+   LIABILITY EXCEED THE GREATER OF (A) THE LICENSE FEES PAID BY YOU FOR THE
+   SPECIFIC COMPONENT CAUSING THE CLAIM IN THE TWELVE MONTHS PRECEDING THE
+   CLAIM, OR (B) ₹50,000 (INR FIFTY THOUSAND ONLY).
+
+
+8. INDEMNITY
+   You shall indemnify, defend, and hold harmless the Licensor, its heirs,
+   successors, and assigns against all claims, actions, demands, liabilities,
+   damages, penalties (including DPDP Act monetary penalties), fines, costs,
+   and expenses (including reasonable attorney fees on a vakalatnama-cum-
+   actuals basis) arising out of (a) your use or deployment of the Software,
+   (b) your violation of this Agreement or of any law (including patient-data
+   protection obligations), (c) any claim by your patients, staff, or
+   third parties relating to data processed through the Software, or (d) any
+   modification or redistribution made by you.
+
+
+9. REMEDIES, DISPUTE RESOLUTION, GOVERNING LAW, AND JURISDICTION
+   9.1 GOVERNING LAW: This Agreement is governed by and construed in accordance
+       with the laws of the Republic of India, including without limitation the
+       Copyright Act, 1957, the Information Technology Act, 2000, the Digital
+       Personal Data Protection Act, 2023, the Indian Contract Act, 1872, the
+       Specific Relief Act, 1963, and the Consumer Protection Act, 2019.
+   9.2 AMICABLE SETTLEMENT: Before initiating proceedings, the parties shall
+       attempt good-faith resolution for 30 days (negotiation, then optional
+       mediation under Section 12-A of the Commercial Courts Act, 2015).
+   9.3 ARBITRATION: Any dispute not so resolved shall be referred to a sole
+       arbitrator appointed by mutual consent under the Arbitration and
+       Conciliation Act, 1996 (as amended), seated and administered at
+       Vadodara, Gujarat; language English.
+   9.4 EXCLUSIVE JURISDICTION — VADODARA: Subject to Clause 9.3, the courts at
+       Vadodara, Gujarat, India shall have EXCLUSIVE jurisdiction over all
+       suits, proceedings, and applications arising out of or relating to this
+       Agreement or the Software. For matters cognizable under the Copyright
+       Act, 1957 (Sections 55, 63) and the IT Act, 2000 (Sections 43, 43A, 66,
+       66B, 66C, 66D, 70, 79), the parties submit to the courts, police
+       stations, Controller of Patents/Copyright Registrar authorities having
+       jurisdiction at Vadodara, Gujarat, subject to statutory forum
+       requirements. The licensee irrevocably waives any objection to venue or
+       inconvenient-forum defense.
+   9.5 LEGAL ACTION: The Licensor reserves the right to pursue ALL remedies
+       available at law and equity, including without limitation:
+       (a) civil suits for permanent and interim injunction (Specific Relief
+           Act, 1963, Sections 36–42), damages, accounts of profit, and
+           conversion (Sections 55 & 63, Copyright Act, 1957);
+       (b) criminal complaints/prosecution for copyright infringement
+           (Section 63, Copyright Act, 1957 — punishable with imprisonment for
+           a term not less than six months and up to three years, and fine not
+           less than ₹50,000 and up to ₹200,000 per offence; enhanced
+           second-and-subsequent conviction under Section 63A), and for offences
+           under the IT Act, 2000 (e.g., Section 66 computer-related offences,
+           Section 66C identity theft, Section 66D cheating by personation
+           using a computer resource) and corresponding provisions of the Bharatiya
+           Nyaya Sanhita, 2023 (BNS) in force from 1 July 2024 (e.g., offences
+           analogous to cheating, criminal breach of trust, forgery, and
+           defamation used in relation to unauthorized software/data use);
+       (c) action for data breach/misuse under the DPDP Act, 2023 (monetary
+           penalties up to ₹250 crore for failure to prevent personal data
+           breaches, and other penalties per the Schedule to the Act) and
+           compensation to data principals under Section 12 of that Act;
+       (d) action under Order XXXVII (summary suit) or commercial-court
+           procedures (Commercial Courts Act, 2015) for recovery of unpaid
+           License Fees;
+       (e) Anton Piller/search-and-seizure orders, John Doe (unknown-person)
+           anti-piracy injunctions, and takedown notices under IT Act Section
+           79 + Intermediary Rules, 2021 against mirrors and distributors.
+   9.6 Infringing use after receipt of a cease-and-desist notice constitutes
+       willful infringement for the purposes of aggravated damages.
+
+
+10. GENERAL
+   10.1 Entire agreement between the parties regarding the Software; supersedes
+        the MIT License and all prior permissions unless expressly preserved
+        in a signed writing.
+   10.2 Amendments only in writing signed by the Licensor; the Licensor may
+        publish updated EULA versions with prospective effect on new
+        downloads/builds.
+   10.3 Severability; failure/delay to enforce is not waiver.
+   10.4 Export compliance — you must comply with India's Foreign Trade
+        (Development and Regulation) Act, 1992 and applicable export-control
+        laws.
+   10.5 Assignment — you may not assign this Agreement; the Licensor may.
+   10.6 Notices under this Agreement to the Licensor must be in writing to the
+        published contact address/email; notices to you may be delivered via
+        the Software, registered email, or post.
+   10.7 This Agreement may be executed digitally; electronic signatures are
+        valid under Section 3A/4A of the IT Act, 2000 and the IT (Signature or
+        Electronic Signature and Authentication) Rules, 2000/2015.
+
+
+BY DOWNLOADING, INSTALLING, OR USING THE SOFTWARE, YOU ACKNOWLEDGE THAT YOU
+HAVE READ THIS AGREEMENT, UNDERSTAND IT, AND AGREE TO BE BOUND BY IT. IF YOU
+DO NOT AGREE, DELETE ALL COPIES AND DO NOT USE THE SOFTWARE.
+
+(c) 2026 Dr. Sohil Momin, Vadodara, Gujarat, India. All rights reserved.
+Licensing inquiries: [email] | [phone] | [postal address]

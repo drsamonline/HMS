@@ -56,7 +56,17 @@ button:not(:disabled):active{transform:translateY(1px)}
 .dashboard-card strong{font-size:1.05rem;color:#17384d}
 .record-tab:hover{border-color:#7aa6c3}
 .table-wrap tr:hover td{background:#f4f8fb}
-@media(min-width:1700px){.app-shell{padding-inline:clamp(24px,4vw,64px)}}
+@media(min-width:1700px){.workspace{grid-template-columns:minmax(260px,300px) minmax(0,1fr);gap:24px}.content-panel{padding:26px}}
+/* Full-screen coverage (all viewport widths): the shell and every view fill
+   the window edge-to-edge.  The connection/login panels are centred cards
+   (max 680px) *inside* a full width area — .app-shell itself must never be
+   capped or the UI collapses into a narrow middle column on wide monitors. */
+html,body{width:100%}
+main.app-shell{min-height:calc(100vh - 56px)}
+.workspace{width:100%;grid-template-columns:minmax(220px,260px) minmax(0,1fr)}
+.workspace-main{display:grid;gap:16px;align-content:start}
+.workspace-main>.content-panel,.workspace-header{width:100%}
+#record-view,.module-placeholder,.patient-list,.admin-grid,.pharmacy-master-grid,.mrd-grid,.investigation-grid,.clinical-two-col{width:100%}
 /* Draft autosave (js/autosave.js): restore banner + highlighted restored forms */
 .draft-restore-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff8e6;border-color:#e6cf9a}
 .draft-restore-banner .link-button{background:none;border:none;color:#8a6d1b;text-decoration:underline;padding:0 4px;font-weight:600}
