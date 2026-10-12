@@ -9,6 +9,7 @@ from sqlalchemy import Select, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ResourceNotFoundException
+from app.core.utils import utc_now
 from app.models.admission import Admission
 from app.models.case_record import CaseRecord
 from app.models.diagnosis import Diagnosis
@@ -213,7 +214,7 @@ class ReportingService:
         blocks.sort(key=lambda block: block.print_order)
         return ReportPrintManifestRead(
             title=request.title or "HHMS Clinical Report",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             patient_id=patient.id,
             case_record_id=case_record.id if case_record else None,
             admission_id=admission.id if admission else None,
@@ -392,7 +393,7 @@ class ReportingService:
         title = request.title or "HHMS Clinical Report"
         return ReportPrintEnvelope(
             title=title,
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             patient_id=report.patient_id,
             case_record_id=report.case_record_id,
             admission_id=report.admission_id,
@@ -460,7 +461,7 @@ class ReportingService:
         balance_due = max(total_amount - amount_paid, Decimal("0"))
         payment_status = invoice.payment_status
 
-        generated_at = datetime.utcnow()
+        generated_at = utc_now()
         invoice_payload = _dump_row(invoice)
         for key in ("total_amount",):
             if key in invoice_payload:
@@ -525,7 +526,7 @@ class ReportingService:
             for item in summary["items"]
         ]
 
-        generated_at = datetime.utcnow()
+        generated_at = utc_now()
         return CollectionSummaryPrintEnvelope(
             title=request.title or "HHMS Collection Summary by Patient",
             generated_at=generated_at,
@@ -589,7 +590,7 @@ class ReportingService:
 
         return ReceivablesAgingPrintEnvelope(
             title=request.title or "HHMS Receivables Aging Ledger",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=ReceivablesAgingPrintData(
                 as_of=aging["as_of"],
                 buckets=[
@@ -649,12 +650,12 @@ class ReportingService:
             patients,
             receipts_by_invoice,
             paid_by_invoice,
-            datetime.utcnow(),
+            utc_now(),
         )
 
         return InvoiceReceiptContinuityPrintEnvelope(
             title=request.title or "HHMS Invoice Receipt Continuity Report",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=InvoiceReceiptContinuityPrintData(
                 as_of=audit["as_of"],
                 invoices_checked=audit["invoices_checked"],
@@ -691,7 +692,7 @@ class ReportingService:
 
         return ReceiptNumberingContinuityPrintEnvelope(
             title=request.title or "HHMS Receipt Numbering Continuity Audit",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=ReceiptNumberingContinuityPrintData(
                 as_of=audit["as_of"],
                 receipts_checked=audit["receipts_checked"],
@@ -729,7 +730,7 @@ class ReportingService:
 
         return InvoicePaymentReconciliationPrintEnvelope(
             title=request.title or "HHMS Invoice Payment Reconciliation Ledger",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=InvoicePaymentReconciliationPrintData(
                 as_of=ledger["as_of"],
                 invoices_checked=ledger["invoices_checked"],
@@ -774,7 +775,7 @@ class ReportingService:
 
         return PaymentMethodSummaryPrintEnvelope(
             title=request.title or "HHMS Payment Method Collection Summary",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=PaymentMethodSummaryPrintData(
                 as_of=summary["as_of"],
                 invoices_checked=summary["invoices_checked"],
@@ -815,7 +816,7 @@ class ReportingService:
 
         return InvoiceOverpaymentPrintEnvelope(
             title=request.title or "HHMS Invoice Overpayment Ledger",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=InvoiceOverpaymentPrintData(
                 as_of=ledger["as_of"],
                 invoices_checked=ledger["invoices_checked"],
@@ -859,7 +860,7 @@ class ReportingService:
 
         return PaymentMethodOverpaymentPrintEnvelope(
             title=request.title or "HHMS Payment Method Overpayment Breakdown",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=PaymentMethodOverpaymentPrintData(
                 as_of=breakdown["as_of"],
                 invoices_checked=breakdown["invoices_checked"],
@@ -906,7 +907,7 @@ class ReportingService:
 
         return InvoiceSettlementAuditPrintEnvelope(
             title=request.title or "HHMS Invoice Settlement Audit",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=InvoiceSettlementAuditPrintData(
                 as_of=audit["as_of"],
                 items=[
@@ -964,7 +965,7 @@ class ReportingService:
 
         return RefundAuditPrintEnvelope(
             title=request.title or "HHMS Refund Processing Audit",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=RefundAuditPrintData(
                 as_of=audit["as_of"],
                 items=[
@@ -1005,11 +1006,11 @@ class ReportingService:
         )
 
         rows = await build_discharge_audit_scan(db, request.limit)
-        audit = build_discharge_audit_result(rows, datetime.utcnow())
+        audit = build_discharge_audit_result(rows, utc_now())
 
         return DischargeAuditPrintEnvelope(
             title=request.title or "HHMS Discharge Audit",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=DischargeAuditPrintData(
                 as_of=audit["as_of"],
                 items=[
@@ -1040,7 +1041,7 @@ class ReportingService:
 
         return OPDQueueSummaryPrintEnvelope(
             title=request.title or "HHMS OPD Queue Summary",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=OPDQueueSummaryPrintData(
                 as_of=summary["as_of"],
                 items=[
@@ -1072,11 +1073,11 @@ class ReportingService:
         )
 
         rows = await build_ward_occupancy_summary_scan(db, request.limit)
-        summary = build_ward_occupancy_summary_result(rows, datetime.utcnow())
+        summary = build_ward_occupancy_summary_result(rows, utc_now())
 
         return WardOccupancyPrintEnvelope(
             title=request.title or "HHMS Ward Occupancy Summary",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=WardOccupancyPrintData(
                 as_of=summary["as_of"],
                 wards_reported=summary["wards_reported"],
@@ -1118,7 +1119,7 @@ class ReportingService:
             db, request.limit
         )
         summary = build_investigation_billing_reconciliation_result(
-            rows, datetime.utcnow()
+            rows, utc_now()
         )
         # The shared scan/rollup also emits visit_id/admission_id for the
         # dashboard feed; the print line intentionally omits them, so drop
@@ -1133,7 +1134,7 @@ class ReportingService:
 
         return InvestigationBillingReconciliationPrintEnvelope(
             title=request.title or "HHMS Investigation Billing Reconciliation",
-            generated_at=datetime.utcnow(),
+            generated_at=utc_now(),
             data=InvestigationBillingReconciliationPrintData(
                 as_of=summary["as_of"],
                 currency_note=summary["currency_note"],

@@ -149,3 +149,16 @@ _(empty)_
 - `docs/LAN_DISCOVERY.md`: documented port updated to 38541.
 
 **Verified:** backend suite **549 passed, 2 skipped** (incl. test_lan_discovery.py + test_batch104_multi_client_lan_qa.py green against new default). No remaining references to 39555 anywhere. Note: HHMS.exe itself is built by CI (.github release workflow) — rebuild/tag required to ship the fixed client.
+
+## Run #P (2026-10-12) — OP-3 utcnow sweep on clean branch cut from origin/main
+- Context: user asked to push work to a new branch for PR merge. Previous rebuild branch
+  (rebuild/scratch-rebuild, 2142988) contained a duplicate simplified stack vs the real
+  async stack (Run #O finding). Per plan, created fresh branch `fix/op3-utcnow-cleanup`
+  directly from origin/main (68f4d79) — no rebuild code included.
+- Change: replaced all 21 deprecated `datetime.utcnow()` call sites in
+  backend/app/services/reporting.py with tz-aware `utc_now()` from app.core.utils
+  (added import). Zero remaining utcnow() call sites in backend/app/**/*.py.
+- Verification: `from app.services import reporting` imports OK; full suite
+  `cd backend && python -m pytest`: 553 passed, 2 skipped (baseline preserved).
+- OP-3 -> Fixed (this commit). Pushed to origin as fix/op3-utcnow-cleanup for PR.
+- Note: token used for push was exposed in chat; user advised to revoke (done pending).
