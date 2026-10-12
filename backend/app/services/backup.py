@@ -94,10 +94,16 @@ class BackupService:
         if overwrite:
             # Rolling snapshots (e.g. the shutdown "data draft saver") reuse
             # one slot; stamp the name so each save is unique while keeping
-            # the requested stem for easy identification.
+            # the requested stem for easy identification.  Two drafts saved
+            # inside the same second still collide on an exact-second stamp,
+            # so disambiguate with a counter suffix instead of failing.
             stem = name[: -len(".sqlite3")]
-            if not stem.endswith(suffix):
-                name = f"{stem}-{suffix}.sqlite3"
+            candidate = f"{stem}-{suffix}.sqlite3"
+            attempt = 1
+            while (backups_directory() / candidate).exists():
+                candidate = f"{stem}-{suffix}-{attempt}.sqlite3"
+                attempt += 1
+            name = candidate
         target = backups_directory() / name
         if target.resolve() == source.resolve():
             raise BusinessRuleException("Backup target cannot overwrite the live database.")

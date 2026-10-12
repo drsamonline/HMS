@@ -17,6 +17,11 @@ hidden_app_imports = collect_submodules("app")
 # the frozen server bootstraps the schema but 500s on every request.
 hidden_app_imports += ["aiosqlite", "sqlite3"]
 
+# Desktop console (app/desktop_console.py) imports tkinter lazily and pystray/
+# PIL inside try/except, so PyInstaller's static analysis misses them; collect
+# them explicitly or the packaged tray + live-log window silently disappears.
+hidden_app_imports += ["tkinter", "pystray", "PIL", "PIL.Image", "PIL.ImageDraw"]
+
 a = Analysis(
     [str(backend_root / "app" / "server.py")],
     pathex=[str(backend_root)],

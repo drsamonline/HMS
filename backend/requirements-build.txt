@@ -1,2 +1,6 @@
 # PyInstaller packaging dependencies (CI build jobs only)
 pyinstaller>=6.0,<7.0
+# Windows desktop console (tray icon + live-log window, see app/desktop_console.py).
+# Pillow provides the tray image; pystray owns the system-tray integration.
+pystray>=0.19,<1.0
+Pillow>=10.4,<12.0

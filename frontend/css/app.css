@@ -57,3 +57,7 @@ button:not(:disabled):active{transform:translateY(1px)}
 .record-tab:hover{border-color:#7aa6c3}
 .table-wrap tr:hover td{background:#f4f8fb}
 @media(min-width:1700px){.app-shell{padding-inline:clamp(24px,4vw,64px)}}
+/* Draft autosave (js/autosave.js): restore banner + highlighted restored forms */
+.draft-restore-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff8e6;border-color:#e6cf9a}
+.draft-restore-banner .link-button{background:none;border:none;color:#8a6d1b;text-decoration:underline;padding:0 4px;font-weight:600}
+form.has-restored-draft{outline:2px dashed #d9b954;outline-offset:6px;border-radius:6px}
