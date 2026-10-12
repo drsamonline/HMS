@@ -177,3 +177,12 @@ _(empty)_
   superseded by this clean branch; recommend deleting it after merge to avoid confusion.
 - Next after merge: tag v1.0.0 on main, push tag to trigger release pipeline (OP-1 close),
   then UI Phase 2+ per docs/UI_ENHANCEMENTS.md (OP-5).
+
+## Run #R (2026-10-12) — Cleanup: superseded rebuild branch deleted; final state verified
+- Deleted rebuild/scratch-rebuild locally and on origin (was 2142988, later 6c70b7a after a
+  stray amend/push from the earlier interrupted session). Superseded by fix/op3-utcnow-cleanup.
+- Final remote heads: main=68f4d79, fix/op3-utcnow-cleanup=0730c15 (verified ls-remote).
+- Working tree clean; no stashes; no duplicate-stack residue (backend/app/routers absent;
+  only app/cli/seed_demo_data.py + create_admin.py as in real project).
+- datetime.utcnow() call sites in backend/app: 0. Suite on branch: 553 passed, 2 skipped.
+- Awaiting user PR merge of fix/op3-utcnow-cleanup -> main; then tag v1.0.0 (OP-1 close).
