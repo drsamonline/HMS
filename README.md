@@ -3,19 +3,17 @@
 # 🏥 HHMS — Homeopathic Hospital Management System
 
 **A LAN-based hospital management system purpose-built for homeopathic hospitals and clinics.**
-
 Runs entirely on the local network with a server-owned database — *no internet dependency, no cloud lock-in.*
 
-[![Release policy](https://img.shields.io/badge/releases-nightly%20%2B%20stable-blueviolet)](CHANGELOG.md)
+[![Landing page](https://img.shields.io/badge/landing%20page-live-1d4ed8?logo=githubpages&logoColor=white)](https://drsamonline.github.io/HMS/)
 [![Version](https://img.shields.io/badge/version-0.0.1-informational)](VERSION)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-566%20passed-brightgreen)](backend/tests)
-[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-blue?logo=githubactions&logoColor=white)](.github/workflows/release.yml)
-[![Python 3.13+](https://img.shields.io/badge/python-3.13%2B-blue?logo=python&logoColor=white)](backend/pyproject.toml)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![SQLite](https://img.shields.io/badge/database-SQLite%20%2B%20Alembic-003b57?logo=sqlite&logoColor=white)](docs/DATABASE_SCHEMA.md)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20LAN-lightgrey)](docs/DEPLOYMENT_ARCHITECTURE.md)
-[![Docs](https://img.shields.io/badge/docs-INDEX-green)](docs/INDEX.md)
+
+**Landing page:** <https://drsamonline.github.io/HMS/> · **Demo build:** <https://github.com/drsamonline/HMS/releases/tag/nightly> · **Demo data guide:** [docs/DEMO_DATA.md](docs/DEMO_DATA.md)
+
+<sub>HHMS is a LAN application, so there is no hosted web demo — a fresh install seeds a full demo dataset automatically on first run.</sub>
 
 </div>
 

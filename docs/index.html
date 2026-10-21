@@ -1,0 +1,805 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1d4ed8">
+<title>HHMS — LAN-Based Homeopathic Hospital Management System</title>
+<meta name="description" content="HHMS is a LAN-first hospital management system for homeopathic hospitals and clinics: patient registration, OPD token queue, case records, prescriptions, IPD ward/bed management, pharmacy stock ledger, billing and reporting — running on a server-owned SQLite database with no internet dependency.">
+<meta name="keywords" content="HHMS, homeopathic hospital management system, homoeopathy software, LAN hospital software, offline hospital management, OPD queue, IPD bed management, pharmacy stock ledger, FastAPI, SQLite, WebView2, Dr. Sohil Momin">
+<meta name="author" content="Dr. Sohil Momin">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://drsamonline.github.io/HMS/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HHMS">
+<meta property="og:title" content="HHMS — LAN-Based Homeopathic Hospital Management System">
+<meta property="og:description" content="A LAN-first hospital management system for homeopathic hospitals and clinics. Server-owned SQLite database, automatic LAN discovery, role-based access and offline reliability — no cloud dependency.">
+<meta property="og:url" content="https://drsamonline.github.io/HMS/">
+<meta property="og:image" content="https://socialify.git.ci/drsamonline/HMS/image?name=1&owner=1&description=1&language=1&theme=Light&font=Inter">
+<meta property="og:image:alt" content="HHMS — Homeopathic Hospital Management System">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="HHMS — LAN-Based Homeopathic Hospital Management System">
+<meta name="twitter:description" content="LAN-first hospital management for homeopathic hospitals and clinics: OPD queue, case records, IPD, pharmacy, billing and reporting on a server-owned database.">
+<meta name="twitter:image" content="https://socialify.git.ci/drsamonline/HMS/image?name=1&owner=1&description=1&language=1&theme=Light&font=Inter">
+
+<link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+<script>document.documentElement.className+=" js";</script>
+
+<style>
+  :root{
+    --blue:#1d4ed8;
+    --blue-dark:#1e40af;
+    --blue-soft:#eff4ff;
+    --cyan:#0891b2;
+    --cyan-soft:#ecfeff;
+    --ink:#0f172a;
+    --slate:#475569;
+    --slate-2:#64748b;
+    --line:#e2e8f0;
+    --line-2:#cbd5e1;
+    --bg:#f6f8fc;
+    --panel:#ffffff;
+    --ok:#15803d;
+    --ok-soft:#ecfdf5;
+    --warn:#b45309;
+    --warn-soft:#fffbeb;
+    --err:#b91c1c;
+    --err-soft:#fef2f2;
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow:0 1px 2px rgba(15,23,42,.05), 0 8px 24px -14px rgba(15,23,42,.20);
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --maxw:1120px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+    background-image:linear-gradient(180deg,#eef2f9 0%,#f6f8fc 260px,#f6f8fc 100%);
+  }
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--blue);font-weight:600;display:inline-flex;align-items:center;gap:8px
+  }
+  .eyebrow::before{content:"";width:22px;height:2px;background:var(--blue);display:inline-block}
+  h1,h2,h3{line-height:1.2;letter-spacing:-.02em;margin:0}
+  h1{font-size:clamp(2rem,4.6vw,3.15rem);font-weight:800}
+  h2{font-size:clamp(1.5rem,2.9vw,2.1rem);font-weight:750}
+  h3{font-size:1.08rem;font-weight:700}
+  p{margin:0}
+  .lead{color:var(--slate);font-size:1.09rem}
+
+  /* ---------- Nav ---------- */
+  .nav{
+    position:sticky;top:0;z-index:60;background:rgba(255,255,255,.86);
+    backdrop-filter:blur(12px);border-bottom:1px solid var(--line)
+  }
+  .nav-inner{display:flex;align-items:center;gap:20px;height:64px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:-.02em}
+  .brand .mark{
+    width:34px;height:34px;border-radius:9px;background:linear-gradient(150deg,var(--blue),#3b6ef0);
+    display:grid;place-items:center;box-shadow:0 6px 16px -8px rgba(29,78,216,.8)
+  }
+  .brand .mark svg{width:19px;height:19px;stroke:#fff}
+  .brand small{display:block;font-weight:600;font-size:10.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--slate-2);font-family:var(--mono)}
+  .nav-links{margin-left:auto;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+  .nav-links a{
+    color:var(--slate);font-size:.9rem;font-weight:600;padding:8px 11px;border-radius:8px
+  }
+  .nav-links a:hover{background:var(--blue-soft);color:var(--blue);text-decoration:none}
+  .nav-cta{
+    margin-left:6px;background:var(--blue);color:#fff!important;border-radius:9px;
+    padding:9px 15px!important;font-weight:700;display:inline-flex;align-items:center;gap:7px
+  }
+  .nav-cta:hover{background:var(--blue-dark)}
+  .nav-cta svg{width:15px;height:15px;stroke:#fff}
+  .nav-toggle{display:none;margin-left:auto;background:#fff;border:1px solid var(--line-2);
+    border-radius:9px;padding:8px;cursor:pointer}
+  .nav-toggle svg{width:20px;height:20px;stroke:var(--ink);display:block}
+
+  /* ---------- Hero ---------- */
+  .hero{padding:64px 0 30px}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:46px;align-items:center}
+  .hero h1{margin:16px 0 0}
+  .hero .lead{margin-top:16px;max-width:52ch}
+  .hero-actions{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;font-weight:700;font-size:.95rem;
+    border-radius:10px;padding:12px 19px;border:1px solid transparent;cursor:pointer;
+    transition:transform .18s ease,box-shadow .18s ease,background .18s ease
+  }
+  .btn svg{width:17px;height:17px}
+  .btn-primary{background:var(--blue);color:#fff;box-shadow:0 10px 22px -12px rgba(29,78,216,.9)}
+  .btn-primary:hover{background:var(--blue-dark);transform:translateY(-1px);text-decoration:none}
+  .btn-primary svg{stroke:#fff}
+  .btn-ghost{background:#fff;color:var(--ink);border-color:var(--line-2)}
+  .btn-ghost:hover{border-color:var(--blue);color:var(--blue);transform:translateY(-1px);text-decoration:none}
+  .btn-ghost svg{stroke:currentColor}
+  .hero-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:26px}
+
+  /* chips */
+  .chip{
+    display:inline-flex;align-items:center;gap:7px;font-size:.78rem;font-weight:700;
+    padding:5px 11px;border-radius:999px;border:1px solid var(--line-2);
+    background:#fff;color:var(--slate);font-family:var(--mono);letter-spacing:.01em
+  }
+  .chip svg{width:13px;height:13px;stroke:currentColor}
+  .chip.ok{background:var(--ok-soft);border-color:#bbf7d0;color:var(--ok)}
+  .chip.blue{background:var(--blue-soft);border-color:#c7d7fe;color:var(--blue)}
+  .chip.cyan{background:var(--cyan-soft);border-color:#a5f3fc;color:var(--cyan)}
+  .chip.warn{background:var(--warn-soft);border-color:#fde68a;color:var(--warn)}
+
+  /* ---------- Console mock ---------- */
+  .console{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden
+  }
+  .console-bar{
+    display:flex;align-items:center;gap:9px;padding:11px 15px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#fbfcfe,#f4f7fc)
+  }
+  .console-bar .dots{display:flex;gap:6px}
+  .console-bar .dots i{width:10px;height:10px;border-radius:50%;background:var(--line-2);display:block}
+  .console-bar .title{font-family:var(--mono);font-size:11.5px;color:var(--slate-2);
+    letter-spacing:.04em;margin-left:4px}
+  .console-bar .live{margin-left:auto;font-family:var(--mono);font-size:11px;font-weight:700;
+    color:var(--ok);background:var(--ok-soft);border:1px solid #bbf7d0;padding:3px 9px;border-radius:999px;
+    display:inline-flex;align-items:center;gap:6px}
+  .console-bar .live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok)}
+  .console-body{display:grid;grid-template-columns:150px 1fr;min-height:330px}
+  .console-side{border-right:1px solid var(--line);padding:13px 10px;background:#fafcfe}
+  .console-side .grp{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--slate-2);padding:6px 9px 4px}
+  .console-side .item{
+    display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;
+    font-size:12.5px;color:var(--slate);font-weight:600
+  }
+  .console-side .item svg{width:14px;height:14px;stroke:currentColor}
+  .console-side .item.on{background:var(--blue-soft);color:var(--blue)}
+  .console-main{padding:16px}
+  .console-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+  .console-head h4{margin:0;font-size:13.5px;font-weight:700}
+  .console-head span{font-family:var(--mono);font-size:10.5px;color:var(--slate-2)}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+  .kpi b{display:block;font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
+  .kpi span{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--slate-2)}
+  .kpi i{font-style:normal;font-size:10.5px;font-weight:700;font-family:var(--mono)}
+  .kpi i.up{color:var(--ok)} .kpi i.dn{color:var(--err)}
+  table.tbl{width:100%;border-collapse:collapse;font-size:12px}
+  table.tbl th{
+    text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--slate-2);padding:7px 9px;border-bottom:1px solid var(--line-2);font-weight:600
+  }
+  table.tbl td{padding:8px 9px;border-bottom:1px solid var(--line);color:var(--slate)}
+  table.tbl td:first-child{color:var(--ink);font-weight:600}
+  table.tbl tr:last-child td{border-bottom:0}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+  .st{font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;display:inline-block}
+  .st.ok{background:var(--ok-soft);color:var(--ok)}
+  .st.warn{background:var(--warn-soft);color:var(--warn)}
+  .st.err{background:var(--err-soft);color:var(--err)}
+  .st.blue{background:var(--blue-soft);color:var(--blue)}
+
+  /* ---------- Sections ---------- */
+  section{padding:62px 0}
+  .sec-head{max-width:64ch}
+  .sec-head h2{margin:12px 0 0}
+  .sec-head p{margin-top:13px}
+
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:38px}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:24px 22px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+    transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease
+  }
+  .card::after{
+    content:"";position:absolute;inset:0 0 auto 0;height:3px;
+    background:linear-gradient(90deg,var(--blue),var(--cyan));opacity:0;transition:opacity .2s ease
+  }
+  .card:hover{transform:translateY(-3px);border-color:#c7d7fe;box-shadow:0 18px 36px -22px rgba(15,23,42,.35)}
+  .card:hover::after{opacity:1}
+  .card .ico{
+    width:42px;height:42px;border-radius:10px;background:var(--blue-soft);display:grid;place-items:center;
+    margin-bottom:15px;border:1px solid #dbe4fb
+  }
+  .card .ico svg{width:21px;height:21px;stroke:var(--blue)}
+  .card h3{margin-bottom:8px}
+  .card p{color:var(--slate);font-size:.94rem}
+  .card .tags{margin-top:14px;display:flex;gap:6px;flex-wrap:wrap}
+
+  /* how it works */
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:38px}
+  .step{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px 20px;
+    position:relative;box-shadow:var(--shadow)
+  }
+  .step .n{
+    font-family:var(--mono);font-size:12px;font-weight:700;color:var(--blue);
+    background:var(--blue-soft);border:1px solid #dbe4fb;border-radius:7px;padding:3px 9px;display:inline-block
+  }
+  .step h3{margin:13px 0 8px}
+  .step p{color:var(--slate);font-size:.9rem}
+  .step .ico{margin-top:14px}
+  .step .ico svg{width:22px;height:22px;stroke:var(--cyan)}
+  .flow-conn{display:none}
+
+  /* demo split */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:center;margin-top:38px}
+  .split .console{transform:scale(1)}
+  .feature-list{list-style:none;padding:0;margin:20px 0 0;display:grid;gap:12px}
+  .feature-list li{display:flex;gap:12px;align-items:flex-start;font-size:.95rem;color:var(--slate)}
+  .feature-list svg{width:18px;height:18px;stroke:var(--ok);flex:0 0 auto;margin-top:3px}
+  .feature-list b{color:var(--ink)}
+
+  /* get started */
+  .gs{background:linear-gradient(160deg,#0f1e3d,#132a54);color:#e7edf8;border-radius:18px;
+    padding:40px;margin-top:38px;border:1px solid #1e3a6b}
+  .gs h3{color:#fff;font-size:1.15rem}
+  .gs .eyebrow{color:#8fb2ff}.gs .eyebrow::before{background:#8fb2ff}
+  .gs-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:start;margin-top:22px}
+  pre{
+    background:#0a1730;border:1px solid #1e3a6b;border-radius:12px;padding:17px 18px;overflow:auto;
+    font-family:var(--mono);font-size:12.7px;line-height:1.75;color:#cfe0ff;margin:0
+  }
+  pre .c{color:#7f9dd0}
+  pre .p{color:#7ee2c0}
+  .gs-steps{list-style:none;padding:0;margin:0;display:grid;gap:14px}
+  .gs-steps li{display:flex;gap:12px;font-size:.93rem;color:#c6d4ee}
+  .gs-steps .b{font-family:var(--mono);font-size:11px;font-weight:700;color:#8fb2ff;
+    border:1px solid #2a4a86;border-radius:6px;padding:2px 8px;height:fit-content}
+  .gs-note{margin-top:18px;font-size:.86rem;color:#9fb3d6;border-top:1px solid #1e3a6b;padding-top:16px}
+
+  /* FAQ */
+  .faq{margin-top:34px;display:grid;gap:12px;max-width:860px}
+  details{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-sm);
+    padding:0 20px;box-shadow:var(--shadow)
+  }
+  details[open]{border-color:#c7d7fe}
+  summary{
+    cursor:pointer;font-weight:700;padding:17px 0;list-style:none;display:flex;
+    align-items:center;justify-content:space-between;gap:16px;font-size:.97rem
+  }
+  summary::-webkit-details-marker{display:none}
+  summary .plus{
+    width:22px;height:22px;flex:0 0 auto;border-radius:6px;background:var(--blue-soft);
+    display:grid;place-items:center;position:relative;transition:transform .2s ease
+  }
+  summary .plus::before,summary .plus::after{
+    content:"";position:absolute;background:var(--blue);border-radius:2px
+  }
+  summary .plus::before{width:11px;height:2px}
+  summary .plus::after{width:2px;height:11px;transition:opacity .2s ease}
+  details[open] summary .plus{transform:rotate(90deg)}
+  details[open] summary .plus::after{opacity:0}
+  details p{padding:0 0 18px;color:var(--slate);font-size:.93rem}
+
+  /* footer */
+  footer{background:#0c1a34;color:#a9bad6;padding:52px 0 30px;border-top:1px solid #1e3a6b}
+  .foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:34px}
+  footer h4{color:#fff;font-size:.8rem;font-family:var(--mono);letter-spacing:.13em;
+    text-transform:uppercase;margin:0 0 14px}
+  footer a{color:#c6d4ee;display:block;padding:4px 0;font-size:.9rem}
+  footer a:hover{color:#fff}
+  .foot-brand{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+  .foot-brand .mark{width:32px;height:32px;border-radius:8px;background:linear-gradient(150deg,var(--blue),#3b6ef0);display:grid;place-items:center}
+  .foot-brand .mark svg{width:18px;height:18px;stroke:#fff}
+  .foot-brand b{color:#fff;font-size:1.05rem}
+  footer p.small{font-size:.86rem;color:#8ea2c2;max-width:44ch}
+  .foot-bottom{margin-top:34px;padding-top:20px;border-top:1px solid #1e3a6b;
+    display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:.83rem;color:#8ea2c2}
+  .foot-bottom a{display:inline}
+
+  /* badges row */
+  .badges{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:16px}
+  .badges img{height:20px;display:block}
+  .pbadge{
+    display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;font-weight:700;
+    padding:3px 9px;border-radius:6px;border:1px solid var(--line-2);background:#fff;color:var(--slate)
+  }
+  .pbadge.blue{background:var(--blue-soft);border-color:#c7d7fe;color:var(--blue)}
+  .pbadge.ok{background:var(--ok-soft);border-color:#bbf7d0;color:var(--ok)}
+  .pbadge.cyan{background:var(--cyan-soft);border-color:#a5f3fc;color:var(--cyan)}
+  .pbadge.warn{background:var(--warn-soft);border-color:#fde68a;color:var(--warn)}
+  .pbadge.red{background:var(--err-soft);border-color:#fecaca;color:var(--err)}
+
+  /* reveal animation — only when JS is available, so no-JS/crawlers see content */
+  .js .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+  .js .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .js .reveal{opacity:1;transform:none;transition:none}
+    .btn,.card,.nav-links a{transition:none}
+    .card:hover,.btn:hover{transform:none}
+    .console-bar .live::before{animation:none}
+  }
+
+  @media (max-width:960px){
+    .hero-grid{grid-template-columns:1fr;gap:34px}
+    .cards{grid-template-columns:repeat(2,1fr)}
+    .flow{grid-template-columns:repeat(2,1fr)}
+    .split{grid-template-columns:1fr}
+    .gs-grid{grid-template-columns:1fr}
+    .foot-grid{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:720px){
+    .nav-links{display:none}
+    .nav-links.open{
+      display:flex;position:absolute;top:64px;left:0;right:0;background:#fff;
+      flex-direction:column;align-items:stretch;padding:10px 16px 18px;border-bottom:1px solid var(--line);
+      box-shadow:var(--shadow)
+    }
+    .nav-links.open .nav-cta{justify-content:center;margin:6px 0 0}
+    .nav-toggle{display:block}
+    .cards,.flow{grid-template-columns:1fr}
+    .console-body{grid-template-columns:1fr}
+    .console-side{display:none}
+    .kpis{grid-template-columns:1fr 1fr}
+    .foot-grid{grid-template-columns:1fr}
+    section{padding:48px 0}
+    .gs{padding:26px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= NAV ================= -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top" aria-label="HHMS home">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v18M3 12h18"/>
+        </svg>
+      </span>
+      <span>HHMS<small>Homeopathic Hospital Management</small></span>
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <nav class="nav-links" id="navLinks" aria-label="Primary">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#demo">Console</a>
+      <a href="#start">Get started</a>
+      <a href="#faq">FAQ</a>
+      <a class="nav-cta" href="https://github.com/drsamonline/HMS" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.9a3.4 3.4 0 0 0-1-2.6c3-.3 6.2-1.5 6.2-6.8A5.3 5.3 0 0 0 19.8 5a4.9 4.9 0 0 0-.1-3.6s-1.1-.3-3.6 1.4a12.3 12.3 0 0 0-6.5 0C7.1 1.1 6 .4 6 .4A4.9 4.9 0 0 0 5.9 4 5.3 5.3 0 0 0 4.3 7.7c0 5.3 3.2 6.5 6.2 6.8a3.4 3.4 0 0 0-1 2.6V22"/></svg>
+        GitHub
+      </a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">LAN-first hospital system</span>
+      <h1>Hospital management that runs entirely on your local network.</h1>
+      <p class="lead">
+        HHMS is a hospital management system purpose-built for homeopathic hospitals
+        and clinics. A single server executable owns the database; lightweight clients
+        on the hospital LAN connect over HTTP/JSON with automatic discovery — no internet
+        dependency, no cloud lock-in.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/drsamonline/HMS" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.9a3.4 3.4 0 0 0-1-2.6c3-.3 6.2-1.5 6.2-6.8A5.3 5.3 0 0 0 19.8 5a4.9 4.9 0 0 0-.1-3.6s-1.1-.3-3.6 1.4a12.3 12.3 0 0 0-6.5 0C7.1 1.1 6 .4 6 .4A4.9 4.9 0 0 0 5.9 4 5.3 5.3 0 0 0 4.3 7.7c0 5.3 3.2 6.5 6.2 6.8a3.4 3.4 0 0 0-1 2.6V22"/></svg>
+          View repository
+        </a>
+        <a class="btn btn-ghost" href="#start">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          Quick start
+        </a>
+      </div>
+      <div class="hero-meta">
+        <span class="chip ok"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>566 backend tests passing</span>
+        <span class="chip blue"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>LAN + offline-first</span>
+        <span class="chip cyan"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>FastAPI + SQLite</span>
+      </div>
+    </div>
+
+    <!-- Console mock -->
+    <div class="console reveal" role="img" aria-label="Mock HHMS dashboard console showing connection state, KPIs and an OPD queue table">
+      <div class="console-bar">
+        <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="title">HHMS · server console</span>
+        <span class="live">LAN connected</span>
+      </div>
+      <div class="console-body">
+        <aside class="console-side" aria-hidden="true">
+          <div class="grp">Workspace</div>
+          <div class="item on"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</div>
+          <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Patients</div>
+          <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>OPD queue</div>
+          <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/></svg>IPD beds</div>
+          <div class="grp">Records</div>
+          <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>Pharmacy</div>
+          <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Billing</div>
+          <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>Statistics</div>
+        </aside>
+        <div class="console-main">
+          <div class="console-head">
+            <h4>Operational dashboard</h4>
+            <span>2025 · demo dataset</span>
+          </div>
+          <div class="kpis">
+            <div class="kpi"><span>OPD queue</span><b>24</b><i class="up">▲ live</i></div>
+            <div class="kpi"><span>Bed occupancy</span><b>6/8</b><i>wards</i></div>
+            <div class="kpi"><span>Outstanding</span><b>₹1.42L</b><i class="dn">▼ 4%</i></div>
+          </div>
+          <table class="tbl">
+            <thead>
+              <tr><th>Token</th><th>Patient</th><th>Module</th><th class="num">Amount</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>#T-1042</td><td>A. Mehta</td><td>OPD</td><td class="num">₹250</td><td><span class="st ok">Paid</span></td></tr>
+              <tr><td>#T-1043</td><td>R. Iyer</td><td>OPD</td><td class="num">₹250</td><td><span class="st blue">In queue</span></td></tr>
+              <tr><td>#IPD-118</td><td>S. Kulkarni</td><td>IPD</td><td class="num">₹3,400</td><td><span class="st warn">Partial</span></td></tr>
+              <tr><td>#LAB-770</td><td>M. Desai</td><td>Laboratory</td><td class="num">₹600</td><td><span class="st err">Pending</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="badges" aria-label="Project badges">
+      <img src="https://img.shields.io/badge/version-0.0.1-informational" alt="Version 0.0.1" loading="lazy" onerror="this.style.display='none'">
+      <img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="Proprietary license" loading="lazy" onerror="this.style.display='none'">
+      <img src="https://img.shields.io/badge/tests-566%20passed-brightgreen" alt="566 tests passing" loading="lazy" onerror="this.style.display='none'">
+      <img src="https://img.shields.io/badge/python-3.13%2B-blue" alt="Python 3.13+" loading="lazy" onerror="this.style.display='none'">
+      <img src="https://img.shields.io/badge/FastAPI-0.115%2B-009688" alt="FastAPI" loading="lazy" onerror="this.style.display='none'">
+      <img src="https://img.shields.io/badge/database-SQLite%20%2B%20Alembic-003b57" alt="SQLite and Alembic" loading="lazy" onerror="this.style.display='none'">
+      <img src="https://img.shields.io/badge/platform-Windows%20%7C%20LAN-lightgrey" alt="Windows and LAN" loading="lazy" onerror="this.style.display='none'">
+      <span class="pbadge ok">LAN-first</span>
+      <span class="pbadge blue">RBAC · 8 roles</span>
+      <span class="pbadge cyan">UDP 38541 discovery</span>
+      <span class="pbadge warn">Proprietary EULA</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FEATURES ================= -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">What it covers</span>
+      <h2>Clinical, operational and reporting modules in one system</h2>
+      <p class="lead">Everything below is drawn from the project's own specification and README. Modules are designed to work independently, so a clinic can adopt what it needs.</p>
+    </div>
+
+    <div class="cards">
+      <article class="card reveal">
+        <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div>
+        <h3>Patient registration &amp; clinical records</h3>
+        <p>Register and search patients, keep homeopathic case records, record diagnoses (ICD-11), and maintain prescriptions — with annual case rollover and archival.</p>
+        <div class="tags"><span class="chip blue">Case records</span><span class="chip">ICD-11</span></div>
+      </article>
+
+      <article class="card reveal">
+        <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div>
+        <h3>OPD queue with token system</h3>
+        <p>A token-based outpatient queue drives the day's flow, with a role-based dashboard showing the live OPD queue alongside pending work.</p>
+        <div class="tags"><span class="chip blue">Tokens</span><span class="chip">Live queue</span></div>
+      </article>
+
+      <article class="card reveal">
+        <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/></svg></div>
+        <h3>IPD admission &amp; ward/bed management</h3>
+        <p>Admit patients to wards and beds, track occupancy and discharges, and follow a discharge audit — with bed-occupancy dashboards for administrators.</p>
+        <div class="tags"><span class="chip blue">Wards</span><span class="chip">Occupancy</span></div>
+      </article>
+
+      <article class="card reveal">
+        <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M9 9h6M9 13h6M9 17h4"/></svg></div>
+        <h3>Pharmacy &amp; stock ledger</h3>
+        <p>A pharmacy stock ledger with dispense integrity — receipts minus dispenses reconcile to the live balance — plus procurement and goods receipt.</p>
+        <div class="tags"><span class="chip blue">Stock ledger</span><span class="chip">Procurement</span></div>
+      </article>
+
+      <article class="card reveal">
+        <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h3>Billing with live-derived balances</h3>
+        <p>Billing and payments with invoice balances derived live from ledger entries, supporting settled, outstanding and overpaid cases.</p>
+        <div class="tags"><span class="chip blue">Invoices</span><span class="chip">Payments</span></div>
+      </article>
+
+      <article class="card reveal">
+        <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg></div>
+        <h3>Statistics, reporting &amp; printing</h3>
+        <p>A statistics engine plus 16 screen/paper-parity print envelopes — receivables aging, collection summaries, ward occupancy, investigation reconciliation — with PDF generation and batch printing.</p>
+        <div class="tags"><span class="chip blue">16 envelopes</span><span class="chip">PDF</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW IT WORKS ================= -->
+<section id="how" style="background:linear-gradient(180deg,#fff,#f6f8fc);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">How it works</span>
+      <h2>One server owns the data. Clients stay thin.</h2>
+      <p class="lead">The server is the only component that opens the shared SQLite database — the client never does. That single-writer model keeps a hospital's data on one machine under the hospital's control.</p>
+    </div>
+
+    <div class="flow">
+      <div class="step reveal">
+        <span class="n">01</span>
+        <h3>Server executable</h3>
+        <p>HHMS-Server runs FastAPI with a server-owned SQLite database and Alembic migrations. It handles authentication, business services, reporting, file management and audit logging.</p>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></div>
+      </div>
+      <div class="step reveal">
+        <span class="n">02</span>
+        <h3>LAN transport</h3>
+        <p>Clients talk to the server over HTTP/JSON on the hospital LAN. A small native UDP discovery protocol (default port 38541) finds the server, with manual address configuration as a fallback.</p>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a7 7 0 0 1 14 0M8 15a4 4 0 0 1 8 0"/><circle cx="12" cy="18" r="1"/></svg></div>
+      </div>
+      <div class="step reveal">
+        <span class="n">03</span>
+        <h3>Thin client UI</h3>
+        <p>HHMS-Client hosts an HTML/CSS/vanilla-JavaScript interface in a WebView2 shell. It renders the workspaces and calls the API — it never touches the database directly.</p>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg></div>
+      </div>
+      <div class="step reveal">
+        <span class="n">04</span>
+        <h3>Roles &amp; offline reliability</h3>
+        <p>Role-based access control governs modules and data per role. Normal operation is offline-first with respect to the internet: no cloud service is required, and the client clearly reports a server-unavailable condition rather than silently creating a second database.</p>
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.4 8 11 4.6-2.6 8-6 8-11V5z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DEMO / SCREENSHOTS ================= -->
+<section id="demo">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">The console</span>
+      <h2>A tablet-style console, populated from day one</h2>
+      <p class="lead">HHMS is a LAN application, so there is no hosted web demo. Instead, a fresh install seeds a full 2025 demo dataset automatically on first run — patients, OPD tokens, cases, prescriptions, dispenses, lab results, admissions, invoices and payments — so every dashboard, table and print envelope renders meaningful figures immediately.</p>
+    </div>
+
+    <div class="split">
+      <div class="reveal">
+        <ul class="feature-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Populated dashboards</b> — OPD queue, bed occupancy, outstanding billing and pending investigations all show real figures out of the box.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Safe by default</b> — the seed runs only when the database is pristine; an install that already holds real data is never touched.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Opt-out for production</b> — set <code style="font-family:var(--mono);font-size:.85em">HHMS_SEED_DEMO_DATA=false</code> to skip seeding entirely.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Try it locally</b> — run the server, open the built-in GUI at <code style="font-family:var(--mono);font-size:.85em">http://localhost:8000/</code> and sign in as the bootstrapped administrator.</span></li>
+        </ul>
+        <div class="hero-actions">
+          <a class="btn btn-ghost" href="https://github.com/drsamonline/HMS/blob/main/docs/DEMO_DATA.md" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            Read the demo-data guide
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/drsamonline/HMS/releases/tag/nightly" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+            Download nightly build
+          </a>
+        </div>
+      </div>
+
+      <div class="console reveal" role="img" aria-label="Mock HHMS pharmacy stock ledger table with running balances and status chips">
+        <div class="console-bar">
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="title">Pharmacy · stock ledger</span>
+          <span class="live">Balanced</span>
+        </div>
+        <div class="console-body" style="grid-template-columns:1fr">
+          <div class="console-main">
+            <div class="console-head">
+              <h4>Dispense integrity</h4>
+              <span>receipts − dispenses = balance</span>
+            </div>
+            <table class="tbl">
+              <thead>
+                <tr><th>Medicine</th><th>Batch</th><th class="num">Receipts</th><th class="num">Dispensed</th><th class="num">Balance</th><th>State</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Arnica 30C</td><td>B-2041</td><td class="num">120</td><td class="num">48</td><td class="num">72</td><td><span class="st ok">Balanced</span></td></tr>
+                <tr><td>Belladonna 30C</td><td>B-2043</td><td class="num">90</td><td class="num">90</td><td class="num">0</td><td><span class="st warn">Restock</span></td></tr>
+                <tr><td>Nux Vomica 200C</td><td>B-2046</td><td class="num">60</td><td class="num">21</td><td class="num">39</td><td><span class="st ok">Balanced</span></td></tr>
+                <tr><td>Sulphur 30C</td><td>B-2050</td><td class="num">150</td><td class="num">33</td><td class="num">117</td><td><span class="st ok">Balanced</span></td></tr>
+              </tbody>
+            </table>
+            <p style="margin-top:12px;font-size:11px;color:var(--slate-2);font-family:var(--mono)">Illustrative layout — figures shown are a representation of the console, not live data.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GET STARTED ================= -->
+<section id="start" style="padding-top:0">
+  <div class="wrap">
+    <div class="gs reveal">
+      <span class="eyebrow">Get started</span>
+      <h3 style="margin-top:12px">From clone to a populated console in a few commands</h3>
+      <div class="gs-grid">
+        <div>
+          <pre><code><span class="c"># 1. clone the repository</span>
+git clone https://github.com/drsamonline/HMS.git
+cd HMS/backend
+
+<span class="c"># 2. install the server dependencies</span>
+pip install -r requirements.txt
+
+<span class="c"># 3. run the server</span>
+python -m app.server
+
+<span class="c"># GUI:  http://localhost:8000/</span>
+<span class="c"># login: admin / admin  (change immediately)</span></code></pre>
+        </div>
+        <div>
+          <ul class="gs-steps">
+            <li><span class="b">STEP 1</span><span>Clone the repo and move into the <code style="font-family:var(--mono)">backend/</code> directory.</span></li>
+            <li><span class="b">STEP 2</span><span>Install dependencies from <code style="font-family:var(--mono)">requirements.txt</code>.</span></li>
+            <li><span class="b">STEP 3</span><span>Start the server — it runs migrations automatically and bootstraps a default administrator.</span></li>
+            <li><span class="b">STEP 4</span><span>On a brand-new install it also seeds the 2025 demo dataset, so the GUI is populated the moment you open it.</span></li>
+          </ul>
+          <p class="gs-note">
+            Default credentials are <code style="font-family:var(--mono);color:#cfe0ff">admin / admin</code> — change them immediately.
+            Disable the bootstrap admin with <code style="font-family:var(--mono);color:#cfe0ff">HHMS_BOOTSTRAP_DEFAULT_ADMIN=false</code>.
+            Portable folder and EXE builds work out of the box: copy → run → log in. Production setup is covered in the
+            <a href="https://github.com/drsamonline/HMS/blob/main/docs/DEPLOYMENT_ARCHITECTURE.md" target="_blank" rel="noopener" style="color:#8fb2ff">deployment architecture</a> and
+            <a href="https://github.com/drsamonline/HMS/blob/main/docs/SERVER_STARTUP.md" target="_blank" rel="noopener" style="color:#8fb2ff">server startup</a> docs.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">FAQ</span>
+      <h2>Common questions</h2>
+    </div>
+    <div class="faq">
+      <details open>
+        <summary>Does HHMS need an internet connection? <span class="plus" aria-hidden="true"></span></summary>
+        <p>No. HHMS is offline-first with respect to internet connectivity — normal hospital operation does not require cloud services. Clients do need the HHMS server reachable on the hospital LAN for shared data operations, and the client reports a server-unavailable condition clearly rather than working from a second database.</p>
+      </details>
+      <details>
+        <summary>Where does the data live? <span class="plus" aria-hidden="true"></span></summary>
+        <p>On the server computer, in an application-data location rather than inside source code. SQLite is the primary database for the portable LAN deployment, with Alembic migrations managed by the server. The server is the only component that opens the database — clients never access it directly.</p>
+      </details>
+      <details>
+        <summary>How do clients find the server? <span class="plus" aria-hidden="true"></span></summary>
+        <p>Automatic discovery uses a small native UDP protocol (default port 38541) so no mDNS, Node.js or third-party discovery service is required. Manual server address and port configuration is available as a fallback, and discovery only exposes connection metadata — authentication remains an HTTP/API concern.</p>
+      </details>
+      <details>
+        <summary>How is access controlled? <span class="plus" aria-hidden="true"></span></summary>
+        <p>Through role-based access control. Each user is assigned one or more roles that determine the modules, functions and data they can reach. The documented roles include Administrator, Registration Desk, Medical Officer / Consultant, Pharmacist, Laboratory Staff, Billing Staff, Medical Records Department and Store Keeper. Authentication, sessions and audit logging are covered in the security architecture.</p>
+      </details>
+      <details>
+        <summary>What does it cost to use? <span class="plus" aria-hidden="true"></span></summary>
+        <p>HHMS is proprietary software under its own EULA. Personal use is free of charge; non-profit organisations may use it free of charge only after prior written permission; business/commercial use and large educational institutions require a separate paid licence before installation or use. See the LICENSE file in the repository for the full terms.</p>
+      </details>
+      <details>
+        <summary>How are releases published? <span class="plus" aria-hidden="true"></span></summary>
+        <p>Every push to <code style="font-family:var(--mono);font-size:.85em">main</code> publishes a single rolling <code style="font-family:var(--mono);font-size:.85em">nightly</code> prerelease, and pushing a version tag (<code style="font-family:var(--mono);font-size:.85em">v*.*.*</code>) publishes a permanent stable Release. Builds cover a Linux one-file server bundle and a Windows server EXE plus installer, with SHA-256 checksums attached.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="foot-brand">
+          <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg></span>
+          <b>HHMS</b>
+        </div>
+        <p class="small">A LAN-based hospital management system purpose-built for homeopathic hospitals and clinics — running entirely on the local network with a server-owned database.</p>
+      </div>
+      <div>
+        <h4>Repository</h4>
+        <a href="https://github.com/drsamonline/HMS" target="_blank" rel="noopener">drsamonline/HMS</a>
+        <a href="https://github.com/drsamonline/HMS/blob/main/README.md" target="_blank" rel="noopener">README</a>
+        <a href="https://github.com/drsamonline/HMS/blob/main/docs/INDEX.md" target="_blank" rel="noopener">Documentation index</a>
+        <a href="https://github.com/drsamonline/HMS/releases" target="_blank" rel="noopener">Releases</a>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <a href="https://github.com/drsamonline/HMS/blob/main/LICENSE" target="_blank" rel="noopener">Licence (EULA)</a>
+        <a href="https://github.com/drsamonline/HMS/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing</a>
+        <a href="https://github.com/drsamonline/HMS/blob/main/SECURITY.md" target="_blank" rel="noopener">Security policy</a>
+        <a href="https://github.com/drsamonline/HMS/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>HHMS Project © 2025 · Built by Dr. Sohil Momin</span>
+      <span><a href="https://github.com/drsamonline/HMS" target="_blank" rel="noopener">github.com/drsamonline/HMS</a></span>
+    </div>
+  </div>
+</footer>
+
+<!-- ================= JSON-LD ================= -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "HHMS — Homeopathic Hospital Management System",
+  "alternateName": "HHMS",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Windows, Linux (LAN server + Windows client)",
+  "description": "A LAN-based hospital management system purpose-built for homeopathic hospitals and clinics. Runs entirely on the local network with a server-owned SQLite database, automatic LAN discovery, role-based access control and offline reliability.",
+  "softwareVersion": "0.0.1",
+  "license": "https://github.com/drsamonline/HMS/blob/main/LICENSE",
+  "url": "https://drsamonline.github.io/HMS/",
+  "codeRepository": "https://github.com/drsamonline/HMS",
+  "programmingLanguage": "Python",
+  "author": {
+    "@type": "Person",
+    "name": "Dr. Sohil Momin",
+    "url": "https://github.com/drsamonline"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "INR",
+    "description": "Personal use free of charge; commercial and institutional use requires a separate paid licence."
+  }
+}
+</script>
+
+<script>
+  // Mobile nav
+  (function(){
+    var t = document.getElementById('navToggle');
+    var links = document.getElementById('navLinks');
+    if(t && links){
+      t.addEventListener('click', function(){
+        var open = links.classList.toggle('open');
+        t.setAttribute('aria-expanded', String(open));
+      });
+      links.addEventListener('click', function(e){
+        if(e.target.tagName === 'A'){ links.classList.remove('open'); t.setAttribute('aria-expanded','false'); }
+      });
+    }
+  })();
+
+  // Scroll reveal (respects prefers-reduced-motion via CSS + guard)
+  (function(){
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var els = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+    if(reduce || !('IntersectionObserver' in window)){
+      els.forEach(function(el){ el.classList.add('in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); }
+      });
+    }, {rootMargin:'0px 0px -8% 0px', threshold:0.12});
+    els.forEach(function(el){ io.observe(el); });
+  })();
+</script>
+</body>
+</html>

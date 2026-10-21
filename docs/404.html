@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1d4ed8">
+<title>404 — Page not found · HHMS</title>
+<meta name="robots" content="noindex, follow">
+<link rel="icon" type="image/svg+xml" href="/HMS/assets/favicon.svg">
+<style>
+  :root{
+    --blue:#1d4ed8;--blue-dark:#1e40af;--cyan:#0891b2;--ink:#0f172a;--slate:#475569;
+    --slate-2:#64748b;--line:#e2e8f0;--line-2:#cbd5e1;--bg:#f6f8fc;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);
+    background-image:linear-gradient(180deg,#eef2f9,#f6f8fc 320px);color:var(--ink);
+    font-family:var(--sans);padding:24px}
+  .card{max-width:520px;width:100%;background:#fff;border:1px solid var(--line);
+    border-radius:16px;padding:40px 38px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 18px 40px -24px rgba(15,23,42,.35)}
+  .mark{width:44px;height:44px;border-radius:11px;background:linear-gradient(150deg,var(--blue),#3b6ef0);
+    display:grid;place-items:center;margin-bottom:22px}
+  .mark svg{width:24px;height:24px;stroke:#fff}
+  .code{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--blue);font-weight:700}
+  h1{font-size:1.8rem;font-weight:800;letter-spacing:-.02em;margin:10px 0 12px;line-height:1.2}
+  p{color:var(--slate);margin:0 0 26px;font-size:.98rem;line-height:1.6}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  a.btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:.92rem;
+    border-radius:10px;padding:11px 18px;text-decoration:none;border:1px solid transparent}
+  a.primary{background:var(--blue);color:#fff;box-shadow:0 10px 22px -12px rgba(29,78,216,.9)}
+  a.primary:hover{background:var(--blue-dark)}
+  a.ghost{background:#fff;color:var(--ink);border-color:var(--line-2)}
+  a.ghost:hover{border-color:var(--blue);color:var(--blue)}
+  .note{margin-top:26px;padding-top:20px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:11px;color:var(--slate-2)}
+</style>
+</head>
+<body>
+  <main class="card">
+    <span class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg>
+    </span>
+    <div class="code">Error 404</div>
+    <h1>This page isn't on the console.</h1>
+    <p>The page you were looking for could not be found. It may have moved, or the link may be out of date. Head back to the HHMS landing page or the repository.</p>
+    <div class="row">
+      <a class="btn primary" href="/HMS/">Back to HHMS</a>
+      <a class="btn ghost" href="https://github.com/drsamonline/HMS" target="_blank" rel="noopener">View repository</a>
+    </div>
+    <div class="note">HHMS · Built by Dr. Sohil Momin</div>
+  </main>
+</body>
+</html>
