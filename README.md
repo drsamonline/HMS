@@ -6,6 +6,7 @@
 Runs entirely on the local network with a server-owned database — *no internet dependency, no cloud lock-in.*
 
 [![Landing page](https://img.shields.io/badge/landing%20page-live-1d4ed8?logo=githubpages&logoColor=white)](https://drsamonline.github.io/HMS/)
+[![All projects](https://img.shields.io/badge/All%20projects-hub-1d4ed8?logo=githubpages&logoColor=white)](https://drsamonline.github.io/)
 [![Version](https://img.shields.io/badge/version-0.0.1-informational)](VERSION)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-566%20passed-brightgreen)](backend/tests)
