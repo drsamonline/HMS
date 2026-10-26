@@ -29,7 +29,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-FALLBACK_VERSION = "0.0.1"
+# Must equal the root VERSION file, and the regression suite asserts it before a tag
+# is cut - `FALLBACK_VERSION must equal root VERSION before the tag is cut`. That check
+# is right: this is what a release falls back to when the VERSION file cannot be read,
+# so a stale value here would tag a release with the wrong number.
+FALLBACK_VERSION = "0.0.2"
 
 
 def version_file_candidates() -> list[Path]:
