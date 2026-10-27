@@ -244,7 +244,7 @@ jobs:
 
       # Exactly ONE release per pipeline run — no per-commit snapshot clutter.
       - name: Publish release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65   # was @v2
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64   # was @v3.0.3
         with:
           tag_name: ${{ steps.target.outputs.tag }}
           target_commitish: ${{ github.sha }}   # pin rolling nightly to current commit
