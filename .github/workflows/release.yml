@@ -167,6 +167,7 @@ jobs:
 
       - name: Compute SHA-256 checksums
         run: |
+          set -o pipefail
           cd artifacts
           find . -type f -print0 | sort -z | xargs -0 sha256sum > ../SHA256SUMS.txt
           cd ..
@@ -221,10 +222,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete nightly --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+          gh release delete nightly --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" \
+            || echo "::notice::no nightly release to delete"
           # Belt-and-braces: also delete a stale tag if the release was already
           # gone but the tag somehow remained.
-          git push origin :refs/tags/nightly || true
+          git push origin :refs/tags/nightly \
+            || echo "::notice::no nightly tag to delete"
 
       - name: Generate release notes
         run: |
