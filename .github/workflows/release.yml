@@ -95,7 +95,7 @@ jobs:
         run: bash scripts/deploy/build-server.sh
       - name: Smoke-test bundle (first-run bootstrap + health)
         run: ./build/dist/HHMS-Server --smoke-test
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02   # was @v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9   # was @v7.0.2
         with:
           name: hhms-server-linux
           path: build/dist/HHMS-Server
@@ -136,13 +136,13 @@ jobs:
       - name: Smoke-test server EXE (first-run bootstrap + health)
         shell: pwsh
         run: ./build/dist/HHMS-Server.exe --smoke-test
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02   # was @v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9   # was @v7.0.2
         with:
           name: hhms-windows-installer
           path: dist/installer/HHMS-Setup-*.exe
           if-no-files-found: error
           retention-days: 14
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02   # was @v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9   # was @v7.0.2
         with:
           name: hhms-server-windows
           path: build/dist/HHMS-Server.exe
@@ -176,7 +176,7 @@ jobs:
       # Bundle binaries + checksums into a single Actions artifact so they are
       # always downloadable from the run page (works for private repos too).
       - name: Upload combined latest-build artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02   # was @v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9   # was @v7.0.2
         with:
           name: latest-build
           if-no-files-found: error
