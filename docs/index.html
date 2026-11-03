@@ -363,6 +363,17 @@
     background:var(--blue-soft);color:var(--blue);font-family:var(--mono);font-size:9.5px;font-weight:700;
     margin-right:8px;vertical-align:middle}
   .pv-cap{margin-top:14px;font-size:.84rem;color:var(--slate-2);font-family:var(--mono)}
+
+  /* ---------- light theme ----------
+     Added so the page reads on paper. It overrides the page's own variables and
+     nothing else — no markup, no layout, no type. */
+  :root, html {
+    color-scheme: light;
+    --ink: #14161a;
+    --line: #e2ddd2;
+    --bg: #f7f6f2;
+    --panel: #ffffff;
+  }
 </style>
 </head>
 <body>
