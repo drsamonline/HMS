@@ -9,7 +9,7 @@ Runs entirely on the local network with a server-owned database — *no internet
 [![All projects](https://img.shields.io/badge/All%20projects-hub-1d4ed8?logo=githubpages&logoColor=white)](https://drsamonline.github.io/)
 [![Version](https://img.shields.io/badge/version-0.0.1-informational)](VERSION)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-566%20passed-brightgreen)](backend/tests)
+[![Tests](https://img.shields.io/badge/tests-569%20passed-brightgreen)](backend/tests)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20LAN-lightgrey)](docs/DEPLOYMENT_ARCHITECTURE.md)
 
 **Landing page:** <https://drsamonline.github.io/HMS/> · **Demo build:** <https://github.com/drsamonline/HMS/releases/tag/nightly> · **Demo data guide:** [docs/DEMO_DATA.md](docs/DEMO_DATA.md)
@@ -60,7 +60,7 @@ Runs entirely on the local network with a server-owned database — *no internet
 
 **Reporting & printing** — statistics engine, 16 screen/paper-parity print envelopes (receivables aging, collection summaries, receipt continuity, settlement/refund audits, ward occupancy, investigation billing reconciliation), PDF generation, report scheduling, batch printing.
 
-**Release-ready infrastructure** — LAN server discovery (UDP port 38541), single-file Windows/Linux server binaries, Inno/NSIS installers, automatic dual-platform GitHub releases (rolling `nightly` prerelease on every push to `main`, stable Release on `v*.*.*` tags), backup/restore workflows, login rate limiting, JWT hardening, secret-key rotation runbook. **566 backend tests passing.**
+**Release-ready infrastructure** — LAN server discovery (UDP port 38541), single-file Windows/Linux server binaries, Inno/NSIS installers, automatic dual-platform GitHub releases (rolling `nightly` prerelease on every push to `main`, stable Release on `v*.*.*` tags), backup/restore workflows, login rate limiting, JWT hardening, secret-key rotation runbook. **569 backend tests passing.**
 
 ---
 

@@ -443,3 +443,9 @@ keeping the newest-first ledger identical across feed, screen and print.
 - Client wiring: `getDashboardOutstandingInvoices(options)` wrapper in `frontend/js/api.js`; dashboard "Outstanding invoices" panel with count/total summary whose cards navigate to the patients view and dispatch `hhms:open-patient`; graceful unavailable-state on fetch failure.
 - Documentation: `docs/CLIENT_DASHBOARD_OUTSTANDING_INVOICES.md` added and indexed in `docs/INDEX.md`.
 - Contract suite `backend/tests/test_dashboard_outstanding_invoices.py` (full suite 222 passed).
+
+## Batch 120 — The served GUI entry restored (2026-11-05)
+- `frontend/index.html` was deleted by the page sweep in `d07c56c` ("p110, per the page audit"). It is the client shell mounted at `/` by `app.py`, not a Pages page: `GET /` and `/favicon.svg` returned 404, 17 contract tests failed and `main`'s `release` run 42059827238 failed.
+- Restored verbatim from `d07c56c^`, plus an `HHMS-PAGE-MARKER` comment at the end of the file stating what it is and that a page sweep must not delete it.
+- New guard `backend/tests/test_frontend_entry_guard.py` (3 tests): file exists with its marker, the application actually serves `/`, `/js/app.js` and `/css/app.css`, and no workflow publishes `frontend/` as a Pages site. Verified to bite (2 of 3 fail with the file removed).
+- Full suite: 569 passed, 2 skipped (566 + 3 new).
