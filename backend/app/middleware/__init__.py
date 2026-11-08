@@ -24,9 +24,17 @@ from .rate_limit import (
     SlidingWindowRateLimiter,
 )
 from .request_id import RequestIDMiddleware
+from .security_headers import (
+    CONTENT_SECURITY_POLICY,
+    SECURITY_HEADERS,
+    SecurityHeadersMiddleware,
+)
 
 __all__ = [
     "RequestIDMiddleware",
+    "SecurityHeadersMiddleware",
+    "SECURITY_HEADERS",
+    "CONTENT_SECURITY_POLICY",
     "ProcessTimeMiddleware",
     "RequestLoggingMiddleware",
     "RateLimitMiddleware",
