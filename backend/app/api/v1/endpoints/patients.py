@@ -55,11 +55,12 @@ async def list_patients(
 async def create_patient(
     patient_in: PatientCreate,
     db: DatabaseSession,
-    _: CurrentUserDependency,
+    current_user: CurrentUserDependency,
 ) -> PatientRead:
     return await patient_service.create(
         db,
         patient_in=patient_in,
+        actor=current_user,
     )
 
 
@@ -86,12 +87,13 @@ async def update_patient(
     patient_id: int,
     patient_in: PatientUpdate,
     db: DatabaseSession,
-    _: CurrentUserDependency,
+    current_user: CurrentUserDependency,
 ) -> PatientRead:
     return await patient_service.update(
         db,
         patient_id=patient_id,
         patient_in=patient_in,
+        actor=current_user,
     )
 
 
@@ -102,11 +104,12 @@ async def update_patient(
 async def deactivate_patient(
     patient_id: int,
     db: DatabaseSession,
-    _: CurrentUserDependency,
+    current_user: CurrentUserDependency,
 ) -> PatientRead:
     return await patient_service.deactivate(
         db,
         patient_id=patient_id,
+        actor=current_user,
     )
 
 

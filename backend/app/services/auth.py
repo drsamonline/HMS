@@ -22,7 +22,22 @@ class AuthService:
         return user
     async def login(self,db:AsyncSession,*,username:str,password:str)->str:
         user=await self.authenticate(db,username=username,password=password)
-        return create_access_token(subject=str(user.id))
+        # User has no ``roles`` relationship, so the names are queried. The
+        # claims exist so an audit row can say what authority the caller held
+        # when they acted, without a lookup on every write.
+        role_rows=await db.execute(
+            select(Role.role_name)
+            .join(UserRole,UserRole.role_id==Role.id)
+            .where(UserRole.user_id==user.id,Role.is_active.is_(True))
+        )
+        roles=sorted({row[0] for row in role_rows.all()})
+        return create_access_token(
+            subject=str(user.id),
+            additional_claims={
+                "username": user.username,
+                "roles": roles,
+            },
+        )
     async def get_current_user_profile(self,db:AsyncSession,*,user_id:int) -> tuple[User,list[str],list[str]]:
         user=await db.get(User,user_id)
         if user is None or not user.is_active: raise AuthenticationException("Authenticated user is not available.")
