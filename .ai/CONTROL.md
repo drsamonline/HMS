@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-00-quick-wins` |
+| Branch | `batch-01-accountability` (stacked on `batch-00-quick-wins`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `b9d79a1` (code) + the control commit that carries this file |
-| Tests | **590 passed, 2 skipped** (569 baseline + 21 new) |
-| Wave complete | Wave 0 — quick wins (B01–B06) |
-| Next batch | **B07 — audit schema v2** |
+| Head commit | `72f23d5` (B07) + the control commit that carries this file |
+| Tests | **599 passed, 2 skipped** (569 baseline + 30 new) |
+| Wave complete | Wave 0 — quick wins (B01–B06); wave 1 in progress |
+| Next batch | **B08 — audit write service** |
 | Blocking decision | none |
-| Open question | whether to push `batch-00-quick-wins` and open a PR |
+| Open question | none |
 
 ---
 
@@ -159,6 +159,29 @@ A nonce-based policy is correct but the current GUI renders inline blocks; a
 policy the UI cannot satisfy would be reverted by the first person who hit a
 blank page. Tightening it is part of B27/B28, and the docstring says so.
 
+**D-006 — Three columns from the plan were not added.**
+B07 named `actor_id`, `action` and `occurred_at`. Each duplicates a column that
+already exists: `user_id` is the actor, `activity` is the action and
+`action_timestamp` is the time. Adding them would have created two sources of
+truth for the same fact, and the one that drifts is always the one somebody
+forgot to populate. The gate test asserts they are absent, so the decision is
+enforced rather than merely recorded.
+
+**D-007 — `user_id` is nullable and `actor_username` is denormalised.**
+Neither was in the B07 text. Without the first, a failed authentication for a
+username that does not exist cannot be recorded at all, and
+`SECURITY_ARCHITECTURE.md` section 9 names failed authentication as an event
+that must be. Without the second, an audit entry stops naming the person the
+moment their account is renamed or deactivated. A foreign key cannot promise
+that, so the name is stored as it stood.
+
+**D-008 — Stacked branches, not one long branch.**
+Wave 1 sits on `batch-01-accountability`, branched from `batch-00-quick-wins`
+rather than from `main`, because wave 0 is still open as PR #80. A PR for wave 1
+targets the wave 0 branch and retargets to `main` automatically when #80 merges.
+The alternative - one branch for everything - would have made the wave 0 review
+grow with each batch, which is how a review stops being a review.
+
 ---
 
 ## 7. Batch log
@@ -171,9 +194,10 @@ blank page. Tightening it is part of B27/B28, and the docstring says so.
 | B04 + B05 | 2026-11-09 | `ef719ad` | 4 tests | 590 | Fleet block removed (3,745 bytes); client fails closed with a notice. One commit, two batches, per D-004 |
 | B06 | 2026-11-09 | `b9d79a1` | review only | 590 | `SECURITY.md` now separates shipped from planned |
 | — | 2026-11-09 | this commit | — | 590 | This document; `PROJECT_STATE.md` marked superseded |
+| B07 | 2026-11-09 | `72f23d5` | 9 tests | 599 | Evidence columns, nullable actor, three indexes. Two defects found by the gate: a missing server default on `outcome`, and a test fixture that silently measured an empty database |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 21 new tests. Final: **590 passed, 2 skipped**.
+test baseline plus 30 new tests. Final: **599 passed, 2 skipped**.
 
 ---
 
