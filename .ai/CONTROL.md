@@ -17,12 +17,12 @@ latest milestone in the same paragraph.
 | Date | 2026-11-09 |
 | Branch | `batch-01-accountability` (stacked on `batch-00-quick-wins`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `055c010` (B08) + the control commit that carries this file |
-| Tests | **612 passed, 2 skipped** (569 baseline + 43 new) |
-| Wave complete | Wave 0 — quick wins (B01–B06); wave 1 in progress |
-| Next batch | **B09 — wire the remaining services** |
+| Head commit | `0cf0ed6` (B09) + the control commit that carries this file |
+| Tests | **617 passed, 2 skipped** (569 baseline + 48 new) |
+| Wave complete | Wave 0 — quick wins (B01–B06); wave 1 three-fifths done |
+| Next batch | **B10 — append-only guard and hash chain** |
 | Blocking decision | none |
-| Open question | none. **Ritual due after B09** (three batches since the last one) |
+| Open question | none. Ritual complete after B09 |
 
 ---
 
@@ -204,6 +204,28 @@ raised handler cannot leave a context bound for the next request. Proven by a te
 that drives a real `POST /patients` through the full stack and compares the row's
 `request_id` with the `X-Request-ID` the client was given.
 
+**D-012 — The actor is bound to the request, not passed to the service.**
+B08 took `actor` as a parameter; carrying that across 42 services and every
+endpoint that calls them would have been a signature change in hundreds of places
+for no extra safety. The authentication dependency now binds the actor to the
+request context and `record()` reads it, so a service call is one line. An
+explicit actor still wins, so B08's patient paths are untouched.
+
+**D-013 — B09 is a ratchet, not a claim.**
+The batch text said "every write path in every module". In practice eight
+services record and 34 do not, and saying otherwise would be the exact failure
+this project already made once (documents asserting intentions as facts). The
+coverage test freezes the 34 in a list that may only shrink, fails on any new
+service that writes without recording, and states its own two limits in its
+docstring. The gap is now visible and measured rather than absent from the plan.
+
+**D-014 — Invoice status changes get their own audit row.**
+A payment that moves an invoice from unpaid to paid writes two rows: the payment,
+and the invoice's status transition. One row would have described the cause and
+buried the effect; an auditor sampling an invoice wants its status history, and an
+auditor sampling a receipt wants the payment. Cheap, and both questions answer
+themselves.
+
 ---
 
 ## 7. Batch log
@@ -218,9 +240,22 @@ that drives a real `POST /patients` through the full stack and compares the row'
 | — | 2026-11-09 | this commit | — | 590 | This document; `PROJECT_STATE.md` marked superseded |
 | B07 | 2026-11-09 | `72f23d5` | 9 tests | 599 | Evidence columns, nullable actor, three indexes. Two defects found by the gate: a missing server default on `outcome`, and a test fixture that silently measured an empty database |
 | B08 | 2026-11-09 | `055c010` | 13 tests | 612 | Write path live for patients. ContextVar for request facts; token now carries username and roles. One defect found: `getattr(user, "roles", [])` would have returned an empty list forever, because User has no roles relationship |
+| B09 | 2026-11-09 | `0cf0ed6` | 5 tests | 617 | Money, stock, admission, discharge and prescription wired; 34 services frozen as pending. Two defects: `record()` had no default for `actor`, and a scripted insertion broke an if/else |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 43 new tests. Final: **612 passed, 2 skipped**.
+test baseline plus 48 new tests. Final: **617 passed, 2 skipped**.
+
+### Ritual after B07–B09 (2026-11-09)
+
+| Step | Result |
+|------|--------|
+| 1. Suite | 617 passed, 2 skipped; reconciles to 569 + 48 |
+| 2. Gates by name | B07, B08, B09 re-run together: 27 passed |
+| 3. Prune | No TODO, FIXME or dead code introduced; the one stray line in `audit.py` (`audit_service = None`) was removed during B08 |
+| 4. Docs reconciled | `SECURITY.md` gained an "Audit trail" section stating what is recorded and that coverage is partial, and its gap table now separates coverage from immutability |
+| 5. Queue re-ranked | Unchanged. B10 next: an audit trail anyone with database access can delete is not evidence, and B11 (review UI) is worthless until B10 makes the rows trustworthy |
+| 6. Split | B09 was two batches wearing one name: the wiring, and the coverage ratchet. They shipped together because the test is what makes the partial wiring honest |
+| 7. Logged | D-012, D-013, D-014; batch log row added |
 
 ---
 

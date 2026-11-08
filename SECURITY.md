@@ -71,6 +71,19 @@ target; this file is the present.
   modified, a refund cannot exceed the amount collected, and there is no delete
   endpoint for a payment.
 
+### Audit trail
+
+- Every write to a patient, an invoice, a payment, an invoice line, a dispense, a
+  stock transaction, an admission, a discharge or a prescription records an audit
+  row in the same transaction as the change.
+- Each row carries the actor's id, name and roles as they stood at the time, the
+  fields that changed (before and after), the reason where one was given, the
+  request id, the client address and the user agent.
+- If the row cannot be written, the change is rolled back. An unaudited write is
+  treated as a failed write.
+- **Coverage is partial.** 34 services that write are not wired yet; the list is
+  frozen in `backend/tests/test_batch_b09_audit_coverage.py` and can only shrink.
+
 ### Logging
 
 - Request logs record path, status code, request id and duration. They do not
@@ -93,7 +106,8 @@ this section is deleted as each one lands.
 | Gap | Effect today | Planned |
 |-----|--------------|---------|
 | Server-side permission enforcement | Every authenticated user can call every endpoint, including administration and backup restore | Build plan B12-B15 |
-| Audit trail writes | The `AuditLog` table and its read API exist; no write path records an action | B07-B11 |
+| Audit trail coverage | Eight services record; 34 that write do not yet | B09 (ratchet in place) |
+| Audit immutability | Rows can still be deleted by anyone with database access | B10 |
 | Encryption at rest | The database file and its backups are plaintext | Not scheduled |
 | Encryption in transit | HTTP on the LAN; no TLS listener and no reverse-proxy guidance | Not scheduled |
 | Server-side password policy | Only the client enforces a minimum length | B24 |
