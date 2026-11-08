@@ -17,12 +17,12 @@ latest milestone in the same paragraph.
 | Date | 2026-11-09 |
 | Branch | `batch-01-accountability` (stacked on `batch-00-quick-wins`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `72f23d5` (B07) + the control commit that carries this file |
-| Tests | **599 passed, 2 skipped** (569 baseline + 30 new) |
+| Head commit | `055c010` (B08) + the control commit that carries this file |
+| Tests | **612 passed, 2 skipped** (569 baseline + 43 new) |
 | Wave complete | Wave 0 — quick wins (B01–B06); wave 1 in progress |
-| Next batch | **B08 — audit write service** |
+| Next batch | **B09 — wire the remaining services** |
 | Blocking decision | none |
-| Open question | none |
+| Open question | none. **Ritual due after B09** (three batches since the last one) |
 
 ---
 
@@ -182,6 +182,28 @@ targets the wave 0 branch and retargets to `main` automatically when #80 merges.
 The alternative - one branch for everything - would have made the wave 0 review
 grow with each batch, which is how a review stops being a review.
 
+**D-009 — The token carries username and roles.**
+An audit row must say what authority the caller held **when they acted**. Reading
+it from the token records the role at login, which for a 30-minute token is close
+enough and is arguably the more accurate fact; a database lookup would report
+their role today, which is a different and less useful answer. Cost: a role change
+takes effect in the audit trail at the next login. Accepted.
+
+**D-010 — An audit failure rolls back the business change.**
+If the audit row cannot be written, `record()` raises and the caller's transaction
+rolls back. The alternative - log the failure and continue - means the system
+silently performs changes it cannot account for. The risk is that an audit-table
+problem becomes an outage rather than a degradation. That trade is deliberate: an
+unaudited write in a hospital record is worse than a refused one, and the table
+has no external dependencies that could make it fail independently.
+
+**D-011 — The request context is a ContextVar, reset in a `finally`.**
+Not a module global: one process serves concurrent requests, and a global would
+hand one client's address to another client's audit row. Reset in `finally` so a
+raised handler cannot leave a context bound for the next request. Proven by a test
+that drives a real `POST /patients` through the full stack and compares the row's
+`request_id` with the `X-Request-ID` the client was given.
+
 ---
 
 ## 7. Batch log
@@ -195,9 +217,10 @@ grow with each batch, which is how a review stops being a review.
 | B06 | 2026-11-09 | `b9d79a1` | review only | 590 | `SECURITY.md` now separates shipped from planned |
 | — | 2026-11-09 | this commit | — | 590 | This document; `PROJECT_STATE.md` marked superseded |
 | B07 | 2026-11-09 | `72f23d5` | 9 tests | 599 | Evidence columns, nullable actor, three indexes. Two defects found by the gate: a missing server default on `outcome`, and a test fixture that silently measured an empty database |
+| B08 | 2026-11-09 | `055c010` | 13 tests | 612 | Write path live for patients. ContextVar for request facts; token now carries username and roles. One defect found: `getattr(user, "roles", [])` would have returned an empty list forever, because User has no roles relationship |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 30 new tests. Final: **599 passed, 2 skipped**.
+test baseline plus 43 new tests. Final: **612 passed, 2 skipped**.
 
 ---
 
