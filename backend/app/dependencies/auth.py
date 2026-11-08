@@ -24,6 +24,7 @@ from jwt import InvalidTokenError
 
 from app.auth.jwt import decode_access_token
 from app.auth.security import TokenDependency
+from app.core.request_context import bind_actor
 from app.core.exceptions import AuthenticationException
 
 
@@ -60,6 +61,20 @@ def get_current_user(
         raise AuthenticationException(
             "Invalid or expired authentication token."
         ) from exc
+
+    # Bind the actor for the audit trail. Set here rather than in each service
+    # so that a service never has to take an actor parameter.
+    raw_subject = payload.get("sub")
+    try:
+        actor_id = int(str(raw_subject)) if raw_subject is not None else None
+    except (TypeError, ValueError):
+        actor_id = None
+    roles = payload.get("roles")
+    bind_actor(
+        actor_id=actor_id,
+        username=payload.get("username"),
+        roles=roles if isinstance(roles, (list, tuple)) else None,
+    )
 
     return payload
 

@@ -19,6 +19,7 @@ from app.core.exceptions import (
     DuplicateResourceException,
     ResourceNotFoundException,
 )
+from app.services import audit
 from app.models.case_record import CaseRecord
 from app.models.prescription import Prescription
 from app.models.prescription_item import PrescriptionItem
@@ -161,6 +162,13 @@ class PrescriptionService:
                 db.add(item)
 
             await db.flush()
+            await audit.record(
+                db,
+                activity="prescription.create",
+                entity_name="Prescription",
+                entity_id=prescription.id,
+                after=audit.snapshot(prescription),
+            )
             await db.commit()
             await db.refresh(prescription)
 

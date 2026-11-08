@@ -6,6 +6,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import BusinessRuleException, DatabaseException, DuplicateResourceException, ResourceNotFoundException
+from app.services import audit
 from app.models.dispense_record import DispenseRecord
 from app.models.prescription_item import PrescriptionItem
 from app.models.stock_batch import StockBatch
@@ -115,6 +116,13 @@ class DispenseService:
                 performed_by=performed_by,
                 reference_type="DISPENSE",
                 remarks=f"Dispense against prescription item {data.prescription_item_id}",
+            )
+            await audit.record(
+                db,
+                activity="dispense.create",
+                entity_name="DispenseRecord",
+                entity_id=record.id,
+                after=audit.snapshot(record),
             )
             await db.commit()
             await db.refresh(record)

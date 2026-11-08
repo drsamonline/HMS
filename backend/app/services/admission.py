@@ -21,6 +21,7 @@ from app.core.exceptions import (
     DuplicateResourceException,
     ResourceNotFoundException,
 )
+from app.services import audit
 from app.models.admission import Admission
 from app.models.bed import Bed
 from app.models.patient import Patient
@@ -188,6 +189,13 @@ class AdmissionService:
             bed.occupancy_status = "occupied"
             bed.updated_at = now
 
+            await audit.record(
+                db,
+                activity="admission.create",
+                entity_name="Admission",
+                entity_id=admission.id,
+                after=audit.snapshot(admission),
+            )
             await db.commit()
 
             return admission

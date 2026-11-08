@@ -110,7 +110,15 @@ def _actor_fields(actor: Mapping[str, Any] | None) -> tuple[int | None, str | No
     """
 
     if not actor:
-        return None, None, None
+        # No explicit actor: use the one the authentication dependency bound to
+        # this request. Services that take an actor still win, so B08's patient
+        # paths keep working unchanged.
+        context = current_request_context()
+        return (
+            context.actor_id,
+            context.actor_username,
+            context.actor_role,
+        )
 
     raw_id = actor.get("sub")
     try:
@@ -131,7 +139,7 @@ def _actor_fields(actor: Mapping[str, Any] | None) -> tuple[int | None, str | No
 async def record(
     db: AsyncSession,
     *,
-    actor: Mapping[str, Any] | None,
+    actor: Mapping[str, Any] | None = None,
     activity: str,
     entity_name: str,
     entity_id: int | None = None,
@@ -149,7 +157,10 @@ async def record(
         The caller's session. This function never commits.
 
     actor : Mapping | None
-        The validated JWT payload, or ``None`` for a system action.
+        The validated JWT payload. Omit it to use the actor the authentication
+        dependency bound to the current request, which is what lets a service
+        record without taking an actor parameter. Pass ``None`` explicitly only
+        for a system action that has no request behind it.
 
     activity : str
         What happened, as ``entity.verb`` - ``patient.create``,
