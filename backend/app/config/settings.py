@@ -217,15 +217,11 @@ class Settings(BaseSettings):
     # CORS
     # ==========================================================
 
-    BACKEND_CORS_ORIGINS: list[str] = Field(
-        default_factory=lambda: [
-            "https://app.hhms.local",
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://localhost:8000",
-            "http://127.0.0.1:8000",
-        ]
-    )
+    # Empty by default: the GUI is served by this same server, so a hospital
+    # install needs no cross-origin access at all. Development origins belong in
+    # a developer's own .env, never in the default that ships to a hospital -
+    # ``allow_credentials=True`` plus a localhost origin is an invitation.
+    BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=list)
 
     # ==========================================================
     # Pagination
