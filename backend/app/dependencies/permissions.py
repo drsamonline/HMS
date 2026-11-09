@@ -108,13 +108,28 @@ def require(code: str) -> Callable:
         )
 
     async def guard(
+        request: Request,
         current_user: CurrentUserDependency,
         db: DatabaseSession,
     ) -> CurrentUser:
         if get_settings().PERMISSION_ENFORCEMENT == "off":
             return current_user
 
-        held = await permissions_for_user(db, _subject_id(current_user))
+        subject = _subject_id(current_user)
+
+        # Memoised on the request, not in a ContextVar: two guards on one route
+        # are two sibling dependencies, and a value written to a context
+        # variable inside one is not reliably visible to the other. The request
+        # object is shared by definition, and is discarded with the request - so
+        # a revoked role still stops working on the next one.
+        cached = getattr(request.state, "permissions", None)
+        cached_for = getattr(request.state, "permissions_actor", None)
+        if cached is not None and cached_for == subject:
+            held = cached
+        else:
+            held = await permissions_for_user(db, subject)
+            request.state.permissions = held
+            request.state.permissions_actor = subject
         if code not in held:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

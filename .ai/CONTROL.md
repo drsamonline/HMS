@@ -439,6 +439,52 @@ for forty batches. The difference is not scope creep: it is the two new batches,
 the NABH module being costed separately rather than implied, and B14 taking four
 passes instead of one.
 
+
+---
+
+## 7b. Requirement carried forward: IP protection and provenance
+
+Recorded 2026-11-09 at the owner's instruction, to be built once the product
+works. Not scheduled yet; it becomes **wave 8 (B41–B45)**.
+
+The requirement: lock and guard the code, watermark it, and be able to tell when
+it has been taken. Plus whatever else the owner adds before the wave is planned.
+
+### Three constraints that shape the design before any of it is built
+
+1. **Passive, never active.** A watermark must be discoverable *in the artefact* -
+   a string in a binary, an identifier in a PDF, a licence record in a database.
+   It must never transmit anything. HHMS is sold on being offline and
+   LAN-only; a component that phones home would break that promise, would be a
+   privacy problem under the DPDP Act, and would put patient data in the path of
+   an IP dispute. If a licensee identifier has to travel, it travels in a file the
+   customer chooses to send.
+
+2. **Nothing may disable a hospital.** A licence check that can stop the software
+   is a clinical safety hazard in a product used during an emergency. Expiry may
+   warn, may restrict a non-clinical surface, may refuse a new installation - it
+   must never stop a running system from recording a patient. This is not a
+   preference; it is the difference between a licence and a liability.
+
+3. **Disclosed in the licence.** A covert trace in medical software invites a
+   regulator question. The EULA says the build carries a licensee identifier and
+   why. Concealed from a competitor, disclosed to the customer.
+
+### What the wave is likely to contain
+
+| Batch | Idea | Notes |
+|-------|------|-------|
+| B41 | Provenance headers and SPDX identifiers on every source file | Cheap, and it is what a lawyer asks for first |
+| B42 | Per-licensee build watermark: identifier embedded at build time in the binary, the PDF metadata and the database | One build per licensee, reproducible from a seed |
+| B43 | Canary strings: unique, inert markers in the source and in the compiled output | Detectable in a leaked copy; harmless in a running one |
+| B44 | Signed commits, SBOM and a published hash manifest per release | Proves what shipped, and when |
+| B45 | Detection playbook: given a suspected copy, how to establish whether it derives from this code | The part that is actually used in a dispute |
+
+Deliberately absent: anything that reports usage, anything that revokes a
+function remotely, and any obfuscation of the clinical logic. Obfuscation would
+make the code unauditable by the hospital that is buying it, which is the
+opposite of the "no lock-in" argument the product is sold on.
+
 ---
 
 ## 8. Resuming after a break
