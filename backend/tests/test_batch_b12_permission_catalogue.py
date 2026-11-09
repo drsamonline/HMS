@@ -129,6 +129,7 @@ def test_every_data_endpoint_module_is_covered() -> None:
         "beds": {"ipd"},
         "billing": {"billing"},
         "case_records": {"clinical"},
+        "configuration": {"settings"},
         "dashboard": {"reporting"},
         "department_services": {"masters"},
         "departments": {"masters"},

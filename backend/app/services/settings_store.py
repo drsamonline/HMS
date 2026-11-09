@@ -134,6 +134,27 @@ async def effective(db: AsyncSession, key: str) -> Effective:
     return (await effective_all(db))[key]
 
 
+async def validate(db: AsyncSession, key: str, value) -> None:
+    """Check that a value would be accepted, without storing it.
+
+    The API validates a whole batch before writing any of it, so a wizard step
+    that sets six values cannot land five and fail on the sixth.
+    """
+
+    spec = BY_KEY.get(key)
+    if spec is None:
+        raise ResourceNotFoundException(f"Unknown setting: {key}")
+    if spec.bootstrap:
+        raise BusinessRuleException(
+            f"{spec.label} is read before the database is open and can only be set "
+            "in the server's environment file."
+        )
+
+    text = _serialise(spec, value)
+    if text is not None:
+        _coerce(spec, text)
+
+
 async def set_value(
     db: AsyncSession, key: str, value, *, actor_id: int | None = None
 ) -> Effective:
@@ -206,4 +227,5 @@ __all__ = [
     "effective_all",
     "reset_value",
     "set_value",
+    "validate",
 ]
