@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-03-perf` (stacked on `batch-02-enumeration`) |
+| Branch | `batch-04-modules` (stacked on `batch-03-perf`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `8205f1d` (B15a) + the control commit that carries this file |
-| Tests | **683 passed, 2 skipped** (569 baseline + 114 new) |
-| Wave complete | Waves 0, 1 and 2 (B01–B15); wave 3 next |
-| Next batch | **B16 — module registry** |
+| Head commit | `fdd0eae` (B16) + the control commit that carries this file |
+| Tests | **694 passed, 2 skipped** (569 baseline + 125 new) |
+| Wave complete | Waves 0, 1, 2 (B01–B15a); wave 3 one of six |
+| Next batch | **B17 — mount routes by module** |
 | Blocking decision | none |
-| Open question | none. Ritual due after B16 (third batch since B14) |
+| Open question | none. **Ritual due after B17** (third batch since B14) |
 
 ---
 
@@ -336,10 +336,10 @@ role, because an end-to-end suite needs an actor the guard admits.
 | B14 | 2026-11-09 | `2d8fbe6` | 7 tests | 675 | 238 of 244 routes guarded, enforcement flipped to `enforce`, B11's role gate removed, harness given a real actor. Two self-inflicted defects: a broad regex damaged 31 test files, and the first pass emitted bare functions instead of `Depends(...)` |
 | B15 | 2026-11-09 | `66e085d` | 6 tests | 679 | Enumeration gate that names the unguarded route; proven to fail by planting one. Supersedes the lighter copy inside B14's gate |
 | B15a | 2026-11-09 | `8205f1d` | 4 tests | 683 | Permission set memoised on `request.state`; suite 470 s to 337 s, twelve files 102 s to 75 s. First attempt with a ContextVar failed its own test |
+| B16 | 2026-11-09 | `fdd0eae` | 11 tests | 694 | Eight modules with dependencies and permission sets; `ModuleState` derived from existing records by migration. The B09 ratchet caught the new service for not auditing, and it was wired rather than exempted |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 114 new tests. Final: **683 passed, 2 skipped**. Total wall
-time about 337 s, down from 470 s before B15a.
+test baseline plus 125 new tests. Final: **694 passed, 2 skipped**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in
 file-list chunks and the counts summed. Every file runs exactly once. After B15a
