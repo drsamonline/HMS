@@ -7,10 +7,11 @@
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.report_pdf import (
     PdfRenderRequest,
@@ -30,13 +31,13 @@ def actor_id(user: CurrentUserDependency) -> int:
     return int(str(user["sub"]))
 
 
-@router.get("/pdf/types")
+@router.get("/pdf/types", dependencies=[Depends(require("reporting.export"))])
 async def pdf_envelope_types(_: CurrentUserDependency) -> dict:
     """Envelope report types the server can render to PDF."""
     return {"report_types": sorted(ENVELOPE_KINDS)}
 
 
-@router.post("/pdf")
+@router.post("/pdf", dependencies=[Depends(require("reporting.export"))])
 async def render_pdf(
     payload: PdfRenderRequest, _: CurrentUserDependency
 ) -> FileResponse:
@@ -60,13 +61,19 @@ async def render_pdf(
 schedule_router = APIRouter(prefix="/maintenance/report-schedules", tags=["Maintenance"])
 
 
-@schedule_router.get("", response_model=list[ReportScheduleRead])
+@schedule_router.get(
+    "", response_model=list[ReportScheduleRead],
+    dependencies=[Depends(require('reporting.export'))],
+)
 async def list_schedules(db: DatabaseSession, user: CurrentUserDependency):
     await _require_admin(db, actor_id(user))
     return await report_scheduler_service.list_jobs(db)
 
 
-@schedule_router.post("", response_model=ReportScheduleRead, status_code=status.HTTP_201_CREATED)
+@schedule_router.post(
+    "", response_model=ReportScheduleRead, status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require('reporting.export'))],
+)
 async def create_schedule(data: ReportScheduleCreate, db: DatabaseSession, user: CurrentUserDependency):
     await _require_admin(db, actor_id(user))
     try:
@@ -82,7 +89,10 @@ async def create_schedule(data: ReportScheduleCreate, db: DatabaseSession, user:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
 
 
-@schedule_router.patch("/{job_id}", response_model=ReportScheduleRead)
+@schedule_router.patch(
+    "/{job_id}", response_model=ReportScheduleRead,
+    dependencies=[Depends(require('reporting.export'))],
+)
 async def update_schedule(job_id: int, data: ReportScheduleUpdate, db: DatabaseSession, user: CurrentUserDependency):
     await _require_admin(db, actor_id(user))
     try:
@@ -95,27 +105,39 @@ async def update_schedule(job_id: int, data: ReportScheduleUpdate, db: DatabaseS
 # router/app default response class for OpenAPI generation; an explicit None
 # makes app.openapi() raise "A response class is needed to generate OpenAPI",
 # which breaks /openapi.json and the Swagger UI ("Failed to load API definition").
-@schedule_router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
+@schedule_router.delete(
+    "/{job_id}", status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require('reporting.export'))],
+)
 async def delete_schedule(job_id: int, db: DatabaseSession, user: CurrentUserDependency):
     await _require_admin(db, actor_id(user))
     await report_scheduler_service.delete_job(db, job_id)
     return None
 
 
-@schedule_router.post("/{job_id}/run", response_model=ReportScheduleRunRead)
+@schedule_router.post(
+    "/{job_id}/run", response_model=ReportScheduleRunRead,
+    dependencies=[Depends(require('reporting.export'))],
+)
 async def run_schedule_now(job_id: int, db: DatabaseSession, user: CurrentUserDependency):
     await _require_admin(db, actor_id(user))
     return await report_scheduler_service.fire_job(db, job_id)
 
 
-@schedule_router.get("/{job_id}/runs", response_model=list[ReportScheduleRunRead])
+@schedule_router.get(
+    "/{job_id}/runs", response_model=list[ReportScheduleRunRead],
+    dependencies=[Depends(require('reporting.export'))],
+)
 async def schedule_runs(job_id: int, db: DatabaseSession, user: CurrentUserDependency):
     await _require_admin(db, actor_id(user))
     await report_scheduler_service._get_row(db, job_id)  # 404 if unknown
     return report_scheduler_service.job_runs(job_id)
 
 
-@schedule_router.get("/{job_id}/artifacts/{name}")
+@schedule_router.get(
+    "/{job_id}/artifacts/{name}",
+    dependencies=[Depends(require('reporting.export'))],
+)
 async def download_artifact(job_id: int, name: str, db: DatabaseSession, user: CurrentUserDependency) -> FileResponse:
     await _require_admin(db, actor_id(user))
     await report_scheduler_service._get_row(db, job_id)  # 404 if unknown

@@ -7,9 +7,10 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.investigation_result import (
     InvestigationResultCreate,
@@ -30,6 +31,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=list[InvestigationResultRead],
+    dependencies=[Depends(require("investigations.read"))],
 )
 async def list_investigation_results(
     db: DatabaseSession,
@@ -65,6 +67,7 @@ async def list_investigation_results(
     "",
     response_model=InvestigationResultRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("investigations.write"))],
 )
 async def create_investigation_result(
     result_in: InvestigationResultCreate,
@@ -80,6 +83,7 @@ async def create_investigation_result(
 @router.get(
     "/investigation/{investigation_id}",
     response_model=InvestigationResultRead,
+    dependencies=[Depends(require("investigations.read"))],
 )
 async def get_result_by_investigation(
     investigation_id: int,
@@ -98,6 +102,7 @@ async def get_result_by_investigation(
 @router.get(
     "/{result_id}",
     response_model=InvestigationResultRead,
+    dependencies=[Depends(require("investigations.read"))],
 )
 async def get_investigation_result(
     result_id: int,
@@ -113,6 +118,7 @@ async def get_investigation_result(
 @router.put(
     "/{result_id}",
     response_model=InvestigationResultRead,
+    dependencies=[Depends(require("investigations.write"))],
 )
 async def update_investigation_result(
     result_id: int,
@@ -130,6 +136,7 @@ async def update_investigation_result(
 @router.delete(
     "/{result_id}",
     response_model=InvestigationResultRead,
+    dependencies=[Depends(require("investigations.write"))],
 )
 async def delete_investigation_result(
     result_id: int,

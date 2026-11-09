@@ -1,8 +1,9 @@
 """Administrative maintenance, archive and lifecycle endpoints."""
 from __future__ import annotations
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import FileResponse
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.services.administration import _require_admin
 from app.services.maintenance import maintenance_service
@@ -12,32 +13,32 @@ from app.services.archive_retention import archive_retention_service
 router=APIRouter(prefix="/maintenance",tags=["Maintenance"])
 def actor_id(user: CurrentUserDependency)->int:return int(str(user["sub"]))
 
-@router.get("/status")
+@router.get("/status", dependencies=[Depends(require("maintenance.run"))])
 async def status(db: DatabaseSession,user: CurrentUserDependency): await _require_admin(db,actor_id(user)); return await maintenance_service.health()
 
-@router.post("/run")
+@router.post("/run", dependencies=[Depends(require("maintenance.run"))])
 async def run(db: DatabaseSession,user: CurrentUserDependency): await _require_admin(db,actor_id(user)); return await maintenance_service.run_safe_maintenance()
 
-@router.post("/vacuum")
+@router.post("/vacuum", dependencies=[Depends(require("maintenance.run"))])
 async def vacuum(db: DatabaseSession,user: CurrentUserDependency): await _require_admin(db,actor_id(user)); return await maintenance_service.vacuum()
 
-@router.get("/archives")
+@router.get("/archives", dependencies=[Depends(require("maintenance.run"))])
 async def archives(db: DatabaseSession,user: CurrentUserDependency): await _require_admin(db,actor_id(user)); return await archive_manager.list_archives(db)
 
-@router.post("/archives/{year}")
+@router.post("/archives/{year}", dependencies=[Depends(require("maintenance.run"))])
 async def create_archive(year:int,db:DatabaseSession,user:CurrentUserDependency): await _require_admin(db,actor_id(user)); return await archive_manager.create_year_archive(db,year)
 
-@router.get("/archives/rollover/preview")
+@router.get("/archives/rollover/preview", dependencies=[Depends(require("maintenance.run"))])
 async def archive_rollover_preview(db: DatabaseSession,user: CurrentUserDependency):
     await _require_admin(db, actor_id(user))
     return await archive_manager.rollover_preview(db)
 
-@router.post("/archives/rollover/{year}")
+@router.post("/archives/rollover/{year}", dependencies=[Depends(require("maintenance.run"))])
 async def archive_rollover(year: int, db: DatabaseSession, user: CurrentUserDependency):
     await _require_admin(db, actor_id(user))
     return await archive_manager.rollover_case_year(db, year)
 
-@router.get("/archives/retention/preview")
+@router.get("/archives/retention/preview", dependencies=[Depends(require("maintenance.run"))])
 async def archive_retention_preview(db: DatabaseSession,user: CurrentUserDependency):
     await _require_admin(db,actor_id(user))
     plan = await archive_retention_service.plan(db)
@@ -51,12 +52,12 @@ async def archive_retention_preview(db: DatabaseSession,user: CurrentUserDepende
         "invalid_or_future": list(plan.invalid_or_future),
     }
 
-@router.post("/archives/retention/execute")
+@router.post("/archives/retention/execute", dependencies=[Depends(require("maintenance.run"))])
 async def archive_retention_execute(db: DatabaseSession,user: CurrentUserDependency):
     await _require_admin(db,actor_id(user))
     return await archive_retention_service.execute_eligible(db)
 
-@router.get("/archives/{year}/patients/{patient_id}/cases")
+@router.get("/archives/{year}/patients/{patient_id}/cases", dependencies=[Depends(require("maintenance.run"))])
 async def historical_cases(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
     uid = actor_id(user)
     try:
@@ -69,7 +70,7 @@ async def historical_cases(year:int, patient_id:int, db:DatabaseSession, user:Cu
             raise
     return await archive_manager.read_case_records(db,year,patient_id)
 
-@router.get("/archives/{year}/patients/{patient_id}/visits")
+@router.get("/archives/{year}/patients/{patient_id}/visits", dependencies=[Depends(require("maintenance.run"))])
 async def historical_visits(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
     uid = actor_id(user)
     try:
@@ -82,7 +83,7 @@ async def historical_visits(year:int, patient_id:int, db:DatabaseSession, user:C
             raise
     return await archive_manager.read_visits(db,year,patient_id)
 
-@router.get("/archives/{year}/patients/{patient_id}/invoices")
+@router.get("/archives/{year}/patients/{patient_id}/invoices", dependencies=[Depends(require("maintenance.run"))])
 async def historical_invoices(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
     uid = actor_id(user)
     try:
@@ -95,7 +96,7 @@ async def historical_invoices(year:int, patient_id:int, db:DatabaseSession, user
             raise
     return await archive_manager.read_invoices(db,year,patient_id)
 
-@router.get("/archives/{year}/patients/{patient_id}/payments")
+@router.get("/archives/{year}/patients/{patient_id}/payments", dependencies=[Depends(require("maintenance.run"))])
 async def historical_payments(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
     uid = actor_id(user)
     try:
@@ -108,7 +109,7 @@ async def historical_payments(year:int, patient_id:int, db:DatabaseSession, user
             raise
     return await archive_manager.read_payments(db,year,patient_id)
 
-@router.get("/archives/{year}/patients/{patient_id}/dispenses")
+@router.get("/archives/{year}/patients/{patient_id}/dispenses", dependencies=[Depends(require("maintenance.run"))])
 async def historical_dispenses(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
     uid = actor_id(user)
     try:
@@ -121,7 +122,7 @@ async def historical_dispenses(year:int, patient_id:int, db:DatabaseSession, use
             raise
     return await archive_manager.read_dispenses(db,year,patient_id)
 
-@router.get("/archives/{year}/patients/{patient_id}/prescriptions")
+@router.get("/archives/{year}/patients/{patient_id}/prescriptions", dependencies=[Depends(require("maintenance.run"))])
 async def historical_prescriptions(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
     uid = actor_id(user)
     try:
@@ -134,7 +135,7 @@ async def historical_prescriptions(year:int, patient_id:int, db:DatabaseSession,
             raise
     return await archive_manager.read_prescriptions(db,year,patient_id)
 
-@router.get("/archives/{year}/patients/{patient_id}/prescription-items")
+@router.get("/archives/{year}/patients/{patient_id}/prescription-items", dependencies=[Depends(require("maintenance.run"))])
 async def historical_prescription_items(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
     uid = actor_id(user)
     try:
@@ -147,7 +148,7 @@ async def historical_prescription_items(year:int, patient_id:int, db:DatabaseSes
             raise
     return await archive_manager.read_prescription_items(db,year,patient_id)
 
-@router.get("/archives/{year}/patients/{patient_id}/investigations")
+@router.get("/archives/{year}/patients/{patient_id}/investigations", dependencies=[Depends(require("maintenance.run"))])
 async def historical_investigations(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
     uid = actor_id(user)
     try:
@@ -160,7 +161,7 @@ async def historical_investigations(year:int, patient_id:int, db:DatabaseSession
             raise
     return await archive_manager.read_investigations(db,year,patient_id)
 
-@router.get("/archives/{year}/patients/{patient_id}/admissions")
+@router.get("/archives/{year}/patients/{patient_id}/admissions", dependencies=[Depends(require("maintenance.run"))])
 async def historical_admissions(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
     uid = actor_id(user)
     try:
@@ -173,7 +174,7 @@ async def historical_admissions(year:int, patient_id:int, db:DatabaseSession, us
             raise
     return await archive_manager.read_admissions(db,year,patient_id)
 
-@router.get("/archives/{year}/patients/{patient_id}/documents")
+@router.get("/archives/{year}/patients/{patient_id}/documents", dependencies=[Depends(require("maintenance.run"))])
 async def historical_documents(year:int, patient_id:int, db:DatabaseSession, user:CurrentUserDependency):
     uid = actor_id(user)
     try:
@@ -186,27 +187,27 @@ async def historical_documents(year:int, patient_id:int, db:DatabaseSession, use
             raise
     return await archive_manager.read_documents(db,year,patient_id)
 
-@router.get("/archives/{year}/purchase-orders")
+@router.get("/archives/{year}/purchase-orders", dependencies=[Depends(require("maintenance.run"))])
 async def historical_purchase_orders(year:int, db:DatabaseSession, user:CurrentUserDependency):
     await _require_admin(db,actor_id(user))
     return await archive_manager.read_purchase_orders(db,year)
 
-@router.get("/archives/{year}/goods-receipts")
+@router.get("/archives/{year}/goods-receipts", dependencies=[Depends(require("maintenance.run"))])
 async def historical_goods_receipts(year:int, db:DatabaseSession, user:CurrentUserDependency):
     await _require_admin(db,actor_id(user))
     return await archive_manager.read_goods_receipts(db,year)
 
-@router.get("/archives/{year}/stock-transactions")
+@router.get("/archives/{year}/stock-transactions", dependencies=[Depends(require("maintenance.run"))])
 async def historical_stock_transactions(year:int, db:DatabaseSession, user:CurrentUserDependency):
     await _require_admin(db,actor_id(user))
     return await archive_manager.read_stock_transactions(db,year)
 
-@router.get("/archives/{year}/stock-cards")
+@router.get("/archives/{year}/stock-cards", dependencies=[Depends(require("maintenance.run"))])
 async def historical_stock_cards(year:int, db:DatabaseSession, user:CurrentUserDependency):
     await _require_admin(db,actor_id(user))
     return await archive_manager.read_stock_cards(db,year)
 
-@router.get("/archives/{year}/download",response_class=FileResponse)
+@router.get("/archives/{year}/download",response_class=FileResponse, dependencies=[Depends(require("maintenance.run"))])
 async def download_archive(year:int,db:DatabaseSession,user:CurrentUserDependency)->FileResponse:
     await _require_admin(db,actor_id(user)); rows=await archive_manager.list_archives(db); row=next((x for x in rows if x.archive_year==year),None)
     if row is None: raise ValueError("Archive year not found")

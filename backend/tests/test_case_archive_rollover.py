@@ -39,8 +39,8 @@ def test_rollover_contracts_are_exposed():
         ROOT / "frontend" / "js" / "system_health.js"
     ).read_text(encoding="utf-8")
 
-    assert '@router.get("/archives/rollover/preview")' in maintenance
-    assert '@router.post("/archives/rollover/{year}")' in maintenance
+    assert '"/archives/rollover/preview"' in maintenance
+    assert '"/archives/rollover/{year}"' in maintenance
     assert "getArchiveRolloverPreview" in api
     assert "rolloverArchiveYear" in api
     assert "archive-rollover" in workspace

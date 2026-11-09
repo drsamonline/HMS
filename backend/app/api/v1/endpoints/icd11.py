@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.schemas.icd11 import ICD11SearchResult
 from app.services.icd11 import icd11_service
 
 router = APIRouter(prefix="/icd11", tags=["ICD-11"])
 
 
-@router.get("/search", response_model=list[ICD11SearchResult])
+@router.get("/search", response_model=list[ICD11SearchResult], dependencies=[Depends(require("masters.read"))])
 async def search_icd11(
     _: CurrentUserDependency,
     q: str = Query(min_length=2, max_length=100),

@@ -4,10 +4,11 @@ HHMS Dispensing API Endpoints.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
 from app.core.exceptions import AuthenticationException
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.dispense import (
     DispenseCreate,
@@ -41,6 +42,7 @@ def _current_user_id(current_user: dict) -> int:
     "",
     response_model=DispenseRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("pharmacy.write"))],
 )
 async def create_dispense(
     dispense_in: DispenseCreate,
@@ -57,6 +59,7 @@ async def create_dispense(
 @router.get(
     "/{dispense_id}",
     response_model=DispenseRead,
+    dependencies=[Depends(require("pharmacy.read"))],
 )
 async def get_dispense(
     dispense_id: int,
@@ -72,6 +75,7 @@ async def get_dispense(
 @router.get(
     "/prescription-item/{prescription_item_id}",
     response_model=list[DispenseRead],
+    dependencies=[Depends(require("pharmacy.read"))],
 )
 async def list_item_dispenses(
     prescription_item_id: int,

@@ -186,7 +186,15 @@ async def default_deny(request: Request) -> None:
 #: hospital data. Everything else needs a guard.
 PUBLIC_PATHS = frozenset(
     {
+        # Liveness and readiness probes: a load balancer or the CI smoke test
+        # cannot present a token, and these return no hospital data.
         "/api/v1/health",
+        "/api/v1/health/live",
+        "/api/v1/health/ready",
+        # Discovery tells a LAN client where the server is, before it has a
+        # token. It exposes a name and a version, nothing more.
+        "/api/v1/health/discovery",
+        # Authentication itself, and the profile of the user just authenticated.
         "/api/v1/auth/login",
         "/api/v1/auth/me",
     }

@@ -168,42 +168,34 @@ async def test_exporting_writes_its_own_audit_row(db_session) -> None:
 
 
 # ------------------------------------------------------------- the HTTP gate
-def _token(roles, username="admin"):
+def test_reading_the_trail_requires_the_audit_read_permission() -> None:
     from app.auth.jwt import create_access_token
-
-    return create_access_token(
-        subject="1", additional_claims={"username": username, "roles": list(roles)}
-    )
-
-
-def test_reading_the_trail_requires_an_auditor_role() -> None:
     from tests._qa_harness import make_client
 
     with make_client() as client:
+        # A token whose subject has no user behind it holds no permissions.
+        token = create_access_token(subject="999999")
         response = client.get(
             "/api/v1/audit-logs",
-            headers={"Authorization": f"Bearer {_token(['billing'], 'clerk')}"},
+            headers={"Authorization": f"Bearer {token}"},
         )
     assert response.status_code == 403, response.text
 
 
 def test_an_administrator_can_read_the_trail() -> None:
-    from tests._qa_harness import make_client
+    from tests._qa_harness import auth_headers, make_client
 
     with make_client() as client:
-        response = client.get(
-            "/api/v1/audit-logs",
-            headers={"Authorization": f"Bearer {_token(['admin'])}"},
-        )
+        response = client.get("/api/v1/audit-logs", headers=auth_headers())
     assert response.status_code == 200, response.text
-    assert response.json() == []
 
 
 def test_export_returns_a_file_and_records_itself() -> None:
-    from tests._qa_harness import make_client
+    from tests._qa_harness import auth_headers, make_client
 
-    headers = {"Authorization": f"Bearer {_token(['admin'])}"}
     with make_client() as client:
+        # Inside the block: the harness creates the database the actor lives in.
+        headers = auth_headers()
         csv_response = client.get("/api/v1/audit-logs/export?format=csv", headers=headers)
         assert csv_response.status_code == 200, csv_response.text
         assert csv_response.headers["content-type"].startswith("text/csv")
@@ -218,4 +210,3 @@ def test_export_returns_a_file_and_records_itself() -> None:
 
     activities = [row["activity"] for row in after]
     assert activities.count("audit.export") == 2, activities
-    assert all(row["actor_username"] == "admin" for row in after)

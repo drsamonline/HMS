@@ -87,6 +87,6 @@ def test_pharmacy_rollover_contracts_are_exposed():
         ROOT / "backend" / "app" / "api" / "v1" / "endpoints" / "maintenance.py"
     ).read_text(encoding="utf-8")
     api = (ROOT / "frontend" / "js" / "api.js").read_text(encoding="utf-8")
-    assert '@router.get("/archives/{year}/patients/{patient_id}/dispenses")' in maintenance
+    assert '"/archives/{year}/patients/{patient_id}/dispenses"' in maintenance
     assert "archive_manager.read_dispenses" in maintenance
     assert "getHistoricalArchiveDispenses" in api

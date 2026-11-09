@@ -7,9 +7,10 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.patient import (
     PatientCreate,
@@ -28,6 +29,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=list[PatientRead],
+    dependencies=[Depends(require("patients.read"))],
 )
 async def list_patients(
     db: DatabaseSession,
@@ -51,6 +53,7 @@ async def list_patients(
     "",
     response_model=PatientRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("patients.write"))],
 )
 async def create_patient(
     patient_in: PatientCreate,
@@ -67,6 +70,7 @@ async def create_patient(
 @router.get(
     "/{patient_id}",
     response_model=PatientRead,
+    dependencies=[Depends(require("patients.read"))],
 )
 async def get_patient(
     patient_id: int,
@@ -82,6 +86,7 @@ async def get_patient(
 @router.patch(
     "/{patient_id}",
     response_model=PatientRead,
+    dependencies=[Depends(require("patients.write"))],
 )
 async def update_patient(
     patient_id: int,
@@ -100,6 +105,7 @@ async def update_patient(
 @router.delete(
     "/{patient_id}",
     response_model=PatientRead,
+    dependencies=[Depends(require("patients.deactivate"))],
 )
 async def deactivate_patient(
     patient_id: int,

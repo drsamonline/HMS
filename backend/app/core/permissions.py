@@ -92,7 +92,8 @@ PERMISSIONS: tuple[PermissionSpec, ...] = (
     _p("roles.write", "roles", "Manage roles", "Create roles and grant permissions."),
     _p("settings.read", "settings", "View settings", "Read hospital and system settings."),
     _p("settings.write", "settings", "Change settings", "Change hospital and system settings and number sequences."),
-    _p("masters.write", "masters", "Maintain masters", "Departments, services, designations and ICD lookups."),
+    _p("masters.read", "masters", "View masters", "Read departments, services, designations and ICD lookups."),
+    _p("masters.write", "masters", "Maintain masters", "Create and edit departments, services, designations and ICD lookups."),
     # ------------------------------------------------------------ system
     _p("backup.read", "backup", "View backups", "List and download backups."),
     _p("backup.write", "backup", "Back up and restore", "Create, delete and restore a backup. Restore overwrites live data."),
@@ -144,12 +145,12 @@ ROLE_TEMPLATES: dict[str, tuple[str, ...]] = {
         "patients.read", "billing.read",
     ),
     "registration desk": (
-        "patients.read", "patients.write", "opd.read", "opd.write",
+        "patients.read", "patients.write", "opd.read", "opd.write", "masters.read",
     ),
     "medical officer": (
         "patients.read", "opd.read", "clinical.read", "clinical.write",
         "prescriptions.read", "prescriptions.write", "investigations.read",
-        "investigations.write", "ipd.read", "reporting.read",
+        "investigations.write", "ipd.read", "reporting.read", "masters.read",
     ),
     "pharmacist": (
         "patients.read", "pharmacy.read", "pharmacy.write", "inventory.read",

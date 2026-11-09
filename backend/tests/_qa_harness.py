@@ -187,11 +187,84 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
         get_settings.cache_clear()
 
 
+#: The QA administrator. Every end-to-end suite needs one authenticated actor
+#: whose permissions come from the database, because the guard resolves them
+#: there rather than from the token (build plan B13/D-023).
+QA_ADMIN_USERNAME = "qa-batch103"
+QA_ADMIN_PASSWORD = "qa-password"
+
+
+def _ensure_qa_admin() -> int:
+    """Get or create the QA administrator, holding the administrator role."""
+
+    from sqlalchemy import func, select
+
+    from app.auth.password import hash_password
+    from app.db.session import get_session_factory
+    from app.models.role import Role
+    from app.models.user import User
+    from app.models.user_role import UserRole
+
+    factory = get_session_factory()
+
+    async def _run() -> int:
+        async with factory() as db:
+            user = (
+                await db.execute(
+                    select(User).where(User.username == QA_ADMIN_USERNAME)
+                )
+            ).scalar_one_or_none()
+            if user is None:
+                user = User(
+                    username=QA_ADMIN_USERNAME,
+                    password_hash=hash_password(QA_ADMIN_PASSWORD),
+                    full_name="QA Administrator",
+                    is_active=True,
+                )
+                db.add(user)
+                await db.flush()
+
+            role = (
+                await db.execute(
+                    select(Role).where(func.lower(Role.role_name) == "administrator")
+                )
+            ).scalar_one_or_none()
+            if role is None:
+                role = Role(role_name="administrator", description="Full access")
+                db.add(role)
+                await db.flush()
+
+            link = (
+                await db.execute(
+                    select(UserRole).where(
+                        UserRole.user_id == user.id, UserRole.role_id == role.id
+                    )
+                )
+            ).scalar_one_or_none()
+            if link is None:
+                db.add(UserRole(user_id=user.id, role_id=role.id))
+
+            await db.commit()
+            return user.id
+
+    return asyncio.run(_run())
+
+
 def auth_headers() -> dict[str, str]:
-    """Return a bearer header carrying a valid signed JWT payload."""
+    """Bearer header for the QA administrator, with a real user behind it.
+
+    Before B14 this minted a token for a subject that was not an integer and
+    belonged to no user. That worked while nothing checked permissions; once the
+    guard resolves them from the database, a token with no user behind it is
+    correctly refused.
+    """
     from app.auth.jwt import create_access_token
 
-    token = create_access_token(subject="qa-batch103")
+    user_id = _ensure_qa_admin()
+    token = create_access_token(
+        subject=str(user_id),
+        additional_claims={"username": QA_ADMIN_USERNAME, "roles": ["administrator"]},
+    )
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -218,6 +291,26 @@ def seed_user(*, username: str = "qa-admin", password: str = "qa-password") -> i
                 is_active=True,
             )
             db.add(user)
+            await db.flush()
+
+            # Give the seeded account the administrator role: a suite that logs
+            # in through the real route needs an actor the guard will admit.
+            from sqlalchemy import func, select
+
+            from app.models.role import Role
+            from app.models.user_role import UserRole
+
+            role = (
+                await db.execute(
+                    select(Role).where(func.lower(Role.role_name) == "administrator")
+                )
+            ).scalar_one_or_none()
+            if role is None:
+                role = Role(role_name="administrator", description="Full access")
+                db.add(role)
+                await db.flush()
+            db.add(UserRole(user_id=user.id, role_id=role.id))
+
             await db.commit()
             await db.refresh(user)
             return user.id
@@ -374,6 +467,11 @@ def seed_client_user(index: int) -> tuple[str, str]:
     username = f"lan-client-{index:02d}"
 
     async def _seed() -> int:
+        from sqlalchemy import func, select
+
+        from app.models.role import Role
+        from app.models.user_role import UserRole
+
         async with factory() as db:
             user = User(
                 username=username,
@@ -383,6 +481,22 @@ def seed_client_user(index: int) -> tuple[str, str]:
                 is_active=True,
             )
             db.add(user)
+            await db.flush()
+
+            # A simulated LAN client is an administrator: the guard resolves
+            # permissions from the database, so an account with no role can do
+            # nothing, and this helper exists to exercise the routes.
+            role = (
+                await db.execute(
+                    select(Role).where(func.lower(Role.role_name) == "administrator")
+                )
+            ).scalar_one_or_none()
+            if role is None:
+                role = Role(role_name="administrator", description="Full access")
+                db.add(role)
+                await db.flush()
+            db.add(UserRole(user_id=user.id, role_id=role.id))
+
             await db.commit()
             await db.refresh(user)
             return user.id

@@ -7,9 +7,10 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.prescription import (
     PrescriptionCreate,
@@ -28,6 +29,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=list[PrescriptionRead],
+    dependencies=[Depends(require("prescriptions.read"))],
 )
 async def list_prescriptions(
     db: DatabaseSession,
@@ -53,6 +55,7 @@ async def list_prescriptions(
     "",
     response_model=PrescriptionRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("prescriptions.write"))],
 )
 async def create_prescription(
     prescription_in: PrescriptionCreate,
@@ -78,6 +81,7 @@ async def create_prescription(
 @router.get(
     "/by-case/{case_record_id}",
     response_model=list[PrescriptionRead],
+    dependencies=[Depends(require("prescriptions.read"))],
 )
 async def list_case_prescriptions(
     case_record_id: int,
@@ -101,6 +105,7 @@ async def list_case_prescriptions(
 @router.get(
     "/{prescription_id}",
     response_model=PrescriptionRead,
+    dependencies=[Depends(require("prescriptions.read"))],
 )
 async def get_prescription(
     prescription_id: int,
@@ -126,6 +131,7 @@ async def get_prescription(
 @router.patch(
     "/{prescription_id}",
     response_model=PrescriptionRead,
+    dependencies=[Depends(require("prescriptions.write"))],
 )
 async def update_prescription(
     prescription_id: int,

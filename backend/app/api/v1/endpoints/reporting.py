@@ -1,9 +1,10 @@
 """HHMS report-data selection endpoints."""
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.reporting import (
     ClinicalReportBatchRead,
@@ -52,11 +53,11 @@ from app.services.reporting import reporting_service
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 
-@router.get("/catalog", response_model=ReportCatalogRead)
+@router.get("/catalog", response_model=ReportCatalogRead, dependencies=[Depends(require("reporting.read"))])
 async def get_report_catalog(_: CurrentUserDependency) -> ReportCatalogRead:
     return reporting_service.catalog()
 
-@router.post("/clinical-data", response_model=ClinicalReportRead)
+@router.post("/clinical-data", response_model=ClinicalReportRead, dependencies=[Depends(require("reporting.read"))])
 async def build_clinical_report(
     report_in: ClinicalReportRequest,
     db: DatabaseSession,
@@ -64,7 +65,7 @@ async def build_clinical_report(
 ) -> ClinicalReportRead:
     return await reporting_service.build_clinical_report(db, report_in)
 
-@router.post("/clinical-data/print-manifest", response_model=ReportPrintManifestRead)
+@router.post("/clinical-data/print-manifest", response_model=ReportPrintManifestRead, dependencies=[Depends(require("reporting.read"))])
 async def build_clinical_print_manifest(
     report_in: ReportPrintManifestRequest,
     db: DatabaseSession,
@@ -72,7 +73,7 @@ async def build_clinical_print_manifest(
 ) -> ReportPrintManifestRead:
     return await reporting_service.build_print_manifest(db, report_in)
 
-@router.post("/clinical-data/print-envelope", response_model=ReportPrintEnvelope)
+@router.post("/clinical-data/print-envelope", response_model=ReportPrintEnvelope, dependencies=[Depends(require("reporting.read"))])
 async def build_clinical_print_envelope(
     report_in: ReportPrintEnvelopeRequest,
     db: DatabaseSession,
@@ -80,7 +81,7 @@ async def build_clinical_print_envelope(
 ) -> ReportPrintEnvelope:
     return await reporting_service.build_print_envelope(db, report_in)
 
-@router.post("/clinical-data/batch", response_model=ClinicalReportBatchRead)
+@router.post("/clinical-data/batch", response_model=ClinicalReportBatchRead, dependencies=[Depends(require("reporting.read"))])
 async def build_clinical_report_batch(
     report_in: ClinicalReportBatchRequest,
     db: DatabaseSession,
@@ -88,7 +89,7 @@ async def build_clinical_report_batch(
 ) -> ClinicalReportBatchRead:
     return await reporting_service.build_case_batch(db, report_in)
 
-@router.post("/invoice-print-envelope", response_model=InvoicePrintEnvelope)
+@router.post("/invoice-print-envelope", response_model=InvoicePrintEnvelope, dependencies=[Depends(require("reporting.read"))])
 async def build_invoice_print_envelope(
     report_in: InvoicePrintRequest,
     db: DatabaseSession,
@@ -101,6 +102,7 @@ async def build_invoice_print_envelope(
 @router.post(
     "/collection-summary-print-envelope",
     response_model=CollectionSummaryPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_collection_summary_print_envelope(
     report_in: CollectionSummaryPrintRequest,
@@ -121,6 +123,7 @@ async def build_collection_summary_print_envelope(
 @router.post(
     "/receivables-aging-print-envelope",
     response_model=ReceivablesAgingPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_receivables_aging_print_envelope(
     report_in: ReceivablesAgingPrintRequest,
@@ -142,6 +145,7 @@ async def build_receivables_aging_print_envelope(
 @router.post(
     "/invoice-receipt-continuity-print-envelope",
     response_model=InvoiceReceiptContinuityPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_invoice_receipt_continuity_print_envelope(
     report_in: InvoiceReceiptContinuityPrintRequest,
@@ -163,6 +167,7 @@ async def build_invoice_receipt_continuity_print_envelope(
 @router.post(
     "/receipt-numbering-continuity-print-envelope",
     response_model=ReceiptNumberingContinuityPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_receipt_numbering_continuity_print_envelope(
     report_in: ReceiptNumberingContinuityPrintRequest,
@@ -185,6 +190,7 @@ async def build_receipt_numbering_continuity_print_envelope(
 @router.post(
     "/invoice-payment-reconciliation-print-envelope",
     response_model=InvoicePaymentReconciliationPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_invoice_payment_reconciliation_print_envelope(
     report_in: InvoicePaymentReconciliationPrintRequest,
@@ -208,6 +214,7 @@ async def build_invoice_payment_reconciliation_print_envelope(
 @router.post(
     "/payment-method-summary-print-envelope",
     response_model=PaymentMethodSummaryPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_payment_method_summary_print_envelope(
     report_in: PaymentMethodSummaryPrintRequest,
@@ -230,6 +237,7 @@ async def build_payment_method_summary_print_envelope(
 @router.post(
     "/invoice-overpayment-print-envelope",
     response_model=InvoiceOverpaymentPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_invoice_overpayment_print_envelope(
     report_in: InvoiceOverpaymentPrintRequest,
@@ -253,6 +261,7 @@ async def build_invoice_overpayment_print_envelope(
 @router.post(
     "/payment-method-overpayment-print-envelope",
     response_model=PaymentMethodOverpaymentPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_payment_method_overpayment_print_envelope(
     report_in: PaymentMethodOverpaymentPrintRequest,
@@ -276,6 +285,7 @@ async def build_payment_method_overpayment_print_envelope(
 @router.post(
     "/invoice-settlement-audit-print-envelope",
     response_model=InvoiceSettlementAuditPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_invoice_settlement_audit_print_envelope(
     report_in: InvoiceSettlementAuditPrintRequest,
@@ -299,6 +309,7 @@ async def build_invoice_settlement_audit_print_envelope(
 @router.post(
     "/refund-audit-print-envelope",
     response_model=RefundAuditPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_refund_audit_print_envelope(
     report_in: RefundAuditPrintRequest,
@@ -319,6 +330,7 @@ async def build_refund_audit_print_envelope(
 @router.post(
     "/discharge-audit-print-envelope",
     response_model=DischargeAuditPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_discharge_audit_print_envelope(
     report_in: DischargeAuditPrintRequest,
@@ -339,6 +351,7 @@ async def build_discharge_audit_print_envelope(
 @router.post(
     "/opd-queue-summary-print-envelope",
     response_model=OPDQueueSummaryPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_opd_queue_summary_print_envelope(
     report_in: OPDQueueSummaryPrintRequest,
@@ -360,6 +373,7 @@ async def build_opd_queue_summary_print_envelope(
 @router.post(
     "/ward-occupancy-print-envelope",
     response_model=WardOccupancyPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_ward_occupancy_print_envelope(
     report_in: WardOccupancyPrintRequest,
@@ -383,6 +397,7 @@ async def build_ward_occupancy_print_envelope(
 @router.post(
     "/investigation-billing-reconciliation-print-envelope",
     response_model=InvestigationBillingReconciliationPrintEnvelope,
+    dependencies=[Depends(require("reporting.read"))],
 )
 async def build_investigation_billing_reconciliation_print_envelope(
     report_in: InvestigationBillingReconciliationPrintRequest,

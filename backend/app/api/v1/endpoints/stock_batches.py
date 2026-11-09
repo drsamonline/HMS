@@ -4,9 +4,10 @@ HHMS Stock Batch API Endpoints.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.stock_batch import (
     StockBatchCreate,
@@ -25,6 +26,7 @@ router = APIRouter(
 @router.get(
     "/medicine/{medicine_id}",
     response_model=list[StockBatchRead],
+    dependencies=[Depends(require("inventory.read"))],
 )
 async def list_medicine_stock(
     medicine_id: int,
@@ -45,6 +47,7 @@ async def list_medicine_stock(
 
 @router.get(
     "/medicine/{medicine_id}/status",
+    dependencies=[Depends(require("inventory.read"))],
 )
 async def stock_status(
     medicine_id: int,
@@ -61,6 +64,7 @@ async def stock_status(
     "",
     response_model=StockBatchRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("inventory.write"))],
 )
 async def create_stock_batch(
     batch_in: StockBatchCreate,
@@ -76,6 +80,7 @@ async def create_stock_batch(
 @router.get(
     "/{stock_batch_id}",
     response_model=StockBatchRead,
+    dependencies=[Depends(require("inventory.read"))],
 )
 async def get_stock_batch(
     stock_batch_id: int,
@@ -91,6 +96,7 @@ async def get_stock_batch(
 @router.patch(
     "/{stock_batch_id}",
     response_model=StockBatchRead,
+    dependencies=[Depends(require("inventory.write"))],
 )
 async def update_stock_batch(
     stock_batch_id: int,

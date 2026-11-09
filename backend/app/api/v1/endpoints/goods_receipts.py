@@ -1,13 +1,14 @@
 from __future__ import annotations
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.goods_receipt import GoodsReceiptCreate, GoodsReceiptRead
 from app.services.goods_receipt import goods_receipt_service
 
 router = APIRouter(prefix="/goods-receipts", tags=["Inventory"])
 
-@router.post("", response_model=GoodsReceiptRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=GoodsReceiptRead, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require("procurement.write"))])
 async def create_goods_receipt(data: GoodsReceiptCreate, db: DatabaseSession, current_user: CurrentUserDependency) -> GoodsReceiptRead:
     try:
         received_by = int(current_user.get("sub"))
@@ -16,7 +17,7 @@ async def create_goods_receipt(data: GoodsReceiptCreate, db: DatabaseSession, cu
         raise AuthenticationException("Authenticated user identity is invalid.") from exc
     return await goods_receipt_service.create(db, data, received_by)
 
-@router.get("/{receipt_id}", response_model=GoodsReceiptRead)
+@router.get("/{receipt_id}", response_model=GoodsReceiptRead, dependencies=[Depends(require("procurement.read"))])
 async def get_goods_receipt(receipt_id: int, db: DatabaseSession, _: CurrentUserDependency) -> GoodsReceiptRead:
     return await goods_receipt_service.get(db, receipt_id)
 

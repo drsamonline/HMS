@@ -1,9 +1,10 @@
 """Unified patient history access endpoint."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.core.exceptions import AuthorizationException
 from app.services.auth import auth_service
@@ -27,7 +28,7 @@ async def _require_history_access(db, user_id: int) -> None:
         raise AuthorizationException("You do not have permission to access patient history.")
 
 
-@router.get("/{patient_id}/history")
+@router.get("/{patient_id}/history", dependencies=[Depends(require("patients.read"))])
 async def get_patient_history(
     patient_id: int,
     db: DatabaseSession,
@@ -38,7 +39,7 @@ async def get_patient_history(
     return await patient_history_service.unified(db, patient_id, year)
 
 
-@router.get("/{patient_id}/history/archives")
+@router.get("/{patient_id}/history/archives", dependencies=[Depends(require("patients.read"))])
 async def get_patient_history_archives(
     patient_id: int,
     db: DatabaseSession,
@@ -48,7 +49,7 @@ async def get_patient_history_archives(
     return {"patient_id": patient_id, "archives": await patient_history_service.available_archives(db)}
 
 
-@router.get("/{patient_id}/history/years/{year}/events")
+@router.get("/{patient_id}/history/years/{year}/events", dependencies=[Depends(require("patients.read"))])
 async def get_patient_history_year_events(
     patient_id: int,
     year: int,

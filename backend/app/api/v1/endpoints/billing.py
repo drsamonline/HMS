@@ -7,9 +7,10 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.billing import (
     InvoiceCreate,
@@ -33,6 +34,7 @@ router = APIRouter(
 @router.get(
     "/invoices",
     response_model=list[InvoiceRead],
+    dependencies=[Depends(require("billing.read"))],
 )
 async def list_invoices(
     db: DatabaseSession,
@@ -68,6 +70,7 @@ async def list_invoices(
     "/invoices",
     response_model=InvoiceRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("billing.write"))],
 )
 async def create_invoice(
     invoice_in: InvoiceCreate,
@@ -97,6 +100,7 @@ async def create_invoice(
 @router.get(
     "/invoices/{invoice_id}",
     response_model=InvoiceRead,
+    dependencies=[Depends(require("billing.read"))],
 )
 async def get_invoice(
     invoice_id: int,
@@ -112,6 +116,7 @@ async def get_invoice(
 @router.patch(
     "/invoices/{invoice_id}",
     response_model=InvoiceRead,
+    dependencies=[Depends(require("billing.write"))],
 )
 async def update_invoice(
     invoice_id: int,
@@ -129,6 +134,7 @@ async def update_invoice(
 @router.get(
     "/invoices/{invoice_id}/summary",
     response_model=InvoiceSummary,
+    dependencies=[Depends(require("billing.read"))],
 )
 async def get_invoice_summary(
     invoice_id: int,
@@ -154,6 +160,7 @@ async def get_invoice_summary(
 @router.get(
     "/invoices/{invoice_id}/payments",
     response_model=list[PaymentRead],
+    dependencies=[Depends(require("billing.read"))],
 )
 async def list_invoice_payments(
     invoice_id: int,
@@ -181,6 +188,7 @@ async def list_invoice_payments(
     "/payments",
     response_model=PaymentRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("billing.write"))],
 )
 async def create_payment(
     payment_in: PaymentCreate,
@@ -210,6 +218,7 @@ async def create_payment(
 @router.get(
     "/payments/{payment_id}",
     response_model=PaymentRead,
+    dependencies=[Depends(require("billing.read"))],
 )
 async def get_payment(
     payment_id: int,
@@ -225,6 +234,7 @@ async def get_payment(
 @router.get(
     "/invoices/{invoice_id}/items",
     response_model=list[InvoiceItemRead],
+    dependencies=[Depends(require("billing.write"))],
 )
 async def list_invoice_items(
     invoice_id: int,
@@ -238,6 +248,7 @@ async def list_invoice_items(
     "/invoices/{invoice_id}/items",
     response_model=InvoiceItemRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("billing.write"))],
 )
 async def create_invoice_item(
     invoice_id: int,
@@ -252,6 +263,7 @@ async def create_invoice_item(
     "/invoice-items/{item_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
+    dependencies=[Depends(require("billing.void"))],
 )
 async def delete_invoice_item(
     item_id: int,

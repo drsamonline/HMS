@@ -7,9 +7,10 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.discharge import (
     DischargeCreate,
@@ -29,6 +30,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=list[DischargeRead],
+    dependencies=[Depends(require("ipd.read"))],
 )
 async def list_discharges(
     db: DatabaseSession,
@@ -54,6 +56,7 @@ async def list_discharges(
     "",
     response_model=DischargeRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("ipd.write"))],
 )
 async def create_discharge(
     discharge_in: DischargeCreate,
@@ -69,6 +72,7 @@ async def create_discharge(
 @router.get(
     "/admission/{admission_id}",
     response_model=DischargeRead,
+    dependencies=[Depends(require("ipd.read"))],
 )
 async def get_discharge_by_admission(
     admission_id: int,
@@ -84,6 +88,7 @@ async def get_discharge_by_admission(
 @router.get(
     "/{discharge_id}",
     response_model=DischargeRead,
+    dependencies=[Depends(require("ipd.read"))],
 )
 async def get_discharge(
     discharge_id: int,

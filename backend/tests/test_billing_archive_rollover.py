@@ -92,8 +92,8 @@ def test_billing_rollover_contracts_are_exposed():
         ROOT / "backend" / "app" / "api" / "v1" / "endpoints" / "maintenance.py"
     ).read_text(encoding="utf-8")
     api = (ROOT / "frontend" / "js" / "api.js").read_text(encoding="utf-8")
-    assert '@router.get("/archives/{year}/patients/{patient_id}/invoices")' in maintenance
-    assert '@router.get("/archives/{year}/patients/{patient_id}/payments")' in maintenance
+    assert '"/archives/{year}/patients/{patient_id}/invoices"' in maintenance
+    assert '"/archives/{year}/patients/{patient_id}/payments"' in maintenance
     assert "archive_manager.read_invoices" in maintenance
     assert "archive_manager.read_payments" in maintenance
     assert "getHistoricalArchiveInvoices" in api
