@@ -126,7 +126,7 @@ def test_migration_creates_the_columns(bootstrapped_db: Path) -> None:
 
     missing = REQUIRED_COLUMNS - columns
     assert not missing, f"migration did not create {sorted(missing)}"
-    assert version == "0035_setting_value"
+    assert version == "0036_setup_state"
 
 
 def test_migration_and_model_agree(bootstrapped_db: Path) -> None:

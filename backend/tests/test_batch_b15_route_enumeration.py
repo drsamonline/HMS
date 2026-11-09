@@ -18,6 +18,7 @@ from app.core.permissions import CODES
 from app.dependencies.permissions import (
     AUTHENTICATED_ONLY_PATHS,
     PUBLIC_PATHS,
+    SETUP_PREFIX,
     route_permission,
 )
 
@@ -50,6 +51,10 @@ def test_every_route_is_guarded_or_named_public() -> None:
         # Two deliberate exemptions: routes that work before a login, and routes
         # that need a login but no particular permission (a user's own menu).
         if full in PUBLIC_PATHS or full in AUTHENTICATED_ONLY_PATHS:
+            continue
+        # The setup wizard runs before a user exists; it carries its own gate,
+        # the setup code exchanged for a scoped token.
+        if full.startswith(SETUP_PREFIX):
             continue
         if route_permission(route) is None:
             for method in sorted(methods):
@@ -100,7 +105,11 @@ def test_no_route_is_public_and_guarded_at_once() -> None:
 
     contradictions = []
     for full, _methods, route in _routes():
-        exempt = full in PUBLIC_PATHS or full in AUTHENTICATED_ONLY_PATHS
+        exempt = (
+            full in PUBLIC_PATHS
+            or full in AUTHENTICATED_ONLY_PATHS
+            or full.startswith(SETUP_PREFIX)
+        )
         if exempt and route_permission(route) is not None:
             contradictions.append(full)
     assert not contradictions, (
@@ -123,7 +132,11 @@ def test_coverage_is_reported_by_prefix() -> None:
         prefix = "/".join(full.split("/")[:4])
         if route_permission(route) is not None:
             guarded[prefix] += 1
-        elif full not in PUBLIC_PATHS and full not in AUTHENTICATED_ONLY_PATHS:
+        elif (
+            full not in PUBLIC_PATHS
+            and full not in AUTHENTICATED_ONLY_PATHS
+            and not full.startswith(SETUP_PREFIX)
+        ):
             unguarded[prefix] += 1
 
     assert sum(guarded.values()) >= 200, (

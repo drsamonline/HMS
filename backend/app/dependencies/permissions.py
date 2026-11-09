@@ -179,6 +179,8 @@ async def default_deny(request: Request) -> None:
     path = request.url.path
     if path in PUBLIC_PATHS or path in AUTHENTICATED_ONLY_PATHS:
         return
+    if path.startswith(SETUP_PREFIX):
+        return
 
     if mode == "warn":
         import logging
@@ -207,6 +209,14 @@ AUTHENTICATED_ONLY_PATHS = frozenset(
 )
 
 
+#: The setup wizard runs before any user exists, so it cannot be guarded by a
+#: permission. It carries its own gate: the setup code, exchanged for a token with
+#: ``scope: setup``. Listed here so default deny allows it deliberately.
+#: A prefix rather than a set of exact paths: ``/setup/steps/{step}`` is a route
+#: template, and the request carries a literal path that will never match it.
+SETUP_PREFIX = "/api/v1/setup/"
+
+
 #: Routes that must work before a user is authenticated, or that carry no
 #: hospital data. Everything else needs a guard.
 PUBLIC_PATHS = frozenset(
@@ -232,6 +242,7 @@ DefaultDeny = Annotated[None, Depends(default_deny)]
 __all__ = [
     "AUTHENTICATED_ONLY_PATHS",
     "DefaultDeny",
+    "SETUP_PREFIX",
     "PERMISSION_MARKER",
     "PUBLIC_PATHS",
     "default_deny",

@@ -55,6 +55,7 @@ from app.api.v1.endpoints.stock_cards import router as stock_cards_router
 from app.api.v1.endpoints.stock_transactions import router as stock_transactions_router
 from app.api.v1.endpoints.configuration import router as configuration_router
 from app.api.v1.endpoints.navigation import router as navigation_router
+from app.api.v1.endpoints.setup import router as setup_router
 from app.api.v1.endpoints.visits import router as visits_router
 
 api_router = APIRouter(
@@ -80,6 +81,7 @@ MODULE_ROUTERS: dict[str, tuple] = {
         health_router,
         auth_router,
         navigation_router,
+        setup_router,
         configuration_router,
         patients_router,
         visits_router,

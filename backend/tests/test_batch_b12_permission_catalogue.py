@@ -36,7 +36,8 @@ MIGRATION = (
 #: Endpoint modules that carry no hospital data and therefore need no permission:
 #: the health probe, the login route, and the module that serves the GUI itself.
 #: ``navigation`` returns the caller's own menu, so it needs a login and no
-#: particular permission - see AUTHENTICATED_ONLY_PATHS.
+#: particular permission - see AUTHENTICATED_ONLY_PATHS. ``setup`` runs before any
+#: user exists and carries the setup code instead of a permission.
 NO_PERMISSION_NEEDED = {"__init__", "auth", "health", "navigation"}
 
 
@@ -163,6 +164,7 @@ def test_every_data_endpoint_module_is_covered() -> None:
         "reporting": {"reporting"},
         "service_activities": {"masters"},
         "settings": {"settings"},
+        "setup": set(),
         "statistics": {"reporting"},
         "stock_batches": {"inventory"},
         "stock_cards": {"inventory"},

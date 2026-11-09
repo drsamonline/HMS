@@ -19,6 +19,7 @@ from .base import (
 from .bed import Bed
 from .module_state import ModuleState
 from .setting_value import SettingValue
+from .setup_state import SetupState
 from .department import Department
 from .department_service import DepartmentService
 from .diagnosis import Diagnosis
