@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-08-config-api` (stacked on `batch-07-settings-catalogue`) |
+| Branch | `batch-09-spine` (stacked on `batch-08-config-api`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `771ebe2` (B20) + the control commit that carries this file |
-| Tests | **744 passed, 2 skipped, 746 collected** (569 baseline + 175 new) |
-| Wave complete | Waves 0, 1, 2 (B01–B15a); wave 3 five of six |
-| Next batch | **B21 — reflection test, closing wave 3** |
+| Head commit | `cc5435d` (B21) + the control commit that carries this file |
+| Tests | **753 passed, 2 skipped, 755 collected** (569 baseline + 184 new) |
+| Wave complete | **Waves 0–3 complete (B01–B21)**; wave 4 next |
+| Next batch | **B22 — the setup wizard** |
 | Blocking decision | none |
-| Open question | none. Ritual complete after B20 |
+| Open question | none. Ritual due after B23 (third batch since B20) |
 
 ---
 
@@ -363,9 +363,10 @@ would pin them forever, silently.
 | B18 | 2026-11-09 | `f7d6412` | 9 tests | 711 | One navigation manifest; the server filters the menu by enabled modules and held permissions; the static fallback is tested against it. Added `AUTHENTICATED_ONLY_PATHS` as a third route category |
 | B19 | 2026-11-09 | `79e192b` | 18 tests | 729 | 44 settings described once with type, group, default and restart flag; precedence db > env > default returned with the value; six bootstrap keys refused by the store. The B09 ratchet caught the new service and it was wired, not exempted |
 | B20 | 2026-11-09 | `771ebe2` | 15 tests | 744 | Configuration API with all-or-nothing batch writes, export of overrides only, secrets never echoed, and a matching CLI |
+| B21 | 2026-11-09 | `cc5435d` | 9 tests | 753 | Spine cross-check: routes, modules, navigation and settings agree with each other. Proven to fail by planting a fictional permission. **Closes wave 3** |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 175 new tests. Final: **744 passed, 2 skipped, 746 collected**.
+test baseline plus 184 new tests. Final: **753 passed, 2 skipped, 755 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -629,6 +630,22 @@ database when both call `make_client()`: the second sees the first's writes. It
 caught a test of mine that assumed isolation, and the fix was to use a key no
 neighbour touches rather than to weaken the assertion. Worth remembering before
 writing two tests that depend on the same setting.
+
+### Wave 3 closed (2026-11-09)
+
+| Batch | Delivered |
+|-------|-----------|
+| B16 | Eight modules, dependencies, permission sets; state derived from existing records |
+| B17 | Routers grouped by module; a disabled module answers 404 and keeps its records |
+| B18 | One navigation manifest, filtered server-side |
+| B19 | 44 settings described once, with precedence returned alongside the value |
+| B20 | Configuration API and CLI, all-or-nothing writes |
+| B21 | The spine cross-check that holds the other five together |
+
+The configuration spine is done. A hospital can now be described - which modules it
+runs, who may open what, and how it is set up - and every one of those three is a
+catalogue the code checks rather than a list in a template. Wave 4 builds the
+wizard on top of it.
 
 ---
 
