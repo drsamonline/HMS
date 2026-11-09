@@ -305,6 +305,7 @@ Specification → Review → Implementation → Code Review → Testing → Git 
 |----------|---------|
 | [PRIVACY.md](../PRIVACY.md) | What HHMS stores, where it is stored, and the fact that nothing leaves the installation |
 | [DISCLAIMER.md](../DISCLAIMER.md) | What the software does not claim: it records, it does not diagnose |
+| [TERMS.md](../TERMS.md) | Terms of supply: licence, support, data ownership and the hospital's responsibilities |
 | [legal/RETENTION-AND-ERASURE.md](legal/RETENTION-AND-ERASURE.md) | Archive tiers mapped to the DPDP retention and erasure duties, and the erasure gap |
 | [legal/DPDP-NOTICE-TEMPLATE.md](legal/DPDP-NOTICE-TEMPLATE.md) | The patient notice a hospital issues, with the nine Rule 3 elements |
 | [legal/LEGAL-INDEX.md](legal/LEGAL-INDEX.md) | Evidence for every factual claim, and the questions counsel must settle |
