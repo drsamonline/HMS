@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-19-tokens` (stacked on `batch-18-certificates`) |
+| Branch | `batch-20-components` (stacked on `batch-19-tokens`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **834 passed, 2 skipped, 836 collected** (569 baseline + 265 new) |
-| Wave complete | **Waves 0–5 complete (B01–B35)**; wave 6 one of six |
-| Next batch | **B28 — the component kit** |
+| Tests | **845 passed, 2 skipped, 847 collected** (569 baseline + 276 new) |
+| Wave complete | **Waves 0–5 complete (B01–B35)**; wave 6 two of six |
+| Next batch | **B29 — navigation restructure** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -393,9 +393,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B17 | 2026-11-09 | `1849d8f` | none | 818 | Test-runtime pass: measured (2-3 s per block, ~60 tables × 800 tests), attempted, reverted. Finding and a four-step plan recorded |
 | B35 | 2026-11-09 | see `git log` | 9 tests | 827 | Certificate register with retention computed at issue, referral case statement enforced, fourth readiness duty. **Closes wave 5** |
 | B27 | 2026-11-09 | see `git log` | 7 tests | 834 | Design tokens: every colour, space and size named once; app.css carries no literal colour; contrast asserted against WCAG AA. **Opens wave 6** |
+| B28 | 2026-11-09 | see `git log` | 11 tests | 845 | Component kit: form and confirm dialogs, toasts, four honest states, one worklist table, the patient header strip. No browser dialogs remain |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 265 new tests. Final: **834 passed, 2 skipped, 836 collected**.
+test baseline plus 276 new tests. Final: **845 passed, 2 skipped, 847 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -863,6 +864,21 @@ a hospital interface becomes unreadable on a ward monitor.
 Colour is fully tokenised and asserted. Space, type, radius and shadow are defined
 now and applied as the interface is rebuilt in B28–B32; the test says so rather than
 quietly exempting them.
+
+**D-053 — A cancelled dialog resolves null, never undefined.**
+`undefined` is falsy, so `if (!values) return` looks correct - and it is, until a
+caller destructures the result before checking. Null is explicit and survives being
+passed around; Escape counts as cancel because that is what the user meant.
+
+**D-054 — Empty, no-results, loading and error are four states, not one.**
+They all used to render "No data." A list that is empty because there is nothing yet
+and a list that failed to load are not the same thing to somebody standing at a desk
+wondering whether the system is broken.
+
+**D-055 — The kit escapes plain values and trusts render functions.**
+A column with a `render` function escapes its own content; a plain value is escaped
+by the table. That is the distinction that keeps user data out of the markup while
+letting a cell draw a badge.
 
 ---
 
