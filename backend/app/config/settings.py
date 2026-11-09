@@ -142,6 +142,14 @@ class Settings(BaseSettings):
         default="HS256",
     )
 
+    #: off | warn | enforce. B13 ships "warn" so the suite stays green while the
+    #: routes are being guarded in B14; B14 flips the default to "enforce".
+    #: A route that declares require(...) is always enforced regardless of mode.
+    PERMISSION_ENFORCEMENT: str = Field(
+        default="warn",
+        pattern="^(off|warn|enforce)$",
+    )
+
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
         default=30,
         ge=1,

@@ -1,7 +1,9 @@
 """HHMS API v1 router registration."""
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.dependencies.permissions import default_deny
 
 from app.api.v1.endpoints.administration import router as administration_router
 from app.api.v1.endpoints.backups import router as backups_router
@@ -53,7 +55,12 @@ from app.api.v1.endpoints.stock_cards import router as stock_cards_router
 from app.api.v1.endpoints.stock_transactions import router as stock_transactions_router
 from app.api.v1.endpoints.visits import router as visits_router
 
-api_router = APIRouter()
+api_router = APIRouter(
+    # Router-level default deny: a route added without require(...) is refused
+    # under enforce, and logged under warn. One place, so a new endpoint cannot
+    # quietly be born open.
+    dependencies=[Depends(default_deny)],
+)
 
 # Core/session
 for router in (health_router, auth_router, patients_router, visits_router, opd_tokens_router):

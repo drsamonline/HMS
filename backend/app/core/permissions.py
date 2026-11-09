@@ -110,6 +110,18 @@ BY_CODE: dict[str, PermissionSpec] = {spec.code: spec for spec in PERMISSIONS}
 #: The wildcard used by a role template that holds everything.
 ALL = "*"
 
+#: Role names the client already treats as all-access (frontend/js/rbac.js).
+#: Kept here so the server and the client agree about what "admin" means; the
+#: migration grants these roles every code so the data says the same thing.
+ALL_ACCESS_ROLE_NAMES = frozenset(
+    {
+        "admin",
+        "administrator",
+        "hospital administrator",
+        "super administrator",
+    }
+)
+
 
 #: Default grants for the eight roles named in MASTER_SPECIFICATION section 6,
 #: plus an auditor and a medical superintendent because B11's review screen and
@@ -178,6 +190,7 @@ def unknown_codes(template: tuple[str, ...]) -> frozenset[str]:
 
 __all__ = [
     "ALL",
+    "ALL_ACCESS_ROLE_NAMES",
     "BY_CODE",
     "CODES",
     "PERMISSIONS",
