@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-18-certificates` (stacked on `batch-17-runtime`) |
+| Branch | `batch-19-tokens` (stacked on `batch-18-certificates`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **827 passed, 2 skipped, 829 collected** (569 baseline + 258 new) |
-| Wave complete | **Waves 0–5 complete (B01–B35)**; wave 6 next |
-| Next batch | **B27 — design tokens, opening wave 6** |
+| Tests | **834 passed, 2 skipped, 836 collected** (569 baseline + 265 new) |
+| Wave complete | **Waves 0–5 complete (B01–B35)**; wave 6 one of six |
+| Next batch | **B28 — the component kit** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -392,9 +392,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B34 | 2026-11-09 | see `git log` | 10 tests | 818 | Pharmacovigilance register with two timestamps per event, idempotent reporting, free-text product name. Readiness now checks all three duties |
 | B17 | 2026-11-09 | `1849d8f` | none | 818 | Test-runtime pass: measured (2-3 s per block, ~60 tables × 800 tests), attempted, reverted. Finding and a four-step plan recorded |
 | B35 | 2026-11-09 | see `git log` | 9 tests | 827 | Certificate register with retention computed at issue, referral case statement enforced, fourth readiness duty. **Closes wave 5** |
+| B27 | 2026-11-09 | see `git log` | 7 tests | 834 | Design tokens: every colour, space and size named once; app.css carries no literal colour; contrast asserted against WCAG AA. **Opens wave 6** |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 258 new tests. Final: **827 passed, 2 skipped, 829 collected**.
+test baseline plus 265 new tests. Final: **834 passed, 2 skipped, 836 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -842,6 +843,26 @@ would produce a document that says what the hospital wishes it had said.
 Three years is a floor. The report says what may be archived and never what may be
 deleted, because a hospital deleting a certificate at three years and a day has
 misread the regulation.
+
+### Wave 6 opened (2026-11-09)
+
+| Batch | Delivered |
+|-------|-----------|
+| B27 | Design tokens; app.css carries no literal colour; contrast asserted |
+
+**D-050 — Tokens are named for what they are for, not what they look like.**
+`--ink` rather than `--grey-800`. A token named for its appearance tells you nothing
+about whether it is safe to change; one named for its role survives a redesign.
+
+**D-051 — Contrast is measured, not eyeballed.**
+Every foreground/background pair the interface renders is checked against WCAG AA,
+and the measuring helper is itself checked against known values. Grey-on-grey is how
+a hospital interface becomes unreadable on a ward monitor.
+
+**D-052 — The spacing and type scales are defined before they are used.**
+Colour is fully tokenised and asserted. Space, type, radius and shadow are defined
+now and applied as the interface is rebuilt in B28–B32; the test says so rather than
+quietly exempting them.
 
 ---
 
