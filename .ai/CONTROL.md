@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-09-spine` (stacked on `batch-08-config-api`) |
+| Branch | `batch-10-wizard` (stacked on `batch-09-spine`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `cc5435d` (B21) + the control commit that carries this file |
-| Tests | **753 passed, 2 skipped, 755 collected** (569 baseline + 184 new) |
-| Wave complete | **Waves 0–3 complete (B01–B21)**; wave 4 next |
-| Next batch | **B22 — the setup wizard** |
+| Head commit | `02886b1` (B22) + the control commit that carries this file |
+| Tests | **763 passed, 2 skipped, 765 collected** (569 baseline + 194 new) |
+| Wave complete | **Waves 0–3 complete (B01–B21)**; wave 4 one of five |
+| Next batch | **B23 — wizard steps 3 to 6** |
 | Blocking decision | none |
-| Open question | none. Ritual due after B23 (third batch since B20) |
+| Open question | none. **Ritual due after B23** (third batch since B20) |
 
 ---
 
@@ -364,9 +364,10 @@ would pin them forever, silently.
 | B19 | 2026-11-09 | `79e192b` | 18 tests | 729 | 44 settings described once with type, group, default and restart flag; precedence db > env > default returned with the value; six bootstrap keys refused by the store. The B09 ratchet caught the new service and it was wired, not exempted |
 | B20 | 2026-11-09 | `771ebe2` | 15 tests | 744 | Configuration API with all-or-nothing batch writes, export of overrides only, secrets never echoed, and a matching CLI |
 | B21 | 2026-11-09 | `cc5435d` | 9 tests | 753 | Spine cross-check: routes, modules, navigation and settings agree with each other. Proven to fail by planting a fictional permission. **Closes wave 3** |
+| B22 | 2026-11-09 | `02886b1` | 10 tests | 763 | Setup state, six-digit code issued to the log and stored hashed, lockout after five failures, `scope=setup` token that is neither a login nor accepted as one. Four self-inflicted defects caught by the gate |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 184 new tests. Final: **753 passed, 2 skipped, 755 collected**.
+test baseline plus 194 new tests. Final: **763 passed, 2 skipped, 765 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -646,6 +647,22 @@ The configuration spine is done. A hospital can now be described - which modules
 runs, who may open what, and how it is set up - and every one of those three is a
 catalogue the code checks rather than a list in a template. Wave 4 builds the
 wizard on top of it.
+
+**D-036 — The setup wizard is gated by a code, not by a permission.**
+It runs before any user exists. A six-digit code, issued to the server log, stored
+as a hash, expiring in an hour and locked out after five failures, is what stands
+between a freshly installed server and the first person on the LAN claiming it.
+
+**D-037 — A setup token is not a login, and a login is not a setup token.**
+The token carries `scope: setup`; `get_current_user` refuses it and
+`require_setup_token` refuses anything without it. Both directions are tested,
+because the failure that matters is one of them quietly accepting the other.
+
+**D-038 — The setup code is delivered through the log, not the response.**
+The log is the one channel a LAN user cannot read. A test asserting this must spy
+on the logger rather than use `caplog`: an earlier test in the suite configures
+logging, after which propagation is off and `caplog` stops seeing records. The
+property under test is that the code is emitted, not that pytest can observe it.
 
 ---
 
