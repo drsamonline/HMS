@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-15-nch` (stacked on `batch-14-nerd`) |
+| Branch | `batch-16-pharmacovigilance` (stacked on `batch-15-nch`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **808 passed, 2 skipped, 810 collected** (569 baseline + 239 new) |
-| Wave complete | **Waves 0–4 complete (B01–B26)**; wave 5 one of three |
-| Next batch | **B34 — pharmacovigilance register** |
+| Tests | **818 passed, 2 skipped, 820 collected** (569 baseline + 249 new) |
+| Wave complete | **Waves 0–4 complete (B01–B26)**; wave 5 two of three |
+| Next batch | **a test-runtime pass** — see the note under the ritual |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -389,9 +389,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B25 | 2026-11-09 | see `git log` | 9 tests | 790 | Review of all ten steps before commit, export of the answers, and finish writing the staged network values into a marked block in `.env` |
 | B26 | 2026-11-09 | see `git log` | 9 tests | 799 | Restart status naming stored-vs-running differences; headless setup CLI; modules step de-duplicated into a handler. **Closes wave 4** |
 | B33 | 2026-11-09 | see `git log` | 9 tests | 808 | NCH 7(2) registration number on the practitioner, 31(1) reason for change enforced on the follow-up, readiness report for both plus the unimplemented third. Harness now drops the schema before creating it |
+| B34 | 2026-11-09 | see `git log` | 10 tests | 818 | Pharmacovigilance register with two timestamps per event, idempotent reporting, free-text product name. Readiness now checks all three duties |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 239 new tests. Final: **808 passed, 2 skipped, 810 collected**.
+test baseline plus 249 new tests. Final: **818 passed, 2 skipped, 820 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -755,6 +756,16 @@ mine: the permission join on every request (mitigated at B15a but not removed), 
 the harness dropping and recreating the schema for every block since B33. The next
 batch that touches nothing else should be a test-runtime pass, or the verification
 cost will keep growing faster than the feature work.
+
+**D-046 — Recording an event and reporting it are separate acts.**
+One field cannot hold both. A clinician records in the consulting room; the hospital
+reports weeks later; the gap between the two timestamps is the evidence a hospital
+is asked for.
+
+**D-047 — A superseded test is pointed at the new truth, not deleted.**
+B33 asserted that the pharmacovigilance duty was reported as unimplemented. B34
+implemented it. The test now asserts that all three named duties carry a count,
+which is the property that mattered all along.
 
 ---
 
