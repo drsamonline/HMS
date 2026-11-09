@@ -767,6 +767,60 @@ B33 asserted that the pharmacovigilance duty was reported as unimplemented. B34
 implemented it. The test now asserts that all three named duties carry a count,
 which is the property that mattered all along.
 
+
+---
+
+## 7d. The test-runtime pass (B17, 2026-11-09) — measured, attempted, reverted
+
+The suite had grown to about fourteen minutes across six slices. This batch set out
+to fix that. It measured the cost, tried the obvious remedy, and reverted it when
+the remedy broke five tests. The measurement and the reason are recorded here so
+the next attempt starts where this one stopped.
+
+### What the measurement says
+
+| Observation | Value |
+|---|---|
+| Cost of one `make_client()` block | 2 to 3 seconds |
+| What dominates it | Creating about sixty tables for each block |
+| Slowest single test | 11.3 s (`test_patient_visit_token_chain_end_to_end`) |
+| Total for three representative files | 37 s for 24 tests |
+
+Every one of the eight hundred tests that uses the harness pays that 2–3 seconds.
+That is the whole problem: not one slow test, but a fixed cost multiplied eight
+hundred times.
+
+### What was tried
+
+Share one in-memory engine across the process and empty the tables between blocks
+instead of dropping and recreating the schema. Deleting rows is far cheaper than
+DDL, and the block still starts empty.
+
+**It broke five tests**, all with `no such table: ModuleState`. The cause is that
+other harness helpers — `make_file_client` and the various cache-clearing fixtures —
+still clear the cached engine and session factory and point them at their own
+database. The application then talks to a database the shared engine never created.
+
+### Why it was reverted rather than fixed
+
+Making one engine work means making *every* helper agree on it: `make_file_client`,
+the per-test fixtures that call `get_engine.cache_clear()`, and the app's own
+`get_db` dependency all have to stop fighting over the same process-wide cache. That
+is a real refactor of the test rig, and doing it at the end of a long session, with
+the whole suite needing a run after each step, is how a rig gets broken rather than
+fixed.
+
+### What the next attempt should do
+
+1. One engine, owned by the harness, created once. No helper clears the caches.
+2. `make_file_client` gets its own engine explicitly, passed rather than set through
+   the environment.
+3. Empty tables between blocks, in reverse dependency order.
+4. Run the full suite after **each** of those three steps, not after all of them.
+
+Expected: the fixed cost drops from 2–3 seconds to well under 100 milliseconds per
+block, which is where the fourteen minutes goes.
+
 ---
 
 ## 8. Resuming after a break
