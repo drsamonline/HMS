@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-20-components` (stacked on `batch-19-tokens`) |
+| Branch | `batch-21-navigation` (stacked on `batch-20-components`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **845 passed, 2 skipped, 847 collected** (569 baseline + 276 new) |
-| Wave complete | **Waves 0–5 complete (B01–B35)**; wave 6 two of six |
-| Next batch | **B29 — navigation restructure** |
+| Tests | **854 passed, 2 skipped, 856 collected** (569 baseline + 285 new) |
+| Wave complete | **Waves 0–5 complete (B01–B35)**; wave 6 three of six |
+| Next batch | **B30 — role-shaped home screens** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -394,9 +394,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B35 | 2026-11-09 | see `git log` | 9 tests | 827 | Certificate register with retention computed at issue, referral case statement enforced, fourth readiness duty. **Closes wave 5** |
 | B27 | 2026-11-09 | see `git log` | 7 tests | 834 | Design tokens: every colour, space and size named once; app.css carries no literal colour; contrast asserted against WCAG AA. **Opens wave 6** |
 | B28 | 2026-11-09 | see `git log` | 11 tests | 845 | Component kit: form and confirm dialogs, toasts, four honest states, one worklist table, the patient header strip. No browser dialogs remain |
+| B29 | 2026-11-10 | see `git log` | 9 tests | 854 | Navigation: fourteen flat buttons become six ordered groups; group metadata travels with each item; empty groups are removed client-side |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 276 new tests. Final: **845 passed, 2 skipped, 847 collected**.
+test baseline plus 285 new tests. Final: **854 passed, 2 skipped, 856 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -879,6 +880,16 @@ wondering whether the system is broken.
 A column with a `render` function escapes its own content; a plain value is escaped
 by the table. That is the distinction that keeps user data out of the markup while
 letting a cell draw a badge.
+
+**D-056 — Group metadata travels with each item, not in a second payload.**
+The client already receives a list, and a list cannot carry metadata without
+changing the shape every caller depends on. The alternative was a second request or
+a breaking change; neither was worth the tidiness.
+
+**D-057 — The client moves buttons into groups, never rebuilds them.**
+Click handlers are bound in app.js before the navigation renders. Rebuilding the
+markup would silently unbind every screen in the product, and it would look like a
+routing bug rather than a rendering one.
 
 ---
 
