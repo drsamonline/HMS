@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-10-wizard` (stacked on `batch-09-spine`) |
+| Branch | `batch-11-wizard-steps` (stacked on `batch-10-wizard`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `02886b1` (B22) + the control commit that carries this file |
-| Tests | **763 passed, 2 skipped, 765 collected** (569 baseline + 194 new) |
-| Wave complete | **Waves 0–3 complete (B01–B21)**; wave 4 one of five |
-| Next batch | **B23 — wizard steps 3 to 6** |
+| Head commit | `15027e9` (B23) + the control commit that carries this file |
+| Tests | **772 passed, 2 skipped, 774 collected** (569 baseline + 203 new) |
+| Wave complete | **Waves 0–3 complete (B01–B21)**; wave 4 two of five |
+| Next batch | **B24 — wizard steps 7 to 9** |
 | Blocking decision | none |
-| Open question | none. **Ritual due after B23** (third batch since B20) |
+| Open question | none. Ritual complete after B23 |
 
 ---
 
@@ -336,6 +336,15 @@ A provisioning file containing all forty-four values looks like a record of
 decisions and is a record of whatever the defaults happened to be that day. It
 would pin them forever, silently.
 
+**D-039 — A wizard step writes settings or creates rows, never both.**
+The two validate differently, and a step that did both would have to interleave
+them. Dispatch on the step keeps each path honest.
+
+**D-040 — Wizard steps are idempotent, always.**
+A second click tops up a ward rather than creating a second ward with the same
+name and different numbering, and never resets a sequence that has been issuing
+numbers for a year. A wizard is a thing people click twice.
+
 ---
 
 ## 7. Batch log
@@ -365,9 +374,10 @@ would pin them forever, silently.
 | B20 | 2026-11-09 | `771ebe2` | 15 tests | 744 | Configuration API with all-or-nothing batch writes, export of overrides only, secrets never echoed, and a matching CLI |
 | B21 | 2026-11-09 | `cc5435d` | 9 tests | 753 | Spine cross-check: routes, modules, navigation and settings agree with each other. Proven to fail by planting a fictional permission. **Closes wave 3** |
 | B22 | 2026-11-09 | `02886b1` | 10 tests | 763 | Setup state, six-digit code issued to the log and stored hashed, lockout after five failures, `scope=setup` token that is neither a login nor accepted as one. Four self-inflicted defects caught by the gate |
+| B23 | 2026-11-09 | `15027e9` | 9 tests | 772 | Wards, departments, numbering and money steps, all idempotent. Found that Bed's model and migration disagreed about timestamps |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 194 new tests. Final: **763 passed, 2 skipped, 765 collected**.
+test baseline plus 203 new tests. Final: **772 passed, 2 skipped, 774 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -663,6 +673,26 @@ The log is the one channel a LAN user cannot read. A test asserting this must sp
 on the logger rather than use `caplog`: an earlier test in the suite configures
 logging, after which propagation is off and `caplog` stops seeing records. The
 property under test is that the code is emitted, not that pytest can observe it.
+
+### Ritual after B23 (2026-11-09)
+
+| Step | Result |
+|------|--------|
+| 1. Suite | 772 passed, 2 skipped, **774 collected**; five chunks sum exactly |
+| 2. Gates by name | B22, B23 re-run green |
+| 3. Prune | No dead code; the wizard's data steps share one dispatch rather than four branches |
+| 4. Docs reconciled | Nothing to change yet |
+| 5. Queue re-ranked | Unchanged. B24 completes the steps, B25 the review, B26 nerd mode |
+| 6. Split | None |
+| 7. Logged | D-039, D-040; batch log row added |
+
+**A model/migration disagreement, found by the wizard.** `Bed` declares its
+timestamps `NOT NULL` with no model-side default, while the migration gives them
+`CURRENT_TIMESTAMP`. A schema built by `create_all` therefore rejects an insert the
+migrated one accepts - a difference that appears only under test, which is the
+worst place for one to hide. The model now declares the same default and the
+handler sets the times explicitly. Worth checking the other models the same way
+before wave 6 adds more writes.
 
 ---
 
