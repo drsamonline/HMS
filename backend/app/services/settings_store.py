@@ -221,11 +221,51 @@ async def reset_value(db: AsyncSession, key: str) -> Effective:
     return await effective(db, key)
 
 
+
+
+async def restart_status(db: AsyncSession) -> dict:
+    """Which restart-required settings differ from what this process is running.
+
+    A hospital changes its port in the settings screen, nothing appears to happen,
+    and nobody can tell whether the change was saved or lost. This answers that:
+    the values are stored, the running process still has the old ones, and the
+    list names the difference.
+    """
+
+    effective = await effective_all(db)
+    running = get_settings()
+
+    pending: dict[str, dict] = {}
+    for key, result in effective.items():
+        if not result.spec.restart_required:
+            continue
+        current = getattr(running, key, None)
+        if result.spec.type == "list" and current is not None:
+            current = tuple(current)
+        if current != result.value:
+            pending[key] = {
+                "stored": result.value,
+                "running": current,
+                "label": result.spec.label,
+            }
+
+    return {
+        "restart_required": bool(pending),
+        "pending": pending,
+        "note": (
+            "Restart the server for these to take effect."
+            if pending
+            else "The running process matches the stored configuration."
+        ),
+    }
+
+
 __all__ = [
     "Effective",
     "effective",
     "effective_all",
     "reset_value",
+    "restart_status",
     "set_value",
     "validate",
 ]

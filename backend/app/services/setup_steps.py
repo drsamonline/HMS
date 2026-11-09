@@ -38,6 +38,38 @@ REQUIRED_SEQUENCES = (
 )
 
 
+async def apply_modules(db: AsyncSession, values: dict[str, Any]) -> dict:
+    """Enable the modules this hospital chose.
+
+    Lives here rather than inline in the endpoint so the wizard and the headless CLI
+    run the same code - the duplication was the first thing to drift.
+    """
+
+    from app.modules.registry import BY_CODE
+    from app.services import module_state
+
+    wanted = values.get("modules")
+    if not isinstance(wanted, list):
+        raise BusinessRuleException("The modules step needs a list under 'modules'.")
+
+    unknown = [code for code in wanted if code not in BY_CODE]
+    if unknown:
+        raise BusinessRuleException(f"Unknown modules: {', '.join(unknown)}")
+
+    changed: set[str] = set()
+    for code in wanted:
+        changed |= await module_state.enable(db, code)
+
+    await audit.record(
+        db,
+        activity="setup.modules",
+        entity_name="ModuleState",
+        entity_id=None,
+        after={"requested": wanted, "changed": sorted(changed)},
+    )
+    return {"modules_enabled": sorted(changed)}
+
+
 async def apply_wards(db: AsyncSession, values: dict[str, Any]) -> dict:
     """Create beds from a ward list.
 
@@ -227,6 +259,7 @@ __all__ = [
     "REQUIRED_SEQUENCES",
     "apply_departments",
     "apply_money",
+    "apply_modules",
     "apply_network",
     "apply_numbering",
     "apply_people",
@@ -370,6 +403,7 @@ HANDLERS = {
     "wards": apply_wards,
     "departments": apply_departments,
     "money": apply_money,
+    "modules": apply_modules,
     "numbering": apply_numbering,
     "people": apply_people,
     "network": apply_network,

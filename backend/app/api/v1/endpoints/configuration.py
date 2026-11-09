@@ -160,6 +160,16 @@ async def reset_setting(
 
 
 @router.get(
+    "/restart-status",
+    dependencies=[Depends(require("settings.read"))],
+)
+async def restart_status(db: DatabaseSession) -> dict:
+    """Which restart-required settings have been stored but are not yet running."""
+
+    return await settings_store.restart_status(db)
+
+
+@router.get(
     "/export",
     dependencies=[Depends(require("settings.read"))],
 )

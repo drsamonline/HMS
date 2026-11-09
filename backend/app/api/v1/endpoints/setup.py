@@ -138,22 +138,6 @@ async def apply_step(
     for key, value in payload.values.items():
         await settings_store.set_value(db, key, value)
 
-    if step == "modules":
-        wanted = payload.values.get("modules")
-        if not isinstance(wanted, list):
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="The modules step needs a list under 'modules'.",
-            )
-        unknown = [code for code in wanted if code not in BY_CODE]
-        if unknown:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Unknown modules: {', '.join(unknown)}",
-            )
-        for code in wanted:
-            await module_state.enable(db, code)
-
     await setup.mark_step(db, step)
     await db.commit()
 
