@@ -385,6 +385,59 @@ files went wrong twice. The fix was to revert wholesale and redo precisely. Any
 future batch touching more than about ten files should be done file by file, or
 with a script that is checked against a single file before it runs on all of them.
 
+
+---
+
+## 7a. Replan after wave 2 (2026-11-09)
+
+The audit of B01–B14 changed three things in the queue and confirmed the rest.
+The original `HHMS_BUILD_PLAN.md` remains the reference; this section is the
+delta, and it wins where the two disagree.
+
+### What the audit found
+
+| Finding | Evidence | Consequence |
+|---------|----------|-------------|
+| Permission resolution costs a query per request | Suite went from 290 s to over 450 s after B14; it no longer fits one 300 s call | Insert **B15a**, a per-request memo for the permission set |
+| Audit coverage is 7 of 42 services (17%) | `grep -l "audit.record("` versus services that write | The NABH evidence pack would be built on a third of the trail. **B09b** finishes the ratchet before wave 7 |
+| The catalogue was written from the write side | `masters.read` had to be added during B14 | No action; recorded so the next catalogue is written from both sides |
+| Two regex-driven edits across 48 files went wrong | B14, reverted wholesale once | Batches over ten files are done file by file |
+| B11's role gate overlapped B14's guard | Removed in B14, 47 lines | None; the sequence absorbed it |
+
+### Reordered queue
+
+| Order | Batch | Change from the plan | Why |
+|-------|-------|----------------------|-----|
+| 1 | B15 | unchanged | Closes wave 2; makes the route guard regression-proof |
+| 2 | **B15a** | **new** | The suite and every API response pay for a permission join. Memoise it per request |
+| 3 | B16–B21 | unchanged | Config spine. The wizard cannot exist without it |
+| 4 | B22–B26 | unchanged | The wizard. This is the answer to "anyone can configure it" |
+| 5 | **B33–B35** | **moved up from wave 6** | NCH duties need nothing from waves 3–5, take six days, and give the product a claim no competitor can make. Shipping them before the interface puts a differentiator in a release earlier |
+| 6 | B27–B32 | unchanged, now after the wizard | Role homes read the navigation manifest, which B18 creates |
+| 7 | **B09b** | **new** | Finish the audit ratchet: the remaining 34 services |
+| 8 | B36–B40 | unchanged | Indicators and the quality board |
+| 9 | NABH module | unchanged | Six batches per `NABH_MODULE_SPEC.md` |
+
+### Effort to v1.0, after the replan
+
+| Block | Batches | Days |
+|-------|---------|------|
+| Done (B01–B14) | 14 | 14 |
+| Close wave 2 (B15, B15a) | 2 | 2 |
+| Config spine (B16–B21) | 6 | 8 |
+| Wizard (B22–B26) | 5 | 11 |
+| NCH duties (B33–B35) | 3 | 6 |
+| Interface (B27–B32) | 6 | 12 |
+| Audit ratchet (B09b) | 1 | 4 |
+| Indicators (B36–B40) | 5 | 13 |
+| NABH module | 6 | 16 |
+| **Total** | **48** | **86** |
+
+Eighty-six development days, against the sixty-four the original plan estimated
+for forty batches. The difference is not scope creep: it is the two new batches,
+the NABH module being costed separately rather than implied, and B14 taking four
+passes instead of one.
+
 ---
 
 ## 8. Resuming after a break
