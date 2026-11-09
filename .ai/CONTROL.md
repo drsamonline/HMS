@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-05-mounting` (stacked on `batch-04-modules`) |
+| Branch | `batch-06-navigation` (stacked on `batch-05-mounting`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `60ffc8e` (B17) + the control commit that carries this file |
-| Tests | **701 passed, 2 skipped, 703 collected** (569 baseline + 132 new) |
-| Wave complete | Waves 0, 1, 2 (B01–B15a); wave 3 two of six |
-| Next batch | **B18 — navigation manifest** |
+| Head commit | `f7d6412` (B18) + the control commit that carries this file |
+| Tests | **711 passed, 2 skipped, 713 collected** (569 baseline + 142 new) |
+| Wave complete | Waves 0, 1, 2 (B01–B15a); wave 3 three of six |
+| Next batch | **B19 — settings catalogue** |
 | Blocking decision | none |
-| Open question | none. Ritual complete after B17 |
+| Open question | none. Ritual due after B20 (third batch since B17) |
 
 ---
 
@@ -349,9 +349,10 @@ per request, memoised on `request.state` like the permission set.
 | B15a | 2026-11-09 | `8205f1d` | 4 tests | 683 | Permission set memoised on `request.state`; suite 470 s to 337 s, twelve files 102 s to 75 s. First attempt with a ContextVar failed its own test |
 | B16 | 2026-11-09 | `fdd0eae` | 11 tests | 696 | Eight modules with dependencies and permission sets; `ModuleState` derived from existing records by migration. The B09 ratchet caught the new service for not auditing, and it was wired rather than exempted |
 | B17 | 2026-11-09 | `60ffc8e` | 7 tests | 701 | Routers grouped by module; a disabled module answers 404 and keeps its records. Three suite findings: the harness needed module rows, an unmigrated database now degrades to core, and two tests asserted a source literal instead of a mount |
+| B18 | 2026-11-09 | `f7d6412` | 9 tests | 711 | One navigation manifest; the server filters the menu by enabled modules and held permissions; the static fallback is tested against it. Added `AUTHENTICATED_ONLY_PATHS` as a third route category |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 132 new tests. Final: **701 passed, 2 skipped**.
+test baseline plus 142 new tests. Final: **711 passed, 2 skipped, 713 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -574,6 +575,18 @@ document says plainly that it is describing intent rather than behaviour:
 reconciling against the collected total, and 87 tests in one chunk were never run.
 The number recorded was plausible and wrong. The ritual now requires the sum to
 match `pytest --collect-only`.
+
+**D-030 — The client filters the markup it has; it does not rebuild it.**
+The click handlers are bound in `app.js` before the navigation request returns,
+and a hospital whose request fails must still get a usable sidebar. So the static
+list stays as the fallback and a test asserts it matches the manifest exactly. A
+rebuild would have been cleaner and would have broken both of those.
+
+**D-031 — There are three route categories, not two.**
+Public (no token), authenticated-only (a token, no permission), and guarded (a
+token and a permission). The navigation endpoint is the second: it returns the
+caller's own menu. `AUTHENTICATED_ONLY_PATHS` names it, and a test keeps the list
+to three entries so it cannot quietly become a back door.
 
 ---
 
