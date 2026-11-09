@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-01-accountability` (stacked on `batch-00-quick-wins`) |
+| Branch | `batch-02-enumeration` (stacked on `batch-01-accountability`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `2d8fbe6` (B14) + the control commit that carries this file |
-| Tests | **675 passed, 2 skipped** (569 baseline + 106 new) |
-| Wave complete | Waves 0, 1 and 2 (B01–B14); wave 3 next |
-| Next batch | **B15 — route enumeration test, closing wave 2** |
+| Head commit | `66e085d` (B15) + the control commit that carries this file |
+| Tests | **679 passed, 2 skipped** (569 baseline + 110 new) |
+| Wave complete | Waves 0, 1 and 2 (B01–B15); wave 3 next |
+| Next batch | **B15a — memoise the permission set** |
 | Blocking decision | none |
-| Open question | none. Ritual complete after B14 |
+| Open question | none. Ritual due after B17 (third batch since B14) |
 
 ---
 
@@ -334,9 +334,10 @@ role, because an end-to-end suite needs an actor the guard admits.
 | B12 | 2026-11-09 | `7ad9f53` | 16 tests | 656 | 39 codes, 20 modules, 10 role templates, seeded by migration. Two defects: module labels disagreed with code prefixes, and the migration's id/code map was inverted so the administrator got no grants |
 | B13 | 2026-11-09 | `8d0a0e2` | 12 tests | 668 | `require(code)`, router-level default deny, staged enforcement, migration 0033 for the `admin` role alias |
 | B14 | 2026-11-09 | `2d8fbe6` | 7 tests | 675 | 238 of 244 routes guarded, enforcement flipped to `enforce`, B11's role gate removed, harness given a real actor. Two self-inflicted defects: a broad regex damaged 31 test files, and the first pass emitted bare functions instead of `Depends(...)` |
+| B15 | 2026-11-09 | `66e085d` | 6 tests | 679 | Enumeration gate that names the unguarded route; proven to fail by planting one. Supersedes the lighter copy inside B14's gate |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 106 new tests. Final: **675 passed, 2 skipped**.
+test baseline plus 110 new tests. Final: **679 passed, 2 skipped**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks and the counts summed. Every file runs exactly once.
