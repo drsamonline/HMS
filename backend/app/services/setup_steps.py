@@ -221,11 +221,156 @@ async def apply_money(db: AsyncSession, values: dict[str, Any]) -> dict:
     return {"prefixes_updated": updated}
 
 
+
+__all__ = [
+    "HANDLERS",
+    "REQUIRED_SEQUENCES",
+    "apply_departments",
+    "apply_money",
+    "apply_network",
+    "apply_numbering",
+    "apply_people",
+    "apply_wards",
+]
+
+
+# --------------------------------------------------------------- people (B24)
+async def apply_people(db: AsyncSession, values: dict[str, Any]) -> dict:
+    """Create the first real administrator.
+
+    This is the handover. Until this step every write went through the setup token;
+    after it there is a person who can log in, and the setup token's job is done.
+
+    The role is the all-access ``administrator`` the catalogue seeds, so the first
+    account is not accidentally crippled by a missing grant.
+    """
+
+    from app.auth.password import hash_password
+    from app.models.role import Role
+    from app.models.user import User
+    from app.models.user_role import UserRole
+
+    username = str(values.get("username", "")).strip()
+    password = str(values.get("password", ""))
+    full_name = str(values.get("full_name", "")).strip()
+
+    if not username:
+        raise BusinessRuleException("The people step needs a username.")
+    if len(password) < 8:
+        raise BusinessRuleException("The administrator password must be at least 8 characters.")
+    if not full_name:
+        raise BusinessRuleException("The people step needs the administrator's full name.")
+
+    existing = (
+        await db.execute(select(User).where(User.username == username))
+    ).scalar_one_or_none()
+    if existing is not None:
+        # Idempotent: a second click does not create a second administrator, and
+        # does not silently reset the password of the first.
+        return {"user_created": False, "username": username}
+
+    user = User(
+        username=username,
+        password_hash=hash_password(password),
+        full_name=full_name,
+        email=str(values["email"]).strip().lower() if values.get("email") else None,
+        is_active=True,
+    )
+    db.add(user)
+    await db.flush()
+
+    role = (
+        await db.execute(
+            select(Role).where(func.lower(Role.role_name) == "administrator")
+        )
+    ).scalar_one_or_none()
+    if role is None:
+        role = Role(role_name="administrator", description="Full access")
+        db.add(role)
+        await db.flush()
+
+    db.add(UserRole(user_id=user.id, role_id=role.id))
+
+    await audit.record(
+        db,
+        activity="setup.administrator",
+        entity_name="User",
+        entity_id=user.id,
+        after={"username": username, "full_name": full_name, "role": "administrator"},
+    )
+    return {"user_created": True, "username": username}
+
+
+# -------------------------------------------------------------- network (B24)
+async def apply_network(db: AsyncSession, values: dict[str, Any]) -> dict:
+    """Stage the network values; they take effect after a restart.
+
+    The port and the discovery keys are read before the database is open, so they
+    cannot live in it (D-032). This step validates them and stages them for the
+    restart that follows setup, rather than pretending they are already applied.
+    """
+
+    from pathlib import Path
+
+    import json
+
+    from app.config.runtime_paths import application_root
+
+    staged: dict[str, Any] = {}
+
+    if "SERVER_PORT" in values:
+        try:
+            port = int(values["SERVER_PORT"])
+        except (TypeError, ValueError) as exc:
+            raise BusinessRuleException("The server port must be a whole number.") from exc
+        if not 1024 <= port <= 65535:
+            raise BusinessRuleException("The server port must be between 1024 and 65535.")
+        staged["SERVER_PORT"] = port
+
+    if "DISCOVERY_ENABLED" in values:
+        staged["DISCOVERY_ENABLED"] = bool(values["DISCOVERY_ENABLED"])
+
+    if "DISCOVERY_PORT" in values:
+        try:
+            discovery_port = int(values["DISCOVERY_PORT"])
+        except (TypeError, ValueError) as exc:
+            raise BusinessRuleException("The discovery port must be a whole number.") from exc
+        if not 1024 <= discovery_port <= 65535:
+            raise BusinessRuleException("The discovery port must be between 1024 and 65535.")
+        staged["DISCOVERY_PORT"] = discovery_port
+
+    if "DISCOVERY_NAME" in values:
+        name = str(values["DISCOVERY_NAME"]).strip()
+        if not name:
+            raise BusinessRuleException("The discovery name cannot be empty.")
+        staged["DISCOVERY_NAME"] = name
+
+    target = Path(application_root()) / "data" / "pending-network.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(staged, indent=2), encoding="utf-8")
+
+    await audit.record(
+        db,
+        activity="setup.network",
+        entity_name="SetupState",
+        entity_id=None,
+        after={"staged": staged, "file": str(target)},
+    )
+    return {
+        "staged": staged,
+        "restart_required": True,
+        "note": (
+            "These take effect when the server restarts. They are read before the "
+            "database is opened, so they cannot be stored in it."
+        ),
+    }
+
+
 HANDLERS = {
     "wards": apply_wards,
     "departments": apply_departments,
     "money": apply_money,
     "numbering": apply_numbering,
+    "people": apply_people,
+    "network": apply_network,
 }
-
-__all__ = ["HANDLERS", "REQUIRED_SEQUENCES", "apply_departments", "apply_money", "apply_numbering", "apply_wards"]

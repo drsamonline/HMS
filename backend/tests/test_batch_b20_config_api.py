@@ -13,6 +13,31 @@ import json
 import pytest
 
 
+def _clear_overrides() -> None:
+    """Start from no overrides.
+
+    ``make_client`` reuses one in-memory database across a run, so a setting
+    written by an earlier test is still there. The export test asserts an exact
+    dict, so it must start from a known state.
+    """
+
+    import asyncio
+
+    from sqlalchemy import delete
+
+    from app.db.session import get_session_factory
+    from app.models.setting_value import SettingValue
+
+    factory = get_session_factory()
+
+    async def _go():
+        async with factory() as db:
+            await db.execute(delete(SettingValue))
+            await db.commit()
+
+    asyncio.run(_go())
+
+
 def _admin() -> dict:
     from tests._qa_harness import auth_headers
 
@@ -198,6 +223,7 @@ def test_export_contains_only_overrides(isolated) -> None:
     """Exporting all forty-four would pin today's defaults forever."""
 
     with _client() as client:
+        _clear_overrides()
         headers = _admin()
         client.patch(
             "/api/v1/configuration",
@@ -211,6 +237,7 @@ def test_export_contains_only_overrides(isolated) -> None:
 
 def test_export_then_import_round_trips(isolated) -> None:
     with _client() as client:
+        _clear_overrides()
         headers = _admin()
         client.patch(
             "/api/v1/configuration",
