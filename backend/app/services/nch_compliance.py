@@ -11,8 +11,8 @@ holds:
   Enforced where the follow-up is written, and counted here.
 * 36(c) - records of prescriptions and certificates maintained. Counted here as
   follow-ups that carry a decision but no reason, which is the gap that matters.
-* 37 - adverse events reported. Not yet a table; that is the pharmacovigilance
-  batch, and this endpoint will grow a third count when it lands.
+* 37 - adverse events reported. Counted here as events recorded and not yet
+  marked as reported to an authority.
 
 This is a readiness report rather than a block. A hospital that has just installed
 the software has no registration numbers yet, and refusing every prescription until
@@ -32,6 +32,7 @@ from app.models.followup import FollowUp
 from app.models.user import User
 from app.models.user_role import UserRole
 from app.models.role import Role
+from app.services import adverse_events
 
 
 async def readiness(db: AsyncSession) -> dict:
@@ -39,6 +40,7 @@ async def readiness(db: AsyncSession) -> dict:
 
     clinicians_missing = await _clinicians_without_registration(db)
     followups_without_reason = await _followups_without_reason(db)
+    unreported = await adverse_events.unreported_count(db)
 
     return {
         "prescriber_registration": {
@@ -54,9 +56,13 @@ async def readiness(db: AsyncSession) -> dict:
         },
         "adverse_event_register": {
             "requirement": "NCH Code of Ethics 37: adverse events to homoeopathic products reported.",
-            "ok": False,
-            "missing_count": None,
-            "note": "Not implemented yet: the pharmacovigilance register is its own batch.",
+            "ok": unreported == 0,
+            "missing_count": unreported,
+            "note": (
+                "Every recorded event has been reported."
+                if unreported == 0
+                else "Events recorded and not yet reported to an authority."
+            ),
         },
     }
 

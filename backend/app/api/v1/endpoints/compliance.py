@@ -14,9 +14,37 @@ from fastapi import APIRouter, Depends
 
 from app.dependencies.database import DatabaseSession
 from app.dependencies.permissions import require
-from app.services import nch_compliance
+from app.services import adverse_events, nch_compliance
 
 router = APIRouter(prefix="/compliance", tags=["Compliance"])
+
+
+@router.get(
+    "/adverse-events",
+    dependencies=[Depends(require("clinical.read"))],
+)
+async def list_adverse_events(
+    db: DatabaseSession,
+    unreported_only: bool = False,
+) -> list[dict]:
+    """The pharmacovigilance register, newest first."""
+
+    events = await adverse_events.list_events(db, unreported_only=unreported_only)
+    return [
+        {
+            "id": event.id,
+            "patient_id": event.patient_id,
+            "product_name": event.product_name,
+            "event_datetime": event.event_datetime,
+            "severity": event.severity,
+            "description": event.description,
+            "outcome": event.outcome,
+            "reported": event.reported,
+            "reported_at": event.reported_at,
+            "reported_to": event.reported_to,
+        }
+        for event in events
+    ]
 
 
 @router.get(

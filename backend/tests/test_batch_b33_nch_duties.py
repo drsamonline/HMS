@@ -274,8 +274,13 @@ def test_readiness_counts_followups_that_changed_without_a_reason(session) -> No
     assert entry["ok"] is False
 
 
-def test_readiness_reports_the_unimplemented_duty_honestly(session) -> None:
-    """Pharmacovigilance is its own batch; the report says so rather than passing."""
+def test_readiness_reports_the_third_duty_as_checkable(session) -> None:
+    """B34 implemented pharmacovigilance; the report must say so.
+
+    At B33 this asserted the opposite - that the duty was named as not implemented
+    rather than quietly omitted. The assertion is kept, pointed at the new truth:
+    a report that claims to cover three duties must actually cover three.
+    """
 
     from app.services import nch_compliance
 
@@ -286,8 +291,9 @@ def test_readiness_reports_the_unimplemented_duty_honestly(session) -> None:
             return await nch_compliance.readiness(db)
 
     adverse = _run(_go())["adverse_event_register"]
-    assert adverse["ok"] is False
-    assert "Not implemented yet" in adverse["note"]
+    assert "Not implemented yet" not in (adverse["note"] or "")
+    assert adverse["missing_count"] is not None, "a checkable duty must carry a count"
+    assert adverse["ok"] is True
 
 
 # --------------------------------------------------------------------- fields

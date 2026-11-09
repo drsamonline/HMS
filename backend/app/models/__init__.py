@@ -8,6 +8,7 @@ Author  : Dr. Sohil Momin
 from __future__ import annotations
 
 from .admission import Admission
+from .adverse_event import AdverseEvent
 from .case_record import CaseRecord
 from .case_archive_reference import CaseArchiveReference
 from .audit_log import AuditLog
