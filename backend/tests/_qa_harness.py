@@ -80,7 +80,13 @@ def make_client() -> Iterator["object"]:
     engine = get_engine()
 
     async def _create_schema() -> None:
+        # drop_all first: create_all is checkfirst by default, so a database that
+        # already exists - a file left by an earlier module, or an in-memory one
+        # reused through a cached engine - would keep an older schema and every
+        # query against a new column would fail. The block promises an empty
+        # schema; this makes that true rather than hopeful.
         async with engine.begin() as connection:
+            await connection.run_sync(Base.metadata.drop_all)
             await connection.run_sync(Base.metadata.create_all)
 
     asyncio.run(_create_schema())
@@ -139,7 +145,13 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
     engine = get_engine()
 
     async def _create_schema() -> None:
+        # drop_all first: create_all is checkfirst by default, so a database that
+        # already exists - a file left by an earlier module, or an in-memory one
+        # reused through a cached engine - would keep an older schema and every
+        # query against a new column would fail. The block promises an empty
+        # schema; this makes that true rather than hopeful.
         async with engine.begin() as connection:
+            await connection.run_sync(Base.metadata.drop_all)
             await connection.run_sync(Base.metadata.create_all)
 
     asyncio.run(_create_schema())

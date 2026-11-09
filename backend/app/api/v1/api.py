@@ -53,6 +53,7 @@ from app.api.v1.endpoints.settings import router as settings_router
 from app.api.v1.endpoints.statistics import router as statistics_router
 from app.api.v1.endpoints.stock_cards import router as stock_cards_router
 from app.api.v1.endpoints.stock_transactions import router as stock_transactions_router
+from app.api.v1.endpoints.compliance import router as compliance_router
 from app.api.v1.endpoints.configuration import router as configuration_router
 from app.api.v1.endpoints.navigation import router as navigation_router
 from app.api.v1.endpoints.setup import router as setup_router
@@ -83,6 +84,7 @@ MODULE_ROUTERS: dict[str, tuple] = {
         navigation_router,
         setup_router,
         configuration_router,
+        compliance_router,
         patients_router,
         visits_router,
         opd_tokens_router,

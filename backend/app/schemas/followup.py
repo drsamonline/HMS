@@ -28,6 +28,7 @@ class FollowUpCreate(BaseSchema):
     new_symptoms: str | None = None
     old_symptoms: str | None = None
     clinical_assessment: str | None = None
+    reason_for_change: str | None = None
     notes: str | None = None
     previous_prescription_id: int | None = Field(default=None, gt=0)
     next_prescription_id: int | None = Field(default=None, gt=0)
@@ -44,6 +45,7 @@ class FollowUpUpdate(BaseSchema):
     new_symptoms: str | None = None
     old_symptoms: str | None = None
     clinical_assessment: str | None = None
+    reason_for_change: str | None = None
     notes: str | None = None
     previous_prescription_id: int | None = Field(default=None, gt=0)
     next_prescription_id: int | None = Field(default=None, gt=0)
