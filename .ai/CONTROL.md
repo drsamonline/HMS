@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-16-pharmacovigilance` (stacked on `batch-15-nch`) |
+| Branch | `batch-18-certificates` (stacked on `batch-17-runtime`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **818 passed, 2 skipped, 820 collected** (569 baseline + 249 new) |
-| Wave complete | **Waves 0–4 complete (B01–B26)**; wave 5 two of three |
-| Next batch | **a test-runtime pass** — see the note under the ritual |
+| Tests | **827 passed, 2 skipped, 829 collected** (569 baseline + 258 new) |
+| Wave complete | **Waves 0–5 complete (B01–B35)**; wave 6 next |
+| Next batch | **B27 — design tokens, opening wave 6** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -390,9 +390,11 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B26 | 2026-11-09 | see `git log` | 9 tests | 799 | Restart status naming stored-vs-running differences; headless setup CLI; modules step de-duplicated into a handler. **Closes wave 4** |
 | B33 | 2026-11-09 | see `git log` | 9 tests | 808 | NCH 7(2) registration number on the practitioner, 31(1) reason for change enforced on the follow-up, readiness report for both plus the unimplemented third. Harness now drops the schema before creating it |
 | B34 | 2026-11-09 | see `git log` | 10 tests | 818 | Pharmacovigilance register with two timestamps per event, idempotent reporting, free-text product name. Readiness now checks all three duties |
+| B17 | 2026-11-09 | `1849d8f` | none | 818 | Test-runtime pass: measured (2-3 s per block, ~60 tables × 800 tests), attempted, reverted. Finding and a four-step plan recorded |
+| B35 | 2026-11-09 | see `git log` | 9 tests | 827 | Certificate register with retention computed at issue, referral case statement enforced, fourth readiness duty. **Closes wave 5** |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 249 new tests. Final: **818 passed, 2 skipped, 820 collected**.
+test baseline plus 258 new tests. Final: **827 passed, 2 skipped, 829 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -820,6 +822,26 @@ fixed.
 
 Expected: the fixed cost drops from 2–3 seconds to well under 100 milliseconds per
 block, which is where the fourteen minutes goes.
+
+### Wave 5 closed (2026-11-09)
+
+| Batch | Delivered |
+|-------|-----------|
+| B33 | Registration number on the practitioner; reason for change enforced on the follow-up |
+| B34 | Pharmacovigilance register, two timestamps per event |
+| B35 | Certificate register with retention at issue; referral case statement |
+
+Four NCH duties are now checkable, and the readiness report names all four. That is
+a claim no homoeopathy product on the market makes, and it cost nine days.
+
+**D-048 — A certificate stores the text as issued, never regenerated.**
+A certificate is a statement made on a date. Regenerating it from current records
+would produce a document that says what the hospital wishes it had said.
+
+**D-049 — Past retention means archivable, never removable.**
+Three years is a floor. The report says what may be archived and never what may be
+deleted, because a hospital deleting a certificate at three years and a day has
+misread the regulation.
 
 ---
 
