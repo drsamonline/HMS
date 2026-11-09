@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-14-nerd` (stacked on `batch-13-review`) |
+| Branch | `batch-15-nch` (stacked on `batch-14-nerd`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **799 passed, 2 skipped, 801 collected** (569 baseline + 230 new) |
-| Wave complete | **Waves 0–4 complete (B01–B26)**; wave 5 next |
-| Next batch | **B33 — NCH duties** (wave 5, moved ahead of the interface) |
+| Tests | **808 passed, 2 skipped, 810 collected** (569 baseline + 239 new) |
+| Wave complete | **Waves 0–4 complete (B01–B26)**; wave 5 one of three |
+| Next batch | **B34 — pharmacovigilance register** |
 | Blocking decision | none |
-| Open question | none. **Ritual due after B26** — run it before B33 |
+| Open question | **Suite runtime is now the top operational problem** — see the note below |
 
 ---
 
@@ -345,6 +345,16 @@ A second click tops up a ward rather than creating a second ward with the same
 name and different numbering, and never resets a sequence that has been issuing
 numbers for a year. A wizard is a thing people click twice.
 
+**D-044 — A compliance rule follows the model's vocabulary, not an invented one.**
+The first version of the reason-for-change rule compared `decision` against
+"continue", which is not one of its values. The model offers wait, repeat,
+change_remedy and stop_reassess; two continue and two change. Reading the schema
+first would have saved a cycle.
+
+**D-045 — A readiness report names the duty it cannot check.**
+Pharmacovigilance is not implemented, and the report says so rather than omitting
+it. A report that quietly covers two of three duties reads as a clean bill of health.
+
 ---
 
 ## 7. Batch log
@@ -378,9 +388,10 @@ numbers for a year. A wizard is a thing people click twice.
 | B24 | 2026-11-09 | see `git log` | 9 tests | 781 | The handover: the first administrator who can log in and open screens. Network values staged for the restart rather than stored |
 | B25 | 2026-11-09 | see `git log` | 9 tests | 790 | Review of all ten steps before commit, export of the answers, and finish writing the staged network values into a marked block in `.env` |
 | B26 | 2026-11-09 | see `git log` | 9 tests | 799 | Restart status naming stored-vs-running differences; headless setup CLI; modules step de-duplicated into a handler. **Closes wave 4** |
+| B33 | 2026-11-09 | see `git log` | 9 tests | 808 | NCH 7(2) registration number on the practitioner, 31(1) reason for change enforced on the follow-up, readiness report for both plus the unimplemented third. Harness now drops the schema before creating it |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 230 new tests. Final: **799 passed, 2 skipped, 801 collected**.
+test baseline plus 239 new tests. Final: **808 passed, 2 skipped, 810 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -725,6 +736,25 @@ browser-built one.
 A flag lands in shell history and in the process list. Worth knowing: argparse
 accepts an unambiguous prefix, so `--admin-password` is read as
 `--admin-password-env` and silently consumes the secret as a variable name.
+
+### Ritual after B24–B26 and B33 (2026-11-09)
+
+| Step | Result |
+|------|--------|
+| 1. Suite | 808 passed, 2 skipped, **810 collected**; eight slices sum exactly |
+| 2. Gates by name | B24, B25, B26, B33 re-run green |
+| 3. Prune | No dead code; the modules step's inline logic in the endpoint was removed when its handler landed |
+| 4. Docs reconciled | `SECURITY.md` unchanged; the NCH duties are a product claim, not a security one |
+| 5. Queue re-ranked | **The suite is now the problem.** See below |
+| 6. Split | B33 covered two duties and a report; the pharmacovigilance register is its own batch (B34) |
+| 7. Logged | D-044, D-045; batch log rows added |
+
+**The suite has become the bottleneck.** It now takes about 12 minutes across eight
+slices, against one 300-second call for the whole thing at B14. Two causes, both
+mine: the permission join on every request (mitigated at B15a but not removed), and
+the harness dropping and recreating the schema for every block since B33. The next
+batch that touches nothing else should be a test-runtime pass, or the verification
+cost will keep growing faster than the feature work.
 
 ---
 
