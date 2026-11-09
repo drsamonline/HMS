@@ -25,7 +25,7 @@ from app.core.settings_catalogue import BY_KEY
 from app.dependencies.database import DatabaseSession
 from app.dependencies.setup import SetupAuthorised
 from app.modules.registry import BY_CODE
-from app.services import module_state, settings_store, setup
+from app.services import module_state, settings_store, setup, setup_steps
 
 router = APIRouter(prefix="/setup", tags=["Setup"])
 
@@ -102,6 +102,20 @@ async def apply_step(
 
     if step not in setup.STEPS:
         raise HTTPException(status_code=404, detail=f"Unknown setup step: {step}")
+
+    # A step either writes settings or creates rows; the two are validated
+    # differently, so a step may not do both.
+    handler = setup_steps.HANDLERS.get(step)
+    if handler is not None:
+        try:
+            outcome = await handler(db, payload.values)
+        except BusinessRuleException as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+            ) from exc
+        await setup.mark_step(db, step)
+        await db.commit()
+        return {"step": step, "applied": True, **outcome, **(await setup.status(db))}
 
     allowed = STEP_SETTINGS.get(step, ())
     for key in payload.values:
