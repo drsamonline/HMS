@@ -17,12 +17,12 @@ latest milestone in the same paragraph.
 | Date | 2026-11-09 |
 | Branch | `batch-01-accountability` (stacked on `batch-00-quick-wins`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `7ad9f53` (B12) + the control commit that carries this file |
-| Tests | **656 passed, 2 skipped** (569 baseline + 87 new) |
-| Wave complete | Waves 0 and 1 (B01–B11); wave 2 one of four done |
-| Next batch | **B13 — the guard** |
+| Head commit | `8d0a0e2` (B13) + the control commit that carries this file |
+| Tests | **668 passed, 2 skipped** (569 baseline + 99 new) |
+| Wave complete | Waves 0 and 1 (B01–B11); wave 2 two of four done |
+| Next batch | **B14 — apply guards to the 242 routes, then flip to enforce** |
 | Blocking decision | none |
-| Open question | none. **Ritual due after B14** (third batch since the wave 1 close) |
+| Open question | none. **Ritual due after B14**, which is also the batch that flips `PERMISSION_ENFORCEMENT` to `enforce` |
 
 ---
 
@@ -274,6 +274,27 @@ resource. The label now equals the first segment of the code, and one endpoint
 file may map to several modules instead (administration serves users, roles,
 settings and masters). The test asserts the mapping in both directions.
 
+**D-022 — Enforcement is staged, and the default is `warn`.**
+A guard that refuses every route the moment it lands would have turned the
+application off between B13 and B14. `PERMISSION_ENFORCEMENT` has three values;
+B13 ships `warn` (explicit guards apply, unguarded routes log), and B14 flips it
+to `enforce` once every route declares a guard. A declared guard is enforced in
+every mode except `off`, so the protection arrives with the code, not with the
+switch.
+
+**D-023 — Permissions are resolved per request, from the database.**
+Not from the token. A role revoked at 10:00 should refuse a request at 10:01, not
+at the next login. The cost is one join per protected request; the alternative is
+an authorisation decision that lags a permission change, which is the wrong trade
+for a control whose whole purpose is to stop something happening now.
+
+**D-024 — Migration 0033 exists because the demo seed and the catalogue disagreed.**
+The demo seeds a role called `admin`; the catalogue in 0032 created
+`administrator`. Both mean the same thing to a hospital, and only one received
+grants - so the guard would have locked the administrator out of their own
+installation. 0033 grants every code to the four role names the client has always
+treated as all-access, so the database and the client now agree.
+
 ---
 
 ## 7. Batch log
@@ -292,9 +313,10 @@ settings and masters). The test asserts the mapping in both directions.
 | B10 | 2026-11-09 | `69c0f3a` | 9 tests | 626 | Append-only triggers, SHA-256 chain, verifier, nightly pass. One defect: hashing `isoformat()` never matched on read-back because SQLite returns naive datetimes - every row would have read as edited |
 | B11 | 2026-11-09 | `66d0f3c` | 14 tests | 640 | Review filters, detail, CSV and PDF export, role gate, self-recording export. Two defects: `Depends()` used as a bare default instead of `Annotated`, and a client contract test still constructing the pre-B07 schema |
 | B12 | 2026-11-09 | `7ad9f53` | 16 tests | 656 | 39 codes, 20 modules, 10 role templates, seeded by migration. Two defects: module labels disagreed with code prefixes, and the migration's id/code map was inverted so the administrator got no grants |
+| B13 | 2026-11-09 | `8d0a0e2` | 12 tests | 668 | `require(code)`, router-level default deny, staged enforcement, migration 0033 for the `admin` role alias |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 87 new tests. Final: **656 passed, 2 skipped**.
+test baseline plus 99 new tests. Final: **668 passed, 2 skipped**.
 
 ### Ritual after B07–B09 (2026-11-09)
 
