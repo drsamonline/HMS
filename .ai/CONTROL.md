@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-13-review` (stacked on `batch-12-people`) |
+| Branch | `batch-14-nerd` (stacked on `batch-13-review`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **790 passed, 2 skipped, 792 collected** (569 baseline + 221 new) |
-| Wave complete | **Waves 0–3 complete (B01–B21)**; wave 4 four of five |
-| Next batch | **B26 — nerd mode, closes wave 4** |
+| Tests | **799 passed, 2 skipped, 801 collected** (569 baseline + 230 new) |
+| Wave complete | **Waves 0–4 complete (B01–B26)**; wave 5 next |
+| Next batch | **B33 — NCH duties** (wave 5, moved ahead of the interface) |
 | Blocking decision | none |
-| Open question | none. Ritual due after B26 (third batch since B23) |
+| Open question | none. **Ritual due after B26** — run it before B33 |
 
 ---
 
@@ -377,9 +377,10 @@ numbers for a year. A wizard is a thing people click twice.
 | B23 | 2026-11-09 | `15027e9` | 9 tests | 772 | Wards, departments, numbering and money steps, all idempotent. Found that Bed's model and migration disagreed about timestamps |
 | B24 | 2026-11-09 | see `git log` | 9 tests | 781 | The handover: the first administrator who can log in and open screens. Network values staged for the restart rather than stored |
 | B25 | 2026-11-09 | see `git log` | 9 tests | 790 | Review of all ten steps before commit, export of the answers, and finish writing the staged network values into a marked block in `.env` |
+| B26 | 2026-11-09 | see `git log` | 9 tests | 799 | Restart status naming stored-vs-running differences; headless setup CLI; modules step de-duplicated into a handler. **Closes wave 4** |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 221 new tests. Final: **790 passed, 2 skipped, 792 collected**.
+test baseline plus 230 new tests. Final: **799 passed, 2 skipped, 801 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -700,6 +701,30 @@ before wave 6 adds more writes.
 The staged network values have to reach the environment file, but an operator may
 have their own lines there. A block between two markers can be replaced on every
 run; appending cannot, and neither can editing the file wholesale.
+
+### Wave 4 closed (2026-11-09)
+
+| Batch | Delivered |
+|-------|-----------|
+| B22 | Setup state, the six-digit code, a token that is not a login |
+| B23 | Wards, departments, numbering, money - all idempotent |
+| B24 | The handover to a real administrator; network values staged |
+| B25 | Review before commit, export, finish writing `.env` |
+| B26 | Restart status, headless CLI, modules de-duplicated |
+
+The wizard is complete end to end: install, open a browser, read the code from the
+server log, walk ten steps, log in as yourself - or do the same four flags from a
+shell. That was the request that opened this work.
+
+**D-042 — The headless CLI calls the wizard's services, not a copy of them.**
+Two implementations of "create the first administrator" would drift, and the drift
+would show up as a script-built hospital that behaves differently from a
+browser-built one.
+
+**D-043 — The administrator password comes from an environment variable.**
+A flag lands in shell history and in the process list. Worth knowing: argparse
+accepts an unambiguous prefix, so `--admin-password` is read as
+`--admin-password-env` and silently consumes the secret as a variable name.
 
 ---
 
