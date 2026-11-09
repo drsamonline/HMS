@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-06-navigation` (stacked on `batch-05-mounting`) |
+| Branch | `batch-07-settings-catalogue` (stacked on `batch-06-navigation`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `f7d6412` (B18) + the control commit that carries this file |
-| Tests | **711 passed, 2 skipped, 713 collected** (569 baseline + 142 new) |
-| Wave complete | Waves 0, 1, 2 (B01–B15a); wave 3 three of six |
-| Next batch | **B19 — settings catalogue** |
+| Head commit | `79e192b` (B19) + the control commit that carries this file |
+| Tests | **729 passed, 2 skipped, 731 collected** (569 baseline + 160 new) |
+| Wave complete | Waves 0, 1, 2 (B01–B15a); wave 3 four of six |
+| Next batch | **B20 — settings API and CLI** |
 | Blocking decision | none |
-| Open question | none. Ritual due after B20 (third batch since B17) |
+| Open question | none. **Ritual due after B20** (third batch since B17) |
 
 ---
 
@@ -350,9 +350,10 @@ per request, memoised on `request.state` like the permission set.
 | B16 | 2026-11-09 | `fdd0eae` | 11 tests | 696 | Eight modules with dependencies and permission sets; `ModuleState` derived from existing records by migration. The B09 ratchet caught the new service for not auditing, and it was wired rather than exempted |
 | B17 | 2026-11-09 | `60ffc8e` | 7 tests | 701 | Routers grouped by module; a disabled module answers 404 and keeps its records. Three suite findings: the harness needed module rows, an unmigrated database now degrades to core, and two tests asserted a source literal instead of a mount |
 | B18 | 2026-11-09 | `f7d6412` | 9 tests | 711 | One navigation manifest; the server filters the menu by enabled modules and held permissions; the static fallback is tested against it. Added `AUTHENTICATED_ONLY_PATHS` as a third route category |
+| B19 | 2026-11-09 | `79e192b` | 18 tests | 729 | 44 settings described once with type, group, default and restart flag; precedence db > env > default returned with the value; six bootstrap keys refused by the store. The B09 ratchet caught the new service and it was wired, not exempted |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 142 new tests. Final: **711 passed, 2 skipped, 713 collected**.
+test baseline plus 160 new tests. Final: **729 passed, 2 skipped, 731 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -587,6 +588,17 @@ Public (no token), authenticated-only (a token, no permission), and guarded (a
 token and a permission). The navigation endpoint is the second: it returns the
 caller's own menu. `AUTHENTICATED_ONLY_PATHS` names it, and a test keeps the list
 to three entries so it cannot quietly become a back door.
+
+**D-032 — Bootstrap settings cannot be stored in the database.**
+Six values are read before the database is open: the port, three discovery keys,
+the signing secret and the database address. Storing them would be a lie - the
+server would never read the row - so `set_value` refuses them and the list is
+asserted exactly, because it should not grow quietly.
+
+**D-033 — Every read returns the source, not just the value.**
+Database, environment, or catalogue default. The settings screen can then say where
+a number came from, which is the difference between a page an administrator trusts
+and one they distrust after the first unexplained value.
 
 ---
 
