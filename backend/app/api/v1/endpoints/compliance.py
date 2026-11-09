@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends
 
 from app.dependencies.database import DatabaseSession
 from app.dependencies.permissions import require
-from app.services import adverse_events, nch_compliance
+from app.services import adverse_events, certificates, nch_compliance
 
 router = APIRouter(prefix="/compliance", tags=["Compliance"])
 
@@ -45,6 +45,42 @@ async def list_adverse_events(
         }
         for event in events
     ]
+
+
+@router.get(
+    "/certificates",
+    dependencies=[Depends(require("mrd.read"))],
+)
+async def list_certificates(
+    db: DatabaseSession,
+    patient_id: int | None = None,
+) -> list[dict]:
+    """The certificate register. Regulation 7(1) keeps these for three years."""
+
+    rows = await certificates.list_certificates(db, patient_id=patient_id)
+    return [
+        {
+            "id": row.id,
+            "patient_id": row.patient_id,
+            "certificate_type": row.certificate_type,
+            "certificate_number": row.certificate_number,
+            "issued_at": row.issued_at,
+            "retention_until": row.retention_until,
+            "case_statement": row.case_statement,
+            "is_voided": row.is_voided,
+        }
+        for row in rows
+    ]
+
+
+@router.get(
+    "/certificate-retention",
+    dependencies=[Depends(require("audit.read"))],
+)
+async def certificate_retention(db: DatabaseSession) -> dict:
+    """What the register holds, and what is past its retention date."""
+
+    return await certificates.retention_report(db)
 
 
 @router.get(
