@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-11-wizard-steps` (stacked on `batch-10-wizard`) |
+| Branch | `batch-12-people` (stacked on `batch-11-wizard-steps`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `15027e9` (B23) + the control commit that carries this file |
-| Tests | **772 passed, 2 skipped, 774 collected** (569 baseline + 203 new) |
-| Wave complete | **Waves 0–3 complete (B01–B21)**; wave 4 two of five |
-| Next batch | **B24 — wizard steps 7 to 9** |
+| Head commit | `b24-commit` (B24) + the control commit that carries this file |
+| Tests | **781 passed, 2 skipped, 783 collected** (569 baseline + 212 new) |
+| Wave complete | **Waves 0–3 complete (B01–B21)**; wave 4 three of five |
+| Next batch | **B25 — review, apply, export** |
 | Blocking decision | none |
-| Open question | none. Ritual complete after B23 |
+| Open question | none. Ritual due after B26 (third batch since B23) |
 
 ---
 
@@ -375,9 +375,10 @@ numbers for a year. A wizard is a thing people click twice.
 | B21 | 2026-11-09 | `cc5435d` | 9 tests | 753 | Spine cross-check: routes, modules, navigation and settings agree with each other. Proven to fail by planting a fictional permission. **Closes wave 3** |
 | B22 | 2026-11-09 | `02886b1` | 10 tests | 763 | Setup state, six-digit code issued to the log and stored hashed, lockout after five failures, `scope=setup` token that is neither a login nor accepted as one. Four self-inflicted defects caught by the gate |
 | B23 | 2026-11-09 | `15027e9` | 9 tests | 772 | Wards, departments, numbering and money steps, all idempotent. Found that Bed's model and migration disagreed about timestamps |
+| B24 | 2026-11-09 | see `git log` | 9 tests | 781 | The handover: the first administrator who can log in and open screens. Network values staged for the restart rather than stored |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 203 new tests. Final: **772 passed, 2 skipped, 774 collected**.
+test baseline plus 212 new tests. Final: **781 passed, 2 skipped, 783 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
