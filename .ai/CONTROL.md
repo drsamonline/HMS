@@ -17,12 +17,12 @@ latest milestone in the same paragraph.
 | Date | 2026-11-09 |
 | Branch | `batch-01-accountability` (stacked on `batch-00-quick-wins`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `8d0a0e2` (B13) + the control commit that carries this file |
-| Tests | **668 passed, 2 skipped** (569 baseline + 99 new) |
-| Wave complete | Waves 0 and 1 (B01–B11); wave 2 two of four done |
-| Next batch | **B14 — apply guards to the 242 routes, then flip to enforce** |
+| Head commit | `2d8fbe6` (B14) + the control commit that carries this file |
+| Tests | **675 passed, 2 skipped** (569 baseline + 106 new) |
+| Wave complete | Waves 0, 1 and 2 (B01–B14); wave 3 next |
+| Next batch | **B15 — route enumeration test, closing wave 2** |
 | Blocking decision | none |
-| Open question | none. **Ritual due after B14**, which is also the batch that flips `PERMISSION_ENFORCEMENT` to `enforce` |
+| Open question | none. Ritual complete after B14 |
 
 ---
 
@@ -295,6 +295,25 @@ grants - so the guard would have locked the administrator out of their own
 installation. 0033 grants every code to the four role names the client has always
 treated as all-access, so the database and the client now agree.
 
+**D-025 — Codes are chosen per module and per verb, not per file.**
+GET takes the read code, POST/PATCH/PUT the write code, DELETE the specific code
+where one exists (`patients.deactivate`, `billing.void`). One file may therefore
+carry three different codes. The alternative - one code per file - would have made
+`billing.read` and `billing.write` indistinguishable on the invoice-item delete,
+which is exactly the route an auditor asks about.
+
+**D-026 — `masters.read` was added because the guards revealed it was missing.**
+Applying the guards is what showed that a GET on a master table had no code to
+check. The catalogue had been written from the write side only. Recorded because
+it is the argument for applying a control rather than reasoning about it.
+
+**D-027 — The QA harness now creates a real administrator.**
+`auth_headers()` used to mint a token whose subject was the string
+"qa-batch103" and belonged to no user. That was harmless while nothing checked
+permissions and became a 401 the moment the guard resolved them from the
+database. Every harness helper that creates a user now grants the administrator
+role, because an end-to-end suite needs an actor the guard admits.
+
 ---
 
 ## 7. Batch log
@@ -314,9 +333,13 @@ treated as all-access, so the database and the client now agree.
 | B11 | 2026-11-09 | `66d0f3c` | 14 tests | 640 | Review filters, detail, CSV and PDF export, role gate, self-recording export. Two defects: `Depends()` used as a bare default instead of `Annotated`, and a client contract test still constructing the pre-B07 schema |
 | B12 | 2026-11-09 | `7ad9f53` | 16 tests | 656 | 39 codes, 20 modules, 10 role templates, seeded by migration. Two defects: module labels disagreed with code prefixes, and the migration's id/code map was inverted so the administrator got no grants |
 | B13 | 2026-11-09 | `8d0a0e2` | 12 tests | 668 | `require(code)`, router-level default deny, staged enforcement, migration 0033 for the `admin` role alias |
+| B14 | 2026-11-09 | `2d8fbe6` | 7 tests | 675 | 238 of 244 routes guarded, enforcement flipped to `enforce`, B11's role gate removed, harness given a real actor. Two self-inflicted defects: a broad regex damaged 31 test files, and the first pass emitted bare functions instead of `Depends(...)` |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 99 new tests. Final: **668 passed, 2 skipped**.
+test baseline plus 106 new tests. Final: **675 passed, 2 skipped**.
+
+From B14 the suite takes longer than one 300-second call, so it is run in four
+file-list chunks and the counts summed. Every file runs exactly once.
 
 ### Ritual after B07–B09 (2026-11-09)
 
@@ -344,6 +367,23 @@ test baseline plus 99 new tests. Final: **668 passed, 2 skipped**.
 
 **Wave 1 closed.** The trail records, cannot be deleted or edited, can be verified,
 can be read by an auditor and can be exported - and the export records itself.
+
+### Ritual after B14 (2026-11-09)
+
+| Step | Result |
+|------|--------|
+| 1. Suite | 675 passed, 2 skipped across four chunks; every file ran once |
+| 2. Gates by name | B12, B13, B14 re-run: 35 passed |
+| 3. Prune | No dead code in the new modules; `audit_logs.py` lost 47 lines of superseded role gate |
+| 4. Docs reconciled | `SECURITY.md`'s authorisation row is now true: the client fails closed *and* the server refuses |
+| 5. Queue re-ranked | Unchanged. B15 next, and it is small |
+| 6. Split | B14 was one batch, but it was the largest so far and it broke the suite in ways that took four passes to settle |
+| 7. Logged | D-025, D-026, D-027; batch log row added |
+
+**A note for future waves.** B14 is the batch where regex-driven editing of 48
+files went wrong twice. The fix was to revert wholesale and redo precisely. Any
+future batch touching more than about ten files should be done file by file, or
+with a script that is checked against a single file before it runs on all of them.
 
 ---
 

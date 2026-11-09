@@ -55,10 +55,16 @@ target; this file is the present.
 
 ### Authorisation
 
-- Roles, permissions and role-permission assignment are modelled and
-  administered through the API.
+- Every route outside a named public list declares the permission it requires,
+  and the server refuses the request when the caller's roles do not hold it.
+  Permissions resolve per request from the database, so revoking a role takes
+  effect on the next request rather than at the next login.
+- A route with no guard is refused, not allowed: default deny is enforced at the
+  router, so an endpoint added tomorrow cannot be born open.
+- The public list is six paths: the health probes, LAN discovery, login and the
+  authenticated user's own profile.
 - The client hides navigation a user cannot use, and fails closed: an account
-  with no permission codes sees no module.
+  with no permissions sees no module.
 
 ### Data integrity
 
