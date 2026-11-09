@@ -103,3 +103,15 @@
   color: var(--state-danger-ink);
   border: 1px solid var(--state-danger-edge);
 }
+
+/* Sidebar groups. The fourteen buttons were one column; the headings are what make
+   it a menu rather than a list of everything the software can do. */
+.nav-group { display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-4); }
+.nav-group-title {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  margin: 0 0 var(--space-1);
+  font-weight: 600;
+}

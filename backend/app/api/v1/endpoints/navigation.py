@@ -18,7 +18,7 @@ from app.dependencies.auth import CurrentUserDependency
 from app.dependencies.database import DatabaseSession
 from app.dependencies.modules import enabled_modules
 from app.dependencies.permissions import permissions_for_user
-from app.modules.navigation import NAV_ITEMS
+from app.modules.navigation import BY_GROUP, NAV_ITEMS
 
 router = APIRouter(prefix="/navigation", tags=["Navigation"])
 
@@ -29,6 +29,8 @@ class NavItemRead(BaseModel):
     module: str
     permission: str | None
     group: str
+    group_label: str
+    group_order: int
 
 
 # No permission guard: this returns the caller's own menu, so it needs a login
@@ -55,6 +57,10 @@ async def get_navigation(
             continue
         if item.permission is not None and item.permission not in held:
             continue
+        # The group's label and order travel with each item rather than in a
+        # separate payload: the client already receives a list, and a list cannot
+        # carry metadata without changing the shape every caller depends on.
+        group = BY_GROUP[item.group]
         visible.append(
             NavItemRead(
                 view=item.view,
@@ -62,6 +68,8 @@ async def get_navigation(
                 module=item.module,
                 permission=item.permission,
                 group=item.group,
+                group_label=group.label,
+                group_order=group.order,
             )
         )
     return visible

@@ -44,6 +44,8 @@ export async function renderNavigation() {
     if (keep) shown += 1;
   });
 
+  groupNavigation(visible);
+
   const notice = document.querySelector("#access-notice");
   if (notice) {
     const none = shown === 0;
@@ -61,6 +63,60 @@ export async function renderNavigation() {
   }
 }
 
+/**
+ * Put the visible buttons under headings, in the order the server sent.
+ *
+ * The buttons are moved rather than rebuilt, because their click handlers were
+ * bound in app.js before this ran. A heading with nothing under it is removed
+ * entirely: a menu that shows "Pharmacy & Stock" to a hospital with no pharmacy is
+ * telling that user about a screen they will never open.
+ */
+function groupNavigation(visible) {
+  const nav = document.querySelector(".record-nav");
+  if (!nav) return;
+
+  const byView = new Map(visible.map((item) => [item.view, item]));
+  const groups = new Map();
+
+  visible.forEach((item) => {
+    if (!groups.has(item.group)) {
+      groups.set(item.group, {
+        label: item.group_label,
+        order: item.group_order,
+        views: [],
+      });
+    }
+    groups.get(item.group).views.push(item.view);
+  });
+
+  // Remove any headings from a previous run, so a re-render does not nest them.
+  nav.querySelectorAll(".nav-group").forEach((group) => group.remove());
+
+  const ordered = [...groups.entries()].sort((a, b) => a[1].order - b[1].order);
+
+  ordered.forEach(([code, group]) => {
+    const section = document.createElement("section");
+    section.className = "nav-group";
+    section.dataset.navGroup = code;
+
+    const heading = document.createElement("h2");
+    heading.className = "nav-group-title";
+    heading.textContent = group.label;
+    section.appendChild(heading);
+
+    let moved = 0;
+    group.views.forEach((view) => {
+      const button = nav.querySelector(`.nav-item[data-app-view="${view}"]`);
+      if (button && !button.classList.contains("hidden") && byView.has(view)) {
+        section.appendChild(button);
+        moved += 1;
+      }
+    });
+
+    if (moved > 0) nav.appendChild(section);
+  });
+}
+
 function authorisationHeader() {
   try {
     const token =
@@ -71,4 +127,4 @@ function authorisationHeader() {
   }
 }
 
-export { NAV_ITEMS };
+export { NAV_ITEMS, groupNavigation };
