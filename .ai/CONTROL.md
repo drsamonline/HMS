@@ -17,12 +17,12 @@ latest milestone in the same paragraph.
 | Date | 2026-11-09 |
 | Branch | `batch-01-accountability` (stacked on `batch-00-quick-wins`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `69c0f3a` (B10) + the control commit that carries this file |
-| Tests | **626 passed, 2 skipped** (569 baseline + 57 new) |
-| Wave complete | Wave 0 — quick wins (B01–B06); wave 1 four-fifths done |
-| Next batch | **B11 — audit review and export** |
+| Head commit | `66d0f3c` (B11) + the control commit that carries this file |
+| Tests | **640 passed, 2 skipped** (569 baseline + 71 new) |
+| Wave complete | Wave 0 and wave 1 (B01–B11); wave 2 next |
+| Next batch | **B12 — permission catalogue** |
 | Blocking decision | none |
-| Open question | none. Ritual complete after B09 |
+| Open question | none. Ritual complete after B11 (wave 1 closed) |
 
 ---
 
@@ -247,6 +247,19 @@ test honest rather than decorative. Someone who can drop a trigger can also drop
 the table, so the chain - not the trigger - is the control that survives a
 determined insider.
 
+**D-018 — The export records itself, in its own commit.**
+The export handler commits the audit row before returning the file. It cannot
+join the caller's transaction because there is no business change to join - the
+response is the only side effect - and a failed export should still be visible as
+an attempt. Consequence: an export that fails after recording leaves a row saying
+it happened. Acceptable, because the row records the act of exporting, not the
+delivery.
+
+**D-019 — The review list omits before and after; the detail and the export carry them.**
+A patient update row can hold a changed clinical field. Putting that in a list of
+200 rows would put patient data on a screen whose purpose is to show who did what,
+not what they saw. The detail view is a deliberate second click.
+
 ---
 
 ## 7. Batch log
@@ -263,9 +276,10 @@ determined insider.
 | B08 | 2026-11-09 | `055c010` | 13 tests | 612 | Write path live for patients. ContextVar for request facts; token now carries username and roles. One defect found: `getattr(user, "roles", [])` would have returned an empty list forever, because User has no roles relationship |
 | B09 | 2026-11-09 | `0cf0ed6` | 5 tests | 617 | Money, stock, admission, discharge and prescription wired; 34 services frozen as pending. Two defects: `record()` had no default for `actor`, and a scripted insertion broke an if/else |
 | B10 | 2026-11-09 | `69c0f3a` | 9 tests | 626 | Append-only triggers, SHA-256 chain, verifier, nightly pass. One defect: hashing `isoformat()` never matched on read-back because SQLite returns naive datetimes - every row would have read as edited |
+| B11 | 2026-11-09 | `66d0f3c` | 14 tests | 640 | Review filters, detail, CSV and PDF export, role gate, self-recording export. Two defects: `Depends()` used as a bare default instead of `Annotated`, and a client contract test still constructing the pre-B07 schema |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 57 new tests. Final: **626 passed, 2 skipped**.
+test baseline plus 71 new tests. Final: **640 passed, 2 skipped**.
 
 ### Ritual after B07–B09 (2026-11-09)
 
@@ -278,6 +292,21 @@ test baseline plus 57 new tests. Final: **626 passed, 2 skipped**.
 | 5. Queue re-ranked | Unchanged. B10 next: an audit trail anyone with database access can delete is not evidence, and B11 (review UI) is worthless until B10 makes the rows trustworthy |
 | 6. Split | B09 was two batches wearing one name: the wiring, and the coverage ratchet. They shipped together because the test is what makes the partial wiring honest |
 | 7. Logged | D-012, D-013, D-014; batch log row added |
+
+### Ritual after B11 (end of wave 1, 2026-11-09)
+
+| Step | Result |
+|------|--------|
+| 1. Suite | 640 passed, 2 skipped; reconciles to 569 + 71 |
+| 2. Gates by name | B09, B10, B11 re-run together: 28 passed |
+| 3. Prune | No TODO, FIXME or placeholder in the wave 1 modules; no unused imports in the three new or rewritten files |
+| 4. Docs reconciled | `SECURITY.md` carries audit trail and audit integrity sections; the read schema changed, so the client contract test was updated rather than the schema softened |
+| 5. Queue re-ranked | Unchanged. B12 next. Wave 2 is the last structural wave and it unblocks B30's role homes |
+| 6. Split | None. B11 was one batch |
+| 7. Logged | D-018, D-019; batch log row added |
+
+**Wave 1 closed.** The trail records, cannot be deleted or edited, can be verified,
+can be read by an auditor and can be exported - and the export records itself.
 
 ---
 

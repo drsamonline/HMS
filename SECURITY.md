@@ -91,6 +91,9 @@ target; this file is the present.
 - Each row carries a SHA-256 over its evidence and the previous row's hash. A
   verifier walks the chain and reports the first row that does not reconcile; the
   maintenance scheduler runs it nightly and logs a break at error level.
+- The trail can be reviewed by an administrator or auditor role, filtered by
+  actor, entity, activity, outcome and date, and exported as CSV or PDF. The
+  export writes its own audit row.
 - This is **tamper-evident, not tamper-proof**. Someone who can edit the database
   file and recompute every subsequent hash defeats the chain. The head hash is
   therefore worth recording outside the database, which is not built yet.
