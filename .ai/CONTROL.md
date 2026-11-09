@@ -17,10 +17,10 @@ latest milestone in the same paragraph.
 | Date | 2026-11-09 |
 | Branch | `batch-01-accountability` (stacked on `batch-00-quick-wins`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `0cf0ed6` (B09) + the control commit that carries this file |
-| Tests | **617 passed, 2 skipped** (569 baseline + 48 new) |
-| Wave complete | Wave 0 — quick wins (B01–B06); wave 1 three-fifths done |
-| Next batch | **B10 — append-only guard and hash chain** |
+| Head commit | `69c0f3a` (B10) + the control commit that carries this file |
+| Tests | **626 passed, 2 skipped** (569 baseline + 57 new) |
+| Wave complete | Wave 0 — quick wins (B01–B06); wave 1 four-fifths done |
+| Next batch | **B11 — audit review and export** |
 | Blocking decision | none |
 | Open question | none. Ritual complete after B09 |
 
@@ -226,6 +226,27 @@ buried the effect; an auditor sampling an invoice wants its status history, and 
 auditor sampling a receipt wants the payment. Cheap, and both questions answer
 themselves.
 
+**D-015 — The chain excludes `id` from the hash.**
+The hash has to be computable before the insert assigns the id, so `id` is not
+covered. The consequence: a row renumbered in place would not be detected by its
+own hash. It would be detected at the next row, whose `prev_hash` points at the
+old value. Accepted, because the alternative is a second UPDATE after insert,
+which the append-only trigger forbids.
+
+**D-016 — The migration duplicates the canonicaliser rather than importing it.**
+A migration must keep working after the application code moves on. Importing
+`app.services.audit._jsonable` would mean a future change to that function
+silently invalidates every historical hash. The duplicate is deliberate and
+documented; if the two drift, the verifier reports every backfilled row as
+edited, which is loud and correct.
+
+**D-017 — Triggers block UPDATE as well as DELETE.**
+The plan specified DELETE. Blocking UPDATE too means the tamper tests must drop
+the trigger before editing, which is exactly the realistic bypass and makes the
+test honest rather than decorative. Someone who can drop a trigger can also drop
+the table, so the chain - not the trigger - is the control that survives a
+determined insider.
+
 ---
 
 ## 7. Batch log
@@ -241,9 +262,10 @@ themselves.
 | B07 | 2026-11-09 | `72f23d5` | 9 tests | 599 | Evidence columns, nullable actor, three indexes. Two defects found by the gate: a missing server default on `outcome`, and a test fixture that silently measured an empty database |
 | B08 | 2026-11-09 | `055c010` | 13 tests | 612 | Write path live for patients. ContextVar for request facts; token now carries username and roles. One defect found: `getattr(user, "roles", [])` would have returned an empty list forever, because User has no roles relationship |
 | B09 | 2026-11-09 | `0cf0ed6` | 5 tests | 617 | Money, stock, admission, discharge and prescription wired; 34 services frozen as pending. Two defects: `record()` had no default for `actor`, and a scripted insertion broke an if/else |
+| B10 | 2026-11-09 | `69c0f3a` | 9 tests | 626 | Append-only triggers, SHA-256 chain, verifier, nightly pass. One defect: hashing `isoformat()` never matched on read-back because SQLite returns naive datetimes - every row would have read as edited |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 48 new tests. Final: **617 passed, 2 skipped**.
+test baseline plus 57 new tests. Final: **626 passed, 2 skipped**.
 
 ### Ritual after B07–B09 (2026-11-09)
 

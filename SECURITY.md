@@ -84,6 +84,17 @@ target; this file is the present.
 - **Coverage is partial.** 34 services that write are not wired yet; the list is
   frozen in `backend/tests/test_batch_b09_audit_coverage.py` and can only shrink.
 
+### Audit integrity
+
+- Rows cannot be deleted or modified: database triggers refuse both, for every
+  client including raw SQL.
+- Each row carries a SHA-256 over its evidence and the previous row's hash. A
+  verifier walks the chain and reports the first row that does not reconcile; the
+  maintenance scheduler runs it nightly and logs a break at error level.
+- This is **tamper-evident, not tamper-proof**. Someone who can edit the database
+  file and recompute every subsequent hash defeats the chain. The head hash is
+  therefore worth recording outside the database, which is not built yet.
+
 ### Logging
 
 - Request logs record path, status code, request id and duration. They do not
@@ -107,7 +118,6 @@ this section is deleted as each one lands.
 |-----|--------------|---------|
 | Server-side permission enforcement | Every authenticated user can call every endpoint, including administration and backup restore | Build plan B12-B15 |
 | Audit trail coverage | Eight services record; 34 that write do not yet | B09 (ratchet in place) |
-| Audit immutability | Rows can still be deleted by anyone with database access | B10 |
 | Encryption at rest | The database file and its backups are plaintext | Not scheduled |
 | Encryption in transit | HTTP on the LAN; no TLS listener and no reverse-proxy guidance | Not scheduled |
 | Server-side password policy | Only the client enforces a minimum length | B24 |
