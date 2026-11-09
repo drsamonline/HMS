@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import asyncio
 
-from app.dependencies.permissions import PUBLIC_PATHS, route_permission
+
 
 
 RESTRICTED_ROLE = "store keeper"
@@ -87,29 +87,8 @@ def _restricted_headers() -> dict:
 
 
 # ------------------------------------------------------- the guard is present
-def test_every_route_outside_the_public_list_declares_a_guard() -> None:
-    """The enumeration B15 formalises; cheap enough to assert here too."""
-
-    from app.api.v1.api import api_router
-
-    unguarded = []
-    for route in api_router.routes:
-        path = getattr(route, "path", "")
-        full = f"/api/v1{path}" if not path.startswith("/api") else path
-        if full in PUBLIC_PATHS:
-            continue
-        if route_permission(route) is None:
-            unguarded.append((sorted(getattr(route, "methods", []) or []), full))
-
-    assert not unguarded, f"routes with no permission guard: {unguarded}"
-
-
-def test_the_public_list_is_small_and_named() -> None:
-    """A public route is a decision, so the list is short and explicit."""
-
-    assert len(PUBLIC_PATHS) <= 6
-    for path in PUBLIC_PATHS:
-        assert path.startswith("/api/v1/"), path
+# The full enumeration lives in tests/test_batch_b15_route_enumeration.py, which
+# owns it. B14 keeps only the behavioural half: a real actor, real routes.
 
 
 # --------------------------------------------------- the guard is the right one
