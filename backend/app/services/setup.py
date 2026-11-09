@@ -180,13 +180,111 @@ async def is_complete(db: AsyncSession) -> bool:
     return (await _state(db)).is_complete
 
 
+
+
+# --------------------------------------------------------------- review (B25)
+async def review(db: AsyncSession) -> dict:
+    """Everything the operator has chosen, before they commit to it.
+
+    A wizard that applies as it goes and only shows a summary at the end is a
+    wizard nobody checks. This is the same information the steps collected, in one
+    place, with the steps that are still missing marked.
+    """
+
+    from app.core.settings_catalogue import BY_KEY
+    from app.services import module_state, settings_store
+
+    row = await _state(db)
+    done = _done(row)
+    effective = await settings_store.effective_all(db)
+
+    #: The keys each step is responsible for, for display only.
+    step_settings = {
+        "identity": ("HOSPITAL_NAME", "HOSPITAL_CODE", "TIME_ZONE"),
+        "data": ("LIVE_DATA_YEARS", "ONLINE_ARCHIVE_YEARS", "COLD_ARCHIVE_YEARS"),
+    }
+
+    steps = []
+    for step in STEPS:
+        chosen = {
+            key: effective[key].value
+            for key in step_settings.get(step, ())
+            if key in BY_KEY
+        }
+        steps.append(
+            {
+                "step": step,
+                "done": step in done,
+                "values": chosen,
+            }
+        )
+
+    return {
+        "setup_required": not row.is_complete,
+        "steps": steps,
+        "modules": sorted(await module_state.enabled_codes(db)),
+        "missing": [step for step in ("identity", "people") if step not in done],
+    }
+
+
+#: Markers around the block the wizard owns inside the server's environment file.
+ENV_BLOCK_START = "# >>> HHMS managed by the setup wizard >>>"
+ENV_BLOCK_END = "# <<< HHMS managed by the setup wizard <<<"
+
+
+def materialise_network(root: str) -> list[str]:
+    """Write the staged network values into the environment file.
+
+    Only the block between the markers is touched, so an operator's own additions
+    survive. Returns the keys written, so the caller can say what will change on
+    the next start rather than leaving the operator to guess.
+    """
+
+    import json
+    from pathlib import Path
+
+    pending = Path(root) / "data" / "pending-network.json"
+    if not pending.is_file():
+        return []
+
+    staged = json.loads(pending.read_text(encoding="utf-8"))
+    if not staged:
+        return []
+
+    env_file = Path(root) / ".env"
+    existing = env_file.read_text(encoding="utf-8") if env_file.is_file() else ""
+
+    if ENV_BLOCK_START in existing and ENV_BLOCK_END in existing:
+        head = existing[: existing.index(ENV_BLOCK_START)]
+        tail = existing[existing.index(ENV_BLOCK_END) + len(ENV_BLOCK_END) :]
+        existing = head.rstrip("\n") + "\n" + tail.lstrip("\n")
+
+    lines = [ENV_BLOCK_START]
+    for key, value in sorted(staged.items()):
+        if isinstance(value, bool):
+            lines.append(f"{key}={'true' if value else 'false'}")
+        else:
+            lines.append(f"{key}={value}")
+    lines.append(ENV_BLOCK_END)
+
+    env_file.parent.mkdir(parents=True, exist_ok=True)
+    env_file.write_text(
+        existing.rstrip("\n") + "\n\n" + "\n".join(lines) + "\n", encoding="utf-8"
+    )
+    return sorted(staged)
+
+
 __all__ = [
     "CODE_LIFETIME",
+    "ENV_BLOCK_END",
+    "ENV_BLOCK_START",
     "MAX_CODE_ATTEMPTS",
     "STEPS",
     "complete",
     "is_complete",
     "mark_step",
+    "materialise_network",
+    "review",
     "status",
     "unlock",
 ]

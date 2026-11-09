@@ -160,6 +160,36 @@ async def apply_step(
     return {"step": step, "applied": True, **(await setup.status(db))}
 
 
+@router.get("/review")
+async def review(db: DatabaseSession, _: SetupAuthorised) -> dict:
+    """Every choice so far, with the mandatory steps still missing named."""
+
+    return await setup.review(db)
+
+
+@router.get("/export")
+async def export_answers(db: DatabaseSession, _: SetupAuthorised) -> dict:
+    """The wizard's answers as a provisioning file.
+
+    The same shape the configuration API exports, plus the modules - which is
+    everything a second installation needs to be set up identically without
+    clicking through ten steps again.
+    """
+
+    from app.services import module_state, settings_store
+
+    effective = await settings_store.effective_all(db)
+    return {
+        "schema": 1,
+        "settings": {
+            key: result.value
+            for key, result in effective.items()
+            if result.source == "database"
+        },
+        "modules": sorted(await module_state.enabled_codes(db)),
+    }
+
+
 @router.post("/finish")
 async def finish(db: DatabaseSession, _: SetupAuthorised) -> dict:
     """Close setup. Refuses while a mandatory step is missing."""
@@ -171,7 +201,23 @@ async def finish(db: DatabaseSession, _: SetupAuthorised) -> dict:
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
         ) from exc
     await db.commit()
-    return {"setup_required": False}
+
+    # The network values were staged, not applied (D-032). This is where they
+    # reach the environment file - the only place the server reads them from.
+    from app.config.runtime_paths import application_root
+
+    written = setup.materialise_network(str(application_root()))
+
+    return {
+        "setup_required": False,
+        "restart_required": bool(written),
+        "network_keys_written": written,
+        "note": (
+            "Restart the server so the network settings take effect."
+            if written
+            else "Setup is complete."
+        ),
+    }
 
 
 __all__ = ["STEP_SETTINGS", "router"]
