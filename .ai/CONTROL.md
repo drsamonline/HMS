@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-12-people` (stacked on `batch-11-wizard-steps`) |
+| Branch | `batch-13-review` (stacked on `batch-12-people`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **781 passed, 2 skipped, 783 collected** (569 baseline + 212 new) |
-| Wave complete | **Waves 0–3 complete (B01–B21)**; wave 4 three of five |
-| Next batch | **B25 — review, apply, export** |
+| Tests | **790 passed, 2 skipped, 792 collected** (569 baseline + 221 new) |
+| Wave complete | **Waves 0–3 complete (B01–B21)**; wave 4 four of five |
+| Next batch | **B26 — nerd mode, closes wave 4** |
 | Blocking decision | none |
 | Open question | none. Ritual due after B26 (third batch since B23) |
 
@@ -376,9 +376,10 @@ numbers for a year. A wizard is a thing people click twice.
 | B22 | 2026-11-09 | `02886b1` | 10 tests | 763 | Setup state, six-digit code issued to the log and stored hashed, lockout after five failures, `scope=setup` token that is neither a login nor accepted as one. Four self-inflicted defects caught by the gate |
 | B23 | 2026-11-09 | `15027e9` | 9 tests | 772 | Wards, departments, numbering and money steps, all idempotent. Found that Bed's model and migration disagreed about timestamps |
 | B24 | 2026-11-09 | see `git log` | 9 tests | 781 | The handover: the first administrator who can log in and open screens. Network values staged for the restart rather than stored |
+| B25 | 2026-11-09 | see `git log` | 9 tests | 790 | Review of all ten steps before commit, export of the answers, and finish writing the staged network values into a marked block in `.env` |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 212 new tests. Final: **781 passed, 2 skipped, 783 collected**.
+test baseline plus 221 new tests. Final: **790 passed, 2 skipped, 792 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -694,6 +695,11 @@ migrated one accepts - a difference that appears only under test, which is the
 worst place for one to hide. The model now declares the same default and the
 handler sets the times explicitly. Worth checking the other models the same way
 before wave 6 adds more writes.
+
+**D-041 — Finish writes only a marked block in `.env`.**
+The staged network values have to reach the environment file, but an operator may
+have their own lines there. A block between two markers can be replaced on every
+run; appending cannot, and neither can editing the file wholesale.
 
 ---
 
