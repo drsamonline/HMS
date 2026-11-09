@@ -22,6 +22,7 @@
 14. [Recommended Reading Order](#recommended-reading-order)
 15. [Document Status Definitions](#document-status-definitions)
 16. [Development Workflow](#development-workflow)
+17. [Legal](#legal)
 
 ---
 
@@ -298,4 +299,19 @@ Specification → Review → Implementation → Code Review → Testing → Git 
 
 ---
 
-*125 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
+## Legal
+
+| Document | Purpose |
+|----------|---------|
+| [PRIVACY.md](../PRIVACY.md) | What HHMS stores, where it is stored, and the fact that nothing leaves the installation |
+| [DISCLAIMER.md](../DISCLAIMER.md) | What the software does not claim: it records, it does not diagnose |
+| [legal/RETENTION-AND-ERASURE.md](legal/RETENTION-AND-ERASURE.md) | Archive tiers mapped to the DPDP retention and erasure duties, and the erasure gap |
+| [legal/DPDP-NOTICE-TEMPLATE.md](legal/DPDP-NOTICE-TEMPLATE.md) | The patient notice a hospital issues, with the nine Rule 3 elements |
+| [legal/LEGAL-INDEX.md](legal/LEGAL-INDEX.md) | Evidence for every factual claim, and the questions counsel must settle |
+| [SECURITY.md](../SECURITY.md) | Vulnerability reporting |
+
+These are drafts prepared for review, not legal advice. They describe the software as shipped and change with it.
+
+---
+
+*130 documents catalogued · See also: [README.md](../README.md) · [CHANGELOG.md](../CHANGELOG.md) · [ROADMAP.md](../ROADMAP.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [SECURITY.md](../SECURITY.md)*
