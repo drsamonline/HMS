@@ -1,0 +1,85 @@
+/* HHMS design tokens.
+ *
+ * One place for every colour, space and type size the interface uses. Before this
+ * file the stylesheet carried its own values: eleven shades of blue-grey, six
+ * surface tints and four shadows, none of them named, so a change to "the border
+ * colour" meant finding fourteen hex codes and hoping they were all the border.
+ *
+ * The names are the interface's vocabulary, not the palette's: `--ink`, not
+ * `--grey-800`. A token called grey-800 tells you what it looks like; a token
+ * called ink tells you what it is for, and only the second survives a redesign.
+ *
+ * Contrast: every foreground token paired with a surface token below meets WCAG AA
+ * for normal text (4.5:1). That is asserted by a test, not by eye.
+ */
+
+:root {
+  /* ---------------------------------------------------------------- surfaces */
+  --surface-page: #f3f6f9;      /* the app background */
+  --surface-panel: #ffffff;     /* cards, panels, tables */
+  --surface-raised: #fafcfd;    /* a panel inside a panel */
+  --surface-sunken: #edf4f8;    /* wells, inset areas */
+  --surface-brand: #174d70;     /* the top bar */
+  --surface-brand-ink: #1f5f8b; /* brand hover */
+
+  /* -------------------------------------------------------------------- ink */
+  --ink: #1f2937;               /* body text */
+  --ink-strong: #17384d;        /* headings */
+  --ink-muted: #586879;         /* secondary text */
+  --ink-faint: #667085;         /* labels, hints */
+  --ink-on-brand: #ffffff;      /* text on the top bar */
+  --border-on-brand: rgba(255, 255, 255, 0.3); /* pill edge on the top bar */
+  --ink-link: #2563eb;
+
+  /* ----------------------------------------------------------------- borders */
+  --border: #d7dee7;
+  --border-strong: #bfcbd6;
+  --border-subtle: #dfe3e8;
+  --border-focus: #2b6b91;
+
+  /* ---------------------------------------------------------------- semantic */
+  --state-success-surface: #eef8f1;
+  --state-success-edge: #b9dcc3;
+  --state-warning-surface: #fff8e6;
+  --state-warning-edge: #e6cf9a;
+  --state-warning-ink: #8a6d1b;
+  --state-danger-surface: #fff1f1;
+  --state-danger-edge: #e7b9b9;
+  --state-danger-ink: #a4262c;
+  --state-danger-strong: #d9b954;
+
+  /* ------------------------------------------------------------------ spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* --------------------------------------------------------------------- type */
+  --font-sans: "Segoe UI", Arial, sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, monospace;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 18px;
+  --text-xl: 24px;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+
+  /* -------------------------------------------------------------------- shape */
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-pill: 999px;
+
+  --shadow-panel: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.18);
+
+  /* ------------------------------------------------------------------ layering */
+  --layer-base: 0;
+  --layer-sticky: 10;
+  --layer-overlay: 100;
+  --layer-toast: 200;
+}
