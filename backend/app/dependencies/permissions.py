@@ -177,7 +177,7 @@ async def default_deny(request: Request) -> None:
         return
 
     path = request.url.path
-    if path in PUBLIC_PATHS:
+    if path in PUBLIC_PATHS or path in AUTHENTICATED_ONLY_PATHS:
         return
 
     if mode == "warn":
@@ -195,6 +195,16 @@ async def default_deny(request: Request) -> None:
             "Add require(<code>) to the route."
         ),
     )
+
+
+#: Routes that require a login but no particular permission: they return
+#: something about the caller themselves. Kept separate from PUBLIC_PATHS so that
+#: "needs a token" and "needs no token" never get confused in review.
+AUTHENTICATED_ONLY_PATHS = frozenset(
+    {
+        "/api/v1/navigation",
+    }
+)
 
 
 #: Routes that must work before a user is authenticated, or that carry no
@@ -220,6 +230,7 @@ DefaultDeny = Annotated[None, Depends(default_deny)]
 
 
 __all__ = [
+    "AUTHENTICATED_ONLY_PATHS",
     "DefaultDeny",
     "PERMISSION_MARKER",
     "PUBLIC_PATHS",

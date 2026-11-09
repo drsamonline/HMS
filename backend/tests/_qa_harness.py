@@ -204,7 +204,13 @@ def _enable_every_module() -> None:
     factory = get_session_factory()
 
     async def _run() -> None:
+        from sqlalchemy import delete
+
         async with factory() as db:
+            # Idempotent: a file-backed harness can be entered more than once
+            # against the same database, and a second insert of the same module
+            # would hit the unique constraint rather than being a no-op.
+            await db.execute(delete(ModuleState))
             for module in MODULES:
                 db.add(ModuleState(module_code=module.code, is_enabled=True))
             await db.commit()

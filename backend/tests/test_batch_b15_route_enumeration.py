@@ -15,7 +15,11 @@ from collections import defaultdict
 
 from app.api.v1.api import api_router
 from app.core.permissions import CODES
-from app.dependencies.permissions import PUBLIC_PATHS, route_permission
+from app.dependencies.permissions import (
+    AUTHENTICATED_ONLY_PATHS,
+    PUBLIC_PATHS,
+    route_permission,
+)
 
 
 #: Methods FastAPI adds to every route that are not real endpoints.
@@ -43,7 +47,9 @@ def test_every_route_is_guarded_or_named_public() -> None:
 
     unguarded: list[str] = []
     for full, methods, route in _routes():
-        if full in PUBLIC_PATHS:
+        # Two deliberate exemptions: routes that work before a login, and routes
+        # that need a login but no particular permission (a user's own menu).
+        if full in PUBLIC_PATHS or full in AUTHENTICATED_ONLY_PATHS:
             continue
         if route_permission(route) is None:
             for method in sorted(methods):
@@ -71,12 +77,22 @@ def test_every_declared_code_exists_in_the_catalogue() -> None:
     assert not unknown, f"routes guarded by codes the catalogue does not declare: {dict(unknown)}"
 
 
-def test_the_public_list_contains_nothing_that_is_not_mounted() -> None:
-    """A stale entry in PUBLIC_PATHS is a hole nobody would notice."""
+def test_the_exemption_lists_contain_nothing_that_is_not_mounted() -> None:
+    """A stale entry in either list is a hole nobody would notice."""
 
     mounted = {full for full, _methods, _route in _routes()}
-    missing = PUBLIC_PATHS - mounted
-    assert not missing, f"PUBLIC_PATHS names routes that do not exist: {sorted(missing)}"
+    for name, paths in (
+        ("PUBLIC_PATHS", PUBLIC_PATHS),
+        ("AUTHENTICATED_ONLY_PATHS", AUTHENTICATED_ONLY_PATHS),
+    ):
+        missing = paths - mounted
+        assert not missing, f"{name} names routes that do not exist: {sorted(missing)}"
+
+
+def test_the_authenticated_only_list_stays_small() -> None:
+    """Routes that need a login but no permission are rare and deliberate."""
+
+    assert len(AUTHENTICATED_ONLY_PATHS) <= 3, sorted(AUTHENTICATED_ONLY_PATHS)
 
 
 def test_no_route_is_public_and_guarded_at_once() -> None:
@@ -84,7 +100,8 @@ def test_no_route_is_public_and_guarded_at_once() -> None:
 
     contradictions = []
     for full, _methods, route in _routes():
-        if full in PUBLIC_PATHS and route_permission(route) is not None:
+        exempt = full in PUBLIC_PATHS or full in AUTHENTICATED_ONLY_PATHS
+        if exempt and route_permission(route) is not None:
             contradictions.append(full)
     assert not contradictions, (
         f"{sorted(contradictions)} are listed public but declare a guard. Pick one."
@@ -106,7 +123,7 @@ def test_coverage_is_reported_by_prefix() -> None:
         prefix = "/".join(full.split("/")[:4])
         if route_permission(route) is not None:
             guarded[prefix] += 1
-        elif full not in PUBLIC_PATHS:
+        elif full not in PUBLIC_PATHS and full not in AUTHENTICATED_ONLY_PATHS:
             unguarded[prefix] += 1
 
     assert sum(guarded.values()) >= 200, (

@@ -35,7 +35,9 @@ MIGRATION = (
 
 #: Endpoint modules that carry no hospital data and therefore need no permission:
 #: the health probe, the login route, and the module that serves the GUI itself.
-NO_PERMISSION_NEEDED = {"__init__", "auth", "health"}
+#: ``navigation`` returns the caller's own menu, so it needs a login and no
+#: particular permission - see AUTHENTICATED_ONLY_PATHS.
+NO_PERMISSION_NEEDED = {"__init__", "auth", "health", "navigation"}
 
 
 def _load_migration():
