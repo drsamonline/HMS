@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-07-settings-catalogue` (stacked on `batch-06-navigation`) |
+| Branch | `batch-08-config-api` (stacked on `batch-07-settings-catalogue`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `79e192b` (B19) + the control commit that carries this file |
-| Tests | **729 passed, 2 skipped, 731 collected** (569 baseline + 160 new) |
-| Wave complete | Waves 0, 1, 2 (B01–B15a); wave 3 four of six |
-| Next batch | **B20 — settings API and CLI** |
+| Head commit | `771ebe2` (B20) + the control commit that carries this file |
+| Tests | **744 passed, 2 skipped, 746 collected** (569 baseline + 175 new) |
+| Wave complete | Waves 0, 1, 2 (B01–B15a); wave 3 five of six |
+| Next batch | **B21 — reflection test, closing wave 3** |
 | Blocking decision | none |
-| Open question | none. **Ritual due after B20** (third batch since B17) |
+| Open question | none. Ritual complete after B20 |
 
 ---
 
@@ -325,6 +325,17 @@ startup would mean a restart after every switch, and an administrator who toggle
 pharmacy off and sees it still working until Tuesday. The cost is one cached query
 per request, memoised on `request.state` like the permission set.
 
+**D-034 — A batch write is all-or-nothing.**
+Every value is validated before any is stored, so a wizard step that sets six
+things lands or fails together. The alternative - partial application with an error
+list - leaves a hospital configured halfway through a step, and nobody can tell
+which half.
+
+**D-035 — Export writes overrides, never all values.**
+A provisioning file containing all forty-four values looks like a record of
+decisions and is a record of whatever the defaults happened to be that day. It
+would pin them forever, silently.
+
 ---
 
 ## 7. Batch log
@@ -351,9 +362,10 @@ per request, memoised on `request.state` like the permission set.
 | B17 | 2026-11-09 | `60ffc8e` | 7 tests | 701 | Routers grouped by module; a disabled module answers 404 and keeps its records. Three suite findings: the harness needed module rows, an unmigrated database now degrades to core, and two tests asserted a source literal instead of a mount |
 | B18 | 2026-11-09 | `f7d6412` | 9 tests | 711 | One navigation manifest; the server filters the menu by enabled modules and held permissions; the static fallback is tested against it. Added `AUTHENTICATED_ONLY_PATHS` as a third route category |
 | B19 | 2026-11-09 | `79e192b` | 18 tests | 729 | 44 settings described once with type, group, default and restart flag; precedence db > env > default returned with the value; six bootstrap keys refused by the store. The B09 ratchet caught the new service and it was wired, not exempted |
+| B20 | 2026-11-09 | `771ebe2` | 15 tests | 744 | Configuration API with all-or-nothing batch writes, export of overrides only, secrets never echoed, and a matching CLI |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 160 new tests. Final: **729 passed, 2 skipped, 731 collected**.
+test baseline plus 175 new tests. Final: **744 passed, 2 skipped, 746 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -599,6 +611,24 @@ asserted exactly, because it should not grow quietly.
 Database, environment, or catalogue default. The settings screen can then say where
 a number came from, which is the difference between a page an administrator trusts
 and one they distrust after the first unexplained value.
+
+### Ritual after B20 (2026-11-09)
+
+| Step | Result |
+|------|--------|
+| 1. Suite | 744 passed, 2 skipped, **746 collected**; five chunks sum exactly to the collected count |
+| 2. Gates by name | B18, B19, B20 re-run green |
+| 3. Prune | No dead code; the CLI and API share the service rather than duplicating validation |
+| 4. Docs reconciled | Nothing to change yet; the operations guide in wave 9 will document `config` |
+| 5. Queue re-ranked | Unchanged. B21 closes wave 3, then the wizard |
+| 6. Split | None |
+| 7. Logged | D-034, D-035; batch log rows added |
+
+**A harness quirk worth knowing.** Two tests in one file share an in-memory
+database when both call `make_client()`: the second sees the first's writes. It
+caught a test of mine that assumed isolation, and the fix was to use a key no
+neighbour touches rather than to weaken the assertion. Worth remembering before
+writing two tests that depend on the same setting.
 
 ---
 
