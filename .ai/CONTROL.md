@@ -15,14 +15,14 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-04-modules` (stacked on `batch-03-perf`) |
+| Branch | `batch-05-mounting` (stacked on `batch-04-modules`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `fdd0eae` (B16) + the control commit that carries this file |
-| Tests | **694 passed, 2 skipped** (569 baseline + 125 new) |
-| Wave complete | Waves 0, 1, 2 (B01–B15a); wave 3 one of six |
-| Next batch | **B17 — mount routes by module** |
+| Head commit | `60ffc8e` (B17) + the control commit that carries this file |
+| Tests | **701 passed, 2 skipped, 703 collected** (569 baseline + 132 new) |
+| Wave complete | Waves 0, 1, 2 (B01–B15a); wave 3 two of six |
+| Next batch | **B18 — navigation manifest** |
 | Blocking decision | none |
-| Open question | none. **Ritual due after B17** (third batch since B14) |
+| Open question | none. Ritual complete after B17 |
 
 ---
 
@@ -314,6 +314,17 @@ permissions and became a 401 the moment the guard resolved them from the
 database. Every harness helper that creates a user now grants the administrator
 role, because an end-to-end suite needs an actor the guard admits.
 
+**D-028 — A disabled module answers 404, not 403.**
+The resource does not exist for a hospital that never bought the module. 403 would
+tell the caller the route exists and they merely lack a grant, which is
+information a hospital has no reason to disclose.
+
+**D-029 — Routers stay mounted; the gate refuses per request.**
+Module state is data and changes while the server runs. Omitting routers at
+startup would mean a restart after every switch, and an administrator who toggles
+pharmacy off and sees it still working until Tuesday. The cost is one cached query
+per request, memoised on `request.state` like the permission set.
+
 ---
 
 ## 7. Batch log
@@ -336,14 +347,17 @@ role, because an end-to-end suite needs an actor the guard admits.
 | B14 | 2026-11-09 | `2d8fbe6` | 7 tests | 675 | 238 of 244 routes guarded, enforcement flipped to `enforce`, B11's role gate removed, harness given a real actor. Two self-inflicted defects: a broad regex damaged 31 test files, and the first pass emitted bare functions instead of `Depends(...)` |
 | B15 | 2026-11-09 | `66e085d` | 6 tests | 679 | Enumeration gate that names the unguarded route; proven to fail by planting one. Supersedes the lighter copy inside B14's gate |
 | B15a | 2026-11-09 | `8205f1d` | 4 tests | 683 | Permission set memoised on `request.state`; suite 470 s to 337 s, twelve files 102 s to 75 s. First attempt with a ContextVar failed its own test |
-| B16 | 2026-11-09 | `fdd0eae` | 11 tests | 694 | Eight modules with dependencies and permission sets; `ModuleState` derived from existing records by migration. The B09 ratchet caught the new service for not auditing, and it was wired rather than exempted |
+| B16 | 2026-11-09 | `fdd0eae` | 11 tests | 696 | Eight modules with dependencies and permission sets; `ModuleState` derived from existing records by migration. The B09 ratchet caught the new service for not auditing, and it was wired rather than exempted |
+| B17 | 2026-11-09 | `60ffc8e` | 7 tests | 701 | Routers grouped by module; a disabled module answers 404 and keeps its records. Three suite findings: the harness needed module rows, an unmigrated database now degrades to core, and two tests asserted a source literal instead of a mount |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 125 new tests. Final: **694 passed, 2 skipped**.
+test baseline plus 132 new tests. Final: **701 passed, 2 skipped**.
 
-From B14 the suite takes longer than one 300-second call, so it is run in
-file-list chunks and the counts summed. Every file runs exactly once. After B15a
-the chunks are 12, 23, 35 and 61 files, at roughly 75 s, 204 s, 24 s and 34 s.
+From B14 the suite takes longer than one 300-second call, so it is run in four
+file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
+sum against `pytest --collect-only -q` before recording it** - at B17 the first
+attempt silently skipped the 35-file chunk and reported a number 87 short. The
+collect-only count is the check that the chunks actually cover everything.
 
 ### Ritual after B07–B09 (2026-11-09)
 
@@ -543,6 +557,23 @@ document says plainly that it is describing intent rather than behaviour:
 2. **Screenshots are generated, not captured by hand.** A screenshot taken once is
    wrong after the next interface batch. The tutorial renders its images from a
    seeded database at build time, so it cannot silently drift.
+
+### Ritual after B17 (2026-11-09)
+
+| Step | Result |
+|------|--------|
+| 1. Suite | 701 passed, 2 skipped, **703 collected**; the four chunks sum exactly to the collected count |
+| 2. Gates by name | B15a, B16, B17 re-run: 22 passed |
+| 3. Prune | No TODO or dead code in the new modules |
+| 4. Docs reconciled | Nothing to change: `SECURITY.md` describes access control, and module gating is a product feature rather than a security claim |
+| 5. Queue re-ranked | Unchanged. B18 next: the navigation manifest is what makes module state visible to the user |
+| 6. Split | None |
+| 7. Logged | D-028, D-029; batch log rows added |
+
+**A counting error worth recording.** At B16 the four chunks were summed without
+reconciling against the collected total, and 87 tests in one chunk were never run.
+The number recorded was plausible and wrong. The ritual now requires the sum to
+match `pytest --collect-only`.
 
 ---
 
