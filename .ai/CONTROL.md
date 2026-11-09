@@ -17,12 +17,12 @@ latest milestone in the same paragraph.
 | Date | 2026-11-09 |
 | Branch | `batch-01-accountability` (stacked on `batch-00-quick-wins`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `66d0f3c` (B11) + the control commit that carries this file |
-| Tests | **640 passed, 2 skipped** (569 baseline + 71 new) |
-| Wave complete | Wave 0 and wave 1 (B01–B11); wave 2 next |
-| Next batch | **B12 — permission catalogue** |
+| Head commit | `7ad9f53` (B12) + the control commit that carries this file |
+| Tests | **656 passed, 2 skipped** (569 baseline + 87 new) |
+| Wave complete | Waves 0 and 1 (B01–B11); wave 2 one of four done |
+| Next batch | **B13 — the guard** |
 | Blocking decision | none |
-| Open question | none. Ritual complete after B11 (wave 1 closed) |
+| Open question | none. **Ritual due after B14** (third batch since the wave 1 close) |
 
 ---
 
@@ -260,6 +260,20 @@ A patient update row can hold a changed clinical field. Putting that in a list o
 200 rows would put patient data on a screen whose purpose is to show who did what,
 not what they saw. The detail view is a deliberate second click.
 
+**D-020 — The catalogue lives in code, and the migration duplicates it.**
+A permission is a fact about the software, so the source of truth is
+`app/core/permissions.py`: the guard in B13 checks against it and the tests assert
+against it. The migration carries a copy because a migration must keep working
+when the application code moves on. The duplication is safe only because a test
+compares the two and fails the build on drift - the same trade as D-016.
+
+**D-021 — Module labels equal the code prefix.**
+The first draft filed `users.read` under module `administration`, which makes the
+administration screen group correctly and makes the catalogue unsearchable by
+resource. The label now equals the first segment of the code, and one endpoint
+file may map to several modules instead (administration serves users, roles,
+settings and masters). The test asserts the mapping in both directions.
+
 ---
 
 ## 7. Batch log
@@ -277,9 +291,10 @@ not what they saw. The detail view is a deliberate second click.
 | B09 | 2026-11-09 | `0cf0ed6` | 5 tests | 617 | Money, stock, admission, discharge and prescription wired; 34 services frozen as pending. Two defects: `record()` had no default for `actor`, and a scripted insertion broke an if/else |
 | B10 | 2026-11-09 | `69c0f3a` | 9 tests | 626 | Append-only triggers, SHA-256 chain, verifier, nightly pass. One defect: hashing `isoformat()` never matched on read-back because SQLite returns naive datetimes - every row would have read as edited |
 | B11 | 2026-11-09 | `66d0f3c` | 14 tests | 640 | Review filters, detail, CSV and PDF export, role gate, self-recording export. Two defects: `Depends()` used as a bare default instead of `Annotated`, and a client contract test still constructing the pre-B07 schema |
+| B12 | 2026-11-09 | `7ad9f53` | 16 tests | 656 | 39 codes, 20 modules, 10 role templates, seeded by migration. Two defects: module labels disagreed with code prefixes, and the migration's id/code map was inverted so the administrator got no grants |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 71 new tests. Final: **640 passed, 2 skipped**.
+test baseline plus 87 new tests. Final: **656 passed, 2 skipped**.
 
 ### Ritual after B07–B09 (2026-11-09)
 
