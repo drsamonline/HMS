@@ -17,6 +17,7 @@ from .base import (
     metadata,
 )
 from .bed import Bed
+from .module_state import ModuleState
 from .department import Department
 from .department_service import DepartmentService
 from .diagnosis import Diagnosis
@@ -89,6 +90,7 @@ from .procurement_archive_reference import (
 
 
 __all__ = [
+    "ModuleState",
     "Base",
     "metadata",
     "NAMING_CONVENTION",

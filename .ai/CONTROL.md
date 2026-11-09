@@ -488,6 +488,62 @@ function remotely, and any obfuscation of the clinical logic. Obfuscation would
 make the code unauditable by the hospital that is buying it, which is the
 opposite of the "no lock-in" argument the product is sold on.
 
+
+---
+
+## 7c. Requirement carried forward: documentation, tutorials and user guides
+
+Recorded 2026-11-09 at the owner's instruction. Becomes **wave 9 (B46–B51)**,
+after the product works, because documentation written before the behaviour
+settles is the exact failure this repository already made once: `SECURITY.md`
+asserted four controls that did not exist.
+
+### The state of the documentation today
+
+| Measure | Value |
+|---------|-------|
+| Markdown files in `docs/` | 119 |
+| Markdown files repo-wide | 155 |
+| Written before the audit | almost all of them |
+| Known to be wrong now | `SECURITY.md` (fixed at B06), the RBAC claims, the route inventory, anything naming 242 routes |
+
+So the wave does not start by writing. It starts by **auditing what is true**,
+deleting or rewriting the rest, and then writing only what a person needs at the
+moment they need it.
+
+### The rule that makes it different from a pile of prose
+
+Every claim a document makes about the software is checked by a test, or the
+document says plainly that it is describing intent rather than behaviour:
+
+| Document | What a test can verify |
+|----------|------------------------|
+| API reference | Every route in the OpenAPI schema exists and every documented route is mounted |
+| User guide | Every menu item it tells the reader to click exists in the navigation manifest |
+| Operations guide | Every command it names exists in the CLI, and the backup path it describes is the one the code uses |
+| Setup guide | The ten wizard steps match `SETUP_WIZARD_SPEC.md`, field for field |
+| Tutorial | The walkthrough runs against a seeded database and the screenshots come from that run |
+
+### What the wave contains
+
+| Batch | Deliverable | Audience |
+|-------|-------------|----------|
+| B46 | Documentation audit: mark every one of the 119 files true, stale or obsolete; delete the obsolete | You |
+| B47 | Server operations guide: install, first run, backup, restore, secret rotation, upgrade, troubleshooting | The hospital's IT person |
+| B48 | Role guides, one per role, written from that role's worklist and tested against the navigation manifest | Registration, doctor, pharmacist, laboratory, billing, records, stores, administrator |
+| B49 | The tutorial: one end-to-end walkthrough - register, consult, prescribe, dispense, bill, discharge - with screenshots taken from a seeded run | A new user on day one |
+| B50 | In-app help: a help panel on every screen, a first-run tour of the ten setup steps, and searchable help that works offline | Everyone |
+| B51 | API reference generated from the OpenAPI schema, with a worked example per resource | An integrator, and your own next developer |
+
+### Two decisions already made
+
+1. **Offline.** The help ships inside the application. A hospital with no internet
+   cannot reach a website, and a help system that needs one is a help system that
+   does not exist on the ward.
+2. **Screenshots are generated, not captured by hand.** A screenshot taken once is
+   wrong after the next interface batch. The tutorial renders its images from a
+   seeded database at build time, so it cannot silently drift.
+
 ---
 
 ## 8. Resuming after a break
