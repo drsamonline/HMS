@@ -35,9 +35,19 @@ def test_dashboard_endpoint_uses_due_window_service():
 
 
 def test_dashboard_router_registered_on_api():
-    src = _read("backend/app/api/v1/api.py")
-    assert "from app.api.v1.endpoints.dashboard import router as dashboard_router" in src
-    assert "include_router(dashboard_router)" in src
+    """The router must be mounted, not merely imported.
+
+    Asserted by identity against the module map rather than by searching the
+    source for a literal ``include_router(...)`` line: routers are grouped by
+    module now, so the literal would pass for a router that is listed and never
+    mounted.
+    """
+
+    from app.api.v1.api import MODULE_ROUTERS
+    from app.api.v1.endpoints.dashboard import router as dashboard_router
+
+    mounted = [r for routers in MODULE_ROUTERS.values() for r in routers]
+    assert any(dashboard_router is router for router in mounted)
 
 
 def test_dashboard_schemas_expose_actionable_fields():

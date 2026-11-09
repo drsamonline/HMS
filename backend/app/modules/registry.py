@@ -66,7 +66,10 @@ MODULES: tuple[ModuleSpec, ...] = (
         name="Simple stock register",
         summary="General stock, independent of pharmacy inventory.",
         depends_on=("core",),
-        permissions=("inventory.read", "inventory.write"),
+        permissions=(
+            "inventory.read", "inventory.write",
+            "procurement.read", "procurement.write",
+        ),
     ),
     ModuleSpec(
         code="ipd",

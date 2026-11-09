@@ -84,6 +84,7 @@ def make_client() -> Iterator["object"]:
             await connection.run_sync(Base.metadata.create_all)
 
     asyncio.run(_create_schema())
+    _enable_every_module()
 
     application = _build_application()
 
@@ -142,6 +143,7 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
             await connection.run_sync(Base.metadata.create_all)
 
     asyncio.run(_create_schema())
+    _enable_every_module()
 
     application = _build_application()
     clients: list[TestClient] = []
@@ -185,6 +187,29 @@ def make_file_client(db_path: str) -> Iterator[tuple]:
         else:
             os.environ["HHMS_APPLICATION_ROOT"] = prev_app_root
         get_settings.cache_clear()
+
+
+def _enable_every_module() -> None:
+    """Turn every module on for a QA database.
+
+    The harness builds its schema with ``create_all``, so the migration that seeds
+    ``ModuleState`` never runs and every optional module would answer 404. An
+    end-to-end suite exercises all of them, so all of them are on.
+    """
+
+    from app.db.session import get_session_factory
+    from app.models.module_state import ModuleState
+    from app.modules.registry import MODULES
+
+    factory = get_session_factory()
+
+    async def _run() -> None:
+        async with factory() as db:
+            for module in MODULES:
+                db.add(ModuleState(module_code=module.code, is_enabled=True))
+            await db.commit()
+
+    asyncio.run(_run())
 
 
 #: The QA administrator. Every end-to-end suite needs one authenticated actor
