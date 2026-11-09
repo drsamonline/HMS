@@ -10,6 +10,7 @@ import logging
 from contextlib import asynccontextmanager
 from app.config.settings import get_settings
 from app.db.session import get_session_factory
+from app.services.audit_chain import verify as verify_audit_chain
 from app.services.maintenance import maintenance_service
 from app.services.report_scheduler import report_scheduler_service
 logger=logging.getLogger("hhms.maintenance.scheduler")
@@ -52,5 +53,24 @@ class MaintenanceScheduler:
                 next_maint=loop.time()+interval
                 try: await maintenance_service.run_safe_maintenance()
                 except Exception: logger.exception("Automatic HHMS maintenance failed")
+                # Verify the audit chain on the same cadence. A break is logged
+                # at error level rather than raised: the server must keep
+                # serving patients, and the evidence of the break is the log
+                # line plus the rows that remain.
+                try:
+                    async with _db_scope() as db:
+                        report = await verify_audit_chain(db)
+                    if report.first_break is not None:
+                        logger.error(
+                            "AUDIT CHAIN BROKEN at id %s: %s (checked %s rows)",
+                            report.first_break.audit_id,
+                            report.first_break.reason,
+                            report.checked,
+                        )
+                    else:
+                        logger.info(
+                            "Audit chain verified: %s rows intact", report.checked
+                        )
+                except Exception: logger.exception("Audit chain verification failed")
 maintenance_scheduler=MaintenanceScheduler()
 __all__=["MaintenanceScheduler","maintenance_scheduler"]

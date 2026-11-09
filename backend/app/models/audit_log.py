@@ -174,6 +174,27 @@ class AuditLog(Base):
         nullable=True,
     )
 
+    # ------------------------------------------------------------- integrity
+    prev_hash: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        doc=(
+            "row_hash of the previous row in the chain. A row whose prev_hash "
+            "does not match its predecessor is a row that was removed or "
+            "reordered."
+        ),
+    )
+
+    row_hash: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+        index=True,
+        doc=(
+            "SHA-256 over this row's evidence and its prev_hash. Changing any "
+            "field changes this value, which is how a silent edit is found."
+        ),
+    )
+
 
 __all__ = [
     "AuditLog",

@@ -24,12 +24,14 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any, Mapping
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.request_context import current_request_context
@@ -41,11 +43,64 @@ from app.models.audit_log import AuditLog
 #: every write and would make every entry look like a change.
 IGNORED_FIELDS = frozenset({"created_at", "updated_at"})
 
+#: Fields covered by the chain hash. Excludes ``id`` because the hash has to be
+#: computable before the insert assigns one, and excludes ``prev_hash`` and
+#: ``row_hash`` themselves because they are the chain, not the evidence.
+HASHED_FIELDS = (
+    "user_id",
+    "actor_username",
+    "actor_role",
+    "activity",
+    "outcome",
+    "entity_name",
+    "entity_id",
+    "before_json",
+    "after_json",
+    "reason",
+    "action_timestamp",
+    "request_id",
+    "ip_address",
+    "user_agent",
+    "remarks",
+)
+
+
+def compute_hash(row: Mapping[str, Any], prev_hash: str | None) -> str:
+    """SHA-256 over a row's evidence and the hash of the row before it.
+
+    Any change to a field changes this value; removing a row breaks the link
+    that the following row points back to. Together those two properties are what
+    turn a silent edit into a detectable one.
+    """
+
+    payload = {field: _jsonable(row.get(field)) for field in HASHED_FIELDS}
+    payload["prev_hash"] = prev_hash
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+async def _previous_hash(db: AsyncSession) -> str | None:
+    """The row_hash of the newest row, or None for an empty trail."""
+
+    result = await db.execute(
+        select(AuditLog.row_hash).order_by(AuditLog.id.desc()).limit(1)
+    )
+    return result.scalar_one_or_none()
+
 
 def _jsonable(value: Any) -> Any:
     """Make a column value safe for ``json.dumps`` without losing meaning."""
 
-    if isinstance(value, (datetime, date)):
+    if isinstance(value, datetime):
+        # Canonical form: UTC, no offset, fixed precision. SQLite hands a naive
+        # datetime back on read, so a hash taken over ``isoformat()`` at write
+        # time would never match a recomputation at verify time - the chain
+        # would report every row as edited. That was a real defect, caught by the
+        # first verifier run.
+        if value.tzinfo is not None:
+            value = value.astimezone(UTC).replace(tzinfo=None)
+        return value.strftime("%Y-%m-%dT%H:%M:%S.%f")
+    if isinstance(value, date):
         return value.isoformat()
     if isinstance(value, Decimal):
         return str(value)
@@ -205,6 +260,31 @@ async def record(
         ip_address=context.ip_address,
         user_agent=context.user_agent,
         remarks=remarks,
+    )
+
+    # Chain the row before it is inserted: prev_hash links it to the newest row,
+    # row_hash commits to its own contents. A row written outside this path has
+    # no chain and shows up as a break at the next verifier run.
+    entry.prev_hash = await _previous_hash(db)
+    entry.row_hash = compute_hash(
+        {
+            "user_id": entry.user_id,
+            "actor_username": entry.actor_username,
+            "actor_role": entry.actor_role,
+            "activity": entry.activity,
+            "outcome": entry.outcome,
+            "entity_name": entry.entity_name,
+            "entity_id": entry.entity_id,
+            "before_json": entry.before_json,
+            "after_json": entry.after_json,
+            "reason": entry.reason,
+            "action_timestamp": entry.action_timestamp,
+            "request_id": entry.request_id,
+            "ip_address": entry.ip_address,
+            "user_agent": entry.user_agent,
+            "remarks": entry.remarks,
+        },
+        entry.prev_hash,
     )
 
     db.add(entry)
