@@ -1,0 +1,105 @@
+/* The component kit's own styles.
+ *
+ * Everything here comes from tokens.css. Nothing in this file names a colour,
+ * because the moment one does, the palette has two sources of truth again.
+ */
+
+.ui-dialog {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
+  padding: 0;
+  width: min(520px, calc(100vw - var(--space-6)));
+  background: var(--surface-panel);
+  color: var(--ink);
+}
+
+.ui-dialog::backdrop { background: var(--backdrop); }
+
+.ui-dialog-form { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); }
+.ui-dialog-form header h2 { margin: 0; font-size: var(--text-lg); color: var(--ink-strong); }
+.ui-dialog-body { display: flex; flex-direction: column; gap: var(--space-3); }
+.ui-dialog-form footer { display: flex; justify-content: flex-end; gap: var(--space-2); }
+
+.ui-field { display: flex; flex-direction: column; gap: var(--space-1); font-size: var(--text-sm); color: var(--ink-muted); }
+.ui-field input, .ui-field select {
+  padding: var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface-panel);
+}
+.ui-field input:focus, .ui-field select:focus { outline: 2px solid var(--border-focus); outline-offset: 1px; }
+.ui-hint { color: var(--ink-faint); font-size: var(--text-xs); }
+.ui-dialog-error { color: var(--state-danger-ink); font-size: var(--text-sm); margin: 0; }
+
+.ui-toast-host {
+  position: fixed;
+  bottom: var(--space-5);
+  right: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  z-index: var(--layer-toast);
+}
+.ui-toast {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-panel);
+  box-shadow: var(--shadow-panel);
+  font-size: var(--text-sm);
+  max-width: 360px;
+}
+.ui-toast-success { border-color: var(--state-success-edge); background: var(--state-success-surface); }
+.ui-toast-error { border-color: var(--state-danger-edge); background: var(--state-danger-surface); color: var(--state-danger-ink); }
+.ui-toast-warning { border-color: var(--state-warning-edge); background: var(--state-warning-surface); color: var(--state-warning-ink); }
+
+.ui-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.ui-table th, .ui-table td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border-subtle); text-align: left; }
+.ui-table th { color: var(--ink-muted); font-weight: 600; border-bottom-color: var(--border); }
+.ui-table tbody tr[data-row-key] { cursor: pointer; }
+.ui-table tbody tr[data-row-key]:hover { background: var(--surface-sunken); }
+.ui-table .align-right { text-align: right; }
+.ui-table .align-center { text-align: center; }
+
+.ui-state { padding: var(--space-6); text-align: center; color: var(--ink-muted); display: flex; flex-direction: column; gap: var(--space-2); align-items: center; }
+.ui-state-title { font-weight: 600; color: var(--ink-strong); margin: 0; }
+.ui-state-message { margin: 0; font-size: var(--text-sm); }
+.ui-state-error .ui-state-title { color: var(--state-danger-ink); }
+
+.ui-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--border-focus);
+  border-radius: var(--radius-pill);
+  animation: ui-spin 800ms linear infinite;
+}
+@keyframes ui-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ui-spinner { animation: none; } }
+
+.ui-patient-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+.ui-patient-identity { display: flex; align-items: baseline; gap: var(--space-3); flex-wrap: wrap; }
+.ui-patient-number { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-muted); }
+.ui-patient-name { font-size: var(--text-lg); color: var(--ink-strong); }
+.ui-patient-details { font-size: var(--text-sm); color: var(--ink-muted); }
+.ui-patient-alerts { display: flex; gap: var(--space-2); list-style: none; margin: 0; padding: 0; }
+.ui-patient-alerts li {
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--state-danger-surface);
+  color: var(--state-danger-ink);
+  border: 1px solid var(--state-danger-edge);
+}

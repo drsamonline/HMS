@@ -78,6 +78,8 @@
   --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.18);
 
   /* ------------------------------------------------------------------ layering */
+  --backdrop: rgba(15, 23, 42, 0.35);
+
   --layer-base: 0;
   --layer-sticky: 10;
   --layer-overlay: 100;

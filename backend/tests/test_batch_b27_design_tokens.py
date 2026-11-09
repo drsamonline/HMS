@@ -29,6 +29,17 @@ ENTRY = ROOT / "frontend" / "index.html"
 #: Print styles are deliberately black on white for paper, and are exempt.
 PRINT_EXEMPT = {"print.css"}
 
+
+def _application_stylesheets() -> list[Path]:
+    """Every stylesheet the interface loads except print.
+
+    A token is shared across the stylesheets, so 'used' means used somewhere -
+    checking only app.css would call --backdrop unused the moment the component kit
+    started using it.
+    """
+
+    return [path for path in sorted(CSS.glob("*.css")) if path.name not in PRINT_EXEMPT]
+
 COLOUR = re.compile(r"#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)")
 TOKEN_DEF = re.compile(r"(--[a-z0-9-]+)\s*:\s*([^;]+);")
 TOKEN_USE = re.compile(r"var\((--[a-z0-9-]+)\)")
@@ -99,7 +110,11 @@ def test_every_colour_token_is_used() -> None:
     """
 
     tokens = _tokens()
-    used = set(TOKEN_USE.findall(APP.read_text(encoding="utf-8")))
+    used = {
+        name
+        for path in _application_stylesheets()
+        for name in TOKEN_USE.findall(path.read_text(encoding="utf-8"))
+    }
 
     reserved_prefixes = (
         "--space-", "--text-", "--leading-", "--radius-", "--shadow-",
