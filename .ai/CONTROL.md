@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-40-tutorial` (stacked on `batch-39-apiref`) |
+| Branch | `batch-41-handover` (stacked on `batch-40-tutorial`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1065 passed, 2 skipped, 1067 collected** (569 baseline + 496 new) |
-| Wave complete | **Waves 0–8 complete (B01–B45)**; wave 9 five of six |
-| Next batch | **B51 — the handover pack, closing wave 9** |
+| Tests | **1079 passed, 2 skipped, 1081 collected** (569 baseline + 510 new) |
+| Wave complete | **Waves 0–9 complete (B01–B51)** |
+| Next batch | **none — the plan is complete** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -414,9 +414,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B48 | 2026-11-10 | see `git log` | 15 tests | 1043 | Fourteen screen topics served by the API and shown in a drawer, in the same voice as the guides |
 | B49 | 2026-11-10 | see `git log` | 10 tests | 1053 | The API reference, generated from the mounted routes with a drift gate that fails the build when it goes stale |
 | B50 | 2026-11-10 | see `git log` | 12 tests | 1065 | The guided first run: five steps in the order a day happens, progress read from the database, never touching a real patient |
+| B51 | 2026-11-10 | see `git log` | 14 tests | 1079 | The handover pack: one zip with the runbook, guides, compliance mapping, API reference, licence and seal. **Closes wave 9 and the plan** |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 496 new tests. Final: **1065 passed, 2 skipped, 1067 collected**.
+test baseline plus 510 new tests. Final: **1079 passed, 2 skipped, 1081 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1154,6 +1155,53 @@ not reset it and the person can continue on another machine.
 B15's cap on login-only routes went from three to four, and the test now names all four
 and what each returns about the caller. The next addition has to justify itself in the
 same place.
+
+### Wave 9 closed, and the plan with it (2026-11-10)
+
+| Batch | Delivered |
+|-------|-----------|
+| B46 | The operations runbook |
+| B47 | Ten role guides |
+| B48 | In-app help, fourteen screen topics |
+| B49 | The generated API reference |
+| B50 | The guided first run |
+| B51 | The handover pack |
+
+**D-101 — A partial handover pack is worse than none.**
+It fails to build rather than shipping with a document missing, because a pack that
+looks complete is believed.
+
+**D-102 — The pack leads with the troubleshooting order.**
+The person reading it at 2am is not browsing a table of contents.
+
+---
+
+## 9. The plan, complete
+
+Fifty-one batches across ten waves. The suite went from 569 tests to **1079 passed,
+2 skipped, 1081 collected**, and every batch added a gate that fails the build if the
+thing it built stops being true.
+
+What the product now does that it did not at the start:
+
+| Wave | What changed |
+|---|---|
+| 0 | Security headers, foreign keys, an honest SECURITY.md |
+| 1 | An audit trail that cannot be quietly altered, hash-chained and verified nightly |
+| 2 | 40 permissions, default deny, 245 of 251 routes guarded |
+| 3 | Modules, navigation, a 44-setting catalogue, a configuration API |
+| 4 | The setup wizard, end to end, with a code and a headless path |
+| 5 | Four NCH duties enforced where the record is written |
+| 6 | Design tokens, a component kit, six navigation groups, nine role homes, the prescription as a document |
+| 7 | Thirteen indicators, a dashboard, PSQ.3 coverage assessed honestly, the NCH monthly return |
+| 8 | Provenance marks, a detector, build sealing, four editions, the evidence pack |
+| 9 | The runbook, the role guides, in-app help, the API reference, the tutorial, the handover pack |
+
+What is deliberately not done, and is recorded rather than hidden: PSQ.3's 32 KPIs are
+not enumerated because the standard document is not in this repository; six of eleven
+PSQ.3 families cannot be reported because the hospital does not record what they need;
+build-time stripping of the free edition is not written; and the test suite takes about
+fourteen minutes, which is the next thing worth fixing.
 
 ---
 
