@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-30-nch-qci` (stacked on `batch-29-discharge`) |
+| Branch | `batch-31-provenance` (stacked on `batch-30-nch-qci`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **950 passed, 2 skipped, 952 collected** (569 baseline + 381 new) |
-| Wave complete | **Waves 0–7 complete (B01–B40)**; wave 8 next |
-| Next batch | **B41 — provenance marks (wave 8, IP protection)** |
+| Tests | **963 passed, 2 skipped, 965 collected** (569 baseline + 394 new) |
+| Wave complete | **Waves 0–7 complete (B01–B40)**; wave 8 one of five |
+| Next batch | **B42 — the copy detector, packaged** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -404,9 +404,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B38 | 2026-11-10 | see `git log` | 12 tests | 929 | PSQ.3 coverage by family, served by the API and documented; three families fully reportable, six with a stated gap. Mapping row moves absent → partial |
 | B39 | 2026-11-10 | see `git log` | 11 tests | 940 | Discharge outcome (migration 0041) unlocks mortality and DAMA; length of stay and re-admission came free once the right table was read. B38's assessment corrected in place |
 | B40 | 2026-11-10 | see `git log` | 10 tests | 950 | The NCH monthly return as one printable document, with the QCI section stated rather than omitted. **Closes wave 7** |
+| B41 | 2026-11-10 | see `git log` | 13 tests | 963 | Provenance marks in CSS, JS and Python, a public claim endpoint, and a detector. **Opens wave 8** |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 381 new tests. Final: **950 passed, 2 skipped, 952 collected**.
+test baseline plus 394 new tests. Final: **963 passed, 2 skipped, 965 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1014,6 +1015,26 @@ omitting it would read as a clean result.
 **D-075 — A count of zero is a fact; a ratio with no denominator is a gap.**
 No certificates issued is a true zero. No discharges means mortality is unavailable,
 not 0%. The two must not be rendered the same way, and a test asserts it.
+
+### Wave 8 opened (2026-11-10)
+
+| Batch | Delivered |
+|-------|-----------|
+| B41 | Provenance marks in four kinds of file, a public claim, and a detector |
+
+**D-076 — A mark that changes per build cannot be tied to a release.**
+`HHMS-PROV-<release>-<digest>`, stable for a release. A copy found in the wild can be
+tied to the version it came from; a per-commit mark could be tied to nothing.
+
+**D-077 — Say what the mark does not do.**
+The module docstring states plainly that this is evidence and deterrence, not a
+control. Claiming more would be the kind of overstatement the rest of this estate
+avoids.
+
+**D-078 — A detector that finds its own fixtures always succeeds.**
+The first version of the mismatch test wrote the fake marker literally in the test
+file the detector scans, so the "not found" assertion passed for the wrong reason. The
+fake is now built by concatenation.
 
 ---
 
