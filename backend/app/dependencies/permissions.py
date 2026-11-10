@@ -205,6 +205,7 @@ async def default_deny(request: Request) -> None:
 AUTHENTICATED_ONLY_PATHS = frozenset(
     {
         "/api/v1/navigation",
+        "/api/v1/home",
     }
 )
 
