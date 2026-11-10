@@ -209,6 +209,8 @@ AUTHENTICATED_ONLY_PATHS = frozenset(
         "/api/v1/navigation",
         "/api/v1/home",
         "/api/v1/help",
+        # The tutorial is guidance for the caller: a login, no permission.
+        "/api/v1/tutorial",
     }
 )
 

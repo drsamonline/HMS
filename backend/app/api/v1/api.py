@@ -62,6 +62,7 @@ from app.api.v1.endpoints.indicators import router as indicators_router
 from app.api.v1.endpoints.provenance import router as provenance_router
 from app.api.v1.endpoints.navigation import router as navigation_router
 from app.api.v1.endpoints.setup import router as setup_router
+from app.api.v1.endpoints.tutorial import router as tutorial_router
 from app.api.v1.endpoints.visits import router as visits_router
 
 api_router = APIRouter(
@@ -93,6 +94,7 @@ MODULE_ROUTERS: dict[str, tuple] = {
         provenance_router,
         navigation_router,
         setup_router,
+        tutorial_router,
         configuration_router,
         compliance_router,
         patients_router,

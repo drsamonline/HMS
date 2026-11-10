@@ -98,9 +98,22 @@ def test_the_exemption_lists_contain_nothing_that_is_not_mounted() -> None:
 
 
 def test_the_authenticated_only_list_stays_small() -> None:
-    """Routes that need a login but no permission are rare and deliberate."""
+    """Routes that need a login but no permission are rare and deliberate.
 
-    assert len(AUTHENTICATED_ONLY_PATHS) <= 3, sorted(AUTHENTICATED_ONLY_PATHS)
+    The cap is a ratchet, not a rule of nature: it moves when a route genuinely
+    belongs here, and the reason has to be written next to it. Each of these returns
+    something about the caller - their menu, their home, their help, their first run -
+    and none of them exposes hospital data.
+    """
+
+    expected = {
+        "/api/v1/navigation",  # the caller's own menu
+        "/api/v1/home",        # the caller's own landing screen
+        "/api/v1/help",        # guidance for the caller
+        "/api/v1/tutorial",    # the caller's own progress through the first run
+    }
+    assert set(AUTHENTICATED_ONLY_PATHS) <= expected, sorted(AUTHENTICATED_ONLY_PATHS)
+    assert len(AUTHENTICATED_ONLY_PATHS) <= 4, sorted(AUTHENTICATED_ONLY_PATHS)
 
 
 def test_no_route_is_public_and_guarded_at_once() -> None:

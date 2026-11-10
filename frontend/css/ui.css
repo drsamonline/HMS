@@ -230,3 +230,19 @@
 .help-footer { margin-top: auto; color: var(--ink-faint); }
 .help-button { width: 32px; padding: 0; font-weight: 700; }
 @media print { .help-panel { display: none !important; } }
+
+/* The guided first run. Dismissible, and it does not block the screen behind it. */
+.tutorial { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); background: var(--surface-panel); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.tutorial-header { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); }
+.tutorial-header h2 { margin: 0; font-size: var(--text-lg); color: var(--ink-strong); }
+.tutorial-header p { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--ink-muted); }
+.tutorial-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.tutorial-step { display: flex; gap: var(--space-3); align-items: flex-start; }
+.tutorial-index { width: 24px; height: 24px; border-radius: var(--radius-pill); border: 1px solid var(--border-strong); display: grid; place-items: center; font-size: var(--text-xs); color: var(--ink-muted); flex: none; }
+.tutorial-step-done .tutorial-index { background: var(--state-success-surface); border-color: var(--state-success-edge); color: var(--state-success-edge); }
+.tutorial-body { display: flex; flex-direction: column; gap: var(--space-1); }
+.tutorial-body strong { color: var(--ink-strong); font-size: var(--text-sm); }
+.tutorial-what { margin: 0; font-size: var(--text-sm); color: var(--ink); }
+.tutorial-why { margin: 0; font-size: var(--text-xs); color: var(--ink-muted); }
+.tutorial-body button { align-self: flex-start; margin-top: var(--space-1); }
+.tutorial-finished { margin: 0; font-size: var(--text-sm); color: var(--state-success-edge); }
