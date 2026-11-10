@@ -120,10 +120,12 @@ def test_every_colour_token_is_used() -> None:
         "--space-", "--text-", "--leading-", "--radius-", "--shadow-",
         "--layer-", "--font-",
     )
+    # --provenance carries a marker string, not a colour: it is embedded on purpose
+    # and read by nobody. See app/core/provenance.py.
     colour_tokens = {
         name
         for name, value in tokens.items()
-        if not name.startswith(reserved_prefixes)
+        if not name.startswith(reserved_prefixes) and name != "--provenance"
     }
     orphans = colour_tokens - used
     assert not orphans, f"colour tokens defined and never used: {sorted(orphans)}"

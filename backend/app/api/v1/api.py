@@ -57,6 +57,7 @@ from app.api.v1.endpoints.compliance import router as compliance_router
 from app.api.v1.endpoints.configuration import router as configuration_router
 from app.api.v1.endpoints.home import router as home_router
 from app.api.v1.endpoints.indicators import router as indicators_router
+from app.api.v1.endpoints.provenance import router as provenance_router
 from app.api.v1.endpoints.navigation import router as navigation_router
 from app.api.v1.endpoints.setup import router as setup_router
 from app.api.v1.endpoints.visits import router as visits_router
@@ -85,6 +86,7 @@ MODULE_ROUTERS: dict[str, tuple] = {
         auth_router,
         home_router,
         indicators_router,
+        provenance_router,
         navigation_router,
         setup_router,
         configuration_router,

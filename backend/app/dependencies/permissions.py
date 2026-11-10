@@ -204,6 +204,7 @@ async def default_deny(request: Request) -> None:
 #: "needs a token" and "needs no token" never get confused in review.
 AUTHENTICATED_ONLY_PATHS = frozenset(
     {
+        "/api/v1/provenance",
         "/api/v1/navigation",
         "/api/v1/home",
     }
@@ -227,6 +228,8 @@ PUBLIC_PATHS = frozenset(
         "/api/v1/health",
         "/api/v1/health/live",
         "/api/v1/health/ready",
+        # The provenance claim: a licence notice nobody can read is not a notice.
+        "/api/v1/provenance",
         # Discovery tells a LAN client where the server is, before it has a
         # token. It exposes a name and a version, nothing more.
         "/api/v1/health/discovery",

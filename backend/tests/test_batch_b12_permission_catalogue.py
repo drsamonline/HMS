@@ -134,6 +134,8 @@ def test_every_data_endpoint_module_is_covered() -> None:
         # home returns the caller's own landing screen: a login, no permission.
         "home": set(),
         "indicators": {"reporting"},
+        # provenance is public by design: see PUBLIC_PATHS.
+        "provenance": set(),
         "configuration": {"settings"},
         "dashboard": {"reporting"},
         "department_services": {"masters"},
