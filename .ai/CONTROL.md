@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-28-psq3` (stacked on `batch-27-dashboard`) |
+| Branch | `batch-29-discharge` (stacked on `batch-28-psq3`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **929 passed, 2 skipped, 931 collected** (569 baseline + 360 new) |
-| Wave complete | **Waves 0–6 complete (B01–B32)**; wave 7 three of five |
-| Next batch | **B39 — the discharge timestamp decision** |
+| Tests | **940 passed, 2 skipped, 942 collected** (569 baseline + 371 new) |
+| Wave complete | **Waves 0–6 complete (B01–B32)**; wave 7 four of five |
+| Next batch | **B40 — the NCH/QCI pack, closing wave 7** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -402,9 +402,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B36 | 2026-11-10 | see `git log` | 15 tests | 905 | Indicator spine: nine indicators declared with numerator, denominator and standard, computed by one engine, `None` not zero when there is nothing to divide by. **Opens wave 7** |
 | B37 | 2026-11-10 | see `git log` | 12 tests | 917 | The dashboard: grouped cards with definition, standard and an inline-SVG trend that breaks at a gap instead of drawing a false zero |
 | B38 | 2026-11-10 | see `git log` | 12 tests | 929 | PSQ.3 coverage by family, served by the API and documented; three families fully reportable, six with a stated gap. Mapping row moves absent → partial |
+| B39 | 2026-11-10 | see `git log` | 11 tests | 940 | Discharge outcome (migration 0041) unlocks mortality and DAMA; length of stay and re-admission came free once the right table was read. B38's assessment corrected in place |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 360 new tests. Final: **929 passed, 2 skipped, 931 collected**.
+test baseline plus 371 new tests. Final: **940 passed, 2 skipped, 942 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -983,6 +984,16 @@ is missing. A hospital can see, before buying, which numbers this product can pr
 One nullable column on `Admission` would unlock length of stay, mortality,
 re-admission and discharge against medical advice. It changes the clinical model,
 which is frozen; so it is raised as a decision for the owner rather than taken.
+
+**D-072 — A gap analysis that reads one table will report gaps that are not there.**
+B38 said length of stay was uncomputable because `Admission` has no discharge
+timestamp. `Discharge` has one. The lesson is recorded in the document rather than
+tidied away, because the next assessment will face the same temptation.
+
+**D-073 — An unclassified episode has an unknown outcome, not a good one.**
+`discharge_outcome` is nullable and existing rows stay null. The mortality
+denominator counts only episodes with a recorded outcome, so mortality cannot fall
+simply because record-keeping got worse.
 
 ---
 
