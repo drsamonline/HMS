@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-27-dashboard` (stacked on `batch-26-indicators`) |
+| Branch | `batch-28-psq3` (stacked on `batch-27-dashboard`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **917 passed, 2 skipped, 919 collected** (569 baseline + 348 new) |
-| Wave complete | **Waves 0–6 complete (B01–B32)**; wave 7 two of five |
-| Next batch | **B38 — NABH PSQ.3 indicator pack** |
+| Tests | **929 passed, 2 skipped, 931 collected** (569 baseline + 360 new) |
+| Wave complete | **Waves 0–6 complete (B01–B32)**; wave 7 three of five |
+| Next batch | **B39 — the discharge timestamp decision** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -401,9 +401,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B32 | 2026-11-10 | see `git log` | 9 tests | 890 | The prescription as a print document, previewed and printed from the same markup. **Closes wave 6** |
 | B36 | 2026-11-10 | see `git log` | 15 tests | 905 | Indicator spine: nine indicators declared with numerator, denominator and standard, computed by one engine, `None` not zero when there is nothing to divide by. **Opens wave 7** |
 | B37 | 2026-11-10 | see `git log` | 12 tests | 917 | The dashboard: grouped cards with definition, standard and an inline-SVG trend that breaks at a gap instead of drawing a false zero |
+| B38 | 2026-11-10 | see `git log` | 12 tests | 929 | PSQ.3 coverage by family, served by the API and documented; three families fully reportable, six with a stated gap. Mapping row moves absent → partial |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 348 new tests. Final: **917 passed, 2 skipped, 919 collected**.
+test baseline plus 360 new tests. Final: **929 passed, 2 skipped, 931 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -967,6 +968,21 @@ hides every real change.
 
 **D-068 — One point is not a trend.**
 Fewer than two months of data renders as a sentence saying so, not as a flat line.
+
+**D-069 — Do not enumerate a standard from memory.**
+The 32 PSQ.3 indicators are not listed in this repository because the authoritative
+list is in the NABH standard document. A list written from memory would be one a
+hospital could not rely on, and it would look exactly as authoritative as a correct
+one.
+
+**D-070 — Coverage is reported by family, with the gap stated.**
+Eleven families, three fully reportable, two partly, six not at all - each with what
+is missing. A hospital can see, before buying, which numbers this product can produce.
+
+**D-071 — A discharge timestamp is a decision, not a commit.**
+One nullable column on `Admission` would unlock length of stay, mortality,
+re-admission and discharge against medical advice. It changes the clinical model,
+which is frozen; so it is raised as a decision for the owner rather than taken.
 
 ---
 
