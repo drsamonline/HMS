@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-32-detector` (stacked on `batch-31-provenance`) |
+| Branch | `batch-33-seal` (stacked on `batch-32-detector`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **975 passed, 2 skipped, 977 collected** (569 baseline + 406 new) |
-| Wave complete | **Waves 0–7 complete (B01–B40)**; wave 8 two of five |
-| Next batch | **B43 — build sealing** |
+| Tests | **986 passed, 2 skipped, 988 collected** (569 baseline + 417 new) |
+| Wave complete | **Waves 0–7 complete (B01–B40)**; wave 8 three of five |
+| Next batch | **B44 — licence and notice hardening** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -406,9 +406,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B40 | 2026-11-10 | see `git log` | 10 tests | 950 | The NCH monthly return as one printable document, with the QCI section stated rather than omitted. **Closes wave 7** |
 | B41 | 2026-11-10 | see `git log` | 13 tests | 963 | Provenance marks in CSS, JS and Python, a public claim endpoint, and a detector. **Opens wave 8** |
 | B42 | 2026-11-10 | see `git log` | 12 tests | 975 | The detector as a tool: directory, zip or URL in; a written finding with a verdict out, including 'marks stripped' |
+| B43 | 2026-11-10 | see `git log` | 11 tests | 986 | Build sealing: a deterministic manifest of hashes, with verify reporting modified, added and missing files |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 406 new tests. Final: **975 passed, 2 skipped, 977 collected**.
+test baseline plus 417 new tests. Final: **986 passed, 2 skipped, 988 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1046,6 +1047,14 @@ stripped.
 The clean verdict says in its own text that a sufficiently rewritten copy would
 produce the same result. A report that overstates its own reach is worse than no
 report.
+
+**D-081 — A seal kept beside the code proves nothing against someone who can edit both.**
+The seal records where it must be published - the release page and the signed tag -
+and says so in its own payload. A seal trusted beyond its reach is worse than none.
+
+**D-082 — A seal excludes what changes without the source changing.**
+Caches, build output, databases and the seal itself. A seal that changes when nothing
+changed is noise, and noise gets ignored.
 
 ---
 
