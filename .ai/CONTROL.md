@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-37-roleguides` (stacked on `batch-36-opsdocs`) |
+| Branch | `batch-38-help` (stacked on `batch-37-roleguides`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1028 passed, 2 skipped, 1030 collected** (569 baseline + 459 new) |
-| Wave complete | **Waves 0–8 complete (B01–B45)**; wave 9 two of six |
-| Next batch | **B48 — in-app help** |
+| Tests | **1043 passed, 2 skipped, 1045 collected** (569 baseline + 474 new) |
+| Wave complete | **Waves 0–8 complete (B01–B45)**; wave 9 three of six |
+| Next batch | **B49 — the API reference** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -411,9 +411,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B45 | 2026-11-10 | see `git log` | 11 tests | 1012 | The takedown evidence pack: finding, seal comparison, licence position and a tamper-evident manifest, all reproducible by a third party. **Closes wave 8** |
 | B46 | 2026-11-10 | see `git log` | 8 tests | 1020 | The operations runbook: install, LAN, the backup drill, maintenance, troubleshooting, handover. **Opens wave 9** |
 | B47 | 2026-11-10 | see `git log` | 8 tests | 1028 | Ten role guides with a fixed five-section shape, each naming the home screen its role lands on and the screens it cannot open |
+| B48 | 2026-11-10 | see `git log` | 15 tests | 1043 | Fourteen screen topics served by the API and shown in a drawer, in the same voice as the guides |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 459 new tests. Final: **1028 passed, 2 skipped, 1030 collected**.
+test baseline plus 474 new tests. Final: **1043 passed, 2 skipped, 1045 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1117,6 +1118,18 @@ twice.
 A refusal is alarming when it is unexpected and unremarkable when it is written down.
 A registration clerk who knows she cannot edit a clinical record does not file a ticket
 about it.
+
+**D-093 — Help is a drawer, not a page.**
+Leaving a screen to read about the screen is how somebody loses the patient they were
+registering.
+
+**D-094 — Help topics live in the repository, not the database.**
+They are part of the release and reviewed like code. A help text that changes without
+a release is one nobody has read before it shipped.
+
+**D-095 — A path parameter needs a prefix, not a set entry.**
+Third time this has bitten: setup (B22), and now help. `AUTHENTICATED_ONLY_PREFIXES`
+exists so the next one has somewhere to go.
 
 ---
 
