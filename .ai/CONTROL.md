@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-38-help` (stacked on `batch-37-roleguides`) |
+| Branch | `batch-39-apiref` (stacked on `batch-38-help`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1043 passed, 2 skipped, 1045 collected** (569 baseline + 474 new) |
-| Wave complete | **Waves 0–8 complete (B01–B45)**; wave 9 three of six |
-| Next batch | **B49 — the API reference** |
+| Tests | **1053 passed, 2 skipped, 1055 collected** (569 baseline + 484 new) |
+| Wave complete | **Waves 0–8 complete (B01–B45)**; wave 9 four of six |
+| Next batch | **B50 — the tutorial** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -412,9 +412,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B46 | 2026-11-10 | see `git log` | 8 tests | 1020 | The operations runbook: install, LAN, the backup drill, maintenance, troubleshooting, handover. **Opens wave 9** |
 | B47 | 2026-11-10 | see `git log` | 8 tests | 1028 | Ten role guides with a fixed five-section shape, each naming the home screen its role lands on and the screens it cannot open |
 | B48 | 2026-11-10 | see `git log` | 15 tests | 1043 | Fourteen screen topics served by the API and shown in a drawer, in the same voice as the guides |
+| B49 | 2026-11-10 | see `git log` | 10 tests | 1053 | The API reference, generated from the mounted routes with a drift gate that fails the build when it goes stale |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 474 new tests. Final: **1043 passed, 2 skipped, 1045 collected**.
+test baseline plus 484 new tests. Final: **1053 passed, 2 skipped, 1055 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1130,6 +1131,14 @@ a release is one nobody has read before it shipped.
 **D-095 — A path parameter needs a prefix, not a set entry.**
 Third time this has bitten: setup (B22), and now help. `AUTHENTICATED_ONLY_PREFIXES`
 exists so the next one has somewhere to go.
+
+**D-096 — A generated document cannot lie, but only if the build compares it.**
+The reference is deterministic so a test can regenerate and diff it. Without the diff,
+generation is a habit rather than a control.
+
+**D-097 — A check that has never failed is not a check.**
+The drift test exercises `--check` against a deliberately stale file, so the failing
+path is known to work.
 
 ---
 
