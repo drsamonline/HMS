@@ -136,6 +136,8 @@ def test_every_data_endpoint_module_is_covered() -> None:
         "indicators": {"reporting"},
         # provenance is public by design: see PUBLIC_PATHS.
         "provenance": set(),
+        # edition is a public licence statement: no permission, no login.
+        "edition": set(),
         "configuration": {"settings"},
         "dashboard": {"reporting"},
         "department_services": {"masters"},

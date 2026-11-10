@@ -165,7 +165,8 @@ def test_the_headless_setup_completes_an_installation(isolated, monkeypatch) -> 
 
     with make_client() as client:
         _reset()
-        code = asyncio.run(_run(_args(modules="pharmacy,ipd")))
+        # pharmacy is in the free edition; ipd is not, and is tested separately.
+        code = asyncio.run(_run(_args(modules="pharmacy")))
 
         from app.db.session import get_session_factory
 
@@ -184,6 +185,21 @@ def test_the_headless_setup_completes_an_installation(isolated, monkeypatch) -> 
         )
 
     assert login.status_code == 200, login.text
+
+
+def test_the_headless_setup_refuses_a_module_the_edition_does_not_include(
+    isolated, monkeypatch
+) -> None:
+    """The edition is enforced here too, not only in the wizard."""
+
+    from app.cli.setup import _run
+    from tests._qa_harness import make_client
+
+    monkeypatch.setenv("HHMS_ADMIN_PASSWORD", "hospital-2026")
+
+    with make_client() as client:
+        _reset()
+        assert asyncio.run(_run(_args(modules="ipd"))) == 1
 
 
 def test_the_headless_setup_refuses_an_unknown_module(isolated, monkeypatch) -> None:

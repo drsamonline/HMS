@@ -17,6 +17,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.editions import allows_module, current_edition
 from app.core.exceptions import BusinessRuleException, ResourceNotFoundException
 from app.services import audit
 from app.models.module_state import ModuleState
@@ -45,6 +46,16 @@ async def enable(
 
     if code not in BY_CODE:
         raise ResourceNotFoundException(f"Unknown module: {code}")
+
+    # The edition decides what this installation may run. Enforced here rather than
+    # only in the wizard, because the wizard is one of three ways to switch a module
+    # on and the other two are an API call and a crafted request.
+    edition = current_edition()
+    if not allows_module(edition, code):
+        raise BusinessRuleException(
+            f"{BY_CODE[code].name} is not included in {edition.name}. "
+            f"Upgrading the edition is an installation decision, not a setting."
+        )
 
     current = await enabled_codes(db)
     wanted = resolve(code, current)
