@@ -84,6 +84,24 @@ async def psq3_coverage() -> dict:
 
 
 @router.get(
+    "/nch-return",
+    response_model=dict,
+    dependencies=[Depends(require("reporting.read"))],
+)
+async def nch_monthly_return(
+    db: DatabaseSession,
+    start: str | None = Query(default=None),
+    end: str | None = Query(default=None),
+) -> dict:
+    """The NCH duties gathered into one document for the period."""
+
+    from app.services.compliance_return import monthly_return
+
+    from_date, to_date = _period(start, end)
+    return await monthly_return(db, from_date, to_date)
+
+
+@router.get(
     "/catalogue",
     response_model=list[dict],
     dependencies=[Depends(require("reporting.read"))],

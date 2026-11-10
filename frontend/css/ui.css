@@ -196,3 +196,9 @@
 .spark-empty { font-size: var(--text-xs); color: var(--ink-faint); font-style: italic; }
 .ind-definition { margin: 0; font-size: var(--text-xs); color: var(--ink-muted); display: flex; flex-direction: column; gap: 2px; }
 .ind-den { color: var(--ink-faint); }
+
+/* The NCH return. A document, printed as it is previewed. */
+.compliance-standard { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-muted); }
+.compliance-value { text-align: right; }
+.compliance-gaps { font-size: var(--text-sm); color: var(--ink-muted); padding-left: var(--space-4); }
+.compliance-gaps li { margin-bottom: var(--space-2); }
