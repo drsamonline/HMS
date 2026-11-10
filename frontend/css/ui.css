@@ -155,3 +155,17 @@
 @media print {
   .rx-registration-missing { color: inherit; font-style: italic; }
 }
+
+/* The prescription document. Same markup previewed and printed. */
+.rx-document .ui-patient-header { margin: var(--space-3) 0; }
+.rx-items-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.rx-items-table th, .rx-items-table td {
+  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-2);
+  text-align: left;
+}
+.rx-items-table th { color: var(--ink-muted); border-bottom-color: var(--border); }
+.rx-footer { margin-top: var(--space-4); font-size: var(--text-xs); color: var(--ink-muted); }
+@media print {
+  .rx-items-table th, .rx-items-table td { border-bottom-color: var(--border-subtle); }
+}
