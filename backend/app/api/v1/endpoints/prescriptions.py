@@ -26,6 +26,29 @@ router = APIRouter(
 )
 
 
+
+def _read_model(prescription, items, name, registration):
+    """Build the read model without SQLAlchemy's private state.
+
+    ``__dict__`` carries ``_sa_instance_state``, which Pydantic refuses as an extra
+    field. It used to be filtered by luck: the object was expired and the key was
+    gone. Resolving the prescriber issues a query, which changes that, so the
+    filtering is now explicit.
+    """
+
+    data = {
+        key: value
+        for key, value in prescription.__dict__.items()
+        if not key.startswith("_")
+    }
+    return PrescriptionRead(
+        **data,
+        items=items,
+        prescriber_name=name,
+        prescriber_registration=registration,
+    )
+
+
 @router.get(
     "",
     response_model=list[PrescriptionRead],
@@ -39,15 +62,14 @@ async def list_prescriptions(
     if visit_id is None:
         return []
     prescriptions = await prescription_service.repository.get_by_visit(db, visit_id)
+    prescribers = await prescription_service.prescriber_identities(
+        db, {prescription.prescribed_by for prescription in prescriptions}
+    )
     result: list[PrescriptionRead] = []
     for prescription in prescriptions:
         items = await prescription_service.get_items(db, prescription.id)
-        result.append(
-            PrescriptionRead(
-                **prescription.__dict__,
-                items=items,
-            )
-        )
+        name, registration = prescribers.get(prescription.prescribed_by, (None, None))
+        result.append(_read_model(prescription, items, name, registration))
     return result
 
 
@@ -72,10 +94,12 @@ async def create_prescription(
         prescription_id=prescription.id,
     )
 
-    return PrescriptionRead(
-        **prescription.__dict__,
-        items=items,
+    prescribers = await prescription_service.prescriber_identities(
+        db, {prescription.prescribed_by}
     )
+    name, registration = prescribers.get(prescription.prescribed_by, (None, None))
+
+    return _read_model(prescription, items, name, registration)
 
 
 @router.get(
@@ -90,15 +114,14 @@ async def list_case_prescriptions(
 ) -> list[PrescriptionRead]:
     """Case continuity: every prescription across the case's encounters."""
     prescriptions = await prescription_service.get_by_case(db, case_record_id)
+    prescribers = await prescription_service.prescriber_identities(
+        db, {prescription.prescribed_by for prescription in prescriptions}
+    )
     result: list[PrescriptionRead] = []
     for prescription in prescriptions:
         items = await prescription_service.get_items(db, prescription.id)
-        result.append(
-            PrescriptionRead(
-                **prescription.__dict__,
-                items=items,
-            )
-        )
+        name, registration = prescribers.get(prescription.prescribed_by, (None, None))
+        result.append(_read_model(prescription, items, name, registration))
     return result
 
 
@@ -112,9 +135,12 @@ async def get_prescription(
     db: DatabaseSession,
     _: CurrentUserDependency,
 ) -> PrescriptionRead:
-    prescription = await prescription_service.get_by_id(
+    # The service method is get(); this endpoint has called get_by_id() since it
+    # was written, which does not exist - so every read by id raised AttributeError
+    # and returned a 500. No test called the route, so nothing noticed.
+    prescription = await prescription_service.get(
         db,
-        prescription_id=prescription_id,
+        prescription_id,
     )
 
     items = await prescription_service.get_items(
@@ -122,10 +148,12 @@ async def get_prescription(
         prescription_id=prescription.id,
     )
 
-    return PrescriptionRead(
-        **prescription.__dict__,
-        items=items,
+    prescribers = await prescription_service.prescriber_identities(
+        db, {prescription.prescribed_by}
     )
+    name, registration = prescribers.get(prescription.prescribed_by, (None, None))
+
+    return _read_model(prescription, items, name, registration)
 
 
 @router.patch(
@@ -150,10 +178,12 @@ async def update_prescription(
         prescription_id=prescription.id,
     )
 
-    return PrescriptionRead(
-        **prescription.__dict__,
-        items=items,
+    prescribers = await prescription_service.prescriber_identities(
+        db, {prescription.prescribed_by}
     )
+    name, registration = prescribers.get(prescription.prescribed_by, (None, None))
+
+    return _read_model(prescription, items, name, registration)
 
 
 __all__ = [

@@ -39,7 +39,7 @@ statement lacked; the specification is unchanged.
 | COP.2 | A change of treatment is justified | A decision to change the remedy or stop and reassess is refused without a stated reason (NCH Code of Ethics 31(1)) | `backend/app/services/followup.py` | evidenced |
 | COP.8 | Referral carries a written case statement | A referral certificate is refused without one (NCH Code of Ethics 27) | `backend/app/services/certificates.py` | evidenced |
 | COP.11 | Every certificate is retained | Retention date computed at issue and stored; register lists what is held and what is past retention (NCH 7(1)) | `backend/app/models/medical_certificate.py`, `GET /api/v1/compliance/certificate-retention` | evidenced |
-| MOM.4 | Prescriptions are legible, complete and attributable | Prescriber identity, registration number on the practitioner, and a numbered prescription | `backend/app/models/user.py`, `backend/app/models/prescription.py` | partial — the number is stored and returned; printing it is a client change not yet made |
+| MOM.4 | Prescriptions are legible, complete and attributable | Prescriber name and NCH registration number travel with every prescription and render in its header; a missing number is shown as missing | `backend/app/schemas/prescription.py`, `frontend/js/ui/prescription.js` | evidenced |
 
 ## 3. Medication and laboratory
 

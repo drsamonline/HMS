@@ -134,3 +134,24 @@
 .home-panel h3 { margin: 0; font-size: var(--text-base); color: var(--ink-strong); }
 .home-panel-description { margin: 0; font-size: var(--text-sm); color: var(--ink-muted); }
 .home-panel button { align-self: flex-start; }
+
+/* A printed prescription has to name its prescriber and their registration number
+   (NCH Code of Ethics 7(2)). A missing number is shown as missing, not left blank. */
+.rx-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--space-3);
+}
+.rx-identity { display: flex; flex-direction: column; gap: var(--space-1); }
+.rx-prescriber { font-size: var(--text-base); color: var(--ink-strong); }
+.rx-registration { font-size: var(--text-sm); color: var(--ink-muted); font-family: var(--font-mono); }
+.rx-registration-missing { color: var(--state-danger-ink); }
+.rx-meta { display: flex; flex-direction: column; gap: var(--space-1); align-items: flex-end; font-size: var(--text-sm); color: var(--ink-muted); }
+.rx-number { font-family: var(--font-mono); }
+@media print {
+  .rx-registration-missing { color: inherit; font-style: italic; }
+}
