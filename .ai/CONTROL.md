@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-36-opsdocs` (stacked on `batch-35-evidence`) |
+| Branch | `batch-37-roleguides` (stacked on `batch-36-opsdocs`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1020 passed, 2 skipped, 1022 collected** (569 baseline + 451 new) |
-| Wave complete | **Waves 0–8 complete (B01–B45)**; wave 9 one of six |
-| Next batch | **B47 — the role guides** |
+| Tests | **1028 passed, 2 skipped, 1030 collected** (569 baseline + 459 new) |
+| Wave complete | **Waves 0–8 complete (B01–B45)**; wave 9 two of six |
+| Next batch | **B48 — in-app help** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -410,9 +410,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B44 | 2026-11-10 | see `git log` | 14 tests | 1001 | Four editions enforced server-side; the free personal tier is OPD-only with case and bill printing. Public edition endpoint names what is not included |
 | B45 | 2026-11-10 | see `git log` | 11 tests | 1012 | The takedown evidence pack: finding, seal comparison, licence position and a tamper-evident manifest, all reproducible by a third party. **Closes wave 8** |
 | B46 | 2026-11-10 | see `git log` | 8 tests | 1020 | The operations runbook: install, LAN, the backup drill, maintenance, troubleshooting, handover. **Opens wave 9** |
+| B47 | 2026-11-10 | see `git log` | 8 tests | 1028 | Ten role guides with a fixed five-section shape, each naming the home screen its role lands on and the screens it cannot open |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 451 new tests. Final: **1020 passed, 2 skipped, 1022 collected**.
+test baseline plus 459 new tests. Final: **1028 passed, 2 skipped, 1030 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1107,6 +1108,15 @@ The backup section is a six-step drill with a written record, not a schedule.
 **D-090 — Every command in a runbook is under test.**
 If a script is renamed, the document fails the build rather than misleading the next
 operator.
+
+**D-091 — A guide has the same shape as every other guide.**
+Five sections, always. A guide that invents its own shape is a guide nobody reads
+twice.
+
+**D-092 — The 'what the software will not let you do' section earns its place.**
+A refusal is alarming when it is unexpected and unremarkable when it is written down.
+A registration clerk who knows she cannot edit a clinical record does not file a ticket
+about it.
 
 ---
 
