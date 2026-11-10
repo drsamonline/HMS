@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-26-indicators` (stacked on `batch-25-print-preview`) |
+| Branch | `batch-27-dashboard` (stacked on `batch-26-indicators`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **905 passed, 2 skipped, 907 collected** (569 baseline + 336 new) |
-| Wave complete | **Waves 0–6 complete (B01–B32)**; wave 7 one of five |
-| Next batch | **B37 — the indicator dashboard** |
+| Tests | **917 passed, 2 skipped, 919 collected** (569 baseline + 348 new) |
+| Wave complete | **Waves 0–6 complete (B01–B32)**; wave 7 two of five |
+| Next batch | **B38 — NABH PSQ.3 indicator pack** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -400,9 +400,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B31 | 2026-11-10 | see `git log` | 6 tests | 881 | Prescriber name and registration number reach the prescription header. Found two pre-existing defects: a GET that called a method that does not exist, and a read model built from `__dict__` |
 | B32 | 2026-11-10 | see `git log` | 9 tests | 890 | The prescription as a print document, previewed and printed from the same markup. **Closes wave 6** |
 | B36 | 2026-11-10 | see `git log` | 15 tests | 905 | Indicator spine: nine indicators declared with numerator, denominator and standard, computed by one engine, `None` not zero when there is nothing to divide by. **Opens wave 7** |
+| B37 | 2026-11-10 | see `git log` | 12 tests | 917 | The dashboard: grouped cards with definition, standard and an inline-SVG trend that breaks at a gap instead of drawing a false zero |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 336 new tests. Final: **905 passed, 2 skipped, 907 collected**.
+test baseline plus 348 new tests. Final: **917 passed, 2 skipped, 919 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -954,6 +955,18 @@ to distrust it, and the distrust is correct.
 Every declared indicator must have a computer, and no computer may be undeclared. A
 number computed but not described is a number nobody can argue with; a number
 described but not computed is a promise.
+
+**D-066 — A missing month is a gap in the line, not a zero in it.**
+The path breaks at every unavailable point rather than joining across it. A missing
+month plotted as zero draws a plunge that never happened, and the reader has no way
+to tell it from a real one.
+
+**D-067 — A trend is drawn in calendar months, not rolling thirty days.**
+Adjacent rolling windows share most of their data, which draws a smooth line that
+hides every real change.
+
+**D-068 — One point is not a trend.**
+Fewer than two months of data renders as a sentence saying so, not as a flat line.
 
 ---
 
