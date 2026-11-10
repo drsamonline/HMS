@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-33-seal` (stacked on `batch-32-detector`) |
+| Branch | `batch-34-editions` (stacked on `batch-33-seal`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **986 passed, 2 skipped, 988 collected** (569 baseline + 417 new) |
-| Wave complete | **Waves 0–7 complete (B01–B40)**; wave 8 three of five |
-| Next batch | **B44 — licence and notice hardening** |
+| Tests | **1001 passed, 2 skipped, 1003 collected** (569 baseline + 432 new) |
+| Wave complete | **Waves 0–7 complete (B01–B40)**; wave 8 four of five |
+| Next batch | **B45 — the takedown evidence pack** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -407,9 +407,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B41 | 2026-11-10 | see `git log` | 13 tests | 963 | Provenance marks in CSS, JS and Python, a public claim endpoint, and a detector. **Opens wave 8** |
 | B42 | 2026-11-10 | see `git log` | 12 tests | 975 | The detector as a tool: directory, zip or URL in; a written finding with a verdict out, including 'marks stripped' |
 | B43 | 2026-11-10 | see `git log` | 11 tests | 986 | Build sealing: a deterministic manifest of hashes, with verify reporting modified, added and missing files |
+| B44 | 2026-11-10 | see `git log` | 14 tests | 1001 | Four editions enforced server-side; the free personal tier is OPD-only with case and bill printing. Public edition endpoint names what is not included |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 417 new tests. Final: **986 passed, 2 skipped, 988 collected**.
+test baseline plus 432 new tests. Final: **1001 passed, 2 skipped, 1003 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1055,6 +1056,20 @@ and says so in its own payload. A seal trusted beyond its reach is worse than no
 **D-082 — A seal excludes what changes without the source changing.**
 Caches, build output, databases and the seal itself. A seal that changes when nothing
 changed is noise, and noise gets ignored.
+
+**D-083 — Free to use is not free to copy.**
+The personal edition is PolyForm Noncommercial: free for a personal practice,
+forbidding redistribution. That distinction is what makes a free tier compatible with
+a proprietary codebase, and it has to be in the licence, not only in the price list.
+
+**D-084 — A tier enforced only by a licence paragraph is not a tier.**
+Editions are enforced in `module_state.enable`, which every path goes through - the
+wizard, the configuration API, the headless CLI and a crafted request.
+
+**D-085 — The free edition ships the same code, switched off.**
+Build-time stripping is a packaging step, not yet written. Until it exists the honest
+description of the free tier is a licensed restriction, not a technical impossibility,
+and the module docstring says so.
 
 ---
 
