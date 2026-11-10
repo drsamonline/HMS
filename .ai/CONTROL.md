@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-31-provenance` (stacked on `batch-30-nch-qci`) |
+| Branch | `batch-32-detector` (stacked on `batch-31-provenance`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **963 passed, 2 skipped, 965 collected** (569 baseline + 394 new) |
-| Wave complete | **Waves 0–7 complete (B01–B40)**; wave 8 one of five |
-| Next batch | **B42 — the copy detector, packaged** |
+| Tests | **975 passed, 2 skipped, 977 collected** (569 baseline + 406 new) |
+| Wave complete | **Waves 0–7 complete (B01–B40)**; wave 8 two of five |
+| Next batch | **B43 — build sealing** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -405,9 +405,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B39 | 2026-11-10 | see `git log` | 11 tests | 940 | Discharge outcome (migration 0041) unlocks mortality and DAMA; length of stay and re-admission came free once the right table was read. B38's assessment corrected in place |
 | B40 | 2026-11-10 | see `git log` | 10 tests | 950 | The NCH monthly return as one printable document, with the QCI section stated rather than omitted. **Closes wave 7** |
 | B41 | 2026-11-10 | see `git log` | 13 tests | 963 | Provenance marks in CSS, JS and Python, a public claim endpoint, and a detector. **Opens wave 8** |
+| B42 | 2026-11-10 | see `git log` | 12 tests | 975 | The detector as a tool: directory, zip or URL in; a written finding with a verdict out, including 'marks stripped' |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 394 new tests. Final: **963 passed, 2 skipped, 965 collected**.
+test baseline plus 406 new tests. Final: **975 passed, 2 skipped, 977 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1035,6 +1036,16 @@ avoids.
 The first version of the mismatch test wrote the fake marker literally in the test
 file the detector scans, so the "not found" assertion passed for the wrong reason. The
 fake is now built by concatenation.
+
+**D-079 — Absence of a mark in something that is otherwise this software is evidence.**
+The fingerprint list exists so a stripped copy is not reported as clean. It is
+deliberately narrow: a fingerprint list that matches everything makes every tree look
+stripped.
+
+**D-080 — A finding states what it does not prove.**
+The clean verdict says in its own text that a sufficiently rewritten copy would
+produce the same result. A report that overstates its own reach is worse than no
+report.
 
 ---
 
