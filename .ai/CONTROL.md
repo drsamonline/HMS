@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-39-apiref` (stacked on `batch-38-help`) |
+| Branch | `batch-40-tutorial` (stacked on `batch-39-apiref`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1053 passed, 2 skipped, 1055 collected** (569 baseline + 484 new) |
-| Wave complete | **Waves 0–8 complete (B01–B45)**; wave 9 four of six |
-| Next batch | **B50 — the tutorial** |
+| Tests | **1065 passed, 2 skipped, 1067 collected** (569 baseline + 496 new) |
+| Wave complete | **Waves 0–8 complete (B01–B45)**; wave 9 five of six |
+| Next batch | **B51 — the handover pack, closing wave 9** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -413,9 +413,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B47 | 2026-11-10 | see `git log` | 8 tests | 1028 | Ten role guides with a fixed five-section shape, each naming the home screen its role lands on and the screens it cannot open |
 | B48 | 2026-11-10 | see `git log` | 15 tests | 1043 | Fourteen screen topics served by the API and shown in a drawer, in the same voice as the guides |
 | B49 | 2026-11-10 | see `git log` | 10 tests | 1053 | The API reference, generated from the mounted routes with a drift gate that fails the build when it goes stale |
+| B50 | 2026-11-10 | see `git log` | 12 tests | 1065 | The guided first run: five steps in the order a day happens, progress read from the database, never touching a real patient |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 484 new tests. Final: **1053 passed, 2 skipped, 1055 collected**.
+test baseline plus 496 new tests. Final: **1065 passed, 2 skipped, 1067 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1139,6 +1140,20 @@ generation is a habit rather than a control.
 **D-097 — A check that has never failed is not a check.**
 The drift test exercises `--check` against a deliberately stale file, so the failing
 path is known to work.
+
+**D-098 — The tutorial never touches a real patient.**
+It asks for a Tutorial Patient and the checks look only at whether the step has been
+done, not at which record was used. A tutorial that damages the record is not a
+tutorial.
+
+**D-099 — Progress is read from the database, not tracked in the browser.**
+A step is done when the hospital has done it, whoever did it. Closing the laptop does
+not reset it and the person can continue on another machine.
+
+**D-100 — A ratchet moves deliberately or not at all.**
+B15's cap on login-only routes went from three to four, and the test now names all four
+and what each returns about the caller. The next addition has to justify itself in the
+same place.
 
 ---
 
