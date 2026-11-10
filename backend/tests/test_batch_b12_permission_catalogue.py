@@ -133,6 +133,7 @@ def test_every_data_endpoint_module_is_covered() -> None:
         "compliance": {"audit"},
         # home returns the caller's own landing screen: a login, no permission.
         "home": set(),
+        "indicators": {"reporting"},
         "configuration": {"settings"},
         "dashboard": {"reporting"},
         "department_services": {"masters"},

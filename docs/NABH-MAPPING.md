@@ -89,7 +89,11 @@ above and a complete assessment.
 1. **PSQ.1 incident reporting** — a register of incidents and near-misses, separate
    from adverse drug events, with review and closure.
 2. **PSQ.3 organisational KPIs** — the 32 mandatory indicators plus the 18
-   department-specific ones, computed and displayed. This is its own wave.
+   department-specific ones. The indicator spine now exists
+   (`backend/app/core/indicators.py`): nine indicators are declared with their
+   numerator, denominator and standard, and computed by one engine. The remaining
+   KPIs are catalogue entries, not new machinery — but they are not written yet, so
+   this row stays absent.
 3. **DH.7 interoperability** — FHIR or HL7 exchange. Deliberately out of scope for a
    LAN SQLite product; the data model is frozen and a rewrite is not warranted.
 4. **DH.8 electronic signatures** — a signed assertion of who approved what,
