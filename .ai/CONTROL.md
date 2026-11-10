@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-25-print-preview` (stacked on `batch-24-patient-header`) |
+| Branch | `batch-26-indicators` (stacked on `batch-25-print-preview`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **890 passed, 2 skipped, 892 collected** (569 baseline + 321 new) |
-| Wave complete | **Waves 0–6 complete (B01–B32)**; wave 7 next |
-| Next batch | **B36 — the indicator spine** (wave 7, the dashboards) |
+| Tests | **905 passed, 2 skipped, 907 collected** (569 baseline + 336 new) |
+| Wave complete | **Waves 0–6 complete (B01–B32)**; wave 7 one of five |
+| Next batch | **B37 — the indicator dashboard** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -399,9 +399,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | NABH | 2026-11-10 | `batch-23` | 7 tests | 875 | `docs/NABH-MAPPING.md` (25 rows, every citation checked by a test) and the specimen accession (migration 0040) |
 | B31 | 2026-11-10 | see `git log` | 6 tests | 881 | Prescriber name and registration number reach the prescription header. Found two pre-existing defects: a GET that called a method that does not exist, and a read model built from `__dict__` |
 | B32 | 2026-11-10 | see `git log` | 9 tests | 890 | The prescription as a print document, previewed and printed from the same markup. **Closes wave 6** |
+| B36 | 2026-11-10 | see `git log` | 15 tests | 905 | Indicator spine: nine indicators declared with numerator, denominator and standard, computed by one engine, `None` not zero when there is nothing to divide by. **Opens wave 7** |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 321 new tests. Final: **890 passed, 2 skipped, 892 collected**.
+test baseline plus 336 new tests. Final: **905 passed, 2 skipped, 907 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -937,6 +938,22 @@ NCH, NABH and QCI.
 One markup, one path. A second builder for the printed version is how the two drift,
 and a prescription that prints differently from what was reviewed is worse than one
 that cannot print at all.
+
+### Wave 7 opened (2026-11-10)
+
+| Batch | Delivered |
+|-------|-----------|
+| B36 | The indicator spine: nine declared indicators, one engine, one endpoint |
+
+**D-064 — A ratio with an empty denominator is `None`, never zero.**
+"No admissions this month" and "0% of admissions were discharged" are different
+statements. A dashboard that shows the second when it means the first teaches people
+to distrust it, and the distrust is correct.
+
+**D-065 — The contract is held in both directions.**
+Every declared indicator must have a computer, and no computer may be undeclared. A
+number computed but not described is a number nobody can argue with; a number
+described but not computed is a promise.
 
 ---
 
