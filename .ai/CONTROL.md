@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-29-discharge` (stacked on `batch-28-psq3`) |
+| Branch | `batch-30-nch-qci` (stacked on `batch-29-discharge`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **940 passed, 2 skipped, 942 collected** (569 baseline + 371 new) |
-| Wave complete | **Waves 0–6 complete (B01–B32)**; wave 7 four of five |
-| Next batch | **B40 — the NCH/QCI pack, closing wave 7** |
+| Tests | **950 passed, 2 skipped, 952 collected** (569 baseline + 381 new) |
+| Wave complete | **Waves 0–7 complete (B01–B40)**; wave 8 next |
+| Next batch | **B41 — provenance marks (wave 8, IP protection)** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -403,9 +403,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B37 | 2026-11-10 | see `git log` | 12 tests | 917 | The dashboard: grouped cards with definition, standard and an inline-SVG trend that breaks at a gap instead of drawing a false zero |
 | B38 | 2026-11-10 | see `git log` | 12 tests | 929 | PSQ.3 coverage by family, served by the API and documented; three families fully reportable, six with a stated gap. Mapping row moves absent → partial |
 | B39 | 2026-11-10 | see `git log` | 11 tests | 940 | Discharge outcome (migration 0041) unlocks mortality and DAMA; length of stay and re-admission came free once the right table was read. B38's assessment corrected in place |
+| B40 | 2026-11-10 | see `git log` | 10 tests | 950 | The NCH monthly return as one printable document, with the QCI section stated rather than omitted. **Closes wave 7** |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 371 new tests. Final: **940 passed, 2 skipped, 942 collected**.
+test baseline plus 381 new tests. Final: **950 passed, 2 skipped, 952 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -994,6 +995,25 @@ tidied away, because the next assessment will face the same temptation.
 `discharge_outcome` is nullable and existing rows stay null. The mortality
 denominator counts only episodes with a recorded outcome, so mortality cannot fall
 simply because record-keeping got worse.
+
+### Wave 7 closed (2026-11-10)
+
+| Batch | Delivered |
+|-------|-----------|
+| B36 | The indicator spine: thirteen declared indicators, one engine |
+| B37 | The dashboard: definitions, standards and a trend that breaks at a gap |
+| B38 | PSQ.3 coverage by family, served by the API |
+| B39 | The discharge outcome, and a correction to B38 |
+| B40 | The NCH monthly return, with QCI stated rather than skipped |
+
+**D-074 — A missing section looks like a passing section.**
+QCI measures patient experience, complaints and safety culture, none of which HHMS
+records. The return shows the section with a reason against each gap, because
+omitting it would read as a clean result.
+
+**D-075 — A count of zero is a fact; a ratio with no denominator is a gap.**
+No certificates issued is a true zero. No discharges means mortality is unavailable,
+not 0%. The two must not be rendered the same way, and a test asserts it.
 
 ---
 
