@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-21-navigation` (stacked on `batch-20-components`) |
+| Branch | `batch-22-homes` (stacked on `batch-21-navigation`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **854 passed, 2 skipped, 856 collected** (569 baseline + 285 new) |
-| Wave complete | **Waves 0–5 complete (B01–B35)**; wave 6 three of six |
-| Next batch | **B30 — role-shaped home screens** |
+| Tests | **864 passed, 2 skipped, 866 collected** (569 baseline + 295 new) |
+| Wave complete | **Waves 0–5 complete (B01–B35)**; wave 6 four of six |
+| Next batch | **B31 — the patient record header** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -395,9 +395,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B27 | 2026-11-09 | see `git log` | 7 tests | 834 | Design tokens: every colour, space and size named once; app.css carries no literal colour; contrast asserted against WCAG AA. **Opens wave 6** |
 | B28 | 2026-11-09 | see `git log` | 11 tests | 845 | Component kit: form and confirm dialogs, toasts, four honest states, one worklist table, the patient header strip. No browser dialogs remain |
 | B29 | 2026-11-10 | see `git log` | 9 tests | 854 | Navigation: fourteen flat buttons become six ordered groups; group metadata travels with each item; empty groups are removed client-side |
+| B30 | 2026-11-10 | see `git log` | 10 tests | 864 | Nine role homes plus a default, precedence for multi-role users, panels filtered to what the caller can open, client renders the server's answer |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 285 new tests. Final: **854 passed, 2 skipped, 856 collected**.
+test baseline plus 295 new tests. Final: **864 passed, 2 skipped, 866 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -890,6 +891,18 @@ a breaking change; neither was worth the tidiness.
 Click handlers are bound in app.js before the navigation renders. Rebuilding the
 markup would silently unbind every screen in the product, and it would look like a
 routing bug rather than a rendering one.
+
+**D-058 — A home is not a permission.**
+The permissions decide what a role *may* open; the home decides what it *should*
+open first. Conflating them would mean a role could not be given a nicer starting
+point without changing what it is allowed to do.
+
+**D-059 — A role with no declared home gets the default, never a blank screen.**
+A blank screen reads as a broken system, and the account most likely to see one is
+the one with the fewest options - the least able to work out that it is fine.
+
+**D-060 — A home panel is dropped when the caller cannot open its screen.**
+A shortcut that leads to a refusal is worse than no shortcut.
 
 ---
 
