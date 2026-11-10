@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-22-homes` (stacked on `batch-21-navigation`) |
+| Branch | `batch-24-patient-header` (stacked on `batch-23-nabh-lab`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **864 passed, 2 skipped, 866 collected** (569 baseline + 295 new) |
-| Wave complete | **Waves 0–5 complete (B01–B35)**; wave 6 four of six |
-| Next batch | **B31 — the patient record header** |
+| Tests | **881 passed, 2 skipped, 883 collected** (569 baseline + 312 new) |
+| Wave complete | **Waves 0–5 complete (B01–B35)**; wave 6 five of six |
+| Next batch | **B32 — print preview, closing wave 6** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -396,9 +396,11 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B28 | 2026-11-09 | see `git log` | 11 tests | 845 | Component kit: form and confirm dialogs, toasts, four honest states, one worklist table, the patient header strip. No browser dialogs remain |
 | B29 | 2026-11-10 | see `git log` | 9 tests | 854 | Navigation: fourteen flat buttons become six ordered groups; group metadata travels with each item; empty groups are removed client-side |
 | B30 | 2026-11-10 | see `git log` | 10 tests | 864 | Nine role homes plus a default, precedence for multi-role users, panels filtered to what the caller can open, client renders the server's answer |
+| NABH | 2026-11-10 | `batch-23` | 7 tests | 875 | `docs/NABH-MAPPING.md` (25 rows, every citation checked by a test) and the specimen accession (migration 0040) |
+| B31 | 2026-11-10 | see `git log` | 6 tests | 881 | Prescriber name and registration number reach the prescription header. Found two pre-existing defects: a GET that called a method that does not exist, and a read model built from `__dict__` |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 295 new tests. Final: **864 passed, 2 skipped, 866 collected**.
+test baseline plus 312 new tests. Final: **881 passed, 2 skipped, 883 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -903,6 +905,16 @@ the one with the fewest options - the least able to work out that it is fine.
 
 **D-060 — A home panel is dropped when the caller cannot open its screen.**
 A shortcut that leads to a refusal is worse than no shortcut.
+
+**D-061 — A field that never reaches the paper is not a compliance claim.**
+The registration number was stored from B33 and sent to nobody. Moving MOM.4 from
+partial to evidenced required the read model, the client component and the mapping
+row to change together, which is the rule the mapping states.
+
+**D-062 — A read model is built from named fields, not `__dict__`.**
+`__dict__` carries `_sa_instance_state`. It survived only because the instance was
+usually expired when it was read; one query earlier in the request changed that and
+turned a working endpoint into a 500.
 
 ---
 
