@@ -60,6 +60,7 @@ statement lacked; the specification is unchanged.
 | IMS.5 | Numbering is continuous and cannot be edited away | Sequences with prefix, padding and reset policy; a register of what was issued | `backend/app/models/number_sequence.py`, `docs/CLIENT_RECEIPT_NUMBERING_CONTINUITY_AUDIT.md` | evidenced |
 | IMS.6 | The system can show what changed, when, and by whom | Audit review and export endpoints | `GET /api/v1/audit-logs`, `backend/app/api/v1/endpoints/audit_logs.py` | evidenced |
 | PSQ.1 | Incidents are recorded and reviewed | Not implemented | — | absent |
+| PSQ.3 | The hospital measures itself against the mandatory indicators | Nine indicators across three complete families, with an honest coverage report naming the eight families that cannot be served and what each needs | `backend/app/core/indicators.py`, `backend/app/core/psq3.py`, `docs/NABH-PSQ3.md`, `GET /api/v1/indicators/psq3` | partial |
 
 ## 5. Information management — the digital health standards
 
@@ -89,11 +90,12 @@ above and a complete assessment.
 1. **PSQ.1 incident reporting** — a register of incidents and near-misses, separate
    from adverse drug events, with review and closure.
 2. **PSQ.3 organisational KPIs** — the 32 mandatory indicators plus the 18
-   department-specific ones. The indicator spine now exists
-   (`backend/app/core/indicators.py`): nine indicators are declared with their
-   numerator, denominator and standard, and computed by one engine. The remaining
-   KPIs are catalogue entries, not new machinery — but they are not written yet, so
-   this row stays absent.
+   department-specific ones. The spine exists (`backend/app/core/indicators.py`):
+   nine indicators are declared and computed. Coverage is assessed by family in
+   `docs/NABH-PSQ3.md` and served at `GET /api/v1/indicators/psq3`: three families
+   are fully reportable, two partly, six not at all. The enumeration itself is
+   blocked on the NABH standard document, which is not in this repository — see
+   PSQ.3 below.
 3. **DH.7 interoperability** — FHIR or HL7 exchange. Deliberately out of scope for a
    LAN SQLite product; the data model is frozen and a rewrite is not warranted.
 4. **DH.8 electronic signatures** — a signed assertion of who approved what,

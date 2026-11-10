@@ -71,6 +71,19 @@ async def list_indicators(
 
 
 @router.get(
+    "/psq3",
+    response_model=dict,
+    dependencies=[Depends(require("reporting.read"))],
+)
+async def psq3_coverage() -> dict:
+    """What NABH PSQ.3 reporting this installation could support today."""
+
+    from app.core.psq3 import coverage
+
+    return coverage()
+
+
+@router.get(
     "/catalogue",
     response_model=list[dict],
     dependencies=[Depends(require("reporting.read"))],
