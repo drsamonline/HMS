@@ -21,9 +21,9 @@ leaving a hospital to discover it.
 | | Count |
 |---|---|
 | Families PSQ.3 covers | 11 |
-| Families with **any** data in HHMS | 5 |
+| Families with **any** data in HHMS | 6 |
 | Families **fully** reportable today | 3 |
-| Live indicators serving them | 9 |
+| Live indicators serving them | 12 |
 
 ## The families
 
@@ -32,28 +32,39 @@ leaving a hospital to discover it.
 | Access and outpatient activity | OPD footfall, new to follow-up, referral rate | **yes** | — |
 | Clinical process | Prescriptions per visit, investigations reported | **yes** | — |
 | Records and consent | Consent completeness, record completeness, certificate turnaround | partial | A consent register. Certificate issuance is recorded; the consent that should precede a procedure is not |
-| Inpatient activity | Admissions, bed occupancy, **average length of stay** | partial | **Discharge date.** `Admission` carries a status but no discharge timestamp, so length of stay cannot be computed — only the count of open admissions |
+| Inpatient activity | Admissions, bed occupancy, average length of stay | **yes** | — |
 | Medication safety | Medication errors, adverse drug events, look-alike sound-alike | partial | An incident register. The pharmacovigilance table records adverse events to products, which is **one indicator in this family, not the family** |
 | Patient safety incidents | Falls, pressure ulcers, sentinel events, wrong-patient events | **no** | A general incident register with severity, review and closure |
 | Healthcare-associated infection | SSI, VAP, CAUTI, bloodstream infection, hand hygiene | **no** | An infection surveillance register and device-day denominators |
-| Clinical outcomes | Mortality, unplanned re-admission, return to theatre, DAMA | **no** | Discharge disposition and a discharge timestamp |
+| Clinical outcomes | Mortality, unplanned re-admission, return to theatre, DAMA | partial | Mortality and DAMA are computable since `Discharge.discharge_outcome` was added; **return to theatre** still needs a theatre list |
 | Patient experience | Satisfaction, complaints received and resolved | **no** | A feedback and complaints register |
 | Staff safety | Needle-stick and sharps injuries, staff injury reporting | **no** | A staff incident register, separate from patient incidents |
 | Theatre utilisation | Theatre utilisation, cancelled procedures | **no** | A theatre list with planned and actual times |
 
-## The one that looks close but is not
+## A correction, and what it taught
 
-**Average length of stay** is the trap. The indicator spine computes admissions and
-occupancy today, so it is tempting to add length of stay beside them. It cannot be
-computed: `Admission` has an `admission_datetime` and an `admission_status`, and no
-discharge timestamp anywhere. A dashboard showing "0.0 days" would be worse than one
-showing nothing.
+The first version of this document said length of stay could not be computed because
+there was no discharge timestamp anywhere. **That was wrong.** `Admission` has no
+discharge timestamp, but a separate `Discharge` table does — with
+`discharge_datetime`, written by the discharge service. The data was there; the
+assessment had looked in one place.
 
-The fix is small — one nullable `discharged_at` on `Admission`, written when the
-status changes — and it unlocks four indicators across two families: length of stay,
-mortality, re-admission and discharge against medical advice. It is not in this
-batch because it changes the clinical model, and the model is frozen until that is
-decided deliberately.
+Length of stay and thirty-day re-admission are now computed from that join, with no
+schema change at all.
+
+What genuinely was missing is the **outcome**. `Discharge.discharge_status` answers
+whether the record is valid (`discharged` or `cancelled`), not what happened to the
+patient. Mortality and discharge against medical advice therefore had no denominator
+that meant anything.
+
+`Discharge.discharge_outcome` now records `routine`, `expired`, `against_advice` or
+`transferred`. It is nullable and existing rows are left null: an episode nobody
+classified has an unknown outcome, not a good one, and the mortality denominator
+counts only episodes with a recorded outcome — so mortality cannot fall simply
+because record-keeping got worse.
+
+The lesson is recorded rather than tidied away: a gap analysis that names one table
+and not its siblings will report a gap that is not there.
 
 ## The zero that is not a zero
 
@@ -69,9 +80,9 @@ is `None`, never `0`.
 
 Ordered by cost, cheapest first.
 
-1. **Discharge timestamp** — one nullable column, one write on status change. Unlocks
-   length of stay, mortality, re-admission and DAMA. Largest return for the smallest
-   change in the whole document.
+1. ~~**Discharge timestamp**~~ — done. The timestamp already existed on `Discharge`;
+   what was added is the outcome, which unlocked mortality and DAMA. Length of stay
+   and re-admission came free once the right table was read.
 2. **Incident register** — one table with patient or staff, category, severity,
    review and closure. Unlocks three families: patient safety, staff safety and the
    rest of medication safety.

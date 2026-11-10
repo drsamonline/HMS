@@ -15,7 +15,7 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,6 +24,7 @@ from app.core.indicators import BY_CODE, INDICATORS
 from app.models.admission import Admission
 from app.models.adverse_event import AdverseEvent
 from app.models.bed import Bed
+from app.models.discharge import Discharge
 from app.models.followup import FollowUp
 from app.models.investigation import Investigation
 from app.models.investigation_result import InvestigationResult
@@ -166,6 +167,90 @@ async def investigations_completed(db: AsyncSession, start: datetime, end: datet
     return _percent(reported, requested)
 
 
+async def average_length_of_stay(db: AsyncSession, start: datetime, end: datetime) -> float | None:
+    """Days from admission to discharge, averaged over episodes discharged in the period."""
+
+    rows = await db.execute(
+        select(Admission.admission_datetime, Discharge.discharge_datetime)
+        .join(Discharge, Discharge.admission_id == Admission.id)
+        .where(
+            Discharge.discharge_datetime >= start,
+            Discharge.discharge_datetime < end,
+            Discharge.discharge_status == "discharged",
+        )
+    )
+    spans = [
+        (discharged - admitted).total_seconds() / 86400
+        for admitted, discharged in rows.all()
+        if discharged and admitted
+    ]
+    if not spans:
+        return None
+    return round(sum(spans) / len(spans), 2)
+
+
+async def readmissions_30d(db: AsyncSession, start: datetime, end: datetime) -> float | None:
+    """Admissions to the same patient within thirty days of a discharge."""
+
+    discharged = await db.execute(
+        select(Discharge.admission_id, Admission.patient_id, Discharge.discharge_datetime)
+        .join(Admission, Admission.id == Discharge.admission_id)
+        .where(
+            Discharge.discharge_datetime >= start,
+            Discharge.discharge_datetime < end,
+            Discharge.discharge_status == "discharged",
+        )
+    )
+    episodes = discharged.all()
+    if not episodes:
+        return None
+
+    readmitted = 0
+    for _admission_id, patient_id, discharged_at in episodes:
+        later = await db.execute(
+            select(func.count())
+            .select_from(Admission)
+            .where(
+                Admission.patient_id == patient_id,
+                Admission.admission_datetime > discharged_at,
+                Admission.admission_datetime <= discharged_at + timedelta(days=30),
+            )
+        )
+        if later.scalar_one():
+            readmitted += 1
+    return _percent(readmitted, len(episodes))
+
+
+async def _outcome_share(db: AsyncSession, start: datetime, end: datetime, outcome: str) -> float | None:
+    """Share of discharged episodes with one outcome, over those with any outcome.
+
+    The denominator is episodes whose outcome was recorded, not every discharge: an
+    episode nobody classified has an unknown outcome, and counting it as 'not dead'
+    would make mortality fall as record-keeping got worse.
+    """
+
+    rows = await db.execute(
+        select(Discharge.discharge_outcome, func.count())
+        .where(
+            Discharge.discharge_datetime >= start,
+            Discharge.discharge_datetime < end,
+            Discharge.discharge_status == "discharged",
+            Discharge.discharge_outcome.is_not(None),
+        )
+        .group_by(Discharge.discharge_outcome)
+    )
+    counts = {name: count for name, count in rows.all()}
+    return _percent(counts.get(outcome, 0), sum(counts.values()))
+
+
+async def inpatient_mortality(db: AsyncSession, start: datetime, end: datetime) -> float | None:
+    return await _outcome_share(db, start, end, "expired")
+
+
+async def discharge_against_advice(db: AsyncSession, start: datetime, end: datetime) -> float | None:
+    return await _outcome_share(db, start, end, "against_advice")
+
+
 COMPUTERS = {
     "opd_footfall": opd_footfall,
     "new_vs_followup": new_vs_followup,
@@ -175,6 +260,10 @@ COMPUTERS = {
     "adverse_events_reported": adverse_events_reported,
     "certificates_issued": certificates_issued,
     "reason_recorded": reason_recorded,
+    "average_length_of_stay": average_length_of_stay,
+    "readmissions_30d": readmissions_30d,
+    "inpatient_mortality": inpatient_mortality,
+    "discharge_against_advice": discharge_against_advice,
     "investigations_completed": investigations_completed,
 }
 

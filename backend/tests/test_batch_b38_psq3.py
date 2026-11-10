@@ -129,16 +129,16 @@ def test_the_endpoint_needs_a_permission(isolated) -> None:
 
 
 # -------------------------------------------------------------------- document
-def test_the_document_names_the_trap() -> None:
-    """Average length of stay looks computable and is not."""
+def test_the_document_records_the_correction_rather_than_hiding_it() -> None:
+    """The first version named a gap that was not there. B39 corrected it in place."""
 
     from pathlib import Path
 
     text = (Path(__file__).resolve().parents[2] / "docs" / "NABH-PSQ3.md").read_text(
         encoding="utf-8"
     )
-    assert "Average length of stay" in text
-    assert "discharge timestamp" in text.lower() or "Discharge date" in text
+    assert "That was wrong" in text
+    assert "discharge timestamp" in text.lower()
 
 
 def test_the_document_refuses_to_enumerate_from_memory() -> None:

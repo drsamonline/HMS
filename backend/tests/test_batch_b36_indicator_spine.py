@@ -30,7 +30,9 @@ def test_every_indicator_names_a_unit_and_a_group() -> None:
 
     groups = {code for code, _label in GROUPS}
     for indicator in INDICATORS:
-        assert indicator.unit in {"count", "visits", "admissions", "certificates", "percent", "ratio"}
+        assert indicator.unit in {
+            "count", "visits", "admissions", "certificates", "percent", "ratio", "days",
+        }
         assert indicator.group in groups, f"{indicator.code} is in no declared group"
 
 

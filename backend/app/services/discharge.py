@@ -186,6 +186,7 @@ class DischargeService:
             discharge_status=(
                 data.discharge_status
             ),
+            discharge_outcome=data.discharge_outcome,
             discharged_by=data.discharged_by,
             remarks=data.remarks,
             created_at=now,

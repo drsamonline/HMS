@@ -60,7 +60,7 @@ statement lacked; the specification is unchanged.
 | IMS.5 | Numbering is continuous and cannot be edited away | Sequences with prefix, padding and reset policy; a register of what was issued | `backend/app/models/number_sequence.py`, `docs/CLIENT_RECEIPT_NUMBERING_CONTINUITY_AUDIT.md` | evidenced |
 | IMS.6 | The system can show what changed, when, and by whom | Audit review and export endpoints | `GET /api/v1/audit-logs`, `backend/app/api/v1/endpoints/audit_logs.py` | evidenced |
 | PSQ.1 | Incidents are recorded and reviewed | Not implemented | — | absent |
-| PSQ.3 | The hospital measures itself against the mandatory indicators | Nine indicators across three complete families, with an honest coverage report naming the eight families that cannot be served and what each needs | `backend/app/core/indicators.py`, `backend/app/core/psq3.py`, `docs/NABH-PSQ3.md`, `GET /api/v1/indicators/psq3` | partial |
+| PSQ.3 | The hospital measures itself against the mandatory indicators | Thirteen indicators across three complete families, with an honest coverage report naming the five families that cannot yet be served and what each needs | `backend/app/core/indicators.py`, `backend/app/core/psq3.py`, `docs/NABH-PSQ3.md`, `GET /api/v1/indicators/psq3` | partial |
 
 ## 5. Information management — the digital health standards
 
@@ -91,9 +91,9 @@ above and a complete assessment.
    from adverse drug events, with review and closure.
 2. **PSQ.3 organisational KPIs** — the 32 mandatory indicators plus the 18
    department-specific ones. The spine exists (`backend/app/core/indicators.py`):
-   nine indicators are declared and computed. Coverage is assessed by family in
+   thirteen indicators are declared and computed. Coverage is assessed by family in
    `docs/NABH-PSQ3.md` and served at `GET /api/v1/indicators/psq3`: three families
-   are fully reportable, two partly, six not at all. The enumeration itself is
+   are fully reportable, three partly, five not at all. The enumeration itself is
    blocked on the NABH standard document, which is not in this repository — see
    PSQ.3 below.
 3. **DH.7 interoperability** — FHIR or HL7 exchange. Deliberately out of scope for a

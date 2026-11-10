@@ -55,12 +55,9 @@ PSQ3_FAMILIES: tuple[Psq3Family, ...] = (
         code="inpatient",
         name="Inpatient activity",
         indicators=("admissions", "bed occupancy", "average length of stay"),
-        data_held=False,
-        missing_data=(
-            "Discharge date. Admission carries a status but no discharge timestamp, so "
-            "length of stay cannot be computed - only the count of open admissions."
-        ),
-        served_by=("inpatients_admitted", "bed_occupancy"),
+        data_held=True,
+        missing_data=None,
+        served_by=("inpatients_admitted", "bed_occupancy", "average_length_of_stay"),
     ),
     Psq3Family(
         code="clinical",
@@ -107,7 +104,12 @@ PSQ3_FAMILIES: tuple[Psq3Family, ...] = (
         indicators=("inpatient mortality", "unplanned re-admission", "return to theatre",
                     "discharge against medical advice"),
         data_held=False,
-        missing_data="Discharge disposition and a discharge timestamp on Admission.",
+        missing_data=(
+            "Return to theatre, which needs a theatre list. Mortality, re-admission and "
+            "discharge against medical advice are computable since the discharge outcome "
+            "was recorded."
+        ),
+        served_by=("inpatient_mortality", "readmissions_30d", "discharge_against_advice"),
     ),
     Psq3Family(
         code="experience",

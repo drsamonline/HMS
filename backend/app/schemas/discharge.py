@@ -20,6 +20,15 @@ DischargeStatus = Literal[
     "cancelled",
 ]
 
+#: How the episode ended. ``discharge_status`` says whether this record is valid;
+#: this says what happened to the patient, which is what NABH asks for.
+DischargeOutcome = Literal[
+    "routine",
+    "expired",
+    "against_advice",
+    "transferred",
+]
+
 
 class DischargeCreate(BaseSchema):
     admission_id: int = Field(gt=0)
@@ -28,6 +37,7 @@ class DischargeCreate(BaseSchema):
 
     discharge_summary: str | None = None
 
+    discharge_outcome: DischargeOutcome | None = None
     discharge_status: DischargeStatus = (
         "discharged"
     )
@@ -51,6 +61,7 @@ class DischargeRead(BaseSchema):
 
 
 __all__ = [
+    "DischargeOutcome",
     "DischargeStatus",
     "DischargeCreate",
     "DischargeRead",
