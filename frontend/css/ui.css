@@ -169,3 +169,30 @@
 @media print {
   .rx-items-table th, .rx-items-table td { border-bottom-color: var(--border-subtle); }
 }
+
+/* The indicator dashboard. Every number carries its definition. */
+.ind-dashboard { display: flex; flex-direction: column; gap: var(--space-5); }
+.ind-header { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-4); }
+.ind-header h2 { margin: 0; font-size: var(--text-xl); color: var(--ink-strong); }
+.ind-header p { margin: var(--space-1) 0 0; color: var(--ink-muted); font-size: var(--text-sm); }
+.ind-period { font-size: var(--text-sm); color: var(--ink-muted); display: flex; align-items: center; gap: var(--space-2); }
+.ind-group-title { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); margin: 0 0 var(--space-2); }
+.ind-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-3); }
+.ind-card {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--surface-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+}
+.ind-card header { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); }
+.ind-card h3 { margin: 0; font-size: var(--text-sm); color: var(--ink-strong); }
+.ind-standard { font-size: var(--text-xs); color: var(--ink-faint); font-family: var(--font-mono); }
+.ind-value { font-size: var(--text-xl); font-weight: 700; color: var(--ink-strong); }
+.ind-value small { font-size: var(--text-sm); font-weight: 400; color: var(--ink-muted); margin-left: 2px; }
+.ind-value-empty { font-size: var(--text-base); font-weight: 400; color: var(--ink-faint); font-style: italic; }
+.ind-trend { min-height: 28px; }
+.spark-empty { font-size: var(--text-xs); color: var(--ink-faint); font-style: italic; }
+.ind-definition { margin: 0; font-size: var(--text-xs); color: var(--ink-muted); display: flex; flex-direction: column; gap: 2px; }
+.ind-den { color: var(--ink-faint); }

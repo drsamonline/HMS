@@ -93,6 +93,32 @@ async def indicator_catalogue() -> list[dict]:
     ]
 
 
+class SeriesPoint(BaseModel):
+    start: str
+    end: str
+    value: float | None
+    available: bool
+
+
+@router.get(
+    "/{code}/series",
+    response_model=list[SeriesPoint],
+    dependencies=[Depends(require("reporting.read"))],
+)
+async def indicator_series(
+    code: str,
+    db: DatabaseSession,
+    months: int = Query(default=6, ge=1, le=24),
+    end: str | None = Query(default=None),
+) -> list[SeriesPoint]:
+    """One indicator month by month, for a trend line."""
+
+    if code not in BY_CODE:
+        raise HTTPException(status_code=404, detail=f"Unknown indicator: {code}")
+    _from, to_date = _period(None, end)
+    return [SeriesPoint(**point) for point in await indicators.series(db, code, to_date, months)]
+
+
 @router.get(
     "/{code}",
     response_model=IndicatorRead,

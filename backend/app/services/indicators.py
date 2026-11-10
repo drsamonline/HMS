@@ -15,7 +15,7 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -198,8 +198,51 @@ async def compute(db: AsyncSession, code: str, start: datetime, end: datetime) -
     }
 
 
+def month_periods(end: datetime, months: int) -> list[tuple[datetime, datetime]]:
+    """Whole calendar months ending with the month that contains ``end``.
+
+    A trend is read month by month because that is the grain a hospital reports at,
+    and because a rolling thirty days makes two adjacent points share most of their
+    data - which draws a smooth line that hides every real change.
+    """
+
+    periods: list[tuple[datetime, datetime]] = []
+    year, month = end.year, end.month
+    for _ in range(months):
+        first = datetime(year, month, 1, tzinfo=end.tzinfo or UTC)
+        if month == 12:
+            following = datetime(year + 1, 1, 1, tzinfo=end.tzinfo or UTC)
+        else:
+            following = datetime(year, month + 1, 1, tzinfo=end.tzinfo or UTC)
+        periods.append((first, following))
+        month -= 1
+        if month == 0:
+            month, year = 12, year - 1
+    return list(reversed(periods))
+
+
+async def series(
+    db: AsyncSession, code: str, end: datetime, months: int = 6
+) -> list[dict]:
+    """One indicator, month by month, oldest first."""
+
+    indicator = BY_CODE[code]
+    points = []
+    for start, finish in month_periods(end, months):
+        value = await COMPUTERS[code](db, start, finish)
+        points.append(
+            {
+                "start": start.date().isoformat(),
+                "end": finish.date().isoformat(),
+                "value": value,
+                "available": value is not None,
+            }
+        )
+    return points
+
+
 async def compute_all(db: AsyncSession, start: datetime, end: datetime) -> list[dict]:
     return [await compute(db, indicator.code, start, end) for indicator in INDICATORS]
 
 
-__all__ = ["COMPUTERS", "compute", "compute_all"]
+__all__ = ["COMPUTERS", "compute", "compute_all", "month_periods", "series"]
