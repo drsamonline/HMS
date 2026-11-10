@@ -51,6 +51,12 @@ class InvestigationCreate(BaseSchema):
         max_length=150,
     )
 
+    sample_accession: str | None = Field(
+        default=None,
+        max_length=50,
+        description="The laboratory's identifier for the specimen, if one was taken.",
+    )
+
     requested_by: int = Field(gt=0)
 
     requested_datetime: datetime
@@ -84,6 +90,7 @@ class InvestigationRead(BaseSchema):
     visit_id: int | None
     admission_id: int | None
     investigation_number: str
+    sample_accession: str | None = None
     department_id: UUID | None
     service_id: UUID | None
     case_type: InvestigationCaseType | None
