@@ -16,6 +16,7 @@ that owns its subject, so there is one place to change when something changes:
 | Backup workspace in the client | `docs/CLIENT_BACKUP_WORKSPACE.md` |
 | Staff-facing training | `docs/ADMIN_TRAINING.md` |
 | What NABH can be evidenced | `docs/NABH-MAPPING.md` |
+| Every API route and what guards it | `docs/API_REFERENCE.md` |
 
 ---
 
