@@ -138,6 +138,8 @@ def test_every_data_endpoint_module_is_covered() -> None:
         "provenance": set(),
         # edition is a public licence statement: no permission, no login.
         "edition": set(),
+        # help is guidance for the caller: a login, no permission.
+        "help": set(),
         "configuration": {"settings"},
         "dashboard": {"reporting"},
         "department_services": {"masters"},

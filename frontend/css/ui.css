@@ -202,3 +202,31 @@
 .compliance-value { text-align: right; }
 .compliance-gaps { font-size: var(--text-sm); color: var(--ink-muted); padding-left: var(--space-4); }
 .compliance-gaps li { margin-bottom: var(--space-2); }
+
+/* The help drawer. A drawer rather than a page: leaving a screen to read about the
+   screen is how somebody loses the patient they were registering. */
+.help-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(420px, 100vw);
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--surface-panel);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-overlay);
+  z-index: var(--layer-overlay);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.help-header { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-3); }
+.help-header h2 { margin: 0; font-size: var(--text-lg); color: var(--ink-strong); }
+.help-body { font-size: var(--text-sm); color: var(--ink); line-height: var(--leading-normal); }
+.help-body p { margin: 0 0 var(--space-3); }
+.help-body ul { margin: 0 0 var(--space-3); padding-left: var(--space-5); }
+.help-body code { font-family: var(--font-mono); font-size: var(--text-xs); background: var(--surface-sunken); padding: 1px 4px; border-radius: var(--radius-sm); }
+.help-footer { margin-top: auto; color: var(--ink-faint); }
+.help-button { width: 32px; padding: 0; font-weight: 700; }
+@media print { .help-panel { display: none !important; } }

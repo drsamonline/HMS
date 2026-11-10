@@ -179,6 +179,8 @@ async def default_deny(request: Request) -> None:
     path = request.url.path
     if path in PUBLIC_PATHS or path in AUTHENTICATED_ONLY_PATHS:
         return
+    if path.startswith(AUTHENTICATED_ONLY_PREFIXES):
+        return
     if path.startswith(SETUP_PREFIX):
         return
 
@@ -206,7 +208,15 @@ AUTHENTICATED_ONLY_PATHS = frozenset(
     {
         "/api/v1/navigation",
         "/api/v1/home",
+        "/api/v1/help",
     }
+)
+
+#: Routes with a path parameter cannot be listed exactly: the request carries a
+#: literal path, so ``/help/{view}`` would never match. A prefix says the same thing
+#: for the whole subtree, which is what was meant.
+AUTHENTICATED_ONLY_PREFIXES = (
+    "/api/v1/help/",
 )
 
 
@@ -247,6 +257,7 @@ DefaultDeny = Annotated[None, Depends(default_deny)]
 __all__ = [
     "AUTHENTICATED_ONLY_PATHS",
     "DefaultDeny",
+    "AUTHENTICATED_ONLY_PREFIXES",
     "SETUP_PREFIX",
     "PERMISSION_MARKER",
     "PUBLIC_PATHS",

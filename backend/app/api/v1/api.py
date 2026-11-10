@@ -56,6 +56,7 @@ from app.api.v1.endpoints.stock_transactions import router as stock_transactions
 from app.api.v1.endpoints.compliance import router as compliance_router
 from app.api.v1.endpoints.configuration import router as configuration_router
 from app.api.v1.endpoints.edition import router as edition_router
+from app.api.v1.endpoints.help import router as help_router
 from app.api.v1.endpoints.home import router as home_router
 from app.api.v1.endpoints.indicators import router as indicators_router
 from app.api.v1.endpoints.provenance import router as provenance_router
@@ -86,6 +87,7 @@ MODULE_ROUTERS: dict[str, tuple] = {
         health_router,
         auth_router,
         edition_router,
+        help_router,
         home_router,
         indicators_router,
         provenance_router,

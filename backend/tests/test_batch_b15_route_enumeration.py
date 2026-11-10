@@ -17,6 +17,7 @@ from app.api.v1.api import api_router
 from app.core.permissions import CODES
 from app.dependencies.permissions import (
     AUTHENTICATED_ONLY_PATHS,
+    AUTHENTICATED_ONLY_PREFIXES,
     PUBLIC_PATHS,
     SETUP_PREFIX,
     route_permission,
@@ -51,6 +52,8 @@ def test_every_route_is_guarded_or_named_public() -> None:
         # Two deliberate exemptions: routes that work before a login, and routes
         # that need a login but no particular permission (a user's own menu).
         if full in PUBLIC_PATHS or full in AUTHENTICATED_ONLY_PATHS:
+            continue
+        if full.startswith(AUTHENTICATED_ONLY_PREFIXES):
             continue
         # The setup wizard runs before a user exists; it carries its own gate,
         # the setup code exchanged for a scoped token.
@@ -136,6 +139,7 @@ def test_coverage_is_reported_by_prefix() -> None:
             full not in PUBLIC_PATHS
             and full not in AUTHENTICATED_ONLY_PATHS
             and not full.startswith(SETUP_PREFIX)
+            and not full.startswith(AUTHENTICATED_ONLY_PREFIXES)
         ):
             unguarded[prefix] += 1
 
