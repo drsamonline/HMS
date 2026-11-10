@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-24-patient-header` (stacked on `batch-23-nabh-lab`) |
+| Branch | `batch-25-print-preview` (stacked on `batch-24-patient-header`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **881 passed, 2 skipped, 883 collected** (569 baseline + 312 new) |
-| Wave complete | **Waves 0–5 complete (B01–B35)**; wave 6 five of six |
-| Next batch | **B32 — print preview, closing wave 6** |
+| Tests | **890 passed, 2 skipped, 892 collected** (569 baseline + 321 new) |
+| Wave complete | **Waves 0–6 complete (B01–B32)**; wave 7 next |
+| Next batch | **B36 — the indicator spine** (wave 7, the dashboards) |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -398,9 +398,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B30 | 2026-11-10 | see `git log` | 10 tests | 864 | Nine role homes plus a default, precedence for multi-role users, panels filtered to what the caller can open, client renders the server's answer |
 | NABH | 2026-11-10 | `batch-23` | 7 tests | 875 | `docs/NABH-MAPPING.md` (25 rows, every citation checked by a test) and the specimen accession (migration 0040) |
 | B31 | 2026-11-10 | see `git log` | 6 tests | 881 | Prescriber name and registration number reach the prescription header. Found two pre-existing defects: a GET that called a method that does not exist, and a read model built from `__dict__` |
+| B32 | 2026-11-10 | see `git log` | 9 tests | 890 | The prescription as a print document, previewed and printed from the same markup. **Closes wave 6** |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 312 new tests. Final: **881 passed, 2 skipped, 883 collected**.
+test baseline plus 321 new tests. Final: **890 passed, 2 skipped, 892 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -915,6 +916,27 @@ row to change together, which is the rule the mapping states.
 `__dict__` carries `_sa_instance_state`. It survived only because the instance was
 usually expired when it was read; one query earlier in the request changed that and
 turned a working endpoint into a 500.
+
+### Wave 6 closed (2026-11-10)
+
+| Batch | Delivered |
+|-------|-----------|
+| B27 | Design tokens; no literal colour in the application stylesheet |
+| B28 | Component kit: dialogs, toasts, four states, one table, patient strip |
+| B29 | Navigation: fourteen buttons become six ordered groups |
+| B30 | Nine role homes plus a default |
+| B31 | The prescriber's registration number reaches the prescription |
+| B32 | The prescription as a document, previewed and printed from one markup |
+
+The interface work the request opened with - "clean professional GUI", "wizard-like
+configuration so anyone can use" - is done. What remains is what the same request
+called the main thing hospitals ask for: the dashboards, graphs and statistics for
+NCH, NABH and QCI.
+
+**D-063 — The preview is the printed document, not a picture of one.**
+One markup, one path. A second builder for the printed version is how the two drift,
+and a prescription that prints differently from what was reviewed is worse than one
+that cannot print at all.
 
 ---
 
