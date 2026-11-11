@@ -14,3 +14,5 @@ pwdlib[argon2]>=0.2,<1.0
 python-multipart>=0.0.20,<1.0
 # PDF rendering (Batch 115 report_pdf service)
 reportlab>=4.2,<5.0
+# Licence signing/verification (app/cli/licence.py, Batch 54/55 tests)
+cryptography>=43,<47
