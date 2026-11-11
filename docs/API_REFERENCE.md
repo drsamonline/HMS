@@ -109,24 +109,24 @@ differs, which is how it stays true.
 
 | Method | Path | Access | Returns |
 |---|---|---|---|
-| GET | `/api/v1/dashboard/bed-occupancy` | `reporting.read` | `BedOccupancyResponse` |
-| GET | `/api/v1/dashboard/collection-summary-by-patient` | `reporting.read` | `PatientCollectionSummaryResponse` |
-| GET | `/api/v1/dashboard/discharge-audit` | `reporting.read` | `DischargeAuditResponse` |
-| GET | `/api/v1/dashboard/due-followups` | `reporting.read` | `DueFollowUpsResponse` |
-| GET | `/api/v1/dashboard/investigation-billing-reconciliation` | `reporting.read` | `InvestigationBillingReconciliationResponse` |
-| GET | `/api/v1/dashboard/invoice-overpayments` | `reporting.read` | `InvoiceOverpaymentResponse` |
-| GET | `/api/v1/dashboard/invoice-payment-reconciliation` | `reporting.read` | `InvoicePaymentReconciliationResponse` |
-| GET | `/api/v1/dashboard/invoice-receipt-continuity` | `reporting.read` | `InvoiceReceiptContinuityResponse` |
-| GET | `/api/v1/dashboard/invoice-settlement-audit` | `reporting.read` | `InvoiceSettlementAuditResponse` |
-| GET | `/api/v1/dashboard/opd-queue-summary` | `reporting.read` | `OPDQueueSummaryResponse` |
-| GET | `/api/v1/dashboard/outstanding-invoices` | `reporting.read` | `OutstandingInvoicesResponse` |
-| GET | `/api/v1/dashboard/payment-method-overpayments` | `reporting.read` | `PaymentMethodOverpaymentResponse` |
-| GET | `/api/v1/dashboard/payment-method-summary` | `reporting.read` | `PaymentMethodSummaryResponse` |
-| GET | `/api/v1/dashboard/pending-investigations` | `reporting.read` | `PendingInvestigationsResponse` |
-| GET | `/api/v1/dashboard/receipt-numbering-continuity` | `reporting.read` | `ReceiptNumberingContinuityResponse` |
-| GET | `/api/v1/dashboard/receivables-aging` | `reporting.read` | `ReceivablesAgingResponse` |
-| GET | `/api/v1/dashboard/refund-audit` | `reporting.read` | `RefundAuditResponse` |
-| GET | `/api/v1/dashboard/ward-occupancy-summary` | `reporting.read` | `WardOccupancySummaryResponse` |
+| GET | `/api/v1/dashboard/bed-occupancy` | `reports.operational` | `BedOccupancyResponse` |
+| GET | `/api/v1/dashboard/collection-summary-by-patient` | `reports.financial` | `PatientCollectionSummaryResponse` |
+| GET | `/api/v1/dashboard/discharge-audit` | `reports.clinical` | `DischargeAuditResponse` |
+| GET | `/api/v1/dashboard/due-followups` | `reports.clinical` | `DueFollowUpsResponse` |
+| GET | `/api/v1/dashboard/investigation-billing-reconciliation` | `reports.financial` | `InvestigationBillingReconciliationResponse` |
+| GET | `/api/v1/dashboard/invoice-overpayments` | `reports.financial` | `InvoiceOverpaymentResponse` |
+| GET | `/api/v1/dashboard/invoice-payment-reconciliation` | `reports.financial` | `InvoicePaymentReconciliationResponse` |
+| GET | `/api/v1/dashboard/invoice-receipt-continuity` | `reports.financial` | `InvoiceReceiptContinuityResponse` |
+| GET | `/api/v1/dashboard/invoice-settlement-audit` | `reports.financial` | `InvoiceSettlementAuditResponse` |
+| GET | `/api/v1/dashboard/opd-queue-summary` | `reports.operational` | `OPDQueueSummaryResponse` |
+| GET | `/api/v1/dashboard/outstanding-invoices` | `reports.financial` | `OutstandingInvoicesResponse` |
+| GET | `/api/v1/dashboard/payment-method-overpayments` | `reports.financial` | `PaymentMethodOverpaymentResponse` |
+| GET | `/api/v1/dashboard/payment-method-summary` | `reports.financial` | `PaymentMethodSummaryResponse` |
+| GET | `/api/v1/dashboard/pending-investigations` | `reports.clinical` | `PendingInvestigationsResponse` |
+| GET | `/api/v1/dashboard/receipt-numbering-continuity` | `reports.financial` | `ReceiptNumberingContinuityResponse` |
+| GET | `/api/v1/dashboard/receivables-aging` | `reports.financial` | `ReceivablesAgingResponse` |
+| GET | `/api/v1/dashboard/refund-audit` | `reports.financial` | `RefundAuditResponse` |
+| GET | `/api/v1/dashboard/ward-occupancy-summary` | `reports.operational` | `WardOccupancySummaryResponse` |
 
 ## Department Services
 

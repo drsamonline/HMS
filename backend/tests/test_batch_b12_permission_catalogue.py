@@ -205,7 +205,7 @@ def test_no_permission_is_declared_that_no_endpoint_needs() -> None:
         "patients", "opd", "clinical", "prescriptions", "ipd", "investigations",
         "pharmacy", "inventory", "procurement", "billing", "mrd", "reporting",
         "audit", "users", "roles", "settings", "masters", "backup",
-        "maintenance", "health",
+        "maintenance", "health", "reports",
     }
     orphans = {spec.module for spec in PERMISSIONS} - used
     assert not orphans, f"catalogue declares modules no endpoint maps to: {sorted(orphans)}"

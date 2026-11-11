@@ -62,6 +62,27 @@ PERMISSIONS = (
     ("users.read", "users", "View users", "List user accounts."),
     ("users.write", "users", "Manage users", "Create, edit, deactivate and re-role users."),
     (
+        "reports.operational",
+        "reports",
+        "View operational dashboards",
+        "Bed occupancy, ward occupancy and the OPD queue - what the hospital is doing "
+        "right now.",
+    ),
+    (
+        "reports.clinical",
+        "reports",
+        "View clinical follow-through",
+        "Due follow-ups, pending investigations and the discharge audit - what is "
+        "outstanding for a patient.",
+    ),
+    (
+        "reports.financial",
+        "reports",
+        "View financial reconciliation",
+        "Receivables, refunds, overpayments, receipt continuity and settlement - does "
+        "the money reconcile, and who authorised it.",
+    ),
+    (
         "roles.manage",
         "roles",
         "Grant permissions to one person",
@@ -84,40 +105,15 @@ ALL = "*"
 
 ROLE_TEMPLATES = {
     "administrator": (ALL,),
-    "medical superintendent": (
-        "patients.read", "opd.read", "clinical.read", "prescriptions.read",
-        "ipd.read", "investigations.read", "pharmacy.read", "inventory.read",
-        "procurement.read", "billing.read", "mrd.read", "reporting.read",
-        "reporting.export", "audit.read", "audit.export", "users.read",
-        "roles.read", "settings.read", "health.read",
-    ),
-    "auditor": (
-        "audit.read", "audit.export", "reporting.read", "reporting.export",
-        "patients.read", "billing.read",
-    ),
-    "registration desk": (
-        "patients.read", "patients.write", "opd.read", "opd.write", "masters.read",
-    ),
-    "medical officer": (
-        "patients.read", "opd.read", "clinical.read", "clinical.write",
-        "prescriptions.read", "prescriptions.write", "investigations.read",
-        "investigations.write", "ipd.read", "reporting.read", "masters.read",
-    ),
-    "pharmacist": (
-        "patients.read", "pharmacy.read", "pharmacy.write", "inventory.read",
-        "prescriptions.read",
-    ),
-    "laboratory staff": (
-        "patients.read", "investigations.read", "investigations.write",
-        "reporting.read",
-    ),
-    "billing staff": ("patients.read", "billing.read", "billing.write", "reporting.read"),
-    "medical records": (
-        "patients.read", "mrd.read", "mrd.write", "ipd.read", "reporting.read",
-    ),
-    "store keeper": (
-        "inventory.read", "inventory.write", "procurement.read", "procurement.write",
-    ),
+    "medical superintendent": ("patients.read", "opd.read", "clinical.read", "prescriptions.read", "ipd.read", "investigations.read", "pharmacy.read", "inventory.read", "procurement.read", "billing.read", "mrd.read", "reporting.read", "reporting.export", "audit.read", "audit.export", "users.read", "roles.read", "roles.manage", "settings.read", "health.read", "reports.operational", "reports.clinical", "reports.financial"),
+    "auditor": ("audit.read", "audit.export", "reporting.read", "reporting.export", "patients.read", "billing.read", "reports.financial"),
+    "registration desk": ("patients.read", "patients.write", "opd.read", "opd.write", "masters.read", "reports.operational"),
+    "medical officer": ("patients.read", "opd.read", "clinical.read", "clinical.write", "prescriptions.read", "prescriptions.write", "investigations.read", "investigations.write", "ipd.read", "reporting.read", "masters.read", "reports.operational", "reports.clinical"),
+    "pharmacist": ("patients.read", "pharmacy.read", "pharmacy.write", "inventory.read", "prescriptions.read"),
+    "laboratory staff": ("patients.read", "investigations.read", "investigations.write", "reporting.read", "reports.clinical"),
+    "billing staff": ("patients.read", "billing.read", "billing.write", "reporting.read", "reports.financial"),
+    "medical records": ("patients.read", "mrd.read", "mrd.write", "ipd.read", "reporting.read", "reports.clinical"),
+    "store keeper": ("inventory.read", "inventory.write", "procurement.read", "procurement.write"),
 }
 
 ROLE_DESCRIPTIONS = {
