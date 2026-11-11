@@ -157,10 +157,17 @@ async def readiness(db: AsyncSession) -> dict:
         "registrations": entries,
         "at_risk": at_risk,
         "warning_days": EXPIRY_WARNING_DAYS,
+        "blocking": False,
         "note": (
             "Which registrations the law requires depends on the state and the "
             "premises. This records what the establishment says applies to it and "
             "reports the gap against that, rather than deciding for you."
+        ),
+        "effect": (
+            "A missing or expired registration never stops anybody using the "
+            "software. It is a fact about the premises, and a software product that "
+            "locked a doctor out of a patient's record over a lapsed certificate "
+            "would be causing the harm it was warning about."
         ),
     }
 

@@ -37,6 +37,10 @@ class ModuleSpec:
     permissions: tuple[str, ...] = ()
     is_core: bool = False
     field: tuple = ()
+    #: True when the module is an accreditation or reporting extra that a working
+    #: hospital may legitimately never turn on. Off is a choice, not a fault, and
+    #: nothing in the product may treat a disabled optional module as an error.
+    is_optional: bool = False
 
 
 MODULES: tuple[ModuleSpec, ...] = (
@@ -108,6 +112,10 @@ MODULES: tuple[ModuleSpec, ...] = (
         depends_on=("core",),
         recommends=("ipd", "laboratory", "billing"),
         permissions=("audit.read", "audit.export"),
+        # NABH accredits small clinics as well as hospitals, so this is available
+        # everywhere - but a practice that is not pursuing accreditation never turns
+        # it on, and that is a choice rather than a fault.
+        is_optional=True,
     ),
 )
 

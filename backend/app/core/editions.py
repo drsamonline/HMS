@@ -55,7 +55,9 @@ PERSONAL = Edition(
     name="HHMS Personal",
     licence="PolyForm Noncommercial 1.0.0",
     summary="Free for personal use. One clinic, OPD only, prints the full case and bills.",
-    modules=("core", "pharmacy", "billing"),
+    # NABH accredits small healthcare organisations as well as hospitals, so the
+    # module is available even here. It is off until somebody turns it on.
+    modules=("core", "pharmacy", "billing", "nabh"),
     features=("print_case_bundle", "print_bills"),
 )
 
@@ -64,7 +66,7 @@ CLINIC = Edition(
     name="HHMS Clinic",
     licence="Commercial licence",
     summary="Multi-doctor clinic: OPD, pharmacy, stock and billing, with laboratory.",
-    modules=("core", "pharmacy", "billing", "stock", "laboratory"),
+    modules=("core", "pharmacy", "billing", "stock", "laboratory", "nabh"),
     features=("print_case_bundle", "print_bills"),
 )
 
@@ -73,8 +75,6 @@ HOSPITAL = Edition(
     name="HHMS Hospital",
     licence="Commercial licence",
     summary="Full inpatient hospital, with NABH compliance available but optional.",
-    # NABH is available here but optional: a hospital that is not pursuing
-    # accreditation turns the module off and the software stops asking.
     modules=("core", "pharmacy", "billing", "stock", "laboratory", "ipd", "mrd", "nabh"),
     features=("print_case_bundle", "print_bills", "print_discharge"),
 )

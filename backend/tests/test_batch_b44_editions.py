@@ -55,8 +55,9 @@ def test_the_personal_edition_is_opd_only() -> None:
     assert "pharmacy" in PERSONAL.modules
     assert "billing" in PERSONAL.modules
     assert "ipd" not in PERSONAL.modules
-    assert "nabh" not in PERSONAL.modules
     assert "laboratory" not in PERSONAL.modules
+    # NABH is available even here - it accredits small clinics - but it is a module,
+    # so it is off until somebody chooses it (B53).
 
 
 def test_the_personal_edition_prints_the_whole_case_and_the_bills() -> None:
@@ -68,18 +69,19 @@ def test_the_personal_edition_prints_the_whole_case_and_the_bills() -> None:
     assert "print_bills" in PERSONAL.features
 
 
-def test_compliance_reporting_starts_at_the_hospital_edition() -> None:
-    """A personal practice has no NABH assessment to prepare for.
+def test_nabh_is_available_everywhere_and_optional() -> None:
+    """NABH accredits small clinics too; a practice that does not pursue it turns it off.
 
-    B52 moved NABH from enterprise-only to hospital-and-above, because a hospital that
-    is not pursuing accreditation should be able to turn the module off rather than be
-    unable to have it at all.
+    B44 had it enterprise-only, B52 moved it to hospital-and-above, B53 made it
+    available everywhere as an optional module. The last is right: the gate is a
+    choice at setup, not a price list.
     """
 
     from app.core.editions import EDITIONS
+    from app.modules.registry import BY_CODE
 
-    with_nabh = sorted(code for code, edition in EDITIONS.items() if "nabh" in edition.modules)
-    assert with_nabh == ["enterprise", "hospital"]
+    assert all("nabh" in edition.modules for edition in EDITIONS.values())
+    assert BY_CODE["nabh"].is_optional is True
 
 
 def test_editions_grow_monotonically() -> None:

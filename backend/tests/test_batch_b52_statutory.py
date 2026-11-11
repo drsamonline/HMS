@@ -240,15 +240,14 @@ def test_the_report_refuses_to_decide_what_the_law_requires(isolated) -> None:
 
 
 # ------------------------------------------------------------------ editions
-def test_nabh_is_available_from_the_hospital_edition_upward() -> None:
-    """A hospital that is not pursuing accreditation turns it off; it is not blocked."""
+def test_nabh_is_available_in_every_edition() -> None:
+    """B53 corrected this further: NABH accredits small clinics, so it is available
+    everywhere and off until chosen."""
 
-    from app.core.editions import CLINIC, ENTERPRISE, HOSPITAL, PERSONAL
+    from app.core.editions import EDITIONS
 
-    assert "nabh" not in PERSONAL.modules
-    assert "nabh" not in CLINIC.modules
-    assert "nabh" in HOSPITAL.modules
-    assert "nabh" in ENTERPRISE.modules
+    for edition in EDITIONS.values():
+        assert "nabh" in edition.modules
 
 
 def test_qci_is_an_institute_feature_not_a_clinic_one() -> None:
