@@ -13,10 +13,10 @@
  * for normal text (4.5:1). That is asserted by a test, not by eye.
  */
 
-/* Proprietary. HHMS-PROV-0.0.2-218c74592cc7 / homoeopathic-lan-record-keeper */
+/* Proprietary. HHMS-PROV-0.0.3-218c74592cc7 / homoeopathic-lan-record-keeper */
 :root {
   /* A provenance mark, not a design token: it is here to be found in a copy. */
-  --provenance: "HHMS-PROV-0.0.2-218c74592cc7";
+  --provenance: "HHMS-PROV-0.0.3-218c74592cc7";
   /* ---------------------------------------------------------------- surfaces */
   --surface-page: #f3f6f9;      /* the app background */
   --surface-panel: #ffffff;     /* cards, panels, tables */
