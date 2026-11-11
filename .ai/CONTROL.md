@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-45-trial` (stacked on `batch-44-licensing`) |
+| Branch | `batch-46-register-ui` (stacked on `batch-45-trial`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1132 passed, 2 skipped, 1134 collected** (569 baseline + 563 new) |
+| Tests | **1143 passed, 2 skipped, 1145 collected** (569 baseline + 574 new) |
 | Wave complete | **Waves 0–9 complete (B01–B51)**; B52 post-plan correction |
-| Next batch | **B56 — institution registration screen and expiry alerts** |
+| Next batch | **B57 — test-suite runtime, or build-time stripping** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -419,9 +419,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B53 | 2026-11-11 | see `git log` | 10 tests | 1106 | NABH available in every edition and marked optional; a missing or expired statutory registration is reported and never enforced |
 | B54 | 2026-11-11 | see `git log` | 17 tests | 1123 | Signed licence files: RS256 token verified against a public key in the build, with a 30-day grace period. NABH locked behind it |
 | B55 | 2026-11-11 | see `git log` | 9 tests | 1132 | Trial licences defaulting to a month, an advisory machine count that refuses nothing, and the licence stated in the handover pack |
+| B56 | 2026-11-11 | see `git log` | 11 tests | 1143 | The statutory register gets a screen with per-kind explanations, and an alert panel on the superintendent's home that hides when there is nothing to report |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 563 new tests. Final: **1132 passed, 2 skipped, 1134 collected**.
+test baseline plus 574 new tests. Final: **1143 passed, 2 skipped, 1145 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1278,6 +1279,15 @@ has made an enemy of a customer who was expanding.
 **D-115 — The handover pack states the licence.**
 A hospital should know what it bought and until when, in the pack it keeps after the
 vendor leaves.
+
+**D-116 — An alert that always shows is noise.**
+The registration panel hides entirely when there is nothing to report. A card that
+permanently says "nothing is expiring" teaches people to ignore it before the day it
+matters.
+
+**D-117 — An alert belongs on the screen of the person who can act on it.**
+The medical superintendent's home, not the auditor's and not a compliance page nobody
+opens.
 
 ---
 
