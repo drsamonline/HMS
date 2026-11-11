@@ -2,6 +2,8 @@
 
 # 🏥 HHMS — Homeopathic Hospital Management System
 
+
+![Screenshot](docs/shot.png)
 **A LAN-based hospital management system purpose-built for homeopathic hospitals and clinics.**
 Runs entirely on the local network with a server-owned database — *no internet dependency, no cloud lock-in.*
 
