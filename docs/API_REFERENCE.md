@@ -181,7 +181,7 @@ differs, which is how it stays true.
 
 | Method | Path | Access | Returns |
 |---|---|---|---|
-| GET | `/api/v1/home` | login only | `HomeRead` |
+| GET | `/api/v1/home` | login only | `dict` |
 
 ## Homoeopathic Case Records
 

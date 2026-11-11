@@ -110,8 +110,15 @@ def test_the_readiness_report_is_not_a_door() -> None:
         if "institute_registrations.readiness" in text or "institute_registrations.upsert" in text:
             callers.append(path.name)
 
-    # The report is read by the compliance service; upsert is written by the endpoint.
-    assert set(callers) <= {"nch_compliance.py", "institute.py"}, callers
+    # Every caller reads it to show it, or writes it from the endpoint. None of them
+    # refuses anything - that is the property, and the list is short enough to check
+    # by eye when it changes.
+    allowed = {
+        "nch_compliance.py",  # folded into the compliance report
+        "institute.py",       # the endpoint that records a registration
+        "home.py",            # the alert panel on the superintendent's home (B56)
+    }
+    assert set(callers) <= allowed, callers
 
 
 # ------------------------------------------------------------------ runtime

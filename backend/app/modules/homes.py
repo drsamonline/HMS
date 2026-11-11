@@ -27,6 +27,10 @@ class HomePanel:
     #: The dashboard endpoint that feeds it, when the panel shows numbers.
     source: str | None = None
     description: str | None = None
+    #: True when the panel should be hidden if it has nothing to say. An empty
+    #: "nothing is expiring" card is noise; a card that appears only when something
+    #: needs doing is a reminder.
+    hide_when_empty: bool = False
 
 
 @dataclass(frozen=True)
@@ -76,6 +80,16 @@ HOMES: dict[str, Home] = {
         subtitle="Everything the hospital is doing, at a glance.",
         panels=(
             HomePanel("metrics", "Statistics", view="statistics", source="/statistics/summary"),
+            # Appears only when something needs doing: a lapsed BMW authorisation
+            # discovered during an inspection is the failure this exists to prevent.
+            HomePanel(
+                "registrations",
+                "Statutory registrations",
+                view="settings",
+                source="/institute/registrations",
+                description="Licences that are missing, expiring or expired.",
+                hide_when_empty=True,
+            ),
             HomePanel("shortcut", "IPD Management", view="ipd-management"),
             HomePanel("shortcut", "Audit / Activity", view="activity"),
         ),
