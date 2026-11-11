@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-49-escaping` (stacked on `batch-48-audit`) |
+| Branch | `main` — everything merged |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1166 passed, 2 skipped, 1168 collected**; per-block setup 2.53s -> 0.19s |
+| Tests | **1189 passed, 2 skipped, 1191 collected**; per-block setup 2.53s -> 0.19s |
 | Wave complete | **Waves 0–9 complete (B01–B51)**; B52 post-plan correction |
-| Next batch | **none — the plan and the audit are complete** |
+| Next batch | **none.** One owner action remains: replace the licence key |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -1359,6 +1359,73 @@ it. A check that has never failed is not a check (D-097, again).
 `scripts/check_release_ready.py` refuses this build because it carries the development
 licence key. That refusal is the working state, not a defect - and it will keep being
 the working state until the key is replaced.
+
+## 10. Session close — 2026-11-11
+
+Everything is merged. `main` carries the whole plan, the audit, and every fix that came
+out of it. There are no open pull requests.
+
+| | |
+|---|---|
+| Batches | 63 |
+| Waves | 11 |
+| Tests | 569 at the start, **1189** now |
+| Audit findings | 6 found, 4 fixed, 2 documented as correct |
+| Migrations | head `0045_report_permissions` |
+
+### What was built after the plan finished
+
+| Batch | What it did |
+|---|---|
+| B52 | The practitioner's authority, and the institution's own statutory register |
+| B53 | A missing licence never blocks a user; off is a choice, not a fault |
+| B54 | Signed licence files, and NABH locked behind them |
+| B55 | Trials, an advisory machine count, the licence in the handover pack |
+| B56 | The register gets a screen, and an alert that hides when there is nothing to say |
+| B57 | The runtime pass finished: 2.53s to 0.19s per test block |
+| B58 | The code audit, and the two findings worth fixing immediately |
+| B59 | The escaping question answered by measurement, and a release gate |
+| B60 | F-07 recorded with proof: a lab technician could read the refund audit |
+| B61 | Tick a box to give one person one more permission |
+| B62 | F-07 fixed: eighteen reports, three questions, three permissions |
+| B63 | F-04 fixed: the computation and the endpoints, separated |
+| B64 | The key ceremony, and a gate that holds the runbook to the code |
+
+### The one thing left, and it is not mine to do
+
+`scripts/check_release_ready.py` refuses this build because it carries the development
+licence key — one that is in the public repository, so anybody can forge a licence with
+it. That refusal is correct and is the working state.
+
+`docs/KEY-CEREMONY.md` is the runbook: nine steps, written for somebody who has never
+made a key, with what to do when it goes wrong and what happens if the private key is
+lost or leaks. It is gated — a test checks every path and every command in it still
+exists, so the instructions cannot quietly rot.
+
+### Decisions from this session
+
+**D-124 — A checker that flags everything is ignored; one that flags nothing is decoration.**
+The escaping check reported 119 and would have been ignored. Separating a data read from a
+call to a function the author wrote left 21 real findings.
+
+**D-125 — Prove the gate fails.**
+A test plants an unescaped value and asserts the check fails, then removes it.
+
+**D-126 — A release gate should currently refuse.**
+It refuses because the key is the development one. That is the working state, not a defect.
+
+**D-127 — An audit records what it could not check.**
+F-05 was marked unverified until it was measured. Claiming it without doing it would have
+been the worst thing that document could do.
+
+**D-128 — Measure before splitting.**
+`dashboard.py` looked like too many endpoints. It was 71% computation. Splitting by size
+would have cut through the wrong seam.
+
+**D-129 — A runbook is code.**
+`docs/KEY-CEREMONY.md` names paths and commands, so a test reads it and checks they
+exist. A document that tells somebody to paste a key into a file will be wrong the day
+the file is renamed.
 
 ---
 
