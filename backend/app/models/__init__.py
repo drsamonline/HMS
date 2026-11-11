@@ -29,6 +29,7 @@ from .dispense_record import DispenseRecord
 from .goods_receipt import GoodsReceipt, GoodsReceiptItem
 from .purchase_order import PurchaseOrder, PurchaseOrderItem
 from .supplier import Supplier
+from .institute_registration import InstituteRegistration
 from .investigation import Investigation
 from .investigation_result import InvestigationResult
 from .inventory_item import InventoryItem

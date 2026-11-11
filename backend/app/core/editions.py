@@ -72,8 +72,10 @@ HOSPITAL = Edition(
     code="hospital",
     name="HHMS Hospital",
     licence="Commercial licence",
-    summary="Full inpatient hospital: every module except compliance reporting.",
-    modules=("core", "pharmacy", "billing", "stock", "laboratory", "ipd", "mrd"),
+    summary="Full inpatient hospital, with NABH compliance available but optional.",
+    # NABH is available here but optional: a hospital that is not pursuing
+    # accreditation turns the module off and the software stops asking.
+    modules=("core", "pharmacy", "billing", "stock", "laboratory", "ipd", "mrd", "nabh"),
     features=("print_case_bundle", "print_bills", "print_discharge"),
 )
 
@@ -83,7 +85,15 @@ ENTERPRISE = Edition(
     licence="Commercial licence",
     summary="Everything, including NABH and NCH compliance reporting and indicators.",
     modules=("core", "pharmacy", "billing", "stock", "laboratory", "ipd", "mrd", "nabh"),
-    features=("print_case_bundle", "print_bills", "print_discharge", "compliance_returns"),
+    features=(
+        "print_case_bundle",
+        "print_bills",
+        "print_discharge",
+        "compliance_returns",
+        # QCI applies to colleges and teaching hospitals with attached facilities,
+        # which is what this edition is for.
+        "qci_accreditation",
+    ),
 )
 
 EDITIONS: dict[str, Edition] = {

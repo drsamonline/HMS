@@ -68,13 +68,18 @@ def test_the_personal_edition_prints_the_whole_case_and_the_bills() -> None:
     assert "print_bills" in PERSONAL.features
 
 
-def test_only_the_enterprise_edition_carries_compliance_reporting() -> None:
-    """A personal practice has no NABH assessment to prepare for."""
+def test_compliance_reporting_starts_at_the_hospital_edition() -> None:
+    """A personal practice has no NABH assessment to prepare for.
+
+    B52 moved NABH from enterprise-only to hospital-and-above, because a hospital that
+    is not pursuing accreditation should be able to turn the module off rather than be
+    unable to have it at all.
+    """
 
     from app.core.editions import EDITIONS
 
-    with_nabh = [code for code, edition in EDITIONS.items() if "nabh" in edition.modules]
-    assert with_nabh == ["enterprise"]
+    with_nabh = sorted(code for code, edition in EDITIONS.items() if "nabh" in edition.modules)
+    assert with_nabh == ["enterprise", "hospital"]
 
 
 def test_editions_grow_monotonically() -> None:

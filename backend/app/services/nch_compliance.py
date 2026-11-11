@@ -32,7 +32,7 @@ from app.models.followup import FollowUp
 from app.models.user import User
 from app.models.user_role import UserRole
 from app.models.role import Role
-from app.services import adverse_events, certificates
+from app.services import adverse_events, certificates, institute_registrations
 
 
 async def readiness(db: AsyncSession) -> dict:
@@ -42,6 +42,7 @@ async def readiness(db: AsyncSession) -> dict:
     followups_without_reason = await _followups_without_reason(db)
     unreported = await adverse_events.unreported_count(db)
     retention = await certificates.retention_report(db)
+    registrations = await institute_registrations.readiness(db)
 
     return {
         "prescriber_registration": {
@@ -63,6 +64,17 @@ async def readiness(db: AsyncSession) -> dict:
                 f"{retention['total']} certificate(s) held; "
                 f"{retention['past_retention']} past their retention date and archivable."
             ),
+        },
+        "institute_registrations": {
+            "requirement": (
+                "Clinical establishment registration under the Clinical Establishments "
+                "Act where adopted, and bio-medical waste authorisation under the 2016 "
+                "Rules, apply to a private practice as much as to a hospital."
+            ),
+            "ok": not registrations["at_risk"],
+            "missing_count": len(registrations["at_risk"]),
+            "registrations": registrations["registrations"],
+            "note": registrations["note"],
         },
         "adverse_event_register": {
             "requirement": "NCH Code of Ethics 37: adverse events to homoeopathic products reported.",

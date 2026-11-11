@@ -67,6 +67,14 @@ class User(Base):
         nullable=True,
     )
 
+    #: Who issued it. In most states the practitioner registers with the State Board
+    #: or Council of Homoeopathy rather than with NCH, so a field called "NCH number"
+    #: was a field that assumed an answer. This records which body actually issued it.
+    registration_authority: Mapped[str | None] = mapped_column(
+        String(40),
+        nullable=True,
+    )
+
     designation: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
