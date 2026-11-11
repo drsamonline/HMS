@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-41-handover` (stacked on `batch-40-tutorial`) |
+| Branch | `batch-42-statutory` (stacked on `batch-41-handover`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1079 passed, 2 skipped, 1081 collected** (569 baseline + 510 new) |
-| Wave complete | **Waves 0–9 complete (B01–B51)** |
-| Next batch | **none — the plan is complete** |
+| Tests | **1096 passed, 2 skipped, 1098 collected** (569 baseline + 527 new) |
+| Wave complete | **Waves 0–9 complete (B01–B51)**; B52 post-plan correction |
+| Next batch | **B53 — institution registration UI and expiry alerts** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -415,9 +415,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B49 | 2026-11-10 | see `git log` | 10 tests | 1053 | The API reference, generated from the mounted routes with a drift gate that fails the build when it goes stale |
 | B50 | 2026-11-10 | see `git log` | 12 tests | 1065 | The guided first run: five steps in the order a day happens, progress read from the database, never touching a real patient |
 | B51 | 2026-11-10 | see `git log` | 14 tests | 1079 | The handover pack: one zip with the runbook, guides, compliance mapping, API reference, licence and seal. **Closes wave 9 and the plan** |
+| B52 | 2026-11-11 | see `git log` | 17 tests | 1096 | Practitioner registration authority (NCH or State Council); the institution's own statutory register of ten kinds with expiry tracking; NABH optional from hospital upward, QCI enterprise |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 510 new tests. Final: **1079 passed, 2 skipped, 1081 collected**.
+test baseline plus 527 new tests. Final: **1096 passed, 2 skipped, 1098 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1202,6 +1203,33 @@ not enumerated because the standard document is not in this repository; six of e
 PSQ.3 families cannot be reported because the hospital does not record what they need;
 build-time stripping of the free edition is not written; and the test suite takes about
 fourteen minutes, which is the next thing worth fixing.
+
+## 9a. Post-plan corrections (B52)
+
+The owner corrected two things I had wrong, and both were wrong in the same way: a
+field that assumed an answer.
+
+**D-103 — A practitioner's number is not an NCH number.**
+In most states the practitioner registers with the State Board or Council of
+Homoeopathy. NCH recognises the qualification and maintains the National Register.
+`registration_authority` now records which body issued the number, because a field
+named for one body is wrong for most of the doctors using it.
+
+**D-104 — The institution's registrations are not the practitioner's.**
+Clinical establishment registration and bio-medical waste authorisation belong to the
+premises, are issued by different bodies, and expire on their own dates. A hospital
+with twelve doctors holds one BMW authorisation, not twelve.
+
+**D-105 — The software does not decide what the law requires.**
+The Clinical Establishments Act, 2010 has been adopted by some states and not others,
+and several states run their own law. The register records what the establishment says
+applies to it, and the readiness report says so in its own text rather than asserting
+a legal position.
+
+**D-106 — Accreditation is optional; registration is not.**
+NABH moved from enterprise-only to hospital-and-above so a hospital can turn it off
+rather than be unable to have it. QCI is an enterprise feature because it applies to
+colleges and teaching hospitals, not to a private clinic.
 
 ---
 
