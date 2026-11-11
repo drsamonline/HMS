@@ -30,7 +30,7 @@ import hashlib
 
 #: The release this tree is. Bumped deliberately, never per commit - a mark that
 #: changes on every build cannot be tied to a version anyone distributed.
-RELEASE = "0.0.2"
+RELEASE = "0.0.3"
 
 #: The owner, as it should appear in any attribution a copy is obliged to keep.
 OWNER = "Dr Sohil Momin"

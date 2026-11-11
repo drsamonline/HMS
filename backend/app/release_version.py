@@ -33,7 +33,7 @@ from pathlib import Path
 # is cut - `FALLBACK_VERSION must equal root VERSION before the tag is cut`. That check
 # is right: this is what a release falls back to when the VERSION file cannot be read,
 # so a stale value here would tag a release with the wrong number.
-FALLBACK_VERSION = "0.0.2"
+FALLBACK_VERSION = "0.0.3"
 
 
 def version_file_candidates() -> list[Path]:
