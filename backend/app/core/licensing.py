@@ -74,6 +74,18 @@ class Licence:
     issued_at: datetime | None
     expires_at: datetime | None
     reference: str | None
+    #: "paid" or "trial". A trial is the full product for a short period, which is the
+    #: easiest sale there is - and the report says which one a hospital holds, because
+    #: a trial that expires without warning is a support call.
+    kind: str = "paid"
+    #: How many servers the customer said they would run it on. **Advisory only** - see
+    #: the module docstring. It is recorded so the conversation about seats can happen
+    #: with both sides looking at the same number, not so the software can refuse.
+    machines: int | None = None
+
+    @property
+    def is_trial(self) -> bool:
+        return self.kind == "trial"
 
     @property
     def expired(self) -> bool:
@@ -95,6 +107,9 @@ class Licence:
             "expired": self.expired,
             "in_grace": self.in_grace,
             "reference": self.reference,
+            "kind": self.kind,
+            "is_trial": self.is_trial,
+            "machines": self.machines,
         }
 
 
@@ -167,12 +182,22 @@ def verify(token: str) -> Licence:
             return datetime.fromtimestamp(value, UTC)
         return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
 
+    kind = str(claims.get("kind") or "paid").lower()
+    if kind not in {"paid", "trial"}:
+        raise ValueError(f"The licence says its kind is {kind!r}, which this build does not know.")
+
+    machines = claims.get("machines")
+    if machines is not None and (not isinstance(machines, int) or machines < 1):
+        raise ValueError("The licence's machine count must be a positive whole number.")
+
     return Licence(
         edition=edition_for(edition_code),
         customer=str(claims.get("customer") or "unnamed"),
         issued_at=_when("iat"),
         expires_at=_when("exp"),
         reference=claims.get("ref"),
+        kind=kind,
+        machines=machines,
     )
 
 

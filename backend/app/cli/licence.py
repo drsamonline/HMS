@@ -66,22 +66,31 @@ def _issue(args) -> int:
 
     private_key = Path(args.private).read_text()
     now = datetime.now(UTC)
+    months = args.months
+    if args.trial and months is None:
+        months = 1  # a trial defaults to a month, which is enough to decide
+
     claims = {
         "edition": args.edition,
         "customer": args.customer,
+        "kind": "trial" if args.trial else "paid",
         "iat": int(now.timestamp()),
         "ref": args.reference or f"{args.edition}-{now:%Y%m%d%H%M%S}",
     }
-    if args.months:
-        claims["exp"] = int((now + timedelta(days=30 * args.months)).timestamp())
+    if months:
+        claims["exp"] = int((now + timedelta(days=30 * months)).timestamp())
+    if args.machines:
+        claims["machines"] = args.machines
 
     token = jwt.encode(claims, private_key, algorithm="RS256")
     Path(args.out).write_text(token)
 
-    until = (
-        f"{(now + timedelta(days=30 * args.months)):%d %B %Y}" if args.months else "no expiry"
-    )
-    print(f"issued {args.edition} to {args.customer}, valid until {until}")
+    until = f"{(now + timedelta(days=30 * months)):%d %B %Y}" if months else "no expiry"
+    label = "trial of" if args.trial else ""
+    print(f"issued {label} {args.edition} to {args.customer}, valid until {until}")
+    if args.trial:
+        print("This is a trial: the full product for the period above, then the grace")
+        print("period, then the free edition. Tell them the date.")
     print(f"written to {args.out}")
     print()
     print("Send this file to the customer and tell them to put it at data/licence.key")
@@ -137,7 +146,18 @@ def main(argv: list[str] | None = None) -> int:
     issue.add_argument("--private", required=True)
     issue.add_argument("--edition", required=True, choices=sorted(EDITIONS))
     issue.add_argument("--customer", required=True)
-    issue.add_argument("--months", type=int, default=12, help="0 for no expiry")
+    issue.add_argument("--months", type=int, default=None, help="0 for no expiry")
+    issue.add_argument(
+        "--trial",
+        action="store_true",
+        help="mark this as a trial; defaults to one month if --months is omitted",
+    )
+    issue.add_argument(
+        "--machines",
+        type=int,
+        default=None,
+        help="how many servers they said they would run (advisory, never enforced)",
+    )
     issue.add_argument("--reference", default=None)
     issue.add_argument("--out", default="licence.key")
 

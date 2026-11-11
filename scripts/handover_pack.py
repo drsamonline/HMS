@@ -73,10 +73,11 @@ vendor has left. It contains no patient data and no source code.
 | | |
 |---|---|
 | Edition | **{edition['name']}** |
-| Licence | {edition['licence']} |
+| Licence | {_licence_label(edition)} |
 | Included | {', '.join(edition['modules'])} |
 | Not included | {', '.join(item['name'] for item in edition['not_included']) or 'nothing'} |
 
+{_licence_line(edition)}
 {seal_line}
 
 ## When something breaks, in this order
@@ -117,6 +118,50 @@ answer here, and that the answer is the one the software actually produces.
 """
 
 
+def _licence_label(edition_view: dict) -> str:
+    """One phrase for the summary table."""
+
+    licence = edition_view["licence"]
+    if licence["state"] == "licensed":
+        kind = "trial" if licence["kind"] == "trial" else "licensed"
+        until = f" until {licence['expires_at'][:10]}" if licence["expires_at"] else ""
+        return f"{edition_view['licence_text']} - {kind}{until}"
+    if licence["state"] == "grace":
+        return f"{edition_view['licence_text']} - expired, in grace period"
+    if licence["state"] in {"expired", "rejected"}:
+        return "free edition - the licence was not accepted"
+    if licence["state"] == "environment":
+        return f"{edition_view['licence_text']} - set by environment, not licensed"
+    return "free edition - no licence file"
+
+
+def _licence_line(edition_view: dict) -> str:
+    """What this installation is licensed to run, and until when."""
+
+    licence = edition_view["licence"]
+    if licence["state"] == "licensed":
+        until = (
+            f"until **{licence['expires_at'][:10]}**"
+            if licence["expires_at"]
+            else "with no expiry"
+        )
+        kind = "trial of " if licence["kind"] == "trial" else ""
+        return f"Licensed to **{licence['customer']}** as a {kind}{edition_view['name']}, {until}."
+    if licence["state"] == "grace":
+        return (
+            f"The licence for **{licence['customer']}** has expired and the software is "
+            f"in its grace period. Renew it: {licence['warning']}"
+        )
+    if licence["state"] in {"expired", "rejected"}:
+        return f"**This installation is running the free edition.** {licence['warning']}"
+    if licence["state"] == "environment":
+        return (
+            "The edition is set by an environment variable rather than a licence. "
+            "That is an evaluation configuration, not a sold one."
+        )
+    return "This installation has no licence and runs the free edition."
+
+
 def _verify_md(seal: dict | None) -> str:
     if not seal:
         return (
@@ -154,17 +199,21 @@ should compare it against the release note rather than only against this file.
 def build(out: Path, seal_path: Path | None = None) -> dict:
     """Assemble the pack and return what went into it."""
 
-    from app.core.editions import EDITIONS, DEFAULT_EDITION
+    from app.core.licensing import resolve
 
     missing = [source for source in REQUIRED.values() if not (ROOT / source).is_file()]
     if missing:
         raise FileNotFoundError(f"handover pack is missing required documents: {missing}")
 
-    edition = EDITIONS[DEFAULT_EDITION]
+    # Resolved, not assumed: the pack must describe the edition this installation
+    # actually runs, which is what the licence says rather than what the code defaults to.
+    resolution = resolve(ROOT)
+    edition = resolution.edition
     from app.modules.registry import MODULES
 
     edition_view = {
         "name": edition.name,
+        "licence_text": edition.licence,
         "licence": edition.licence,
         "summary": edition.summary,
         "modules": [module.code for module in MODULES if module.code in edition.modules],
@@ -173,6 +222,18 @@ def build(out: Path, seal_path: Path | None = None) -> dict:
             for module in MODULES
             if module.code not in edition.modules
         ],
+        "licence": {
+            "state": resolution.reason,
+            "warning": resolution.warning,
+            "customer": resolution.licence.customer if resolution.licence else None,
+            "kind": resolution.licence.kind if resolution.licence else None,
+            "expires_at": (
+                resolution.licence.expires_at.isoformat()
+                if resolution.licence and resolution.licence.expires_at
+                else None
+            ),
+            "machines": resolution.licence.machines if resolution.licence else None,
+        },
     }
 
     # A seal is a release artefact, not a repository file: it is generated when the
