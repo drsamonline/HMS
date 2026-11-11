@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-47-runtime` (stacked on `batch-46-register-ui`) |
+| Branch | `batch-48-audit` (stacked on `batch-47-runtime`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1143 passed, 2 skipped, 1145 collected**; per-block setup 2.53s -> 0.19s |
+| Tests | **1157 passed, 2 skipped, 1159 collected**; per-block setup 2.53s -> 0.19s |
 | Wave complete | **Waves 0–9 complete (B01–B51)**; B52 post-plan correction |
-| Next batch | **B58 — final code audit** |
+| Next batch | **none — the plan and the audit are complete** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -421,6 +421,7 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B55 | 2026-11-11 | see `git log` | 9 tests | 1132 | Trial licences defaulting to a month, an advisory machine count that refuses nothing, and the licence stated in the handover pack |
 | B56 | 2026-11-11 | see `git log` | 11 tests | 1143 | The statutory register gets a screen with per-kind explanations, and an alert panel on the superintendent's home that hides when there is nothing to report |
 | B57 | 2026-11-11 | see `git log` | 5 tests | 1143 | Runtime: one engine per process emptied between blocks, the ASGI stack built once, the login throttle reset per block. 2.53s -> 0.19s per block |
+| B58 | 2026-11-11 | see `git log` | 9 tests | 1157 | The code audit: F-01 default admin password refused, F-06 broken audit chain surfaced on the home screen, four findings recorded unfixed |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
 test baseline plus 574 new tests. Final: **1143 passed, 2 skipped, 1145 collected**.
@@ -1314,6 +1315,23 @@ exist before trusting the cache.
 **D-120 — Pin the contract of the thing you optimised.**
 Isolation, reuse, the throttle reset and the file-then-memory sequence are all asserted.
 An optimisation without a test of the property it might have broken is a hope.
+
+### B58 — the code audit
+
+`docs/CODE_AUDIT.md`. Six findings, two fixed here, four recorded.
+
+**D-121 — An audit records what it could not check.**
+F-05, the frontend escaping across 109 innerHTML sites, is marked *unverified*. Every
+module has a helper; whether every site uses it is a dedicated pass. Claiming it without
+doing it would be the worst thing that document could do.
+
+**D-122 — A warning is not a control.**
+The default administrator password was guarded by a printed warning that nobody on a
+LAN server reads. It is now refused, and the refusal names the safe paths.
+
+**D-123 — The thing the audit trail exists to detect must be visible.**
+A broken hash chain was logged at error level. It now appears on the superintendent's
+home, because a control nobody sees is a control that does not exist.
 
 ---
 
