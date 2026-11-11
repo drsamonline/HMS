@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-42-statutory` (stacked on `batch-41-handover`) |
+| Branch | `batch-43-optional-modules` (stacked on `batch-42-statutory`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1096 passed, 2 skipped, 1098 collected** (569 baseline + 527 new) |
+| Tests | **1106 passed, 2 skipped, 1108 collected** (569 baseline + 537 new) |
 | Wave complete | **Waves 0–9 complete (B01–B51)**; B52 post-plan correction |
-| Next batch | **B53 — institution registration UI and expiry alerts** |
+| Next batch | **B54 — institution registration screen and expiry alerts** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -416,9 +416,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B50 | 2026-11-10 | see `git log` | 12 tests | 1065 | The guided first run: five steps in the order a day happens, progress read from the database, never touching a real patient |
 | B51 | 2026-11-10 | see `git log` | 14 tests | 1079 | The handover pack: one zip with the runbook, guides, compliance mapping, API reference, licence and seal. **Closes wave 9 and the plan** |
 | B52 | 2026-11-11 | see `git log` | 17 tests | 1096 | Practitioner registration authority (NCH or State Council); the institution's own statutory register of ten kinds with expiry tracking; NABH optional from hospital upward, QCI enterprise |
+| B53 | 2026-11-11 | see `git log` | 10 tests | 1106 | NABH available in every edition and marked optional; a missing or expired statutory registration is reported and never enforced |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 527 new tests. Final: **1096 passed, 2 skipped, 1098 collected**.
+test baseline plus 537 new tests. Final: **1106 passed, 2 skipped, 1108 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1230,6 +1231,21 @@ a legal position.
 NABH moved from enterprise-only to hospital-and-above so a hospital can turn it off
 rather than be unable to have it. QCI is an enterprise feature because it applies to
 colleges and teaching hospitals, not to a private clinic.
+
+**D-107 — Two gates that look alike are not alike.**
+The edition gate is commercial and enforced: you cannot enable a module you did not
+buy. The statutory gate is a fact about the premises and is reported, never enforced.
+Conflating them produces software that locks a doctor out of a patient's record over a
+lapsed certificate, which is the harm the warning existed to prevent.
+
+**D-108 — Off is a choice, not a fault.**
+An optional module that is disabled is a decision the hospital made, and nothing in the
+product may treat it as an error, a gap or a failure.
+
+**A note on how this batch came about.** NABH was enterprise-only in B44, hospital-and-
+above in B52, and everywhere in B53. Three passes at the same boundary, all mine, all
+because I guessed at where the commercial line fell instead of asking. The line is now
+stated once, in `app/core/editions.py`, where a reader will look for it.
 
 ---
 
