@@ -80,9 +80,53 @@ Every one reviewed in the security-relevant paths is deliberate:
 The remaining ones are in CLI entry points, the desktop console and the archive
 manager. None of them is in a request path that decides access.
 
+### F-07 — One permission guards eighteen reports, and six roles hold it
+
+**Severity: high. Status: open, recorded with a failing test.**
+
+Found while explaining F-04, and it is the reason F-04 matters.
+
+`dashboard.py` holds eighteen endpoints under a single guard, `require("reporting.read")`.
+Six roles hold that permission: medical superintendent, auditor, medical officer,
+**laboratory staff**, billing staff and **medical records**.
+
+Among the eighteen are the financial reconciliation reports:
+
+| Route | What it exposes |
+|---|---|
+| `/dashboard/refund-audit` | every refund, and who authorised it |
+| `/dashboard/receivables-aging` | what the hospital is owed, by age |
+| `/dashboard/invoice-overpayments` | money taken that should not have been |
+| `/dashboard/invoice-payment-reconciliation` | invoices against receipts |
+| `/dashboard/receipt-numbering-continuity` | gaps in the receipt series |
+
+A laboratory technician holds four permissions. `billing.read` is **not** one of them, so
+they cannot open the billing module - and they can read the reconciliation reports about
+it, because those live behind a reporting permission instead.
+
+This is not a theory. `tests/test_batch_b60_report_permissions.py` seeds a laboratory
+technician and calls the route; two strict `xfail` tests record that they get **200**.
+They will fail loudly the day somebody fixes it, which is the point.
+
+**Why it happened:** eighteen routes in one file read as one thing. A reviewer sees a
+dashboard module and a reporting permission and moves on. The file being 2,573 lines is
+what stopped anybody reading it closely enough to notice that seven of the thirteen are
+about money.
+
+**The fix, and why it is a product decision rather than a refactor:**
+
+| New permission | Routes | Who should hold it |
+|---|---|---|
+| `reports.operational` | bed occupancy, OPD queue | front desk, medical officer, superintendent |
+| `reports.clinical` | due follow-ups, pending investigations, discharge audit | medical officer, MRD, superintendent |
+| `reports.financial` | the seven reconciliation reports | billing staff, auditor, superintendent |
+
+That table is a decision about who may see the hospital's money, and it should be made
+by the owner rather than inferred by me. The router split is mechanical once it is made.
+
 ### F-04 — One module is 2,573 lines
 
-**Severity: medium. Status: open.**
+**Severity: medium. Status: open. The symptom of F-07.**
 
 `backend/app/api/v1/endpoints/dashboard.py` is 2,573 lines, and
 `services/reporting.py` is 1,235. Everything else is under 1,500 and most are far
