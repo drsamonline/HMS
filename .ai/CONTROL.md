@@ -15,10 +15,10 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-48-audit` (stacked on `batch-47-runtime`) |
+| Branch | `batch-49-escaping` (stacked on `batch-48-audit`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1157 passed, 2 skipped, 1159 collected**; per-block setup 2.53s -> 0.19s |
+| Tests | **1166 passed, 2 skipped, 1168 collected**; per-block setup 2.53s -> 0.19s |
 | Wave complete | **Waves 0–9 complete (B01–B51)**; B52 post-plan correction |
 | Next batch | **none — the plan and the audit are complete** |
 | Blocking decision | none |
@@ -422,6 +422,7 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B56 | 2026-11-11 | see `git log` | 11 tests | 1143 | The statutory register gets a screen with per-kind explanations, and an alert panel on the superintendent's home that hides when there is nothing to report |
 | B57 | 2026-11-11 | see `git log` | 5 tests | 1143 | Runtime: one engine per process emptied between blocks, the ASGI stack built once, the login throttle reset per block. 2.53s -> 0.19s per block |
 | B58 | 2026-11-11 | see `git log` | 9 tests | 1157 | The code audit: F-01 default admin password refused, F-06 broken audit chain surfaced on the home screen, four findings recorded unfixed |
+| B59 | 2026-11-11 | see `git log` | 9 tests | 1166 | F-05 closed by measurement: 21 real unescaped interpolations, 18 escaped, 6 reviewed into a baseline, gate strict and seen to fail. Release gate refuses a development key |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
 test baseline plus 574 new tests. Final: **1143 passed, 2 skipped, 1145 collected**.
@@ -1332,6 +1333,32 @@ LAN server reads. It is now refused, and the refusal names the safe paths.
 **D-123 — The thing the audit trail exists to detect must be visible.**
 A broken hash chain was logged at error level. It now appears on the superintendent's
 home, because a control nobody sees is a control that does not exist.
+
+### B59 — F-05, closed by measuring it
+
+The audit left F-05 unverified because nobody had checked. A tool answered it in an
+afternoon.
+
+| Stage | Count |
+|---|---|
+| Every interpolation the checker could see | 119 |
+| Real - a property read, not a markup builder | 21 |
+| A record id or count | 18 - all escaped |
+| Reviewed and recorded as safe | 6 |
+
+**D-124 — A checker that flags everything is ignored; one that flags nothing is decoration.**
+The first run reported 119 and would have been ignored. Separating a data read from a
+call to a function the author wrote left 21 real findings, and the rest went into a
+baseline that says *why* each is safe.
+
+**D-125 — Prove the gate fails.**
+A test plants `${row.patient_name}` into a file and asserts the check fails, then removes
+it. A check that has never failed is not a check (D-097, again).
+
+**D-126 — A release gate should currently refuse.**
+`scripts/check_release_ready.py` refuses this build because it carries the development
+licence key. That refusal is the working state, not a defect - and it will keep being
+the working state until the key is replaced.
 
 ---
 
