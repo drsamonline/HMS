@@ -52,11 +52,37 @@ async def _registrations_summary(db) -> dict:
     }
 
 
+async def _audit_chain_summary(db) -> dict:
+    """Whether the trail still verifies - the one thing it exists to detect."""
+
+    from app.services import audit_chain
+
+    report = await audit_chain.verify(db)
+    return {
+        "count": 0 if report.is_intact else 1,
+        "headline": (
+            "The audit trail verifies"
+            if report.is_intact
+            else f"The audit trail breaks at entry {report.first_break.audit_id}"
+        ),
+        "items": [] if report.is_intact else [
+            {
+                "label": "Audit trail",
+                "state": "broken",
+                "valid_until": None,
+            }
+        ],
+    }
+
+
 async def _panel_is_empty(panel, db) -> bool:
     """Whether a hide-when-empty panel has nothing to show."""
 
     if panel.kind == "registrations":
         summary = await _registrations_summary(db)
+        return summary["count"] == 0
+    if panel.kind == "audit_chain":
+        summary = await _audit_chain_summary(db)
         return summary["count"] == 0
     return False
 
@@ -98,6 +124,8 @@ async def get_home(
         }
         if panel.kind == "registrations":
             entry["data"] = await _registrations_summary(db)
+        if panel.kind == "audit_chain":
+            entry["data"] = await _audit_chain_summary(db)
         panels.append(entry)
 
     return {

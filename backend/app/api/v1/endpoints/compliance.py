@@ -84,6 +84,34 @@ async def certificate_retention(db: DatabaseSession) -> dict:
 
 
 @router.get(
+    "/audit-chain",
+    dependencies=[Depends(require("audit.read"))],
+)
+async def audit_chain_status(db: DatabaseSession) -> dict:
+    """Whether the audit trail still verifies.
+
+    The nightly verifier logs a break at error level. Nobody reads the log, and a break
+    means the trail was altered outside the application - so it is reported here, where
+    somebody can see it, and the home screen shows a panel only when there is something
+    to say.
+    """
+
+    from app.services import audit_chain
+
+    report = await audit_chain.verify(db)
+    return {
+        "ok": report.is_intact,
+        "checked": report.checked,
+        "broken_at": report.first_break.audit_id if report.first_break else None,
+        "message": (
+            "The audit trail verifies."
+            if report.is_intact
+            else "The audit trail does not verify. This is not a support call."
+        ),
+    }
+
+
+@router.get(
     "/nch-readiness",
     dependencies=[Depends(require("audit.read"))],
 )

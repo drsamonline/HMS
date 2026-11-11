@@ -83,6 +83,14 @@ HOMES: dict[str, Home] = {
             # Appears only when something needs doing: a lapsed BMW authorisation
             # discovered during an inspection is the failure this exists to prevent.
             HomePanel(
+                "audit_chain",
+                "Audit trail",
+                view="activity",
+                source="/compliance/audit-chain",
+                description="A break in the chain means the trail was altered outside the software.",
+                hide_when_empty=True,
+            ),
+            HomePanel(
                 "registrations",
                 "Statutory registrations",
                 view="settings",
