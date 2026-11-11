@@ -214,6 +214,18 @@ the pattern from B56.
   homoeopathic record structure is clinically right is a question for a practitioner,
   not an audit.
 
+## Dependencies
+
+`cryptography` was used by `app/cli/licence.py` and by the licensing tests from B54
+onwards, and was never declared in any requirements file. It worked locally because it
+had been installed by hand, and the release workflow failed its whole backend job with
+20 `ModuleNotFoundError`s. Fixed in #133.
+
+**The lesson is not "add the dependency".** It is that a suite run in an environment
+somebody has already fiddled with cannot tell you what the suite needs. A clean-install
+run is the only thing that answers that question, and it is worth doing before a release
+rather than after.
+
 ## The honest summary
 
 The security-critical paths - authentication, permissions, the setup gate, the licence
