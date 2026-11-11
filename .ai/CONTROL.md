@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-44-licensing` (stacked on `batch-43-optional-modules`) |
+| Branch | `batch-45-trial` (stacked on `batch-44-licensing`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1123 passed, 2 skipped, 1125 collected** (569 baseline + 554 new) |
+| Tests | **1132 passed, 2 skipped, 1134 collected** (569 baseline + 563 new) |
 | Wave complete | **Waves 0–9 complete (B01–B51)**; B52 post-plan correction |
-| Next batch | **B55 — institution registration screen and expiry alerts** |
+| Next batch | **B56 — institution registration screen and expiry alerts** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -418,9 +418,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B52 | 2026-11-11 | see `git log` | 17 tests | 1096 | Practitioner registration authority (NCH or State Council); the institution's own statutory register of ten kinds with expiry tracking; NABH optional from hospital upward, QCI enterprise |
 | B53 | 2026-11-11 | see `git log` | 10 tests | 1106 | NABH available in every edition and marked optional; a missing or expired statutory registration is reported and never enforced |
 | B54 | 2026-11-11 | see `git log` | 17 tests | 1123 | Signed licence files: RS256 token verified against a public key in the build, with a 30-day grace period. NABH locked behind it |
+| B55 | 2026-11-11 | see `git log` | 9 tests | 1132 | Trial licences defaulting to a month, an advisory machine count that refuses nothing, and the licence stated in the handover pack |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 554 new tests. Final: **1123 passed, 2 skipped, 1125 collected**.
+test baseline plus 563 new tests. Final: **1132 passed, 2 skipped, 1134 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1264,6 +1265,19 @@ lock on it, which is what the environment variable was.
 Licensing is not copy protection. Somebody determined enough can patch the check out.
 It makes the honest case honest and the dishonest case deliberate, and the docstring
 says exactly that.
+
+**D-113 — A trial is the full product for a short time.**
+Not a reduced edition. A hospital deciding whether to buy should be deciding about the
+product, not about a demo of it.
+
+**D-114 — The machine count is advisory and nothing reads it to decide.**
+It records what both sides agreed so the conversation can happen with the same number
+in front of them. A product that stops working because a hospital added a second server
+has made an enemy of a customer who was expanding.
+
+**D-115 — The handover pack states the licence.**
+A hospital should know what it bought and until when, in the pack it keeps after the
+vendor leaves.
 
 ---
 
