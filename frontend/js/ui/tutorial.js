@@ -57,7 +57,7 @@ export async function renderTutorial(host, openView) {
       <header class="tutorial-header">
         <div>
           <h2>Getting started</h2>
-          <p>${data.completed} of ${data.total} done. ${escapeHtml(data.note)}</p>
+          <p>${esc(data.completed)} of ${esc(data.total)} done. ${escapeHtml(data.note)}</p>
         </div>
         <button type="button" class="secondary" id="tutorial-dismiss">Hide</button>
       </header>

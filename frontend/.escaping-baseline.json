@@ -1,0 +1,35 @@
+{
+  "reviewed": [
+    {
+      "path": "frontend/js/app.js",
+      "expression": "view[0].toUpperCase()+view.slice(1)",
+      "reason": "the view name is a fixed string chosen in this file"
+    },
+    {
+      "path": "frontend/js/app.js",
+      "expression": "descriptions[view]||\"Module not yet available.\"",
+      "reason": "a fixed dictionary of literals, keyed by a fixed string"
+    },
+    {
+      "path": "frontend/js/operational_year.js",
+      "expression": "Array.from({length:12},(_,i)=",
+      "reason": "generated numbers, no user data"
+    },
+    {
+      "path": "frontend/js/ui/dialog.js",
+      "expression": "spec.danger === false ? \"\" : \"danger\"",
+      "reason": "both branches are string literals"
+    },
+    {
+      "path": "frontend/js/ui/institute-registrations.js",
+      "expression": "atRisk.length\n            ? `<strong>${atRisk.length}</strong> need attention.`\n            : \"Everything recorded is cu",
+      "reason": "a count, and both branches of the ternary are literals or markup built by escaped code"
+    },
+    {
+      "path": "frontend/js/admin.js",
+      "expression": "m.id?`<label class=\"inline-check\"><input type=\"checkbox\" name=\"is_active\" ${m.is_active!==false?\"checked\":\"\"}> Active</label>`:\"\"",
+      "reason": "the only interpolation inside the nested template is the literal 'checked'; m.id is used as a condition, not rendered"
+    }
+  ],
+  "note": "Interpolations into markup that were reviewed and found safe. Anything not listed here fails the escaping gate - see scripts/check_frontend_escaping.py."
+}

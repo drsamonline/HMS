@@ -96,9 +96,9 @@ changes land in the same week.
 clinical feeds, the billing feeds and the statistical feeds are three things that happen
 to share a router.
 
-### F-05 — Frontend escaping: every module has a helper, coverage unverified
+### F-05 — Frontend escaping: every module has a helper, coverage now verified
 
-**Severity: unknown. Status: unverified.**
+**Severity: low. Status: resolved in B59.**
 
 Every JavaScript module that writes HTML defines or imports an escape helper. There are
 109 `innerHTML` assignments across `frontend/js/`.
@@ -108,13 +108,26 @@ pass is possible - the newer components already do it, and the pattern `escapeHt
 is greppable - but it is a dedicated afternoon, not a line in an audit, and claiming it
 without doing it would be the worst outcome of this document.
 
-**What is known:** the components written during this build (`ui/dialog.js`,
-`ui/states.js`, `ui/table.js`, `ui/help.js`, `ui/tutorial.js`,
-`ui/institute-registrations.js`, `ui/prescription-print.js`) escape every value they
-render, and two of them are covered by tests that assert it.
+**What was found, once it was actually measured:** `scripts/check_frontend_escaping.py`
+parses every template literal that reaches a markup sink and asks whether each
+interpolation is escaped. It reported 119 candidates; after separating a property read
+(a value that came from the API) from a call to a function the author wrote (usually a
+markup builder), **21 were real**, and 18 of those were a record id or a number
+interpolated into an attribute.
 
-**What is not known:** the older workspace modules - `dashboard.js`, `print.js`,
-`admin.js` - where the markup is built inline and there is more of it.
+All 18 were escaped. The remaining 6 were reviewed and recorded in
+`frontend/.escaping-baseline.json` with the reason each is safe - a fixed dictionary, a
+ternary of two literals, a count.
+
+The gate is now strict: `--strict` fails on any interpolation that is neither escaped
+nor in the reviewed baseline, and a stale baseline entry is reported so the file does
+not rot. A test plants `${row.patient_name}` into a file and asserts the gate fails -
+a check that has never failed is not a check (D-097).
+
+**What this does not prove:** the checker is a heuristic, not a JavaScript parser. It
+will miss a value escaped two functions away and it will not see markup built by string
+concatenation. It closes the question for the code as written; it does not close it
+forever.
 
 ### F-06 — The audit trail's hash chain is verified nightly, and a break is not surfaced
 
@@ -166,5 +179,9 @@ Two things should be fixed before the first sale: **F-01**, because a default pa
 on a LAN server is the most likely way this product harms a hospital, and **F-06**,
 because a broken audit chain that nobody sees is the same as no audit chain.
 
-**F-05 is the unknown.** It is the largest surface and the least examined, and this
-document says so rather than implying otherwise.
+**F-05 is closed**, and closing it changed the answer: the surface that looked largest
+and least examined turned out to be 18 record ids and a reviewable remainder. That is
+what measuring does, and it is why the first version of this document refused to guess.
+
+**F-04 remains the one worth doing next.** It is not a security problem; it is the
+place where the next mistake will be made.

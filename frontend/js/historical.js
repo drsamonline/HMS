@@ -8,7 +8,7 @@ export async function openHistoricalWorkspace(host, currentPatient = null) {
       <header class="workspace-header"><div><h2>Historical Data</h2><p>Load archived case records by operational year without attaching old databases to normal live usage.</p></div></header>
       <div class="form-grid">
         <label>Operational year<select id="history-year"><option value="">Loading…</option></select></label>
-        <label>Patient ID<input id="history-patient" type="number" min="1" value="${currentPatient?.id ?? ""}" placeholder="Patient ID"></label>
+        <label>Patient ID<input id="history-patient" type="number" min="1" value="${esc(currentPatient?.id ?? "")}" placeholder="Patient ID"></label>
       </div>
       <div class="button-row"><button id="history-load">Load Historical Cases</button><button id="history-refresh" class="secondary">Refresh Archives</button></div>
       <div id="history-status" class="status-box"></div>
@@ -23,7 +23,7 @@ export async function openHistoricalWorkspace(host, currentPatient = null) {
       status.textContent = "Loading available archives…";
       const archives = await listArchives();
       const verified = archives.filter(a => a.verified);
-      yearSelect.innerHTML = verified.length ? verified.map(a => `<option value="${a.archive_year}">${esc(a.archive_year)} — ${esc(a.storage_tier)}</option>`).join("") : `<option value="">No archives available</option>`;
+      yearSelect.innerHTML = verified.length ? verified.map(a => `<option value="${esc(a.archive_year)}">${esc(a.archive_year)} — ${esc(a.storage_tier)}</option>`).join("") : `<option value="">No archives available</option>`;
       status.textContent = verified.length ? `${verified.length} verified archive(s) available.` : "No verified historical archives are available.";
       if (currentPatient?.id) await loadCases();
     } catch (e) { status.textContent = e instanceof Error ? e.message : "Unable to load archives."; status.className="status-box error"; }

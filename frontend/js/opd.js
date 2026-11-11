@@ -3,7 +3,7 @@ const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
 }[c]));
 const today = () => new Date().toISOString().slice(0, 10);
-const patientName = (p) => [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(" ") || p.patient_number || `Patient ${p.id}`;
+const patientName = (p) => [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(" ") || p.patient_number || `Patient ${esc(p.id)}`;
 export async function openOPDQueueWorkspace(box){
   box.innerHTML = `<div class="module-workspace">
     <div class="module-head"><div><h2>OPD Queue</h2><p>Register visits, generate tokens and manage the outpatient queue.</p></div><button id="opd-refresh" class="secondary">Refresh</button></div>
@@ -18,7 +18,7 @@ export async function openOPDQueueWorkspace(box){
     if(!search.value.trim()){results.replaceChildren();return;}
     try{
       const rows=await listPatients(search.value.trim());
-      results.innerHTML=rows.length?rows.slice(0,8).map(p=>`<button type="button" class="patient-card" data-id="${p.id}"><strong>${esc(patientName(p))}</strong><span>${esc(p.patient_number)} · ${esc(p.gender||"—")} · ${esc(p.mobile_number||"—")}</span></button>`).join(""):"<div class=\"empty-state\">No patients found.</div>";
+      results.innerHTML=rows.length?rows.slice(0,8).map(p=>`<button type="button" class="patient-card" data-id="${esc(p.id)}"><strong>${esc(patientName(p))}</strong><span>${esc(p.patient_number)} · ${esc(p.gender||"—")} · ${esc(p.mobile_number||"—")}</span></button>`).join(""):"<div class=\"empty-state\">No patients found.</div>";
       results.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{patient=rows.find(p=>String(p.id)===b.dataset.id);form.elements.patient_id.value=patient.id;selected.textContent=`Selected: ${patientName(patient)} (${patient.patient_number})`;selected.classList.remove("hidden");form.classList.remove("hidden");results.replaceChildren();});
     }catch(e){show(e.message||"Unable to search patients.","error")}
   }
