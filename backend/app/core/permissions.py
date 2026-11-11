@@ -88,6 +88,13 @@ PERMISSIONS: tuple[PermissionSpec, ...] = (
     # --------------------------------------------------- administration
     _p("users.read", "users", "View users", "List user accounts."),
     _p("users.write", "users", "Manage users", "Create, edit, deactivate and re-role users."),
+    _p(
+        "roles.manage",
+        "roles",
+        "Grant permissions to one person",
+        "Give an individual a permission their role does not provide, or take a manual "
+        "grant back. Cannot grant anything the granter does not hold.",
+    ),
     _p("roles.read", "roles", "View roles", "List roles and their permissions."),
     _p("roles.write", "roles", "Manage roles", "Create roles and grant permissions."),
     _p("settings.read", "settings", "View settings", "Read hospital and system settings."),

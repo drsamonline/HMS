@@ -143,6 +143,7 @@ def test_every_data_endpoint_module_is_covered() -> None:
         # tutorial is the caller's own progress: a login, no permission.
         "tutorial": set(),
         "institute": {"settings"},
+        "user_permissions": {"roles"},
         "configuration": {"settings"},
         "dashboard": {"reporting"},
         "department_services": {"masters"},

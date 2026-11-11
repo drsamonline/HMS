@@ -71,6 +71,7 @@ from .stock_batch import StockBatch
 from .stock_card import StockCard
 from .stock_transaction import StockTransaction
 from .user import User
+from .user_permission import UserPermission
 from .user_role import UserRole
 from .visit import Visit
 from .visit_archive_reference import VisitArchiveReference
@@ -109,6 +110,7 @@ __all__ = [
     "User",
     "Role",
     "Permission",
+    "UserPermission",
     "UserRole",
     "RolePermission",
 
