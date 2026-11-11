@@ -13,6 +13,7 @@ dashboard feed:
 * frontend API wrapper and dashboard panel wired to the clinical workspace.
 """
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -22,7 +23,7 @@ def _read(rel: str) -> str:
 
 
 def test_pending_investigations_endpoint_wired_to_models():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     assert '"/pending-investigations"' in src
     assert "from app.models.investigation import Investigation" in src
     # only live orders awaiting results surface; matched case-insensitively

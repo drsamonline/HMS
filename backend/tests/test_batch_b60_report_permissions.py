@@ -132,9 +132,11 @@ def test_the_dashboard_router_is_really_four_modules() -> None:
 
     from pathlib import Path
 
-    source = (
-        Path(__file__).resolve().parents[1] / "app" / "api" / "v1" / "endpoints" / "dashboard.py"
-    ).read_text(encoding="utf-8")
+    endpoints = Path(__file__).resolve().parents[1] / "app" / "api" / "v1" / "endpoints"
+    source = "".join(
+        (endpoints / name).read_text(encoding="utf-8")
+        for name in ("reports_operational.py", "reports_clinical.py", "reports_financial.py")
+    )
 
     financial = [
         "receivables-aging",
@@ -159,13 +161,18 @@ def test_the_routes_are_guarded_by_domain_not_by_one_permission() -> None:
 
     from pathlib import Path
 
-    source = (
-        Path(__file__).resolve().parents[1] / "app" / "api" / "v1" / "endpoints" / "dashboard.py"
-    ).read_text(encoding="utf-8")
+    endpoints = Path(__file__).resolve().parents[1] / "app" / "api" / "v1" / "endpoints"
 
     import re
 
-    guards = set(re.findall(r'require\("([^"]+)"\)', source))
-    assert guards == {"reports.operational", "reports.clinical", "reports.financial"}, (
-        f"a report is guarded by the wrong domain, or by none: {sorted(guards)}"
-    )
+    expected = {
+        "reports_operational.py": "reports.operational",
+        "reports_clinical.py": "reports.clinical",
+        "reports_financial.py": "reports.financial",
+    }
+    for filename, permission in expected.items():
+        source = (endpoints / filename).read_text(encoding="utf-8")
+        guards = set(re.findall(r'require\("([^"]+)"\)', source))
+        assert guards == {permission}, (
+            f"{filename} should be guarded only by {permission}, found {sorted(guards)}"
+        )

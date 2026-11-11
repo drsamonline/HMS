@@ -25,6 +25,7 @@ Locked-in surfaces:
 * feature documentation indexed in docs/INDEX.md.
 """
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -34,7 +35,7 @@ def _read(rel: str) -> str:
 
 
 def test_shared_derivation_extracted_from_dashboard_endpoint():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     # the ledger body now lives in one shared async helper...
     assert "async def build_invoice_payment_reconciliation_ledger(db, limit: int) -> dict:" in src
     # ...built on top of the shared live-scan row builder
@@ -50,7 +51,7 @@ def test_shared_derivation_extracted_from_dashboard_endpoint():
 
 
 def test_dashboard_endpoint_delegates_to_shared_ledger():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     # the GET endpoint delegates instead of re-implementing the scan
     assert '@router.get("/invoice-payment-reconciliation"' in src
     assert "build_invoice_payment_reconciliation_ledger(db, limit)" in src

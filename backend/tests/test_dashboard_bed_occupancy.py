@@ -12,6 +12,7 @@ inpatient dashboard feed:
   per bed via row locking + partial unique index).
 """
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -21,7 +22,7 @@ def _read(rel: str) -> str:
 
 
 def test_bed_occupancy_endpoint_wired_to_models():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     assert '"/bed-occupancy"' in src
     assert "from app.models.admission import Admission" in src
     assert "from app.models.bed import Bed" in src

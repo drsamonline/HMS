@@ -13,6 +13,7 @@ financial-style aging ledger ready for reporting/printing:
   Reports & Printing workspace.
 """
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -22,7 +23,7 @@ def _read(rel: str) -> str:
 
 
 def test_dashboard_endpoint_exposes_receivables_aging():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     assert '"/receivables-aging"' in src
     assert "response_model=ReceivablesAgingResponse" in src
     # built on the Batch 82 live outstanding derivation, never stored status
@@ -31,7 +32,7 @@ def test_dashboard_endpoint_exposes_receivables_aging():
 
 
 def test_aging_buckets_are_standard_and_stable():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     for label in ("0-30 days", "31-60 days", "61-90 days", "Over 90 days"):
         assert label in src
     # every bucket is emitted even when empty so printed ledgers keep shape
@@ -40,7 +41,7 @@ def test_aging_buckets_are_standard_and_stable():
 
 
 def test_aging_balances_use_live_payments_with_clamping():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     # identical reconciliation semantics to Batch 82/85
     assert "func.coalesce(func.sum(Payment.amount_paid), 0)" in src
     assert "amount_paid = min(" in src

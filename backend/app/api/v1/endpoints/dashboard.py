@@ -165,7 +165,6 @@ from app.schemas.dashboard import (
 from app.services.billing import billing_service
 from app.services.followup import followup_service
 
-router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 
 def _naive_utc(value: datetime) -> datetime:
@@ -173,68 +172,6 @@ def _naive_utc(value: datetime) -> datetime:
     if value.tzinfo is not None:
         return value.astimezone(timezone.utc).replace(tzinfo=None)
     return value
-
-
-@router.get("/due-followups", response_model=DueFollowUpsResponse, dependencies=[Depends(require("reports.clinical"))])
-async def due_followups(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    from_datetime: datetime | None = Query(default=None),
-    days_ahead: int = Query(default=7, ge=0, le=365),
-    limit: int = Query(default=100, ge=1, le=200),
-) -> DueFollowUpsResponse:
-    """Follow-ups scheduled inside the window starting ``from_datetime``.
-
-    Defaults to "now through one week ahead" so the dashboard needs no
-    parameters for the common case; earlier windows remain reachable via an
-    explicit ``from_datetime`` (e.g. to surface overdue follow-ups).
-    """
-    start = (
-        _naive_utc(from_datetime)
-        if from_datetime
-        else datetime.now(timezone.utc).replace(tzinfo=None, microsecond=0)
-    )
-    end = start + timedelta(days=days_ahead)
-
-    records = await followup_service.list_due(db, start, end, 0, limit)
-
-    patient_ids = {r.patient_id for r in records}
-    case_ids = {r.case_record_id for r in records}
-    patients: dict[int, Patient] = {}
-    if patient_ids:
-        result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
-        patients = {p.id: p for p in result.scalars()}
-    cases: dict[int, CaseRecord] = {}
-    if case_ids:
-        result = await db.execute(select(CaseRecord).where(CaseRecord.id.in_(case_ids)))
-        cases = {c.id: c for c in result.scalars()}
-
-    items = []
-    for record in records:
-        patient = patients.get(record.patient_id)
-        case = cases.get(record.case_record_id)
-        name = "Unnamed patient"
-        number = None
-        if patient is not None:
-            name = " ".join(
-                part for part in (patient.first_name, patient.middle_name, patient.last_name) if part
-            ) or "Unnamed patient"
-            number = patient.patient_number
-        items.append(
-            {
-                "followup_id": record.id,
-                "case_record_id": record.case_record_id,
-                "patient_id": record.patient_id,
-                "patient_name": name,
-                "patient_number": number,
-                "case_number": case.case_number if case is not None else None,
-                "next_followup_datetime": record.next_followup_datetime,
-                "previous_prescription_id": record.previous_prescription_id,
-                "decision": record.decision,
-            }
-        )
-
-    return DueFollowUpsResponse(from_datetime=start, to_datetime=end, items=items)
 
 
 def _patient_display_name(patient: Patient | None) -> str:
@@ -247,277 +184,6 @@ def _patient_display_name(patient: Patient | None) -> str:
     ) or "Unnamed patient"
 
 
-@router.get("/outstanding-invoices", response_model=OutstandingInvoicesResponse, dependencies=[Depends(require("reports.financial"))])
-async def outstanding_invoices(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=100, ge=1, le=200),
-) -> OutstandingInvoicesResponse:
-    """Oldest-first unpaid/partial invoices with derived balances.
-
-    Built on the Batch 82 ``billing_service.list_outstanding_invoices`` feed:
-    balances are recomputed from live payments (so stale stored statuses and
-    cancelled invoices never surface), and each row is enriched with patient
-    identity plus an age in days so receivables can be chased directly from
-    the dashboard.
-    """
-    invoices, total_balance = await billing_service.list_outstanding_invoices(
-        db, limit=limit
-    )
-
-    as_of = date.today()
-    patient_ids = {invoice.patient_id for invoice in invoices}
-    patients: dict[int, Patient] = {}
-    if patient_ids:
-        result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
-        patients = {p.id: p for p in result.scalars()}
-
-    # Per-row paid totals use the same live-payment derivation as the service,
-    # so balance_due + amount_paid always reconciles to total_amount.
-    paid_by_invoice: dict[int, Decimal] = {}
-    if invoices:
-        invoice_ids = [invoice.id for invoice in invoices]
-        totals_result = await db.execute(
-            select(
-                Payment.invoice_id,
-                func.coalesce(func.sum(Payment.amount_paid), 0),
-            )
-            .where(Payment.invoice_id.in_(invoice_ids))
-            .group_by(Payment.invoice_id)
-        )
-        paid_by_invoice = {row[0]: Decimal(str(row[1])) for row in totals_result}
-
-    items = []
-    for invoice in invoices:
-        patient = patients.get(invoice.patient_id)
-        invoice_local_date = (
-            invoice.invoice_date.astimezone(timezone.utc).date()
-            if invoice.invoice_date.tzinfo is not None
-            else invoice.invoice_date.date()
-        )
-        amount_paid = min(
-            paid_by_invoice.get(invoice.id, Decimal("0")),
-            invoice.total_amount,
-        )
-        balance_due = max(invoice.total_amount - amount_paid, Decimal("0"))
-        items.append(
-            {
-                "invoice_id": invoice.id,
-                "patient_id": invoice.patient_id,
-                "patient_name": _patient_display_name(patient),
-                "patient_number": patient.patient_number if patient else None,
-                "invoice_number": invoice.invoice_number,
-                "invoice_date": invoice.invoice_date,
-                "total_amount": invoice.total_amount,
-                "amount_paid": amount_paid,
-                "balance_due": balance_due,
-                "payment_status": invoice.payment_status,
-                "days_outstanding": max((as_of - invoice_local_date).days, 0),
-            }
-        )
-
-    return OutstandingInvoicesResponse(
-        as_of=as_of,
-        items=items,
-        total_outstanding=total_balance,
-        invoice_count=len(items),
-    )
-
-
-@router.get("/bed-occupancy", response_model=BedOccupancyResponse, dependencies=[Depends(require("reports.operational"))])
-async def bed_occupancy(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> BedOccupancyResponse:
-    """Occupied beds reconciled against their active admissions.
-
-    Built on the Batch 61 bed-occupancy concurrency guarantees (row locking
-    plus the partial unique index keep at most one active admission per bed):
-    this feed reads ``Bed`` rows marked occupied and joins each to its live
-    admission/patient identity, so ward occupancy is actionable from the
-    dashboard without opening the IPD module. Beds whose occupancy flag has
-    drifted from admission state are still reported (with a null admission)
-    so data issues surface instead of silently disappearing.
-    """
-    beds_result = await db.execute(
-        select(Bed)
-        .where(
-            Bed.is_active.is_(True),
-            func.lower(Bed.occupancy_status).in_(("occupied", "reserved")),
-        )
-        .order_by(Bed.ward.asc(), Bed.bed_number.asc(), Bed.id.desc())
-        .limit(limit)
-    )
-    beds = list(beds_result.scalars().all())
-
-    # Active-admission lookup is batched (no N+1); the Batch 61 partial unique
-    # index means at most one row matches per bed, but we keep the first by
-    # recency defensively.
-    active_statuses = ("admitted", "active")
-    admissions_by_bed: dict[int, Admission] = {}
-    patients_by_id: dict[int, Patient] = {}
-    if beds:
-        bed_ids = [bed.id for bed in beds]
-        adm_result = await db.execute(
-            select(Admission)
-            .where(
-                Admission.bed_id.in_(bed_ids),
-                func.lower(Admission.admission_status).in_(active_statuses),
-            )
-            .order_by(Admission.admission_datetime.desc(), Admission.id.desc())
-        )
-        for admission in adm_result.scalars():
-            admissions_by_bed.setdefault(admission.bed_id, admission)
-
-        patient_ids = {a.patient_id for a in admissions_by_bed.values()}
-        if patient_ids:
-            pat_result = await db.execute(
-                select(Patient).where(Patient.id.in_(patient_ids))
-            )
-            patients_by_id = {p.id: p for p in pat_result.scalars()}
-
-    as_of = datetime.now(timezone.utc).replace(tzinfo=None)
-    items = []
-    occupied_count = 0
-    for bed in beds:
-        admission = admissions_by_bed.get(bed.id)
-        patient = (
-            patients_by_id.get(admission.patient_id) if admission else None
-        )
-        length_of_stay_days = None
-        if admission is not None:
-            occupied_count += 1
-            admitted_at = admission.admission_datetime
-            if admitted_at.tzinfo is not None:
-                admitted_at = admitted_at.astimezone(timezone.utc).replace(
-                    tzinfo=None
-                )
-            length_of_stay_days = max((as_of - admitted_at).days, 0)
-        items.append(
-            {
-                "bed_id": bed.id,
-                "bed_number": bed.bed_number,
-                "ward": bed.ward,
-                "room_number": bed.room_number,
-                "bed_type": bed.bed_type,
-                "occupancy_status": bed.occupancy_status,
-                "has_active_admission": admission is not None,
-                "admission_id": admission.id if admission else None,
-                "admission_number": (
-                    admission.admission_number if admission else None
-                ),
-                "admission_datetime": (
-                    admission.admission_datetime if admission else None
-                ),
-                "admission_status": (
-                    admission.admission_status if admission else None
-                ),
-                "patient_id": admission.patient_id if admission else None,
-                "patient_name": _patient_display_name(patient),
-                "patient_number": patient.patient_number if patient else None,
-                "length_of_stay_days": length_of_stay_days,
-            }
-        )
-
-    return BedOccupancyResponse(
-        as_of=datetime.now(timezone.utc),
-        items=items,
-        occupied_count=occupied_count,
-        total_beds=len(items),
-    )
-
-
-@router.get("/pending-investigations", response_model=PendingInvestigationsResponse, dependencies=[Depends(require("reports.clinical"))])
-async def pending_investigations(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=100, ge=1, le=500),
-) -> PendingInvestigationsResponse:
-    """Oldest-first live investigation orders still awaiting results.
-
-    Built on the Batch 66 laboratory result workflow: an order leaves the
-    backlog only when its report is released (status ``completed``) or it is
-    cancelled, so ``pending``/``in_progress`` rows are exactly the orders the
-    laboratory still owes results for. Archived-year rows never surface
-    (``is_current_year`` mirrors the annual lifecycle), each row carries its
-    OPD/IPD lineage (visit/admission/case type) plus an age in hours so
-    ageing orders can be chased directly from the dashboard, and patient
-    enrichment is batched (no N+1).
-    """
-    open_statuses = ("pending", "in_progress")
-    result = await db.execute(
-        select(Investigation)
-        .where(
-            Investigation.is_current_year.is_(True),
-            func.lower(Investigation.investigation_status).in_(open_statuses),
-        )
-        .order_by(
-            Investigation.requested_datetime.asc(),
-            Investigation.id.asc(),
-        )
-        .limit(limit)
-    )
-    investigations = list(result.scalars().all())
-
-    patients_by_id: dict[int, Patient] = {}
-    patient_ids = {inv.patient_id for inv in investigations}
-    if patient_ids:
-        pat_result = await db.execute(
-            select(Patient).where(Patient.id.in_(patient_ids))
-        )
-        patients_by_id = {p.id: p for p in pat_result.scalars()}
-
-    as_of = datetime.now(timezone.utc).replace(tzinfo=None)
-    items = []
-    pending_count = 0
-    in_progress_count = 0
-    for inv in investigations:
-        status = (inv.investigation_status or "").lower()
-        if status == "pending":
-            pending_count += 1
-        elif status == "in_progress":
-            in_progress_count += 1
-        requested_at = inv.requested_datetime
-        if requested_at.tzinfo is not None:
-            requested_at = requested_at.astimezone(timezone.utc).replace(
-                tzinfo=None
-            )
-        age_hours = max(int((as_of - requested_at).total_seconds() // 3600), 0)
-        items.append(
-            {
-                "investigation_id": inv.id,
-                "patient_id": inv.patient_id,
-                "patient_name": _patient_display_name(
-                    patients_by_id.get(inv.patient_id)
-                ),
-                "patient_number": (
-                    patients_by_id[inv.patient_id].patient_number
-                    if inv.patient_id in patients_by_id
-                    else None
-                ),
-                "case_type": inv.case_type,
-                "visit_id": inv.visit_id,
-                "admission_id": inv.admission_id,
-                "investigation_number": inv.investigation_number,
-                "investigation_name": inv.investigation_name,
-                "investigation_status": inv.investigation_status,
-                "requested_datetime": inv.requested_datetime,
-                "requested_by": inv.requested_by,
-                "age_hours": age_hours,
-            }
-        )
-
-    return PendingInvestigationsResponse(
-        as_of=datetime.now(timezone.utc),
-        items=items,
-        pending_count=pending_count,
-        in_progress_count=in_progress_count,
-    )
-
-
-# Standard receivables aging buckets (days outstanding, inclusive lower /
-# exclusive upper; the last bucket is open-ended).
 _RECEIVABLES_BUCKETS = (
     ("0-30 days", 0, 30),
     ("31-60 days", 30, 60),
@@ -601,55 +267,6 @@ def build_receivables_aging_result(
         "invoice_count": len(items),
         "total_outstanding": total_outstanding,
     }
-
-
-@router.get("/receivables-aging", response_model=ReceivablesAgingResponse, dependencies=[Depends(require("reports.financial"))])
-async def receivables_aging(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> ReceivablesAgingResponse:
-    """Financial-style receivables aging ledger over live outstanding invoices.
-
-    Batch 86 — reporting/printing integration feed. Built on the same
-    Batch 82 ``billing_service.list_outstanding_invoices`` derivation so
-    balances always reconcile (``amount_paid + balance_due == total_amount``,
-    stale stored statuses and cancelled invoices never surface). Each invoice
-    is placed into a standard 0-30/31-60/61-90/90+ aging bucket by its age in
-    days; every bucket is reported even when empty so printed ledgers keep a
-    stable shape, and bucket counts/totals sum back to the headline aggregates.
-    Patient enrichment is batched (no N+1). Batch 91 extracted the bucketing
-    into ``build_receivables_aging_result`` so the print envelope reuses the
-    exact same code path.
-    """
-    invoices, _service_total = await billing_service.list_outstanding_invoices(
-        db, limit=limit
-    )
-
-    as_of = date.today()
-    patient_ids = {invoice.patient_id for invoice in invoices}
-    patients: dict[int, Patient] = {}
-    if patient_ids:
-        result = await db.execute(select(Patient).where(Patient.id.in_(patient_ids)))
-        patients = {p.id: p for p in result.scalars()}
-
-    # Live-payment derivation identical to the Batch 82 outstanding feed.
-    paid_by_invoice: dict[int, Decimal] = {}
-    if invoices:
-        invoice_ids = [invoice.id for invoice in invoices]
-        totals_result = await db.execute(
-            select(
-                Payment.invoice_id,
-                func.coalesce(func.sum(Payment.amount_paid), 0),
-            )
-            .where(Payment.invoice_id.in_(invoice_ids))
-            .group_by(Payment.invoice_id)
-        )
-        paid_by_invoice = {row[0]: Decimal(str(row[1])) for row in totals_result}
-
-    return ReceivablesAgingResponse(
-        **build_receivables_aging_result(invoices, patients, paid_by_invoice, as_of)
-    )
 
 
 def _receipt_numeric_suffix(receipt_number: str) -> int | None:
@@ -831,63 +448,6 @@ async def _load_continuity_scan_inputs(
             ) + Decimal(str(amount_paid))
 
     return invoices, patients, receipts_by_invoice, paid_by_invoice
-
-
-@router.get("/invoice-receipt-continuity", response_model=InvoiceReceiptContinuityResponse, dependencies=[Depends(require("reports.financial"))])
-async def invoice_receipt_continuity(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> InvoiceReceiptContinuityResponse:
-    """Audit invoice-to-receipt numbering continuity on live billing data.
-
-    Batch 87 — reporting/printing integration feed; Batch 92 moved the
-    derivation into the shared ``build_invoice_receipt_continuity_result``
-    helper so the printable envelope can never drift from this screen feed.
-    """
-    invoices, patients, receipts_by_invoice, paid_by_invoice = (
-        await _load_continuity_scan_inputs(db, limit)
-    )
-    return InvoiceReceiptContinuityResponse(
-        **build_invoice_receipt_continuity_result(
-            invoices,
-            patients,
-            receipts_by_invoice,
-            paid_by_invoice,
-            datetime.now(timezone.utc),
-        )
-    )
-
-
-@router.get("/receipt-numbering-continuity", response_model=ReceiptNumberingContinuityResponse, dependencies=[Depends(require("reports.financial"))])
-async def receipt_numbering_continuity(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=2000, ge=1, le=5000),
-) -> ReceiptNumberingContinuityResponse:
-    """Audit receipt numbering continuity across the whole receipt book.
-
-    Batch 88 — reporting/printing integration feed. Where Batch 87 checked
-    receipts *per invoice*, this scans the most recent ``limit`` live Payment
-    ledger rows in a single ordered pass (no N+1) and groups them by numeric
-    series — every receipt sharing the same non-digit prefix (e.g. ``R`` in
-    ``R000123``), parsed with the Batch 87 ``_receipt_numeric_suffix`` helper
-    so both audits agree on what "numeric" means.
-
-    For each series the audit reports:
-
-    * ``missing_numbers`` — values skipped between first and last issued
-      number (sequence gaps in the physical receipt book);
-    * ``duplicate_numbers`` — receipt numbers recorded more than once;
-    * per-series reconciliation that always holds:
-      ``expected_count == actual_count + gap_count``.
-
-    Non-numeric receipt numbers are counted as checked but never produce
-    false gaps, and aggregates (``clean_series_count``, ``total_gap_count``)
-    sum back to the scanned ledger so printed audits reconcile.
-    """
-    audit = await build_receipt_numbering_continuity_result(db, limit)
-    return ReceiptNumberingContinuityResponse(**audit)
 
 
 async def build_receipt_numbering_continuity_result(db, limit: int) -> dict:
@@ -1132,34 +692,6 @@ async def _build_reconciliation_rows(db, limit: int) -> list[dict]:
     return rows
 
 
-@router.get("/invoice-payment-reconciliation", response_model=InvoicePaymentReconciliationResponse, dependencies=[Depends(require("reports.financial"))])
-async def invoice_payment_reconciliation(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> InvoicePaymentReconciliationResponse:
-    """Reconcile recent invoices against the live Payment ledger.
-
-    Batch 89 — reporting/printing integration feed. Where Batch 82/86 only
-    surfaced *outstanding* invoices, this ledger reconciles **every** scanned
-    invoice (most recent ``limit`` non-cancelled invoices), keeping the
-    Batch 68 clamp invariant on every printed row.
-
-    Each row also carries the derived payment status next to the stored one
-    (``is_reconciled`` flags drift between the two) plus the number of
-    receipts recorded against the invoice, so billing staff can prove
-    collection state line-by-line before printing. Headline aggregates sum
-    back to ``invoices_checked`` and the totals satisfy
-    ``total_billed == total_paid + total_outstanding``.
-
-    Batch 94 — extracted the scan/aggregation into
-    ``build_invoice_payment_reconciliation_ledger`` so the reporting print
-    envelope reuses this exact code path.
-    """
-    ledger = await build_invoice_payment_reconciliation_ledger(db, limit)
-    return InvoicePaymentReconciliationResponse(**ledger)
-
-
 def build_collection_summary_by_patient(rows: list[dict]) -> dict:
     """Roll reconciliation rows up into per-patient collection totals.
 
@@ -1223,31 +755,6 @@ def build_collection_summary_by_patient(rows: list[dict]) -> dict:
         ),
         "items": items,
     }
-
-
-@router.get(
-    "/collection-summary-by-patient",
-    response_model=PatientCollectionSummaryResponse,
-    dependencies=[Depends(require("reports.financial"))],
-)
-async def collection_summary_by_patient(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> PatientCollectionSummaryResponse:
-    """Group the Batch 89 reconciliation ledger into per-patient collections.
-
-    Batch 90 — printable collection summary: every figure derives from the
-    same live-payment scan as the reconciliation ledger (single grouped
-    Payment pass, no N+1, stored counters never trusted), rolled up per
-    patient with billed / collected / outstanding totals, derived
-    paid/partial/unpaid invoice counts and the latest payment timestamp.
-    Headline aggregates sum back to ``invoices_checked`` /
-    ``patients_checked`` and the totals satisfy
-    ``total_billed == total_collected + total_outstanding``.
-    """
-    rows = await _build_reconciliation_rows(db, limit)
-    return PatientCollectionSummaryResponse(**build_collection_summary_by_patient(rows))
 
 
 def build_payment_method_collection_summary(
@@ -1364,25 +871,6 @@ async def build_payment_method_summary_result(db, limit: int) -> dict:
     )
 
 
-@router.get("/payment-method-summary", response_model=PaymentMethodSummaryResponse, dependencies=[Depends(require("reports.financial"))])
-async def payment_method_summary(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> PaymentMethodSummaryResponse:
-    """Group live collections by payment method for the scan window.
-
-    Batch 96 — reporting/printing integration feed. Where Batch 90 answered
-    *who still owes*, this answers *how the money arrived*: per-method
-    receipt counts, distinct invoices touched, gross received versus
-    collected (clamped per invoice, Batch 68 parity) and each method's
-    percentage share of the window's collected total. Headline aggregates
-    always satisfy ``sum(per-method collected) == total_collected``.
-    """
-    result = await build_payment_method_summary_result(db, limit)
-    return PaymentMethodSummaryResponse(**result)
-
-
 def build_overpayment_ledger_result(rows: list[dict], as_of: date) -> dict:
     """Roll raw overpayment rows up into ledger items and headlines.
 
@@ -1440,28 +928,6 @@ async def build_overpayment_ledger(db, limit: int) -> dict:
             item.pop("last_payment_datetime", None)
             overpaid_rows.append(item)
     return build_overpayment_ledger_result(overpaid_rows, date.today())
-
-
-@router.get("/invoice-overpayments", response_model=InvoiceOverpaymentResponse, dependencies=[Depends(require("reports.financial"))])
-async def invoice_overpayments(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> InvoiceOverpaymentResponse:
-    """List invoices whose live payment ledger exceeds the billed amount.
-
-    Batch 97 — reporting/printing integration feed. The Batch 89/94
-    reconciliation ledger clamps ``amount_paid`` to ``total_amount``, which
-    deliberately hides over-collection; this feed surfaces exactly what the
-    clamp conceals: for the most recent ``limit`` non-cancelled invoices,
-    every invoice where the summed Payment rows exceed ``total_amount``,
-    with the un-clamped paid total and the resulting ``overpaid_amount``.
-    Semantics are derived from the live ledger only (stored counters and
-    status columns are never trusted), and the invariant
-    ``overpaid_amount == total_paid_raw - total_amount`` holds on every row.
-    """
-    ledger = await build_overpayment_ledger(db, limit)
-    return InvoiceOverpaymentResponse(**ledger)
 
 
 def build_payment_method_overpayment_breakdown(
@@ -1584,31 +1050,6 @@ async def build_payment_method_overpayment_result(db, limit: int) -> dict:
     )
 
 
-@router.get(
-    "/payment-method-overpayments",
-    response_model=PaymentMethodOverpaymentResponse,
-    dependencies=[Depends(require("reports.financial"))],
-)
-async def payment_method_overpayments(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> PaymentMethodOverpaymentResponse:
-    """Split the window's over-collection across payment methods.
-
-    Batch 98 — reporting/printing integration feed. Where Batch 97 answers
-    *which invoices* were paid beyond their billed amount, this answers
-    *which methods* produced the excess: per-method gross received,
-    collected (Batch 68 clamp parity via the shared Batch 96 rollup) and
-    overpaid figures, with each method's share of the window's collected
-    total. Headline aggregates always satisfy ``total_gross ==
-    total_collected + total_overpaid`` and ``sum(per-method overpaid) ==
-    total_overpaid``.
-    """
-    result = await build_payment_method_overpayment_result(db, limit)
-    return PaymentMethodOverpaymentResponse(**result)
-
-
 def _as_naive_utc(value: datetime) -> datetime:
     """Normalise a stored datetime to naive UTC for age arithmetic."""
     if value.tzinfo is not None:
@@ -1722,30 +1163,6 @@ async def build_discharge_audit_scan(db, limit: int) -> list[dict]:
     return rows
 
 
-@router.get("/discharge-audit", response_model=DischargeAuditResponse, dependencies=[Depends(require("reports.clinical"))])
-async def discharge_audit(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> DischargeAuditResponse:
-    """Recent discharges reconciled against admission and bed state.
-
-    Batch 99 — ward-flow continuity feed built on the Batch 83
-    bed-occupancy guarantees: the live discharge workflow marks the
-    admission ``discharged`` and frees its bed when a discharge record is
-    created, so each audit row proves the hand-off completed end-to-end.
-    Drifted rows (admission still active, bed still occupied, or no bed
-    link) keep appearing with ``is_reconciled`` false so data issues
-    surface instead of silently disappearing. Headline counts always
-    satisfy ``reconciled_count + drift_count == total_discharges``.
-    """
-    rows = await build_discharge_audit_scan(db, limit)
-    result = build_discharge_audit_result(
-        rows, datetime.now(timezone.utc).replace(tzinfo=None)
-    )
-    return DischargeAuditResponse(**result)
-
-
 OPD_QUEUE_STATUSES = ("waiting", "in_consultation", "completed", "cancelled")
 
 
@@ -1848,25 +1265,6 @@ async def build_opd_queue_summary_scan(db, limit_days: int) -> dict:
     )
 
 
-@router.get("/opd-queue-summary", response_model=OPDQueueSummaryResponse, dependencies=[Depends(require("reports.operational"))])
-async def opd_queue_summary(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit_days: int = Query(default=14, ge=1, le=90),
-) -> OPDQueueSummaryResponse:
-    """Daily OPD token queue workload, newest queue day first.
-
-    Batch 99 — outpatient-flow continuity feed: every reported day's
-    figures come from one grouped pass over live ``OPDToken`` rows, so the
-    status split (waiting/in_consultation/completed/cancelled) always sums
-    to that day's total and the open backlog reconciles line-for-line.
-    Clinician desks get today's pressure and the trailing days' throughput
-    without opening the OPD module.
-    """
-    result = await build_opd_queue_summary_scan(db, limit_days)
-    return OPDQueueSummaryResponse(**result)
-
-
 def build_invoice_settlement_audit_result(rows: list[dict], as_of: date) -> dict:
     """Pure cleared/unsettled rollup over shared reconciliation rows.
 
@@ -1965,31 +1363,6 @@ async def build_invoice_settlement_audit_scan(db, limit: int) -> dict:
         for row in rows:
             row["refund_count"] = refund_counts.get(row["invoice_id"], 0)
     return build_invoice_settlement_audit_result(rows, date.today())
-
-
-@router.get(
-    "/invoice-settlement-audit", response_model=InvoiceSettlementAuditResponse,
-    dependencies=[Depends(require("reports.financial"))],
-)
-async def invoice_settlement_audit(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> InvoiceSettlementAuditResponse:
-    """Cleared vs unsettled settlement audit over the live payment ledger.
-
-    Batch 100 — billing settlement mega-batch feed. Where the Batch 89/94
-    reconciliation ledger reports clamped paid-vs-balance figures, this
-    audit answers *has this invoice fully settled end-to-end*: every
-    scanned invoice carries its un-clamped live paid total (refunds
-    included as negative payments), the settled/outstanding split, any
-    overpayment remainder, receipt and refund counts, and the
-    derived-vs-stored status pair. Headlines always satisfy
-    ``cleared_count + unsettled_count == total_invoices`` and
-    ``total_billed == total_collected + total_outstanding``.
-    """
-    result = await build_invoice_settlement_audit_scan(db, limit)
-    return InvoiceSettlementAuditResponse(**result)
 
 
 def build_refund_audit_result(rows: list[dict], as_of: date) -> dict:
@@ -2121,26 +1494,6 @@ async def build_refund_audit_scan(db, limit: int) -> dict:
             }
         )
     return build_refund_audit_result(rows, date.today())
-
-
-@router.get("/refund-audit", response_model=RefundAuditResponse, dependencies=[Depends(require("reports.financial"))])
-async def refund_audit(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=500),
-) -> RefundAuditResponse:
-    """Every recorded refund inspected for processing drift.
-
-    Batch 100 — billing settlement mega-batch feed. Negative ledger
-    entries record refunds/adjustments against live invoices; this audit
-    proves each one completed the workflow: invoice link intact, remarks
-    note present, and the invoice's net collections left non-negative.
-    Drifted refunds stay visible with the failing flags so cash-office
-    issues surface before they reach the printed books. Headlines always
-    satisfy ``processed_count + drifted_count == total_refunds``.
-    """
-    result = await build_refund_audit_scan(db, limit)
-    return RefundAuditResponse(**result)
 
 
 WARD_UNASSIGNED_LABEL = "Unassigned"
@@ -2278,38 +1631,6 @@ async def build_ward_occupancy_summary_scan(db, limit: int) -> list[dict]:
         )
     return rows
 
-
-@router.get(
-    "/ward-occupancy-summary", response_model=WardOccupancySummaryResponse,
-    dependencies=[Depends(require("reports.operational"))],
-)
-async def ward_occupancy_summary(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=500, ge=1, le=2000),
-) -> WardOccupancySummaryResponse:
-    """Per-ward occupancy rollup for hospital-wide ward clarity.
-
-    Batch 101 — complements the existing ``/bed-occupancy`` bed-level feed
-    with the ward-level view administrators need: each active bed lands in
-    exactly one ward bucket (unlabelled beds surface under "Unassigned"),
-    so ``total_occupied + total_reserved + total_available == total_beds``
-    always foots against the master bed ledger, and every ward row keeps
-    ``occupied_beds + reserved_beds + available_beds == total_beds``.
-    Live-admission counts reuse the Batch 61 concurrency guarantees (one
-    active admission per bed maximum), so ``active_admissions <=
-    occupied_beds`` holds ward-by-ward.
-    """
-    rows = await build_ward_occupancy_summary_scan(db, limit)
-    result = build_ward_occupancy_summary_result(
-        rows, datetime.now(timezone.utc).replace(tzinfo=None)
-    )
-    return WardOccupancySummaryResponse(**result)
-
-
-# ---------------------------------------------------------------------------
-# Batch 102 — Investigation Billing Reconciliation
-# ---------------------------------------------------------------------------
 
 _INVESTIGATION_BILLING_ITEM_TYPES = ("investigation", "lab", "laboratory")
 
@@ -2519,55 +1840,42 @@ async def build_investigation_billing_reconciliation(db, limit: int) -> dict:
     )
 
 
-@router.get(
-    "/investigation-billing-reconciliation",
-    response_model=InvestigationBillingReconciliationResponse,
-    dependencies=[Depends(require("reports.financial"))],
-)
-async def investigation_billing_reconciliation(
-    db: DatabaseSession,
-    _: CurrentUserDependency,
-    limit: int = Query(default=200, ge=1, le=1000),
-) -> InvestigationBillingReconciliationResponse:
-    """Prove every open lab order still has its billed amount on live billing.
-
-    Batch 102 — reconciles the Batch 84 pending-investigation vocabulary
-    against ``InvoiceItem`` lines on live non-cancelled invoices: billed
-    amounts are re-derived from line totals in one grouped pass (never
-    trusted from stored counters), each row keeps ``billed_amount ==
-    charged_total - credited_total``, and the headlines keep
-    ``pending_count + in_progress_count == total_investigations_checked``
-    plus ``billed_count + billed_missing_count ==
-    total_investigations_checked``. Unbilled investigations surface with
-    ``billed_amount == 0`` instead of disappearing — the same
-    drift-surfacing philosophy as the Batch 89/97 ledgers.
-    """
-    result = await build_investigation_billing_reconciliation(db, limit)
-    return InvestigationBillingReconciliationResponse(**result)
-
-
 __all__ = [
+    "OPD_QUEUE_STATUSES",
+    "WARD_UNASSIGNED_LABEL",
+    "_INVESTIGATION_BILLING_ITEM_TYPES",
+    "_RECEIVABLES_BUCKETS",
+    "_as_naive_utc",
+    "_build_reconciliation_rows",
+    "_derive_payment_status",
+    "_invoice_line_investigation_key",
+    "_load_continuity_scan_inputs",
+    "_naive_utc",
+    "_patient_display_name",
+    "_receipt_numeric_suffix",
     "build_collection_summary_by_patient",
     "build_discharge_audit_result",
     "build_discharge_audit_scan",
-    "build_invoice_settlement_audit_result",
-    "build_invoice_settlement_audit_scan",
     "build_investigation_billing_reconciliation",
     "build_investigation_billing_reconciliation_result",
     "build_investigation_billing_reconciliation_scan",
-    "build_overpayment_ledger",
-    "build_overpayment_ledger_result",
+    "build_invoice_payment_reconciliation_ledger",
+    "build_invoice_payment_reconciliation_result",
+    "build_invoice_receipt_continuity_result",
+    "build_invoice_settlement_audit_result",
+    "build_invoice_settlement_audit_scan",
     "build_opd_queue_summary_result",
     "build_opd_queue_summary_scan",
+    "build_overpayment_ledger",
+    "build_overpayment_ledger_result",
     "build_payment_method_collection_summary",
     "build_payment_method_overpayment_breakdown",
     "build_payment_method_overpayment_result",
     "build_payment_method_summary_result",
-    "build_invoice_settlement_audit_result",
+    "build_receipt_numbering_continuity_result",
     "build_receivables_aging_result",
     "build_refund_audit_result",
     "build_refund_audit_scan",
     "build_ward_occupancy_summary_result",
     "build_ward_occupancy_summary_scan",
-    "router",
 ]

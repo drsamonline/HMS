@@ -18,6 +18,7 @@ Locked-in surfaces:
 * feature documentation indexed in docs/INDEX.md.
 """
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -27,7 +28,7 @@ def _read(rel: str) -> str:
 
 
 def test_dashboard_endpoint_exposes_receipt_numbering_audit():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     assert '"/receipt-numbering-continuity"' in src
     assert "ReceiptNumberingContinuityResponse" in src
     # whole-book scan over the live Payment ledger, single ordered pass (no N+1)

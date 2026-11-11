@@ -19,6 +19,7 @@ ledger in Batch 91):
 """
 
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -28,19 +29,27 @@ def _read(rel: str) -> str:
 
 
 def test_shared_continuity_helpers_extracted_in_dashboard_module():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
-    # one implementation of the scan and the audit, exported for the service
+    # Since B63 the route lives in reports_financial and the builders in dashboard, so
+    # the question "extracted, not inlined" needs both: the definition once, the call
+    # once.
+    src = dashboard_source()
     assert "async def _load_continuity_scan_inputs(" in src
     assert "def build_invoice_receipt_continuity_result(" in src
-    # the dashboard endpoint delegates to both instead of scanning inline
+    # the endpoint delegates to both instead of scanning inline
     dash = src[src.index('"/invoice-receipt-continuity"'):]
     assert "await _load_continuity_scan_inputs(db, limit)" in dash
     assert "**build_invoice_receipt_continuity_result(" in dash
     # the scan helper itself performs exactly one grouped Payment pass (no N+1)
-    scan = src[
-        src.index("async def _load_continuity_scan_inputs("):
-    ]
-    scan = scan[:scan.index("@router.get", 10)] if "@router.get" in scan[10:] else scan
+    # Slice to the next top-level definition, not to the next route: the routes are no
+    # longer in this module, so a "@router.get" boundary would run on into the other
+    # files and count their calls.
+    scan = src[src.index("async def _load_continuity_scan_inputs(") :]
+    boundary = min(
+        (scan.index(marker, 10) for marker in ("\n\ndef ", "\n\nasync def ", "\n\nclass ")
+         if marker in scan[10:]),
+        default=len(scan),
+    )
+    scan = scan[:boundary]
     assert scan.count("Payment.invoice_id.in_(invoice_ids)") == 1
     # cancelled invoices excluded inside the shared scan helper
     assert 'Invoice.payment_status != "cancelled"' in scan

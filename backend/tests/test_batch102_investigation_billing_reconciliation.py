@@ -22,6 +22,8 @@ from pathlib import Path
 
 import pytest
 
+from _qa_harness import dashboard_source
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -248,7 +250,13 @@ def test_investigation_billing_service_reuses_shared_builders():
     assert '"/investigation-billing-reconciliation-print-envelope"' in endpoints
     assert "InvestigationBillingReconciliationPrintEnvelope" in endpoints
 
-    dashboard = (REPO_ROOT / "backend/app/api/v1/endpoints/dashboard.py").read_text()
+    # The route and its computation live in different modules since B63: the route
+    # module decides who may call it, the computation module decides what it
+    # returns. This test is about the wiring, so it reads both.
+    dashboard = (
+        (REPO_ROOT / "backend/app/api/v1/endpoints/reports_financial.py").read_text()
+        + dashboard_source()
+    )
     assert '"/investigation-billing-reconciliation"' in dashboard
     assert '"build_investigation_billing_reconciliation"' in dashboard
     assert '"build_investigation_billing_reconciliation_result"' in dashboard

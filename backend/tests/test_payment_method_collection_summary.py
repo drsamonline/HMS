@@ -26,6 +26,7 @@ Locked-in surfaces:
 * feature documentation indexed in docs/INDEX.md.
 """
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -35,7 +36,7 @@ def _read(rel: str) -> str:
 
 
 def test_shared_aggregation_and_scan_live_in_dashboard_module():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     # rollup lives once as a pure function over scanned rows...
     assert "def build_payment_method_collection_summary(" in src
     # ...and the scan-and-aggregate entry point is shared by both surfaces
@@ -53,7 +54,7 @@ def test_shared_aggregation_and_scan_live_in_dashboard_module():
 
 
 def test_dashboard_endpoint_delegates_to_shared_helper():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     assert "\"/payment-method-summary\"" in src
     # bounded limit mirrors the Batch 89/90 ledger window
     assert 'limit: int = Query(default=200, ge=1, le=500)' in src

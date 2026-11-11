@@ -21,6 +21,8 @@ from pathlib import Path
 
 import pytest
 
+from _qa_harness import dashboard_source
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -202,7 +204,7 @@ def test_opd_queue_summary_empty_scan_is_clean():
 
 
 def test_discharge_audit_endpoint_wired_to_models():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     assert '"/discharge-audit"' in src
     assert "response_model=DischargeAuditResponse" in src
     assert "async def build_discharge_audit_scan" in src
@@ -216,7 +218,7 @@ def test_discharge_audit_endpoint_wired_to_models():
 
 
 def test_opd_queue_summary_endpoint_wired_to_grouped_scan():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     assert '"/opd-queue-summary"' in src
     assert "response_model=OPDQueueSummaryResponse" in src
     assert "async def build_opd_queue_summary_scan" in src

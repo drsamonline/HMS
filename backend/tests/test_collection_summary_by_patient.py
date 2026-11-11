@@ -18,6 +18,7 @@ ledger:
 from pathlib import Path
 
 import ast
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -27,7 +28,7 @@ def _read(rel: str) -> str:
 
 
 def test_dashboard_endpoint_groups_reconciliation_by_patient():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     assert '"/collection-summary-by-patient"' in src
     assert "PatientCollectionSummaryResponse" in src
     # shares the Batch 89 scan — no second payment-scan implementation

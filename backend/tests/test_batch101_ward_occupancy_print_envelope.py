@@ -21,6 +21,8 @@ from pathlib import Path
 
 import pytest
 
+from _qa_harness import dashboard_source
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -168,7 +170,13 @@ def test_ward_occupancy_service_reuses_shared_builders():
     assert '"/ward-occupancy-print-envelope"' in endpoints
     assert "WardOccupancyPrintEnvelope" in endpoints
 
-    dashboard = (REPO_ROOT / "backend/app/api/v1/endpoints/dashboard.py").read_text()
+    # The route and its computation live in different modules since B63: the route
+    # module decides who may call it, the computation module decides what it
+    # returns. This test is about the wiring, so it reads both.
+    dashboard = (
+        (REPO_ROOT / "backend/app/api/v1/endpoints/reports_operational.py").read_text()
+        + dashboard_source()
+    )
     assert '"/ward-occupancy-summary"' in dashboard
     assert '"build_ward_occupancy_summary_result"' in dashboard
     assert '"build_ward_occupancy_summary_scan"' in dashboard

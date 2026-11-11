@@ -17,6 +17,7 @@ aging ledger rolled out in Batch 86:
 """
 
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -26,7 +27,7 @@ def _read(rel: str) -> str:
 
 
 def test_shared_aging_derivation_extracted_in_dashboard_module():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     # one implementation of the bucketing, exported for the reporting service
     assert "def build_receivables_aging_result(" in src
     assert '"build_receivables_aging_result"' in src.split("__all__")[-1]

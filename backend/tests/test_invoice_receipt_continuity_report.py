@@ -17,6 +17,7 @@ live billing data and expose it for reporting/printing:
   Printing workspace card wired end-to-end.
 """
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -26,7 +27,7 @@ def _read(rel: str) -> str:
 
 
 def test_dashboard_endpoint_exposes_invoice_receipt_continuity():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     assert '"/invoice-receipt-continuity"' in src
     assert "response_model=InvoiceReceiptContinuityResponse" in src
     assert "CurrentUserDependency" in src
@@ -35,7 +36,7 @@ def test_dashboard_endpoint_exposes_invoice_receipt_continuity():
 
 
 def test_continuity_scans_live_invoices_without_trusting_counters():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     # cancelled invoices are excluded from the audit scope
     assert 'Invoice.payment_status != "cancelled"' in src
     # most-recent-first scan window, deterministic ordering
@@ -49,7 +50,7 @@ def test_continuity_scans_live_invoices_without_trusting_counters():
 
 
 def test_gap_taxonomy_is_stable_and_span_based():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     # the three audited defect classes
     assert '"gap_type": "missing"' in src
     assert '"gap_type": "duplicate"' in src
@@ -64,7 +65,7 @@ def test_gap_taxonomy_is_stable_and_span_based():
 
 
 def test_missing_receipt_detection_follows_batch82_payment_semantics():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     # paid is derived from live payments, mirroring Batch 82 outstanding logic
     assert "paid_by_invoice.get(invoice.id, Decimal(\"0\"))" in src
     assert "paid > 0" in src
