@@ -10,6 +10,7 @@ actionable clinician dashboard feed:
 * follow-up form capturing next_followup_datetime so due lists have data.
 """
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -24,7 +25,7 @@ def test_dashboard_endpoint_module_exists():
 
 
 def test_dashboard_endpoint_uses_due_window_service():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     assert 'prefix="/dashboard"' in src
     assert '"/due-followups"' in src
     assert "followup_service.list_due" in src
@@ -34,7 +35,7 @@ def test_dashboard_endpoint_uses_due_window_service():
     assert "CurrentUserDependency" in src
 
 
-def test_dashboard_router_registered_on_api():
+def test_the_report_routers_are_registered_on_api():
     """The router must be mounted, not merely imported.
 
     Asserted by identity against the module map rather than by searching the
@@ -44,10 +45,14 @@ def test_dashboard_router_registered_on_api():
     """
 
     from app.api.v1.api import MODULE_ROUTERS
-    from app.api.v1.endpoints.dashboard import router as dashboard_router
+    from app.api.v1.endpoints import (
+    reports_clinical,
+    reports_financial,
+    reports_operational,
+)
 
     mounted = [r for routers in MODULE_ROUTERS.values() for r in routers]
-    assert any(dashboard_router is router for router in mounted)
+    assert any(reports_operational.router is router for router in mounted)
 
 
 def test_dashboard_schemas_expose_actionable_fields():

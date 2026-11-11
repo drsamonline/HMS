@@ -24,6 +24,7 @@ Locked-in surfaces:
 * feature documentation indexed in docs/INDEX.md.
 """
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -33,7 +34,7 @@ def _read(rel: str) -> str:
 
 
 def test_dashboard_endpoint_exposes_reconciliation_ledger():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     assert '"/invoice-payment-reconciliation"' in src
     assert "InvoicePaymentReconciliationResponse" in src
     # scans every non-cancelled invoice (most recent first), not just outstanding ones
@@ -56,7 +57,7 @@ def test_dashboard_endpoint_exposes_reconciliation_ledger():
 
 
 def test_payment_status_derivation_taxonomy():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     # dedicated helper mirrors the Batch 68 unpaid/partial/paid derivation
     assert "def _derive_payment_status(total_amount: Decimal, amount_paid: Decimal) -> str:" in src
     helper = src.split("def _derive_payment_status")[1].split("@router")[0]

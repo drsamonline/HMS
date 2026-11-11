@@ -374,8 +374,20 @@ def test_method_overpayment_breakdown_empty_window_is_clean():
 # ---------------------------------------------------------------------------
 
 
+def _wiring_source() -> str:
+    """The route and the scan it calls, which since B63 live in different modules.
+
+    Splitting them was the point - the route decides who may call, the computation
+    decides what it returns - so a test about the wiring has to read both.
+    """
+
+    return _read("backend/app/api/v1/endpoints/reports_financial.py") + _read(
+        "backend/app/api/v1/endpoints/dashboard.py"
+    )
+
+
 def test_settlement_audit_endpoint_wired_to_shared_scan():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = _wiring_source()
     assert '"/invoice-settlement-audit"' in src
     assert "response_model=InvoiceSettlementAuditResponse" in src
     assert "async def build_invoice_settlement_audit_scan" in src
@@ -389,7 +401,7 @@ def test_settlement_audit_endpoint_wired_to_shared_scan():
 
 
 def test_refund_audit_endpoint_wired_to_shared_scan():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = _wiring_source()
     assert '"/refund-audit"' in src
     assert "response_model=RefundAuditResponse" in src
     assert "async def build_refund_audit_scan" in src

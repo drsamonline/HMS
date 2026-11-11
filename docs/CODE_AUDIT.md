@@ -136,14 +136,17 @@ about money.
 `reporting.read` is left in place: it still guards the statistics module and the report
 envelopes, which have nothing to do with this.
 
-**F-04 is not closed by this.** The routes are correctly guarded and the file is still
-2,573 lines. Splitting it is now mechanical rather than investigative - the three
-domains are named, the line ranges are known, and the helpers interleaved between them
-are what make it a careful job rather than a quick one.
+**F-04 is closed separately**, in B63 - and the measurement changed the split. The file
+was 730 lines of routes and 1,843 of computation, so it was 71% logic. Splitting by size
+would have been the wrong seam; splitting by domain was the right one.
+
+`dashboard.py` now holds every builder and no routes. The three route modules expose it.
+`services/reporting.py` imports nine builders by name and still finds them where it
+expects, which is the thing a refactor of this shape silently breaks.
 
 ### F-04 — One module is 2,573 lines
 
-**Severity: medium. Status: open. The symptom of F-07.**
+**Severity: medium. Status: FIXED in B63.**
 
 `backend/app/api/v1/endpoints/dashboard.py` is 2,573 lines, and
 `services/reporting.py` is 1,235. Everything else is under 1,500 and most are far
@@ -256,5 +259,6 @@ because a broken audit chain that nobody sees is the same as no audit chain.
 and least examined turned out to be 18 record ids and a reviewable remainder. That is
 what measuring does, and it is why the first version of this document refused to guess.
 
-**F-04 remains the one worth doing next.** It is not a security problem; it is the
-place where the next mistake will be made.
+**Every finding is now closed or recorded as deliberate.** F-01, F-04, F-06 and F-07
+are fixed; F-02 and F-03 are documented as correct behaviour rather than left as
+questions.

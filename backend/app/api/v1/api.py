@@ -18,7 +18,9 @@ from app.api.v1.endpoints.auth import router as auth_router
 from app.api.v1.endpoints.beds import router as beds_router
 from app.api.v1.endpoints.billing import router as billing_router
 from app.api.v1.endpoints.case_records import router as case_records_router
-from app.api.v1.endpoints.dashboard import router as dashboard_router
+from app.api.v1.endpoints.reports_clinical import router as reports_clinical_router
+from app.api.v1.endpoints.reports_financial import router as reports_financial_router
+from app.api.v1.endpoints.reports_operational import router as reports_operational_router
 from app.api.v1.endpoints.department_services import router as department_services_router
 from app.api.v1.endpoints.designations import router as designations_router
 from app.api.v1.endpoints.diagnoses import router as diagnoses_router
@@ -114,7 +116,9 @@ MODULE_ROUTERS: dict[str, tuple] = {
         pain_assessment_router,
         nutritional_assessment_router,
         icd11_router,
-        dashboard_router,
+        reports_operational_router,
+        reports_clinical_router,
+        reports_financial_router,
         statistics_router,
         reporting_router,
         report_pdf_router,

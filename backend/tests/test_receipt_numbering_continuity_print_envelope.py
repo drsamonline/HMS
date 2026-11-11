@@ -24,6 +24,7 @@ Locked-in surfaces:
 * feature documentation indexed in docs/INDEX.md.
 """
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -33,7 +34,7 @@ def _read(rel: str) -> str:
 
 
 def test_shared_derivation_extracted_from_dashboard_endpoint():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     # the audit body now lives in one shared async helper...
     assert "async def build_receipt_numbering_continuity_result(db, limit: int) -> dict:" in src
     # ...and the dashboard endpoint delegates to it instead of re-implementing

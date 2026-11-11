@@ -25,6 +25,7 @@ Locked-in surfaces:
 * feature documentation indexed in docs/INDEX.md.
 """
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -34,7 +35,7 @@ def _read(rel: str) -> str:
 
 
 def test_shared_scan_and_aggregation_remain_in_dashboard_module():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     # the row scan and the per-patient rollup live once, in the dashboard module
     assert "async def _build_reconciliation_rows(db, limit: int)" in src
     assert "def build_collection_summary_by_patient(rows: list[dict]) -> dict:" in src

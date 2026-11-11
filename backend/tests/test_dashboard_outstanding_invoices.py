@@ -11,6 +11,7 @@ outstanding-invoice feed into an actionable dashboard receivables panel:
 * frontend API wrapper and dashboard rendering wired to the patient workspace.
 """
 from pathlib import Path
+from _qa_harness import dashboard_source
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -32,7 +33,7 @@ def test_billing_service_exposes_outstanding_feed():
 
 
 def test_dashboard_endpoint_module_wired_to_billing_service():
-    src = _read("backend/app/api/v1/endpoints/dashboard.py")
+    src = dashboard_source()
     assert 'prefix="/dashboard"' in src
     assert '"/outstanding-invoices"' in src
     assert "billing_service.list_outstanding_invoices" in src
@@ -43,7 +44,7 @@ def test_dashboard_endpoint_module_wired_to_billing_service():
     assert "CurrentUserDependency" in src
 
 
-def test_dashboard_router_registered_on_api():
+def test_the_report_routers_are_registered_on_api():
     """The router must be mounted, not merely imported.
 
     Asserted by identity against the module map rather than by searching the
@@ -53,10 +54,14 @@ def test_dashboard_router_registered_on_api():
     """
 
     from app.api.v1.api import MODULE_ROUTERS
-    from app.api.v1.endpoints.dashboard import router as dashboard_router
+    from app.api.v1.endpoints import (
+    reports_clinical,
+    reports_financial,
+    reports_operational,
+)
 
     mounted = [r for routers in MODULE_ROUTERS.values() for r in routers]
-    assert any(dashboard_router is router for router in mounted)
+    assert any(reports_operational.router is router for router in mounted)
 
 
 def test_dashboard_schemas_expose_receivable_fields():

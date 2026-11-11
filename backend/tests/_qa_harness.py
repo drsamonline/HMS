@@ -27,6 +27,26 @@ os.environ.setdefault("SECRET_KEY", "batch103-qa-test-secret-key-0123456789abcde
 os.environ.setdefault("DISCOVERY_ENABLED", "false")
 
 
+def dashboard_source() -> str:
+    """Every module that makes up the dashboard endpoints, as one string.
+
+    B63 split the routes out of the computation: ``dashboard.py`` holds the builders,
+    and ``reports_operational``/``reports_clinical``/``reports_financial`` hold the
+    endpoints, one module per question the reports answer. A test that checks a route
+    exists *and* that it calls a particular builder therefore has to read both, and
+    doing that in twenty files by hand is how the next split gets forgotten.
+    """
+
+    root = Path(__file__).resolve().parents[2]
+    parts = ("dashboard", "reports_operational", "reports_clinical", "reports_financial")
+    return "".join(
+        (root / "backend" / "app" / "api" / "v1" / "endpoints" / f"{name}.py").read_text(
+            encoding="utf-8"
+        )
+        for name in parts
+    )
+
+
 #: One engine for the whole process, when the database is the in-memory default.
 #:
 #: Creating sixty tables eight hundred times was the entire cost of this suite: about
