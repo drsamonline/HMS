@@ -45,6 +45,10 @@ class FollowUp(Base):
     new_symptoms: Mapped[str | None] = mapped_column(Text, nullable=True)
     old_symptoms: Mapped[str | None] = mapped_column(Text, nullable=True)
     clinical_assessment: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    #: Why the treatment changed, when it did. Regulation 31(1) requires the
+    #: reason to be stated at the next consultation; this is where it is stated.
+    reason_for_change: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     previous_prescription_id: Mapped[int | None] = mapped_column(
         Integer,

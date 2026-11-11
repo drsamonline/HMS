@@ -1,7 +1,9 @@
 """HHMS API v1 router registration."""
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.dependencies.permissions import default_deny
 
 from app.api.v1.endpoints.administration import router as administration_router
 from app.api.v1.endpoints.backups import router as backups_router
@@ -51,81 +53,120 @@ from app.api.v1.endpoints.settings import router as settings_router
 from app.api.v1.endpoints.statistics import router as statistics_router
 from app.api.v1.endpoints.stock_cards import router as stock_cards_router
 from app.api.v1.endpoints.stock_transactions import router as stock_transactions_router
+from app.api.v1.endpoints.compliance import router as compliance_router
+from app.api.v1.endpoints.configuration import router as configuration_router
+from app.api.v1.endpoints.edition import router as edition_router
+from app.api.v1.endpoints.help import router as help_router
+from app.api.v1.endpoints.home import router as home_router
+from app.api.v1.endpoints.indicators import router as indicators_router
+from app.api.v1.endpoints.institute import router as institute_router
+from app.api.v1.endpoints.provenance import router as provenance_router
+from app.api.v1.endpoints.navigation import router as navigation_router
+from app.api.v1.endpoints.setup import router as setup_router
+from app.api.v1.endpoints.tutorial import router as tutorial_router
 from app.api.v1.endpoints.visits import router as visits_router
 
-api_router = APIRouter()
+api_router = APIRouter(
+    # Router-level default deny: a route added without require(...) is refused
+    # under enforce, and logged under warn. One place, so a new endpoint cannot
+    # quietly be born open.
+    dependencies=[Depends(default_deny)],
+)
 
-# Core/session
-for router in (health_router, auth_router, patients_router, visits_router, opd_tokens_router):
-    api_router.include_router(router)
+# ---------------------------------------------------------------------------
+# Module mounting
+#
+# Every router belongs to a module, and a module that this hospital has switched
+# off answers 404 rather than serving. Grouping them here rather than on each
+# route keeps the decision in one place: the registry says what a module is, this
+# table says which routers it owns, and B16's table says whether it is on.
+# ---------------------------------------------------------------------------
 
-# Clinical + pharmacy
-for router in (
-    prescriptions_router,
-    medicines_router,
-    medicine_batches_router,
-    stock_batches_router,
-    stock_transactions_router,
-    stock_cards_router,
-    inventory_items_router,
-    goods_receipts_router,
-    dispenses_router,
-    procurement_router,
-):
-    api_router.include_router(router)
+from app.dependencies.modules import require_module  # noqa: E402
 
-# IPD
-for router in (beds_router, admissions_router, discharge_router, ipd_assessment_router):
-    api_router.include_router(router)
+MODULE_ROUTERS: dict[str, tuple] = {
+    "core": (
+        health_router,
+        auth_router,
+        edition_router,
+        help_router,
+        home_router,
+        indicators_router,
+        institute_router,
+        provenance_router,
+        navigation_router,
+        setup_router,
+        tutorial_router,
+        configuration_router,
+        compliance_router,
+        patients_router,
+        visits_router,
+        opd_tokens_router,
+        case_records_router,
+        patient_history_router,
+        prescriptions_router,
+        diagnoses_router,
+        followups_router,
+        progress_note_router,
+        diet_chart_router,
+        pain_assessment_router,
+        nutritional_assessment_router,
+        icd11_router,
+        dashboard_router,
+        statistics_router,
+        reporting_router,
+        report_pdf_router,
+        report_schedule_router,
+        settings_router,
+        administration_router,
+        audit_logs_router,
+        maintenance_router,
+        backups_router,
+        departments_router,
+        department_services_router,
+        service_activities_router,
+        designations_router,
+        operational_year_router,
+    ),
+    "pharmacy": (
+        medicines_router,
+        medicine_batches_router,
+        dispenses_router,
+    ),
+    "stock": (
+        inventory_items_router,
+        stock_batches_router,
+        stock_transactions_router,
+        stock_cards_router,
+        procurement_router,
+        goods_receipts_router,
+    ),
+    "ipd": (
+        beds_router,
+        admissions_router,
+        discharge_router,
+        ipd_assessment_router,
+    ),
+    "laboratory": (
+        investigations_router,
+        investigation_results_router,
+    ),
+    "billing": (billing_router,),
+    "mrd": (
+        medical_documents_router,
+        patient_files_router,
+        archive_records_router,
+    ),
+    "nabh": (),
+}
 
-# Laboratory / clinical assessments
-for router in (
-    investigations_router,
-    investigation_results_router,
-    diagnoses_router,
-    followups_router,
-    icd11_router,
-    pain_assessment_router,
-    nutritional_assessment_router,
-    diet_chart_router,
-    progress_note_router,
-):
-    api_router.include_router(router)
 
-# Billing
-api_router.include_router(billing_router)
-
-# Clinician dashboard (Batch 79 — due follow-up workflow continuity)
-api_router.include_router(dashboard_router)
-
-# Clinical records / MRD / history
-for router in (
-    case_records_router,
-    patient_files_router,
-    archive_records_router,
-    medical_documents_router,
-    patient_history_router,
-):
-    api_router.include_router(router)
-
-# Administration / reporting / system operations
-for router in (
-    departments_router,
-    department_services_router,
-    service_activities_router,
-    statistics_router,
-    reporting_router,
-    report_pdf_router,
-    report_schedule_router,
-    settings_router,
-    administration_router,
-    audit_logs_router,
-    maintenance_router,
-    backups_router,
-    designations_router,
-    operational_year_router,
-):
-    api_router.include_router(router)
+for module_code, routers in MODULE_ROUTERS.items():
+    for router in routers:
+        api_router.include_router(
+            router,
+            dependencies=[Depends(require_module(module_code))],
+        )
 
 
 __all__ = ["api_router"]

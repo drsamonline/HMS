@@ -15,6 +15,12 @@ from uuid import UUID, uuid4
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from app.core.request_context import (
+    RequestContext,
+    reset_request_context,
+    set_request_context,
+)
+
 
 REQUEST_ID_HEADER = "X-Request-ID"
 REQUEST_ID_STATE_KEY = "request_id"
@@ -46,6 +52,18 @@ class RequestIDMiddleware:
         scope.setdefault("state", {})
         scope["state"][REQUEST_ID_STATE_KEY] = request_id
 
+        # Bind the facts an audit row needs. Services cannot see the Request,
+        # and should not, so this is the only way the client address and user
+        # agent reach the service layer without threading a request object
+        # through every signature.
+        token = set_request_context(
+            RequestContext(
+                request_id=request_id,
+                ip_address=self._client_address(scope),
+                user_agent=self._user_agent(scope),
+            )
+        )
+
         async def send_with_request_id(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = list(message.get("headers", []))
@@ -59,11 +77,37 @@ class RequestIDMiddleware:
 
             await send(message)
 
-        await self.app(
-            scope,
-            receive,
-            send_with_request_id,
-        )
+        try:
+            await self.app(
+                scope,
+                receive,
+                send_with_request_id,
+            )
+        finally:
+            # Reset even when the handler raised: a context that outlives its
+            # request leaks one hospital's client address into the next.
+            reset_request_context(token)
+
+    @staticmethod
+    def _client_address(scope: Scope) -> str | None:
+        """The peer address, if the ASGI server supplied one."""
+
+        client = scope.get("client")
+        if not client:
+            return None
+        try:
+            return str(client[0])
+        except (IndexError, TypeError):
+            return None
+
+    @staticmethod
+    def _user_agent(scope: Scope) -> str | None:
+        """The User-Agent header, truncated to the column width."""
+
+        for key, value in scope.get("headers", []):
+            if key.lower() == b"user-agent":
+                return value.decode("latin-1")[:255]
+        return None
 
     @staticmethod
     def _get_request_id(scope: Scope) -> str:

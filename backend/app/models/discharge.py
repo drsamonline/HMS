@@ -51,6 +51,17 @@ class Discharge(Base):
         index=True,
     )
 
+    #: How the episode ended, as opposed to that it ended. ``discharge_status``
+    #: records whether the discharge record is valid; this records the outcome, and
+    #: the difference is the whole reason mortality and discharge-against-advice
+    #: could not be measured. Nullable, and left null on existing rows: an episode
+    #: whose outcome nobody recorded has an unknown outcome, not a good one.
+    discharge_outcome: Mapped[str | None] = mapped_column(
+        String(20),
+        nullable=True,
+        index=True,
+    )
+
     discharge_summary: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,

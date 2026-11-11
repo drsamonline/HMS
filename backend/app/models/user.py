@@ -58,6 +58,23 @@ class User(Base):
         nullable=True,
     )
 
+    #: The practitioner's NCH registration number. Regulation 7(2) of the
+    #: Homoeopathy Code of Ethics requires it on every prescription and medical
+    #: certificate, and failing to display it is professional misconduct - so it
+    #: belongs to the person, not to the document they happened to print.
+    registration_number: Mapped[str | None] = mapped_column(
+        String(40),
+        nullable=True,
+    )
+
+    #: Who issued it. In most states the practitioner registers with the State Board
+    #: or Council of Homoeopathy rather than with NCH, so a field called "NCH number"
+    #: was a field that assumed an answer. This records which body actually issued it.
+    registration_authority: Mapped[str | None] = mapped_column(
+        String(40),
+        nullable=True,
+    )
+
     designation: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,

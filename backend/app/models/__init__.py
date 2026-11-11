@@ -8,6 +8,7 @@ Author  : Dr. Sohil Momin
 from __future__ import annotations
 
 from .admission import Admission
+from .adverse_event import AdverseEvent
 from .case_record import CaseRecord
 from .case_archive_reference import CaseArchiveReference
 from .audit_log import AuditLog
@@ -17,6 +18,9 @@ from .base import (
     metadata,
 )
 from .bed import Bed
+from .module_state import ModuleState
+from .setting_value import SettingValue
+from .setup_state import SetupState
 from .department import Department
 from .department_service import DepartmentService
 from .diagnosis import Diagnosis
@@ -25,6 +29,7 @@ from .dispense_record import DispenseRecord
 from .goods_receipt import GoodsReceipt, GoodsReceiptItem
 from .purchase_order import PurchaseOrder, PurchaseOrderItem
 from .supplier import Supplier
+from .institute_registration import InstituteRegistration
 from .investigation import Investigation
 from .investigation_result import InvestigationResult
 from .inventory_item import InventoryItem
@@ -43,6 +48,7 @@ from .medical_document import MedicalDocument
 from .patient_file import PatientFile
 from .archive_record import ArchiveRecord
 from .archive_manifest import ArchiveManifest
+from .medical_certificate import MedicalCertificate
 from .medicine import Medicine
 from .medicine_batch import MedicineBatch
 from .mixins import (
@@ -89,6 +95,7 @@ from .procurement_archive_reference import (
 
 
 __all__ = [
+    "ModuleState",
     "Base",
     "metadata",
     "NAMING_CONVENTION",

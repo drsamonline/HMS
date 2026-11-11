@@ -23,6 +23,7 @@ from app.core.exceptions import (
     DuplicateResourceException,
     ResourceNotFoundException,
 )
+from app.services import audit
 from app.models.admission import Admission
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
@@ -263,6 +264,13 @@ class BillingService:
                 invoice,
             )
 
+            await audit.record(
+                db,
+                activity="invoice.create",
+                entity_name="Invoice",
+                entity_id=invoice.id,
+                after=audit.snapshot(invoice),
+            )
             await db.commit()
 
             return invoice
@@ -303,6 +311,11 @@ class BillingService:
         )
 
         values.pop("payment_status", None)
+        # Capture the fields about to change, before they change.
+        invoice_before = audit.snapshot(
+            invoice,
+            fields={field: getattr(invoice, field) for field in values},
+        )
 
         if "total_amount" in values:
             total_paid = (
@@ -335,6 +348,19 @@ class BillingService:
                 invoice,
             )
 
+            invoice_after = audit.snapshot(
+                invoice,
+                fields={field: getattr(invoice, field) for field in values},
+            )
+            if invoice_before != invoice_after:
+                await audit.record(
+                    db,
+                    activity="invoice.update",
+                    entity_name="Invoice",
+                    entity_id=invoice.id,
+                    before=invoice_before,
+                    after=invoice_after,
+                )
             await db.commit()
 
             return invoice
@@ -480,6 +506,8 @@ class BillingService:
                 total_paid + data.amount_paid
             )
 
+            payment_status_before = invoice.payment_status
+
             if new_total_paid >= invoice.total_amount:
                 invoice.payment_status = "paid"
 
@@ -493,6 +521,23 @@ class BillingService:
                 invoice,
             )
 
+            await audit.record(
+                db,
+                activity="payment.create",
+                entity_name="Payment",
+                entity_id=payment.id,
+                after=audit.snapshot(payment),
+            )
+            if invoice.payment_status != payment_status_before:
+                await audit.record(
+                    db,
+                    activity="invoice.status_change",
+                    entity_name="Invoice",
+                    entity_id=invoice.id,
+                    before={"payment_status": payment_status_before},
+                    after={"payment_status": invoice.payment_status},
+                    remarks=f"Caused by payment {payment.receipt_number}",
+                )
             await db.commit()
 
             return payment
@@ -562,6 +607,13 @@ class BillingService:
                 else "partial" if total_paid > 0
                 else "unpaid"
             )
+            await audit.record(
+                db,
+                activity="invoice_item.create",
+                entity_name="InvoiceItem",
+                entity_id=item.id,
+                after=audit.snapshot(item),
+            )
             await db.commit()
             await db.refresh(item)
             return item
@@ -600,6 +652,14 @@ class BillingService:
                 "paid" if total_paid >= invoice.total_amount
                 else "partial" if total_paid > 0
                 else "unpaid"
+            )
+            await audit.record(
+                db,
+                activity="invoice_item.delete",
+                entity_name="InvoiceItem",
+                entity_id=item.id,
+                before=audit.snapshot(item),
+                remarks=f"Removed from invoice {invoice.invoice_number}",
             )
             await db.commit()
         except SQLAlchemyError as exc:

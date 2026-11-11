@@ -74,6 +74,11 @@ class PrescriptionRead(BaseSchema):
     clinical_notes: str | None
     treatment_plan: str | None
     prescribed_by: int
+    #: The prescriber's name and NCH registration number, resolved for printing.
+    #: NCH Code of Ethics 7(2) requires the number on every prescription, and a
+    #: client cannot print what it was never sent.
+    prescriber_name: str | None = None
+    prescriber_registration: str | None = None
     prescription_datetime: datetime
     printed_at: datetime | None
     prescription_year: int = 0

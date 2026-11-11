@@ -9,12 +9,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from sqlalchemy import select
 
-from app.core.exceptions import DatabaseException, ResourceNotFoundException, ValidationException
+from app.core.exceptions import (
+    BusinessRuleException,
+    DatabaseException,
+    ResourceNotFoundException,
+    ValidationException,
+)
 from app.models.case_record import CaseRecord
 from app.models.followup import FollowUp
 from app.models.prescription import Prescription
 from app.models.visit import Visit
 from app.repositories.followup import FollowUpRepository, followup_repository
+
+#: The decisions that change the treatment, and so need a reason (NCH 31(1)).
+CHANGING_DECISIONS = frozenset({"change_remedy", "stop_reassess"})
 from app.schemas.followup import FollowUpCreate, FollowUpUpdate
 
 
@@ -81,6 +89,19 @@ class FollowUpService:
 
         await self._validate_prescription(db, data.previous_prescription_id, data.patient_id)
         await self._validate_prescription(db, data.next_prescription_id, data.patient_id)
+
+        # NCH Code of Ethics 31(1): a change of treatment must carry its reason.
+        # Enforced here rather than reported later, because this is the moment the
+        # reason is still known. "wait" and "repeat" continue the same treatment;
+        # the other two decisions change it.
+        if (
+            data.decision in CHANGING_DECISIONS
+            and not (data.reason_for_change or "").strip()
+        ):
+            raise BusinessRuleException(
+                "A change of treatment needs a reason. The NCH Code of Ethics "
+                "requires the reason to be stated at the next consultation."
+            )
 
         now = datetime.now(timezone.utc)
         record = FollowUp(

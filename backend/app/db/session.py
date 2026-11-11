@@ -27,6 +27,26 @@ from sqlalchemy.ext.asyncio import (
 from app.config.settings import get_settings
 
 
+def apply_sqlite_pragmas(cursor) -> None:
+    """Apply the per-connection SQLite pragmas HHMS depends on.
+
+    ``foreign_keys`` is the one that matters most. SQLite defaults it **off**,
+    so every ``ForeignKey`` declared in the models is documentation until a
+    connection turns it on. Without it a deleted parent leaves children
+    pointing at nothing - an invoice against a removed patient, a stock
+    transaction against a removed batch - silently, and the failure surfaces
+    months later as a report that does not reconcile.
+
+    The pragma is per connection, not per database, which is why it is applied
+    in the connect handler rather than once at startup.
+    """
+
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA busy_timeout=5000")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA foreign_keys=ON")
+
+
 @lru_cache(maxsize=1)
 def get_engine() -> AsyncEngine:
     """
@@ -88,9 +108,7 @@ def get_engine() -> AsyncEngine:
         def _set_sqlite_pragmas(dbapi_connection, _connection_record):
             cursor = dbapi_connection.cursor()
             try:
-                cursor.execute("PRAGMA journal_mode=WAL")
-                cursor.execute("PRAGMA busy_timeout=5000")
-                cursor.execute("PRAGMA synchronous=NORMAL")
+                apply_sqlite_pragmas(cursor)
             finally:
                 cursor.close()
 

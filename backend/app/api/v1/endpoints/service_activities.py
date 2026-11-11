@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 from uuid import UUID
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.service_activity import ServiceActivityCreate, ServiceActivityRead
 from app.services.service_activity import service_activity_manager
@@ -11,7 +12,7 @@ from app.services.service_activity import service_activity_manager
 router = APIRouter(prefix="/service-activities", tags=["Service Activities"])
 
 
-@router.get("", response_model=list[ServiceActivityRead])
+@router.get("", response_model=list[ServiceActivityRead], dependencies=[Depends(require("masters.read"))])
 async def list_service_activities(
     db: DatabaseSession, _: CurrentUserDependency,
     patient_id: int | None = Query(None, gt=0),
@@ -25,7 +26,7 @@ async def list_service_activities(
     )
 
 
-@router.post("", response_model=ServiceActivityRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ServiceActivityRead, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require("masters.write"))])
 async def create_service_activity(
     data: ServiceActivityCreate, db: DatabaseSession, _: CurrentUserDependency,
 ) -> ServiceActivityRead:

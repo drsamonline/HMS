@@ -7,9 +7,10 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.bed import (
     BedCreate,
@@ -28,6 +29,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=list[BedRead],
+    dependencies=[Depends(require("ipd.read"))],
 )
 async def list_beds(
     db: DatabaseSession,
@@ -67,6 +69,7 @@ async def list_beds(
     "",
     response_model=BedRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("ipd.write"))],
 )
 async def create_bed(
     bed_in: BedCreate,
@@ -82,6 +85,7 @@ async def create_bed(
 @router.get(
     "/{bed_id}",
     response_model=BedRead,
+    dependencies=[Depends(require("ipd.read"))],
 )
 async def get_bed(
     bed_id: int,
@@ -97,6 +101,7 @@ async def get_bed(
 @router.patch(
     "/{bed_id}",
     response_model=BedRead,
+    dependencies=[Depends(require("ipd.write"))],
 )
 async def update_bed(
     bed_id: int,

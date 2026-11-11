@@ -3,9 +3,10 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.department import DepartmentCreate, DepartmentRead, DepartmentUpdate
 from app.services.department import department_service
@@ -13,7 +14,7 @@ from app.services.department import department_service
 router = APIRouter(prefix="/departments", tags=["Administration"])
 
 
-@router.get("", response_model=list[DepartmentRead])
+@router.get("", response_model=list[DepartmentRead], dependencies=[Depends(require("masters.read"))])
 async def list_departments(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -26,7 +27,7 @@ async def list_departments(
     )
 
 
-@router.post("", response_model=DepartmentRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DepartmentRead, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require("masters.write"))])
 async def create_department(
     department_in: DepartmentCreate,
     db: DatabaseSession,
@@ -35,7 +36,7 @@ async def create_department(
     return await department_service.create(db, department_in)
 
 
-@router.get("/{department_id}", response_model=DepartmentRead)
+@router.get("/{department_id}", response_model=DepartmentRead, dependencies=[Depends(require("masters.read"))])
 async def get_department(
     department_id: UUID,
     db: DatabaseSession,
@@ -44,7 +45,7 @@ async def get_department(
     return await department_service.get(db, department_id)
 
 
-@router.patch("/{department_id}", response_model=DepartmentRead)
+@router.patch("/{department_id}", response_model=DepartmentRead, dependencies=[Depends(require("masters.write"))])
 async def update_department(
     department_id: UUID,
     department_in: DepartmentUpdate,

@@ -7,6 +7,8 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
+from typing import Any, Mapping
+
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,6 +24,7 @@ from app.repositories.patient import (
 )
 from app.schemas.patient import PatientCreate, PatientUpdate
 
+from app.services import audit
 from app.services.number_sequence import number_sequence_service
 
 
@@ -72,6 +75,7 @@ class PatientService:
         db: AsyncSession,
         *,
         patient_in: PatientCreate,
+        actor: Mapping[str, Any] | None = None,
     ) -> Patient:
         patient = Patient(
             **patient_in.model_dump(),
@@ -82,6 +86,17 @@ class PatientService:
             patient = await self.repository.add(
                 db,
                 patient,
+            )
+
+            # Same transaction as the insert: the row and the record of it
+            # commit together or neither does.
+            await audit.record(
+                db,
+                actor=actor,
+                activity="patient.create",
+                entity_name="Patient",
+                entity_id=patient.id,
+                after=audit.snapshot(patient),
             )
 
             await db.commit()
@@ -105,6 +120,8 @@ class PatientService:
         *,
         patient_id: int,
         patient_in: PatientUpdate,
+        actor: Mapping[str, Any] | None = None,
+        reason: str | None = None,
     ) -> Patient:
         patient = await self.get_by_id(
             db,
@@ -118,6 +135,13 @@ class PatientService:
         if not update_data:
             return patient
 
+        # Capture the fields about to change before they change. Snapshotting
+        # the whole row afterwards would lose the old values.
+        before = audit.snapshot(
+            patient,
+            fields={field: getattr(patient, field) for field in update_data},
+        )
+
         try:
             for field, value in update_data.items():
                 setattr(patient, field, value)
@@ -126,6 +150,23 @@ class PatientService:
                 db,
                 patient,
             )
+
+            after = audit.snapshot(
+                patient,
+                fields={field: getattr(patient, field) for field in update_data},
+            )
+
+            if before != after:
+                await audit.record(
+                    db,
+                    actor=actor,
+                    activity="patient.update",
+                    entity_name="Patient",
+                    entity_id=patient.id,
+                    before=before,
+                    after=after,
+                    reason=reason,
+                )
 
             await db.commit()
             return patient
@@ -141,18 +182,32 @@ class PatientService:
         db: AsyncSession,
         *,
         patient_id: int,
+        actor: Mapping[str, Any] | None = None,
+        reason: str | None = None,
     ) -> Patient:
         patient = await self.get_by_id(
             db,
             patient_id=patient_id,
         )
 
+        before = audit.snapshot(patient, fields={"is_active": patient.is_active})
         patient.is_active = False
 
         try:
             patient = await self.repository.update(
                 db,
                 patient,
+            )
+
+            await audit.record(
+                db,
+                actor=actor,
+                activity="patient.deactivate",
+                entity_name="Patient",
+                entity_id=patient.id,
+                before=before,
+                after=audit.snapshot(patient, fields={"is_active": patient.is_active}),
+                reason=reason,
             )
 
             await db.commit()

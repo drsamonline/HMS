@@ -11,7 +11,9 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.dependencies.permissions import require
 
 from app.config.settings import get_settings
 from app.network.discovery import server_id
@@ -106,7 +108,11 @@ async def health() -> HealthResponse:
     return _response()
 
 
-@router.get("/system", summary="Live system health")
+@router.get(
+    "/system",
+    summary="Live system health",
+    dependencies=[Depends(require("health.read"))],
+)
 async def system_health() -> dict[str, object]:
     return await maintenance_service.health()
 

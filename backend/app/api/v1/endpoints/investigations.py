@@ -7,9 +7,10 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.investigation import (
     InvestigationCreate,
@@ -30,6 +31,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=list[InvestigationRead],
+    dependencies=[Depends(require("investigations.read"))],
 )
 async def list_investigations(
     db: DatabaseSession,
@@ -65,6 +67,7 @@ async def list_investigations(
     "",
     response_model=InvestigationRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("investigations.write"))],
 )
 async def create_investigation(
     investigation_in: InvestigationCreate,
@@ -80,6 +83,7 @@ async def create_investigation(
 @router.get(
     "/{investigation_id}",
     response_model=InvestigationRead,
+    dependencies=[Depends(require("investigations.read"))],
 )
 async def get_investigation(
     investigation_id: int,
@@ -95,6 +99,7 @@ async def get_investigation(
 @router.put(
     "/{investigation_id}",
     response_model=InvestigationRead,
+    dependencies=[Depends(require("investigations.write"))],
 )
 async def update_investigation(
     investigation_id: int,
@@ -112,6 +117,7 @@ async def update_investigation(
 @router.delete(
     "/{investigation_id}",
     response_model=InvestigationRead,
+    dependencies=[Depends(require("investigations.write"))],
 )
 async def cancel_investigation(
     investigation_id: int,

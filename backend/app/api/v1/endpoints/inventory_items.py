@@ -7,9 +7,10 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.inventory_item import (
     InventoryItemCreate,
@@ -30,6 +31,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=list[InventoryItemRead],
+    dependencies=[Depends(require("inventory.read"))],
 )
 async def list_inventory_items(
     db: DatabaseSession,
@@ -64,6 +66,7 @@ async def list_inventory_items(
     "",
     response_model=InventoryItemRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("inventory.write"))],
 )
 async def create_inventory_item(
     item_in: InventoryItemCreate,
@@ -79,6 +82,7 @@ async def create_inventory_item(
 @router.get(
     "/{item_id}",
     response_model=InventoryItemRead,
+    dependencies=[Depends(require("inventory.read"))],
 )
 async def get_inventory_item(
     item_id: int,
@@ -94,6 +98,7 @@ async def get_inventory_item(
 @router.patch(
     "/{item_id}",
     response_model=InventoryItemRead,
+    dependencies=[Depends(require("inventory.write"))],
 )
 async def update_inventory_item(
     item_id: int,

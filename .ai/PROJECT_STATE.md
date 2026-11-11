@@ -1,3 +1,5 @@
+> **Superseded.** This file was replaced by [`.ai/CONTROL.md`](CONTROL.md) on 2026-11-09. It is kept for history only: it had grown to 451 lines, referenced a `HMS(5).zip` that no longer exists, and named two different batches as the latest milestone in the same paragraph. Do not update it. Update `CONTROL.md`.
+
 # HHMS Project State
 
 ## Authoritative baseline

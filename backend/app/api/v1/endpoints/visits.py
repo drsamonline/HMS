@@ -7,9 +7,10 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.visit import (
     VisitCreate,
@@ -28,6 +29,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=list[VisitRead],
+    dependencies=[Depends(require("opd.read"))],
 )
 async def list_visits(
     db: DatabaseSession,
@@ -58,6 +60,7 @@ async def list_visits(
     "",
     response_model=VisitRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("opd.write"))],
 )
 async def create_visit(
     visit_in: VisitCreate,
@@ -73,6 +76,7 @@ async def create_visit(
 @router.get(
     "/{visit_id}",
     response_model=VisitRead,
+    dependencies=[Depends(require("opd.read"))],
 )
 async def get_visit(
     visit_id: int,
@@ -88,6 +92,7 @@ async def get_visit(
 @router.patch(
     "/{visit_id}",
     response_model=VisitRead,
+    dependencies=[Depends(require("opd.write"))],
 )
 async def update_visit(
     visit_id: int,

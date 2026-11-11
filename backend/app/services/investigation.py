@@ -13,6 +13,7 @@ from sqlalchemy.exc import (
     IntegrityError,
     SQLAlchemyError,
 )
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
@@ -178,6 +179,19 @@ class InvestigationService:
             data,
         )
 
+        # A unique constraint would refuse this too, but as a database error that
+        # reaches the user as a 500. The lab needs to know which accession is taken.
+        if data.sample_accession:
+            existing = await db.scalar(
+                select(Investigation).where(
+                    Investigation.sample_accession == data.sample_accession
+                )
+            )
+            if existing is not None:
+                raise DuplicateResourceException(
+                    f"Accession {data.sample_accession} is already on another specimen."
+                )
+
         department_id, service_id = await resolve_activity_context(
             db,
             department_id=data.department_id,
@@ -209,6 +223,7 @@ class InvestigationService:
             case_type=data.case_type,
             fulfillment_mode=data.fulfillment_mode,
             investigation_number=await number_sequence_service.next_number(db, "investigation_number"),
+            sample_accession=data.sample_accession,
             investigation_name=(
                 data.investigation_name
             ),

@@ -19,8 +19,10 @@ from app.core.exceptions import (
     DuplicateResourceException,
     ResourceNotFoundException,
 )
+from app.services import audit
 from app.models.case_record import CaseRecord
 from app.models.prescription import Prescription
+from app.models.user import User
 from app.models.prescription_item import PrescriptionItem
 from app.models.visit import Visit
 from app.repositories.prescription import (
@@ -63,6 +65,27 @@ class PrescriptionService:
             )
 
         return prescription
+
+    async def prescriber_identities(
+        self,
+        db: AsyncSession,
+        user_ids: set[int],
+    ) -> dict[int, tuple[str | None, str | None]]:
+        """Name and registration number for each prescriber, in one query.
+
+        A hospital that has not filled the numbers in yet gets None rather than an
+        empty string, so the print template can decide whether to show the line.
+        """
+
+        if not user_ids:
+            return {}
+
+        rows = await db.execute(
+            select(User.id, User.full_name, User.registration_number).where(
+                User.id.in_(user_ids)
+            )
+        )
+        return {row[0]: (row[1], row[2]) for row in rows.all()}
 
     async def get_items(
         self,
@@ -161,6 +184,13 @@ class PrescriptionService:
                 db.add(item)
 
             await db.flush()
+            await audit.record(
+                db,
+                activity="prescription.create",
+                entity_name="Prescription",
+                entity_id=prescription.id,
+                after=audit.snapshot(prescription),
+            )
             await db.commit()
             await db.refresh(prescription)
 

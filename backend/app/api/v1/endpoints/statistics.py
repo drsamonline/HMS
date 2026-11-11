@@ -3,10 +3,11 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from uuid import UUID
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.statistics import HospitalStatistics
 from app.services.statistics import statistics_service
@@ -14,7 +15,7 @@ from app.services.statistics import statistics_service
 router = APIRouter(prefix="/statistics", tags=["Statistics"])
 
 
-@router.get("/hospital", response_model=HospitalStatistics)
+@router.get("/hospital", response_model=HospitalStatistics, dependencies=[Depends(require("reporting.read"))])
 async def get_hospital_statistics(
     db: DatabaseSession,
     _: CurrentUserDependency,

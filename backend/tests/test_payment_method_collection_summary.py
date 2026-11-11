@@ -54,7 +54,7 @@ def test_shared_aggregation_and_scan_live_in_dashboard_module():
 
 def test_dashboard_endpoint_delegates_to_shared_helper():
     src = _read("backend/app/api/v1/endpoints/dashboard.py")
-    assert '@router.get("/payment-method-summary", response_model=PaymentMethodSummaryResponse)' in src
+    assert "\"/payment-method-summary\"" in src
     # bounded limit mirrors the Batch 89/90 ledger window
     assert 'limit: int = Query(default=200, ge=1, le=500)' in src
     # endpoint delegates — no inline re-implementation

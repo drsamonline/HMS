@@ -9,9 +9,10 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.opd_token import (
     OPDTokenCreate,
@@ -30,6 +31,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=list[OPDTokenRead],
+    dependencies=[Depends(require("opd.read"))],
 )
 async def list_opd_tokens(
     db: DatabaseSession,
@@ -50,6 +52,7 @@ async def list_opd_tokens(
     "",
     response_model=OPDTokenRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("opd.write"))],
 )
 async def create_opd_token(
     token_in: OPDTokenCreate,
@@ -65,6 +68,7 @@ async def create_opd_token(
 @router.put(
     "/{token_id}",
     response_model=OPDTokenRead,
+    dependencies=[Depends(require("opd.write"))],
 )
 async def update_opd_token(
     token_id: int,
@@ -82,6 +86,7 @@ async def update_opd_token(
 @router.delete(
     "/{token_id}",
     response_model=OPDTokenRead,
+    dependencies=[Depends(require("opd.write"))],
 )
 async def cancel_opd_token(
     token_id: int,

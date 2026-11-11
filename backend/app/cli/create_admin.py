@@ -58,6 +58,15 @@ def _parser(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--password", default=os.environ.get("HHMS_ADMIN_INITIAL_PASSWORD"),
                        help="Initial password. If omitted, the built-in default 'admin' "
                             "is used so a fresh build can be tested immediately.")
+    parser.add_argument(
+        "--allow-default-password",
+        action="store_true",
+        help=(
+            "create the administrator with the well-known default password. "
+            "Refused otherwise: a LAN server running admin/admin is the most likely "
+            "way this software harms a hospital."
+        ),
+    )
     parser.add_argument("--no-change-warning", action="store_true",
                         help="Skip the mandatory password-change warning output.")
     parser.add_argument("--force", action="store_true",
@@ -195,9 +204,27 @@ def main(argv: list[str] | None = None) -> int:
             if password != confirm:
                 print("error: passwords do not match", file=sys.stderr)
                 return 1
-        else:
+        elif args.allow_default_password:
             password = DEFAULT_BOOTSTRAP_PASSWORD
             used_default = True
+        else:
+            # Refused rather than warned about. The warning was honest and it was the
+            # only control; on a LAN server nobody reads it, and an account called
+            # admin with a password called admin is not a hypothetical.
+            print(
+                "error: no password supplied.\n"
+                "\n"
+                "  Set HHMS_ADMIN_INITIAL_PASSWORD, pass --password, or use --prompt.\n"
+                "\n"
+                "  The setup wizard at /setup is the safe path: it takes a code from\n"
+                "  the server log and a password you choose.\n"
+                "\n"
+                "  --allow-default-password exists for a disposable test machine. It\n"
+                "  creates an account with a well-known password; do not use it on any\n"
+                "  server another machine can reach.",
+                file=sys.stderr,
+            )
+            return 1
 
     if len(password) < MIN_PASSWORD_LENGTH and not used_default:
         print(f"error: password must be at least {MIN_PASSWORD_LENGTH} characters", file=sys.stderr)

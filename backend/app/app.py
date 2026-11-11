@@ -28,6 +28,7 @@ from app.middleware import (
     RateLimitMiddleware,
     RequestIDMiddleware,
     RequestLoggingMiddleware,
+    SecurityHeadersMiddleware,
     register_exception_handlers,
 )
 
@@ -67,6 +68,13 @@ def create_application() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+    )
+
+    # Security headers wrap every response, including errors raised inside
+    # the stack below, so an error page is framed and sniffed the same way a
+    # normal page is.
+    application.add_middleware(
+        SecurityHeadersMiddleware,
     )
 
     application.add_middleware(

@@ -21,6 +21,7 @@ from app.core.exceptions import (
     DuplicateResourceException,
     ResourceNotFoundException,
 )
+from app.services import audit
 from app.models.admission import Admission
 from app.models.bed import Bed
 from app.models.discharge import Discharge
@@ -185,6 +186,7 @@ class DischargeService:
             discharge_status=(
                 data.discharge_status
             ),
+            discharge_outcome=data.discharge_outcome,
             discharged_by=data.discharged_by,
             remarks=data.remarks,
             created_at=now,
@@ -205,6 +207,13 @@ class DischargeService:
             bed.occupancy_status = "available"
             bed.updated_at = now
 
+            await audit.record(
+                db,
+                activity="discharge.create",
+                entity_name="Discharge",
+                entity_id=discharge.id,
+                after=audit.snapshot(discharge),
+            )
             await db.commit()
 
             return discharge

@@ -71,6 +71,18 @@ class Investigation(Base):
         index=True,
     )
 
+    #: The laboratory's own identifier for the specimen, separate from the
+    #: investigation number. An order becomes a sample; the accession is what the
+    #: lab writes on the tube, and it is how a result is traced back to what was
+    #: collected. Nullable because a hospital that has no laboratory never sets one,
+    #: unique when set because two specimens sharing an accession is a mix-up.
+    sample_accession: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
+
     investigation_number: Mapped[str] = mapped_column(
         String(20),
         nullable=False,

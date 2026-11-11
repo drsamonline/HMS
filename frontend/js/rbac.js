@@ -25,7 +25,10 @@ export function canAccess(profile,module){
  const roles=(profile.roles||[]).map(normalize);
  if(roles.some(r=>ALL_ACCESS_ROLES.has(r)))return true;
  const permissions=(profile.permissions||[]).map(normalize);
- if(!permissions.length)return true;
+ // Fail closed. A user whose roles grant no permission codes sees no module.
+ // This used to return true, which meant the UI showed everything to a user
+ // with nothing - the opposite of what the access model says.
+ if(!permissions.length)return false;
  const candidates=ACCESS[module]||[];
  return candidates.some(p=>permissions.includes(p));
 }
@@ -38,6 +41,17 @@ export function applyNavigationAccess(profile){
   button.setAttribute("aria-hidden",String(!allowed));
   button.disabled=!allowed;
  });
+ const notice=document.querySelector("#access-notice");
+ if(notice){
+  const permissions=(profile?.permissions||[]).map(normalize);
+  const roles=(profile?.roles||[]).map(normalize);
+  const allAccess=roles.some(r=>ALL_ACCESS_ROLES.has(r));
+  const none=!allAccess&&!permissions.length;
+  notice.classList.toggle("hidden",!none);
+  notice.textContent=none
+    ?"Your account has no permissions assigned yet. Ask an administrator to give your role access."
+    :"";
+ }
  const roleEl=document.querySelector("#user-role");
  if(roleEl){
   const roles=profile?.roles||[];

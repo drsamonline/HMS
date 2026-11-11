@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.diagnosis import DiagnosisCreate, DiagnosisRead, DiagnosisUpdate
 from app.services.diagnosis import diagnosis_service
@@ -16,7 +17,7 @@ def _user_id(user: CurrentUserDependency) -> int:
     return int(user["sub"])
 
 
-@router.get("", response_model=list[DiagnosisRead])
+@router.get("", response_model=list[DiagnosisRead], dependencies=[Depends(require("clinical.read"))])
 async def list_diagnoses(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -27,7 +28,7 @@ async def list_diagnoses(
     return await diagnosis_service.list_by_case(db, case_record_id, skip, limit)
 
 
-@router.post("", response_model=DiagnosisRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=DiagnosisRead, status_code=status.HTTP_201_CREATED, dependencies=[Depends(require("clinical.write"))])
 async def create_diagnosis(
     diagnosis_in: DiagnosisCreate,
     db: DatabaseSession,
@@ -36,7 +37,7 @@ async def create_diagnosis(
     return await diagnosis_service.create(db, diagnosis_in, _user_id(current_user))
 
 
-@router.get("/{diagnosis_id}", response_model=DiagnosisRead)
+@router.get("/{diagnosis_id}", response_model=DiagnosisRead, dependencies=[Depends(require("clinical.read"))])
 async def get_diagnosis(
     diagnosis_id: int,
     db: DatabaseSession,
@@ -45,7 +46,7 @@ async def get_diagnosis(
     return await diagnosis_service.get_by_id(db, diagnosis_id)
 
 
-@router.patch("/{diagnosis_id}", response_model=DiagnosisRead)
+@router.patch("/{diagnosis_id}", response_model=DiagnosisRead, dependencies=[Depends(require("clinical.write"))])
 async def update_diagnosis(
     diagnosis_id: int,
     diagnosis_in: DiagnosisUpdate,

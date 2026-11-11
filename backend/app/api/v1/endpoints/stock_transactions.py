@@ -7,9 +7,10 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.stock_transaction import (
     StockTransactionCreate,
@@ -29,6 +30,7 @@ router = APIRouter(
 @router.get(
     "/item/{inventory_item_id}",
     response_model=list[StockTransactionRead],
+    dependencies=[Depends(require("inventory.read"))],
 )
 async def list_item_transactions(
     inventory_item_id: int,
@@ -55,6 +57,7 @@ async def list_item_transactions(
 @router.get(
     "/{transaction_id}",
     response_model=StockTransactionRead,
+    dependencies=[Depends(require("inventory.read"))],
 )
 async def get_stock_transaction(
     transaction_id: int,
@@ -71,6 +74,7 @@ async def get_stock_transaction(
     "",
     response_model=StockTransactionRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("inventory.write"))],
 )
 async def create_stock_transaction(
     transaction_in: StockTransactionCreate,

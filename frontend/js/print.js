@@ -1,3 +1,4 @@
+import { formDialog, confirmDialog, notify } from "./ui/dialog.js";
 const $=(s,r=document)=>r.querySelector(s);
 const esc=v=>String(v??"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;","\"":"&quot;"}[c]));
 const human=k=>String(k||"").replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
@@ -42,7 +43,7 @@ export function createPrintPreview(host,{manifest,envelope,title="HHMS Clinical 
   selector.addEventListener("change",apply);
   $("#print-select-all",shell).addEventListener("click",()=>{selector.querySelectorAll("input").forEach(x=>x.checked=true);apply()});
   $("#print-clear-all",shell).addEventListener("click",()=>{selector.querySelectorAll("input").forEach(x=>x.checked=false);apply()});
-  $("#print-now",shell).addEventListener("click",()=>{apply();if(!selected().size){window.alert("Select at least one section to print.");return;}window.print();});
+  $("#print-now",shell).addEventListener("click",()=>{apply();if(!selected().size){notify("Select at least one section to print.","warning");return;}window.print();});
   apply(); return {apply,selected};
 }
 
@@ -65,7 +66,7 @@ export function createBatchPrintPreview(host,{reports=[],title="HHMS Batch Clini
   selector.addEventListener("change",apply);
   $("#batch-select-all",shell).addEventListener("click",()=>{selector.querySelectorAll("input").forEach(x=>x.checked=true);apply()});
   $("#batch-clear-all",shell).addEventListener("click",()=>{selector.querySelectorAll("input").forEach(x=>x.checked=false);apply()});
-  $("#batch-print",shell).addEventListener("click",()=>{apply();if(!selected().size){window.alert("Select at least one case to print.");return;}window.print();});
+  $("#batch-print",shell).addEventListener("click",()=>{apply();if(!selected().size){notify("Select at least one case to print.","warning");return;}window.print();});
   apply(); return {apply,selected};
 }
 

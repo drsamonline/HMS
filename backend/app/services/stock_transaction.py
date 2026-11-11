@@ -4,6 +4,7 @@ from datetime import date, datetime, timezone
 from decimal import Decimal
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.core.exceptions import BusinessRuleException, DatabaseException, ResourceNotFoundException
+from app.services import audit
 from app.models.inventory_item import InventoryItem
 from app.models.stock_transaction import StockTransaction
 from app.repositories.stock_transaction import StockTransactionRepository, stock_transaction_repository
@@ -49,6 +50,13 @@ class StockTransactionService:
         item.updated_at=now
         try:
             db.add(tx)
+            await audit.record(
+                db,
+                activity="stock_transaction.create",
+                entity_name="StockTransaction",
+                entity_id=tx.id,
+                after=audit.snapshot(tx),
+            )
             await db.commit(); await db.refresh(tx)
             return tx
         except IntegrityError as exc:

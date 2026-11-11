@@ -7,9 +7,10 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.admission import (
     AdmissionCreate,
@@ -28,6 +29,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=list[AdmissionRead],
+    dependencies=[Depends(require("ipd.read"))],
 )
 async def list_admissions(
     db: DatabaseSession,
@@ -63,6 +65,7 @@ async def list_admissions(
     "",
     response_model=AdmissionRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("ipd.write"))],
 )
 async def create_admission(
     admission_in: AdmissionCreate,
@@ -78,6 +81,7 @@ async def create_admission(
 @router.get(
     "/{admission_id}",
     response_model=AdmissionRead,
+    dependencies=[Depends(require("ipd.read"))],
 )
 async def get_admission(
     admission_id: int,
@@ -93,6 +97,7 @@ async def get_admission(
 @router.patch(
     "/{admission_id}",
     response_model=AdmissionRead,
+    dependencies=[Depends(require("ipd.write"))],
 )
 async def update_admission(
     admission_id: int,

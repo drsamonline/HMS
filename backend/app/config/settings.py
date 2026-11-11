@@ -142,6 +142,15 @@ class Settings(BaseSettings):
         default="HS256",
     )
 
+    #: off | warn | enforce. B14 guards every route, so the default is now
+    #: "enforce": a route added without require(...) is refused rather than
+    #: logged. "warn" remains for diagnosing a rollout; "off" only for a
+    #: deliberate debugging session.
+    PERMISSION_ENFORCEMENT: str = Field(
+        default="enforce",
+        pattern="^(off|warn|enforce)$",
+    )
+
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
         default=30,
         ge=1,
@@ -217,15 +226,11 @@ class Settings(BaseSettings):
     # CORS
     # ==========================================================
 
-    BACKEND_CORS_ORIGINS: list[str] = Field(
-        default_factory=lambda: [
-            "https://app.hhms.local",
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://localhost:8000",
-            "http://127.0.0.1:8000",
-        ]
-    )
+    # Empty by default: the GUI is served by this same server, so a hospital
+    # install needs no cross-origin access at all. Development origins belong in
+    # a developer's own .env, never in the default that ships to a hospital -
+    # ``allow_credentials=True`` plus a localhost origin is an invitation.
+    BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=list)
 
     # ==========================================================
     # Pagination

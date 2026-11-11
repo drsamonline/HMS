@@ -7,9 +7,10 @@ Author  : Dr. Sohil Momin
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.dependencies.auth import CurrentUserDependency
+from app.dependencies.permissions import require
 from app.dependencies.database import DatabaseSession
 from app.schemas.medicine import (
     MedicineCreate,
@@ -28,6 +29,7 @@ router = APIRouter(
 @router.get(
     "",
     response_model=list[MedicineRead],
+    dependencies=[Depends(require("pharmacy.read"))],
 )
 async def list_medicines(
     db: DatabaseSession,
@@ -53,6 +55,7 @@ async def list_medicines(
     "",
     response_model=MedicineRead,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require("pharmacy.write"))],
 )
 async def create_medicine(
     medicine_in: MedicineCreate,
@@ -68,6 +71,7 @@ async def create_medicine(
 @router.get(
     "/{medicine_id}",
     response_model=MedicineRead,
+    dependencies=[Depends(require("pharmacy.read"))],
 )
 async def get_medicine(
     medicine_id: int,
@@ -83,6 +87,7 @@ async def get_medicine(
 @router.patch(
     "/{medicine_id}",
     response_model=MedicineRead,
+    dependencies=[Depends(require("pharmacy.write"))],
 )
 async def update_medicine(
     medicine_id: int,

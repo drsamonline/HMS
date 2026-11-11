@@ -157,10 +157,10 @@ def test_procurement_rollover_contracts_are_exposed():
     ).read_text(encoding="utf-8")
     api = (ROOT / "frontend" / "js" / "api.js").read_text(encoding="utf-8")
     for route in (
-        '@router.get("/archives/{year}/purchase-orders")',
-        '@router.get("/archives/{year}/goods-receipts")',
-        '@router.get("/archives/{year}/stock-transactions")',
-        '@router.get("/archives/{year}/stock-cards")',
+        '"/archives/{year}/purchase-orders"',
+        '"/archives/{year}/goods-receipts"',
+        '"/archives/{year}/stock-transactions"',
+        '"/archives/{year}/stock-cards"',
     ):
         assert route in maintenance
     for call in (
