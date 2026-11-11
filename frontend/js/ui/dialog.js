@@ -9,8 +9,8 @@
  * One dialog, one form, one submit.
  */
 
-/* Proprietary. HHMS-PROV-0.0.3-218c74592cc7 / homoeopathic-lan-record-keeper */
-export const PROVENANCE = "HHMS-PROV-0.0.3-218c74592cc7";
+/* Proprietary. HHMS-PROV-0.0.3-bef4fd7b05a0 / homoeopathic-lan-record-keeper */
+export const PROVENANCE = "HHMS-PROV-0.0.3-bef4fd7b05a0";
 
 let openDialog = null;
 
