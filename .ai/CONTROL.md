@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-46-register-ui` (stacked on `batch-45-trial`) |
+| Branch | `batch-47-runtime` (stacked on `batch-46-register-ui`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1143 passed, 2 skipped, 1145 collected** (569 baseline + 574 new) |
+| Tests | **1143 passed, 2 skipped, 1145 collected**; per-block setup 2.53s -> 0.19s |
 | Wave complete | **Waves 0–9 complete (B01–B51)**; B52 post-plan correction |
-| Next batch | **B57 — test-suite runtime, or build-time stripping** |
+| Next batch | **B58 — final code audit** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -420,6 +420,7 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B54 | 2026-11-11 | see `git log` | 17 tests | 1123 | Signed licence files: RS256 token verified against a public key in the build, with a 30-day grace period. NABH locked behind it |
 | B55 | 2026-11-11 | see `git log` | 9 tests | 1132 | Trial licences defaulting to a month, an advisory machine count that refuses nothing, and the licence stated in the handover pack |
 | B56 | 2026-11-11 | see `git log` | 11 tests | 1143 | The statutory register gets a screen with per-kind explanations, and an alert panel on the superintendent's home that hides when there is nothing to report |
+| B57 | 2026-11-11 | see `git log` | 5 tests | 1143 | Runtime: one engine per process emptied between blocks, the ASGI stack built once, the login throttle reset per block. 2.53s -> 0.19s per block |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
 test baseline plus 574 new tests. Final: **1143 passed, 2 skipped, 1145 collected**.
@@ -800,7 +801,7 @@ which is the property that mattered all along.
 
 ---
 
-## 7d. The test-runtime pass (B17, 2026-11-09) — measured, attempted, reverted
+## 7d. The test-runtime pass (B17 measured; B57 finished)
 
 The suite had grown to about fourteen minutes across six slices. This batch set out
 to fix that. It measured the cost, tried the obvious remedy, and reverted it when
@@ -1288,6 +1289,31 @@ matters.
 **D-117 — An alert belongs on the screen of the person who can act on it.**
 The medical superintendent's home, not the auditor's and not a compliance page nobody
 opens.
+
+### B57 — the runtime pass, finished
+
+The measurement B17 made said the cost was a fixed 2.5 seconds per ``make_client``
+block. Three changes removed it:
+
+| Change | Why |
+|---|---|
+| One engine, emptied between blocks | Sixty CREATEs became a handful of DELETEs |
+| The ASGI stack built once | Assembling it cost four seconds and nothing about it changes |
+| The login throttle reset per block | A cached application would accumulate every login and refuse honest tests |
+
+**D-118 — Share the engine the application actually resolves.**
+The first attempt held its own reference and prepared a database the application never
+looked at, which is why five tests that pass alone failed in company. The harness now
+asks the application which engine it has and shares that one.
+
+**D-119 — A cached schema must be checked, not assumed.**
+The schema was built before every model was imported, leaving a table missing for the
+rest of the run. It now compares the tables the models declare against the tables that
+exist before trusting the cache.
+
+**D-120 — Pin the contract of the thing you optimised.**
+Isolation, reuse, the throttle reset and the file-then-memory sequence are all asserted.
+An optimisation without a test of the property it might have broken is a hope.
 
 ---
 
