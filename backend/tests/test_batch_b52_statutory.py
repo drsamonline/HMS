@@ -240,14 +240,17 @@ def test_the_report_refuses_to_decide_what_the_law_requires(isolated) -> None:
 
 
 # ------------------------------------------------------------------ editions
-def test_nabh_is_available_in_every_edition() -> None:
-    """B53 corrected this further: NABH accredits small clinics, so it is available
-    everywhere and off until chosen."""
+def test_nabh_is_a_paid_feature() -> None:
+    """B52 had it everywhere; B54 reversed that when licensing arrived.
 
-    from app.core.editions import EDITIONS
+    NABH accredits small clinics as well as hospitals, so the *capability* applies to
+    everyone - but it is a paid feature, and the free edition does not carry it. That is
+    what makes the free tier mean something.
+    """
 
-    for edition in EDITIONS.values():
-        assert "nabh" in edition.modules
+    from app.core.editions import PERSONAL
+
+    assert "nabh" not in PERSONAL.modules
 
 
 def test_qci_is_an_institute_feature_not_a_clinic_one() -> None:

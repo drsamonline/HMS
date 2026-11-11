@@ -55,9 +55,10 @@ PERSONAL = Edition(
     name="HHMS Personal",
     licence="PolyForm Noncommercial 1.0.0",
     summary="Free for personal use. One clinic, OPD only, prints the full case and bills.",
-    # NABH accredits small healthcare organisations as well as hospitals, so the
-    # module is available even here. It is off until somebody turns it on.
-    modules=("core", "pharmacy", "billing", "nabh"),
+    # NABH is a paid feature. It accredits small clinics as well as hospitals, so a
+    # free practice that wants it buys a licence rather than being told it does not
+    # apply - but the free edition does not carry it.
+    modules=("core", "pharmacy", "billing"),
     features=("print_case_bundle", "print_bills"),
 )
 
@@ -116,15 +117,16 @@ def edition_for(code: str | None) -> Edition:
 
 
 def current_edition() -> Edition:
-    """The edition this installation runs, read from the environment once.
+    """The edition this installation runs.
 
-    A build-time fact like the port and the discovery name: it is read before the
-    database is open, so it cannot be a setting (D-032).
+    Resolved from the licence file, then the environment, then the free edition - see
+    ``app.core.licensing.resolve``. Read before the database is open, so it cannot be a
+    setting (D-032).
     """
 
-    import os
+    from app.core.licensing import current_edition as resolve_edition
 
-    return edition_for(os.environ.get("HHMS_EDITION"))
+    return resolve_edition()
 
 
 def allows_module(edition: Edition, module_code: str) -> bool:

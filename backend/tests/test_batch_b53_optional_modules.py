@@ -16,13 +16,21 @@ import pytest
 
 
 # ------------------------------------------------------------------ NABH
-def test_nabh_is_available_in_every_edition() -> None:
-    """NABH accredits small healthcare organisations, not only hospitals."""
+def test_nabh_is_paid_and_optional() -> None:
+    """Two separate things, and B54 settled both.
 
-    from app.core.editions import EDITIONS
+    *Paid*: the free edition does not carry it, because a free tier that includes
+    everything is not a tier. *Optional*: where it is available, it is off until
+    somebody chooses it, and off is never an error.
+    """
 
-    for edition in EDITIONS.values():
-        assert "nabh" in edition.modules, f"{edition.code} cannot have NABH at all"
+    from app.core.editions import CLINIC, ENTERPRISE, HOSPITAL, PERSONAL
+    from app.modules.registry import BY_CODE
+
+    assert "nabh" not in PERSONAL.modules
+    for edition in (CLINIC, HOSPITAL, ENTERPRISE):
+        assert "nabh" in edition.modules
+    assert BY_CODE["nabh"].is_optional is True
 
 
 def test_nabh_is_marked_optional() -> None:
@@ -166,12 +174,17 @@ def test_turning_the_nabh_module_off_does_not_stop_the_software(isolated) -> Non
         assert client.get("/api/v1/navigation", headers=auth_headers()).status_code == 200
 
 
-def test_an_optional_module_can_be_turned_back_on(isolated) -> None:
+def test_an_optional_module_can_be_turned_back_on(isolated, monkeypatch, tmp_path) -> None:
+    """The free edition cannot enable it; a licensed one can turn it off and on again."""
+
     import asyncio
 
     from app.db.session import get_session_factory
     from app.services import module_state
     from tests._qa_harness import make_client
+
+    # A licensed hospital, which is where the module is available at all.
+    monkeypatch.setenv("HHMS_EDITION", "hospital")
 
     with make_client() as client:
         factory = get_session_factory()

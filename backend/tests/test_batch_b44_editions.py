@@ -69,18 +69,19 @@ def test_the_personal_edition_prints_the_whole_case_and_the_bills() -> None:
     assert "print_bills" in PERSONAL.features
 
 
-def test_nabh_is_available_everywhere_and_optional() -> None:
-    """NABH accredits small clinics too; a practice that does not pursue it turns it off.
+def test_nabh_is_a_paid_optional_feature() -> None:
+    """Where this landed, after three passes.
 
     B44 had it enterprise-only, B52 moved it to hospital-and-above, B53 made it
-    available everywhere as an optional module. The last is right: the gate is a
-    choice at setup, not a price list.
+    available everywhere, and B54 made it paid - which is what makes the free edition
+    mean something. Two properties survive all of that: it is a paid feature, and where
+    it is available it is optional rather than forced.
     """
 
-    from app.core.editions import EDITIONS
+    from app.core.editions import PERSONAL
     from app.modules.registry import BY_CODE
 
-    assert all("nabh" in edition.modules for edition in EDITIONS.values())
+    assert "nabh" not in PERSONAL.modules
     assert BY_CODE["nabh"].is_optional is True
 
 
