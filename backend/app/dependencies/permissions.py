@@ -55,7 +55,11 @@ PERMISSION_MARKER = "_hhms_permission"
 
 
 async def permissions_for_user(db: AsyncSession, user_id: int) -> frozenset[str]:
-    """Every code the user's active roles hold.
+    """Every code this user holds, from their roles and from direct grants.
+
+    Two sources, and the second one is additive only: a grant can add a permission the
+    role does not give, and can never take one away. Removing what a role gives is done
+    by changing the role, where the change is visible to everybody it affects.
 
     An all-access role short-circuits to the whole catalogue, matching what the
     client has always done and what migration 0033 makes true in the data.
@@ -71,8 +75,12 @@ async def permissions_for_user(db: AsyncSession, user_id: int) -> frozenset[str]
     if role_names & ALL_ACCESS_ROLE_NAMES:
         return CODES
 
+    from app.services import user_permissions
+
+    granted = await user_permissions.active_codes(db, user_id)
+
     if not role_names:
-        return frozenset()
+        return granted
 
     rows = await db.execute(
         select(Permission.code)
@@ -85,7 +93,7 @@ async def permissions_for_user(db: AsyncSession, user_id: int) -> frozenset[str]
             Permission.is_active.is_(True),
         )
     )
-    return frozenset(code for (code,) in rows.all())
+    return frozenset(code for (code,) in rows.all()) | granted
 
 
 def _subject_id(current_user: CurrentUser) -> int:

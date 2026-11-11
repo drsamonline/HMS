@@ -263,3 +263,22 @@
 .reg-expiring .reg-state { color: var(--state-warning-ink); font-weight: 600; }
 .reg-current .reg-state { color: var(--state-success-edge); }
 .reg-footer p { margin: 0; font-size: var(--text-xs); color: var(--ink-faint); }
+
+/* The permission editor. */
+.perm-panel { display: flex; flex-direction: column; gap: var(--space-3); }
+.perm-header h2 { margin: 0; font-size: var(--text-lg); color: var(--ink-strong); }
+.perm-header p { margin: var(--space-1) 0 0; font-size: var(--text-sm); color: var(--ink-muted); }
+.perm-quick { display: flex; gap: var(--space-3); flex-wrap: wrap; font-size: var(--text-sm); }
+.perm-quick input[type="text"] { min-width: 18rem; }
+.perm-group { border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: var(--space-2); }
+.perm-group legend { font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-faint); padding: 0 var(--space-1); }
+.perm-row { display: grid; grid-template-columns: auto 1fr; gap: 0 var(--space-2); padding: var(--space-1) 0; align-items: start; }
+.perm-name { font-size: var(--text-sm); color: var(--ink-strong); }
+.perm-desc { grid-column: 2; font-size: var(--text-xs); color: var(--ink-muted); }
+.perm-expiry, .perm-reason { grid-column: 2; font-size: var(--text-xs); color: var(--ink-faint); }
+.perm-badge { font-size: var(--text-xs); padding: 0 var(--space-1); border-radius: var(--radius-sm); margin-left: var(--space-1); }
+.perm-role { background: var(--surface-sunken); color: var(--ink-faint); }
+.perm-manual { background: var(--state-info-surface, var(--surface-sunken)); color: var(--state-info-ink, var(--ink-muted)); }
+.perm-from-role .perm-name { color: var(--ink-muted); }
+.perm-footer { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); }
+.perm-footer p { margin: 0; font-size: var(--text-xs); color: var(--ink-faint); max-width: 60ch; }

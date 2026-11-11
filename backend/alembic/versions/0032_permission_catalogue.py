@@ -61,6 +61,13 @@ PERMISSIONS = (
     ("audit.export", "audit", "Export the audit trail", "Take a copy of the audit trail out of the system."),
     ("users.read", "users", "View users", "List user accounts."),
     ("users.write", "users", "Manage users", "Create, edit, deactivate and re-role users."),
+    (
+        "roles.manage",
+        "roles",
+        "Grant permissions to one person",
+        "Give an individual a permission their role does not provide, or take a manual "
+        "grant back. Cannot grant anything the granter does not hold.",
+    ),
     ("roles.read", "roles", "View roles", "List roles and their permissions."),
     ("roles.write", "roles", "Manage roles", "Create roles and grant permissions."),
     ("settings.read", "settings", "View settings", "Read hospital and system settings."),
