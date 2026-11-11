@@ -15,12 +15,12 @@ latest milestone in the same paragraph.
 | Field | Value |
 |-------|-------|
 | Date | 2026-11-09 |
-| Branch | `batch-43-optional-modules` (stacked on `batch-42-statutory`) |
+| Branch | `batch-44-licensing` (stacked on `batch-43-optional-modules`) |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1106 passed, 2 skipped, 1108 collected** (569 baseline + 537 new) |
+| Tests | **1123 passed, 2 skipped, 1125 collected** (569 baseline + 554 new) |
 | Wave complete | **Waves 0–9 complete (B01–B51)**; B52 post-plan correction |
-| Next batch | **B54 — institution registration screen and expiry alerts** |
+| Next batch | **B55 — institution registration screen and expiry alerts** |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -417,9 +417,10 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B51 | 2026-11-10 | see `git log` | 14 tests | 1079 | The handover pack: one zip with the runbook, guides, compliance mapping, API reference, licence and seal. **Closes wave 9 and the plan** |
 | B52 | 2026-11-11 | see `git log` | 17 tests | 1096 | Practitioner registration authority (NCH or State Council); the institution's own statutory register of ten kinds with expiry tracking; NABH optional from hospital upward, QCI enterprise |
 | B53 | 2026-11-11 | see `git log` | 10 tests | 1106 | NABH available in every edition and marked optional; a missing or expired statutory registration is reported and never enforced |
+| B54 | 2026-11-11 | see `git log` | 17 tests | 1123 | Signed licence files: RS256 token verified against a public key in the build, with a 30-day grace period. NABH locked behind it |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
-test baseline plus 537 new tests. Final: **1106 passed, 2 skipped, 1108 collected**.
+test baseline plus 554 new tests. Final: **1123 passed, 2 skipped, 1125 collected**.
 
 From B14 the suite takes longer than one 300-second call, so it is run in four
 file-list chunks of 12, 23, 35 and 61 files and the counts summed. **Reconcile the
@@ -1246,6 +1247,23 @@ product may treat it as an error, a gap or a failure.
 above in B52, and everywhere in B53. Three passes at the same boundary, all mine, all
 because I guessed at where the commercial line fell instead of asking. The line is now
 stated once, in `app/core/editions.py`, where a reader will look for it.
+
+**D-109 — A licence that needs a phone-home fails in the buildings that buy it.**
+Hospital LANs have no internet or a firewall. The licence is a signed file verified
+against a public key shipped in the build, and it works offline forever.
+
+**D-110 — An expired licence does not brick a hospital.**
+Thirty days of grace. A doctor who cannot open a patient's record because a renewal was
+missed is a worse outcome than a licence that ran a month long.
+
+**D-111 — The free tier has to be able to do less.**
+NABH is a paid feature. A free edition that includes everything is a price list with no
+lock on it, which is what the environment variable was.
+
+**D-112 — Say what the mechanism does not do.**
+Licensing is not copy protection. Somebody determined enough can patch the check out.
+It makes the honest case honest and the dishonest case deliberate, and the docstring
+says exactly that.
 
 ---
 
