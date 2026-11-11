@@ -175,7 +175,7 @@ def _naive_utc(value: datetime) -> datetime:
     return value
 
 
-@router.get("/due-followups", response_model=DueFollowUpsResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/due-followups", response_model=DueFollowUpsResponse, dependencies=[Depends(require("reports.clinical"))])
 async def due_followups(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -247,7 +247,7 @@ def _patient_display_name(patient: Patient | None) -> str:
     ) or "Unnamed patient"
 
 
-@router.get("/outstanding-invoices", response_model=OutstandingInvoicesResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/outstanding-invoices", response_model=OutstandingInvoicesResponse, dependencies=[Depends(require("reports.financial"))])
 async def outstanding_invoices(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -324,7 +324,7 @@ async def outstanding_invoices(
     )
 
 
-@router.get("/bed-occupancy", response_model=BedOccupancyResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/bed-occupancy", response_model=BedOccupancyResponse, dependencies=[Depends(require("reports.operational"))])
 async def bed_occupancy(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -428,7 +428,7 @@ async def bed_occupancy(
     )
 
 
-@router.get("/pending-investigations", response_model=PendingInvestigationsResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/pending-investigations", response_model=PendingInvestigationsResponse, dependencies=[Depends(require("reports.clinical"))])
 async def pending_investigations(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -603,7 +603,7 @@ def build_receivables_aging_result(
     }
 
 
-@router.get("/receivables-aging", response_model=ReceivablesAgingResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/receivables-aging", response_model=ReceivablesAgingResponse, dependencies=[Depends(require("reports.financial"))])
 async def receivables_aging(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -833,7 +833,7 @@ async def _load_continuity_scan_inputs(
     return invoices, patients, receipts_by_invoice, paid_by_invoice
 
 
-@router.get("/invoice-receipt-continuity", response_model=InvoiceReceiptContinuityResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/invoice-receipt-continuity", response_model=InvoiceReceiptContinuityResponse, dependencies=[Depends(require("reports.financial"))])
 async def invoice_receipt_continuity(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -859,7 +859,7 @@ async def invoice_receipt_continuity(
     )
 
 
-@router.get("/receipt-numbering-continuity", response_model=ReceiptNumberingContinuityResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/receipt-numbering-continuity", response_model=ReceiptNumberingContinuityResponse, dependencies=[Depends(require("reports.financial"))])
 async def receipt_numbering_continuity(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -1132,7 +1132,7 @@ async def _build_reconciliation_rows(db, limit: int) -> list[dict]:
     return rows
 
 
-@router.get("/invoice-payment-reconciliation", response_model=InvoicePaymentReconciliationResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/invoice-payment-reconciliation", response_model=InvoicePaymentReconciliationResponse, dependencies=[Depends(require("reports.financial"))])
 async def invoice_payment_reconciliation(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -1228,7 +1228,7 @@ def build_collection_summary_by_patient(rows: list[dict]) -> dict:
 @router.get(
     "/collection-summary-by-patient",
     response_model=PatientCollectionSummaryResponse,
-    dependencies=[Depends(require("reporting.read"))],
+    dependencies=[Depends(require("reports.financial"))],
 )
 async def collection_summary_by_patient(
     db: DatabaseSession,
@@ -1364,7 +1364,7 @@ async def build_payment_method_summary_result(db, limit: int) -> dict:
     )
 
 
-@router.get("/payment-method-summary", response_model=PaymentMethodSummaryResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/payment-method-summary", response_model=PaymentMethodSummaryResponse, dependencies=[Depends(require("reports.financial"))])
 async def payment_method_summary(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -1442,7 +1442,7 @@ async def build_overpayment_ledger(db, limit: int) -> dict:
     return build_overpayment_ledger_result(overpaid_rows, date.today())
 
 
-@router.get("/invoice-overpayments", response_model=InvoiceOverpaymentResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/invoice-overpayments", response_model=InvoiceOverpaymentResponse, dependencies=[Depends(require("reports.financial"))])
 async def invoice_overpayments(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -1587,7 +1587,7 @@ async def build_payment_method_overpayment_result(db, limit: int) -> dict:
 @router.get(
     "/payment-method-overpayments",
     response_model=PaymentMethodOverpaymentResponse,
-    dependencies=[Depends(require("reporting.read"))],
+    dependencies=[Depends(require("reports.financial"))],
 )
 async def payment_method_overpayments(
     db: DatabaseSession,
@@ -1722,7 +1722,7 @@ async def build_discharge_audit_scan(db, limit: int) -> list[dict]:
     return rows
 
 
-@router.get("/discharge-audit", response_model=DischargeAuditResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/discharge-audit", response_model=DischargeAuditResponse, dependencies=[Depends(require("reports.clinical"))])
 async def discharge_audit(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -1848,7 +1848,7 @@ async def build_opd_queue_summary_scan(db, limit_days: int) -> dict:
     )
 
 
-@router.get("/opd-queue-summary", response_model=OPDQueueSummaryResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/opd-queue-summary", response_model=OPDQueueSummaryResponse, dependencies=[Depends(require("reports.operational"))])
 async def opd_queue_summary(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -1969,7 +1969,7 @@ async def build_invoice_settlement_audit_scan(db, limit: int) -> dict:
 
 @router.get(
     "/invoice-settlement-audit", response_model=InvoiceSettlementAuditResponse,
-    dependencies=[Depends(require("reporting.read"))],
+    dependencies=[Depends(require("reports.financial"))],
 )
 async def invoice_settlement_audit(
     db: DatabaseSession,
@@ -2123,7 +2123,7 @@ async def build_refund_audit_scan(db, limit: int) -> dict:
     return build_refund_audit_result(rows, date.today())
 
 
-@router.get("/refund-audit", response_model=RefundAuditResponse, dependencies=[Depends(require("reporting.read"))])
+@router.get("/refund-audit", response_model=RefundAuditResponse, dependencies=[Depends(require("reports.financial"))])
 async def refund_audit(
     db: DatabaseSession,
     _: CurrentUserDependency,
@@ -2281,7 +2281,7 @@ async def build_ward_occupancy_summary_scan(db, limit: int) -> list[dict]:
 
 @router.get(
     "/ward-occupancy-summary", response_model=WardOccupancySummaryResponse,
-    dependencies=[Depends(require("reporting.read"))],
+    dependencies=[Depends(require("reports.operational"))],
 )
 async def ward_occupancy_summary(
     db: DatabaseSession,
@@ -2522,7 +2522,7 @@ async def build_investigation_billing_reconciliation(db, limit: int) -> dict:
 @router.get(
     "/investigation-billing-reconciliation",
     response_model=InvestigationBillingReconciliationResponse,
-    dependencies=[Depends(require("reporting.read"))],
+    dependencies=[Depends(require("reports.financial"))],
 )
 async def investigation_billing_reconciliation(
     db: DatabaseSession,

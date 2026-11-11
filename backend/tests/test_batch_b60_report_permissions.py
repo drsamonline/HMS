@@ -53,7 +53,29 @@ def _lab_technician_headers() -> dict:
                 await db.execute(
                     select(Role).where(func.lower(Role.role_name) == "laboratory staff")
                 )
-            ).scalar_one()
+            ).scalar_one_or_none()
+            if role is None:
+                role = Role(role_name="laboratory staff", description="Laboratory")
+                db.add(role)
+                await db.flush()
+
+            # The harness builds its schema with create_all, so the catalogue the
+            # migration seeds is absent. Grant the role its template codes here, or
+            # the account holds nothing and the test passes for the wrong reason.
+            from app.core.permissions import ROLE_TEMPLATES, expand
+            from app.models.permission import Permission
+            from app.models.role_permission import RolePermission
+
+            for code in sorted(expand(ROLE_TEMPLATES["laboratory staff"])):
+                permission = (
+                    await db.execute(select(Permission).where(Permission.code == code))
+                ).scalar_one_or_none()
+                if permission is None:
+                    permission = Permission(name=code, code=code, module=code.split(".")[0])
+                    db.add(permission)
+                    await db.flush()
+                db.add(RolePermission(role_id=role.id, permission_id=permission.id))
+
             db.add(UserRole(user_id=user.id, role_id=role.id))
             await db.commit()
             return user.id
@@ -61,7 +83,7 @@ def _lab_technician_headers() -> dict:
     import asyncio
 
     user_id = asyncio.run(_seed())
-    token = create_access_token({"sub": str(user_id)})
+    token = create_access_token(subject=str(user_id))
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -78,14 +100,6 @@ def test_a_lab_technician_cannot_open_the_billing_module() -> None:
     assert "billing.read" not in permissions
 
 
-@pytest.mark.xfail(
-    reason=(
-        "F-07: the dashboard router guards eighteen endpoints with one permission, so a "
-        "role that may not open billing can read the billing reconciliation reports. "
-        "This test records the gap. Remove the marker when the router is split."
-    ),
-    strict=True,
-)
 def test_a_lab_technician_cannot_read_the_refund_audit() -> None:
     from tests._qa_harness import make_client
 
@@ -98,7 +112,6 @@ def test_a_lab_technician_cannot_read_the_refund_audit() -> None:
     )
 
 
-@pytest.mark.xfail(reason="F-07: same gap, the receivables side.", strict=True)
 def test_a_lab_technician_cannot_read_receivables_aging() -> None:
     from tests._qa_harness import make_client
 
@@ -141,8 +154,8 @@ def test_the_dashboard_router_is_really_four_modules() -> None:
     assert len(financial) == 7, "seven of thirteen routes ask 'does the money reconcile'"
 
 
-def test_every_dashboard_route_uses_the_same_permission() -> None:
-    """This assertion is the finding. It should fail the day somebody splits the router."""
+def test_the_routes_are_guarded_by_domain_not_by_one_permission() -> None:
+    """F-07 fixed: the guard now matches the question the report answers."""
 
     from pathlib import Path
 
@@ -153,7 +166,6 @@ def test_every_dashboard_route_uses_the_same_permission() -> None:
     import re
 
     guards = set(re.findall(r'require\("([^"]+)"\)', source))
-    assert guards == {"reporting.read"}, (
-        "the router now has more than one permission - if that is deliberate, update "
-        f"F-07 in docs/CODE_AUDIT.md. Guards found: {sorted(guards)}"
+    assert guards == {"reports.operational", "reports.clinical", "reports.financial"}, (
+        f"a report is guarded by the wrong domain, or by none: {sorted(guards)}"
     )

@@ -84,7 +84,7 @@ def test_prepare_runtime_bootstraps_empty_machine(clean_root: Path) -> None:
             )
         }
 
-    assert version == "0044_roles_manage_permission"
+    assert version == "0045_report_permissions"
     # Core domain tables must all be present after a fresh upgrade chain.
     # (Table names follow the project's declared __tablename__ values.)
     for required in (
@@ -118,7 +118,7 @@ def test_prepare_runtime_is_idempotent(clean_root: Path) -> None:
         version = conn.execute("SELECT version_num FROM alembic_version").fetchone()[0]
 
     assert after == before
-    assert version == "0044_roles_manage_permission"
+    assert version == "0045_report_permissions"
 
 
 def test_migration_chain_head_matches_model_metadata(clean_root: Path) -> None:
@@ -128,7 +128,7 @@ def test_migration_chain_head_matches_model_metadata(clean_root: Path) -> None:
     run_pending_migrations()
 
     script = ScriptDirectory.from_config(migration_config())
-    assert script.get_heads() == ["0044_roles_manage_permission"]
+    assert script.get_heads() == ["0045_report_permissions"]
 
     engine = create_engine(f"sqlite:///{_db_file(clean_root)}")
     with engine.connect() as conn:

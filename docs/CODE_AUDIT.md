@@ -82,7 +82,7 @@ manager. None of them is in a request path that decides access.
 
 ### F-07 — One permission guards eighteen reports, and six roles hold it
 
-**Severity: high. Status: open, recorded with a failing test.**
+**Severity: high. Status: FIXED in B62.**
 
 Found while explaining F-04, and it is the reason F-04 matters.
 
@@ -104,16 +104,18 @@ A laboratory technician holds four permissions. `billing.read` is **not** one of
 they cannot open the billing module - and they can read the reconciliation reports about
 it, because those live behind a reporting permission instead.
 
-This is not a theory. `tests/test_batch_b60_report_permissions.py` seeds a laboratory
-technician and calls the route; two strict `xfail` tests record that they get **200**.
-They will fail loudly the day somebody fixes it, which is the point.
+This was not a theory. `tests/test_batch_b60_report_permissions.py` seeded a laboratory
+technician and called the route; two strict `xfail` tests recorded that they got **200**.
+
+**Both now assert 403.** The xfail markers are gone, because the gap they described is
+gone - and the test that used to record the hole is now the test that proves it closed.
 
 **Why it happened:** eighteen routes in one file read as one thing. A reviewer sees a
 dashboard module and a reporting permission and moves on. The file being 2,573 lines is
 what stopped anybody reading it closely enough to notice that seven of the thirteen are
 about money.
 
-**The fix, and why it is a product decision rather than a refactor:**
+**The fix, as approved and shipped:**
 
 | New permission | Routes | Who should hold it |
 |---|---|---|
@@ -121,8 +123,23 @@ about money.
 | `reports.clinical` | due follow-ups, pending investigations, discharge audit | medical officer, MRD, superintendent |
 | `reports.financial` | the seven reconciliation reports | billing staff, auditor, superintendent |
 
-That table is a decision about who may see the hospital's money, and it should be made
-by the owner rather than inferred by me. The router split is mechanical once it is made.
+| Role | operational | clinical | financial |
+|---|---|---|---|
+| medical superintendent | yes | yes | yes |
+| registration desk | yes | - | - |
+| medical officer | yes | yes | - |
+| laboratory staff | - | yes | - |
+| medical records | - | yes | - |
+| billing staff | - | - | yes |
+| auditor | - | - | yes |
+
+`reporting.read` is left in place: it still guards the statistics module and the report
+envelopes, which have nothing to do with this.
+
+**F-04 is not closed by this.** The routes are correctly guarded and the file is still
+2,573 lines. Splitting it is now mechanical rather than investigative - the three
+domains are named, the line ranges are known, and the helpers interleaved between them
+are what make it a careful job rather than a quick one.
 
 ### F-04 — One module is 2,573 lines
 
