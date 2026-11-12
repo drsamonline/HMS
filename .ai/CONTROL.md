@@ -14,11 +14,11 @@ latest milestone in the same paragraph.
 
 | Field | Value |
 |-------|-------|
-| Date | 2026-11-09 |
-| Branch | `main` — everything merged |
+| Date | 2026-11-12 |
+| Branch | `main` — everything merged; B65 on `fix/b65-first-run` |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
-| Head commit | `b24-commit` (B24) + the control commit that carries this file |
-| Tests | **1189 passed, 2 skipped, 1191 collected**; per-block setup 2.53s -> 0.19s |
+| Head commit | `8b047d9` (B64 merge) + B65 on `fix/b65-first-run` |
+| Tests | **1201 passed, 2 skipped**; per-block setup 0.19s |
 | Wave complete | **Waves 0–9 complete (B01–B51)**; B52 post-plan correction |
 | Next batch | **none.** One owner action remains: replace the licence key |
 | Blocking decision | none |
@@ -1390,6 +1390,7 @@ out of it. There are no open pull requests.
 | B62 | F-07 fixed: eighteen reports, three questions, three permissions |
 | B63 | F-04 fixed: the computation and the endpoints, separated |
 | B64 | The key ceremony, and a gate that holds the runbook to the code |
+| B65 | F-01's other half: a fresh install with no password gets no account and is told why |
 
 ### The one thing left, and it is not mine to do
 
@@ -1426,6 +1427,21 @@ would have cut through the wrong seam.
 `docs/KEY-CEREMONY.md` names paths and commands, so a test reads it and checks they
 exist. A document that tells somebody to paste a key into a file will be wrong the day
 the file is renamed.
+
+**D-130 — A fix is not finished until its other callers are checked.**
+F-01 removed the default password from `create_admin`, and the startup bootstrap went on
+reaching it through `main([])` and ignoring the refusal. On a pristine database the boot
+printed `error: no password supplied` - a message written for an operator who typed
+something wrong - and left **zero accounts**, while three docstrings still promised
+admin/admin. The refusal was right; the caller that assumed it could not fail was not.
+Consequence, now stated in the code: no password means no account, a notice names the
+two paths that do create one, and the return value is the user count so a caller cannot
+mistake "refused" for "done".
+
+**D-131 — A smoke test that takes a fact on trust is not a test.**
+The probe mirrored the boot path precisely so a broken build could not ship, and then
+asserted only that the health endpoint answered. A build with no account passed it. It
+now asks the server whether there is a way in: an account, or an open `/setup` gate.
 
 ---
 

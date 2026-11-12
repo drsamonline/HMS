@@ -16,6 +16,11 @@ The packaged server binary exposes the same behaviour through a subcommand::
     HHMS-Server create-admin [--username NAME] [--full-name NAME] [--no-change-warning]
 
 Behavior:
+  * Refuses to create an account when no password was supplied, unless
+    ``--allow-default-password`` is passed. ``--prompt`` asks for one; the
+    environment variable supplies one. The refusal names both, and the
+    ``/setup`` wizard, because a LAN server running admin/admin is the most
+    likely way this software harms a hospital (audit finding F-01).
   * Refuses to create a second account while any user already exists, unless
     ``--force`` is passed (the bootstrap is for first-run only; day-to-day
     user management happens through the Administration API once an admin
@@ -40,10 +45,10 @@ from sqlalchemy import func, select
 
 MIN_PASSWORD_LENGTH = 8
 
-# Built-in default for evaluation/test installs: if no password is supplied
-# (flag or HHMS_ADMIN_INITIAL_PASSWORD env var), the bootstrap uses this so a
-# fresh build can be logged into immediately with admin/admin. A loud warning
-# is printed; change it before production use.
+# The well-known password a disposable test machine may use. It is reachable
+# ONLY through the explicit --allow-default-password flag (F-01): with no
+# password supplied the CLI refuses, and the startup bootstrap creates nothing
+# rather than falling back to this.
 DEFAULT_BOOTSTRAP_PASSWORD = "admin"
 
 
@@ -144,21 +149,26 @@ async def _create(args: argparse.Namespace, password: str) -> int:
         return 0
 
 
-def ensure_default_admin() -> int:
-    """Idempotently create the default ``admin``/``admin`` account at startup.
+FIRST_RUN_NOTICE = (
+    "HHMS first run: no administrator account exists yet.\n"
+    "\n"
+    "  Complete the setup wizard at /setup - it takes a code printed in this log\n"
+    "  and a password you choose - or run:\n"
+    "\n"
+    '    HHMS-Server create-admin --username admin --full-name "Hospital Administrator" --prompt\n'
+    "\n"
+    "  Or set HHMS_ADMIN_INITIAL_PASSWORD before the first boot to have this\n"
+    "  bootstrap create the account for you.\n"
+    "\n"
+    "  This is the expected state on a fresh install, not a failure. A well-known\n"
+    "  default password is never created automatically.\n"
+)
 
-    Called by the server after migrations so a freshly installed build can be
-    logged into immediately (username ``admin``, password ``admin``) without
-    any manual CLI step. Safe on every boot: does nothing when at least one
-    user already exists, and never overwrites an existing admin's password.
-    Opt out with ``HHMS_BOOTSTRAP_DEFAULT_ADMIN=false``. Returns the total
-    number of users afterwards.
-    """
+
+def count_users() -> int:
+    """Return how many accounts the configured database holds."""
+
     import asyncio
-    import os
-
-    if os.environ.get("HHMS_BOOTSTRAP_DEFAULT_ADMIN", "").strip().lower() in {"false", "0", "no"}:
-        return 0
 
     from sqlalchemy import func, select
 
@@ -170,11 +180,55 @@ def ensure_default_admin() -> int:
         async with factory() as db:
             return await db.scalar(select(func.count()).select_from(User)) or 0
 
-    count = asyncio.run(_count_users())
+    return asyncio.run(_count_users())
+
+
+def ensure_default_admin() -> int:
+    """Bootstrap the first administrator at startup, if a password was supplied.
+
+    Called by the server after migrations. It creates an account **only** when the
+    operator has said what its password is - ``HHMS_ADMIN_INITIAL_PASSWORD`` in the
+    environment, which is also what the CLI refusal tells them to set. It never
+    falls back to the well-known default password: that fallback was removed for
+    F-01, and a startup path that quietly reinstated it would have undone the fix.
+
+    On a fresh database with no password configured the honest outcome is no
+    account and a notice naming the two paths that do create one: the ``/setup``
+    wizard, and ``create-admin``. That is the expected first-run state.
+
+    Safe on every boot: does nothing when at least one user already exists, and
+    never overwrites an existing administrator's password. Opt out entirely with
+    ``HHMS_BOOTSTRAP_DEFAULT_ADMIN=false``.
+
+    Returns the total number of users afterwards, so a caller can tell "there is
+    an account" (>= 1) from "there is still no way in" (0) instead of assuming
+    the bootstrap worked.
+    """
+
+    import os
+
+    if os.environ.get("HHMS_BOOTSTRAP_DEFAULT_ADMIN", "").strip().lower() in {"false", "0", "no"}:
+        return 0
+
+    count = count_users()
     if count:
         return count
-    main([])
-    return asyncio.run(_count_users())
+
+    if not (os.environ.get("HHMS_ADMIN_INITIAL_PASSWORD") or "").strip():
+        print(FIRST_RUN_NOTICE, flush=True)
+        return count_users()
+
+    # A password was configured: main() reads it from the same environment variable.
+    rc = main([])
+    if rc != 0:
+        print(
+            "HHMS first run: the administrator could not be created from "
+            "HHMS_ADMIN_INITIAL_PASSWORD (see the error above). The setup wizard at "
+            "/setup remains available.",
+            file=sys.stderr,
+            flush=True,
+        )
+    return count_users()
 
 
 def main(argv: list[str] | None = None) -> int:
