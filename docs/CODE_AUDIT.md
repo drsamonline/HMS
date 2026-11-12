@@ -30,7 +30,7 @@ problem rather than a bug.
 
 ### F-01 — A well-known default administrator password can be set, and nothing forces a change
 
-**Severity: high. Status: open.**
+**Severity: high. Status: FIXED in B58; the startup path corrected in B65.**
 
 `backend/app/cli/create_admin.py` defines `DEFAULT_BOOTSTRAP_PASSWORD = "admin"`. When
 `create-admin` is run without `--password` and without `HHMS_ADMIN_INITIAL_PASSWORD` on
@@ -51,6 +51,17 @@ headless escape hatch.
 **Recommendation.** Refuse to create a default-password account unless an explicit
 `--allow-default-password` flag is passed, and have that flag print the same warning
 before doing anything. A test asserts the refusal.
+
+**What happened.** B58 did exactly that, and stopped one caller short. The startup
+bootstrap reached the default through `main([])` and ignored the refusal, so a pristine
+database ended its first boot with **no account** and a message (`error: no password
+supplied`) written for somebody who had typed something wrong - while the function's own
+docstring, the `run()` comment and the smoke probe all still claimed the build shipped
+with admin/admin. B65 closes it: the bootstrap creates an account only when
+`HHMS_ADMIN_INITIAL_PASSWORD` is set, otherwise it prints a first-run notice naming
+`/setup` and `create-admin`, and the smoke probe now fails a build that has neither an
+account nor an open setup gate. `backend/tests/test_batch_b65_first_run_bootstrap.py`,
+12 tests, mutation-checked three ways.
 
 ### F-02 — The permission system fails closed, but the failure mode is a 403 that reads like a bug
 

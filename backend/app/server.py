@@ -20,6 +20,31 @@ from app.startup import prepare_runtime
 logger = logging.getLogger("hhms.server")
 
 
+def _first_run_problem(port: int, user_count: int) -> str | None:
+    """Return why this build has no way in, or None when somebody can log in.
+
+    A build with at least one account is fine.  A build with none is only fine if
+    the setup wizard is open: that is the path a fresh install is meant to take.
+    Without this check a portable build could ship with zero accounts, print a
+    notice nobody reads, and pass its own smoke test - which is the definition of
+    a test that proves nothing.
+    """
+
+    if user_count:
+        return None
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/v1/setup/status", timeout=5) as resp:
+            status = json.loads(resp.read().decode())
+    except Exception as exc:  # noqa: BLE001 - the answer is the finding
+        return f"no administrator account and the setup gate is unreachable: {exc}"
+    if status.get("setup_required") and not status.get("locked_out"):
+        return None
+    return (
+        "no administrator account and the setup wizard is closed "
+        f"(setup_required={status.get('setup_required')!r}, locked_out={status.get('locked_out')!r})"
+    )
+
+
 def _smoke_test() -> int:
     """Bootstrap the runtime in-process, serve briefly, probe /health.
 
@@ -40,9 +65,14 @@ def _smoke_test() -> int:
     # exactly what a portable build does on launch: bootstrap admin and seed
     # the demo dataset automatically.  Failures here must surface as a
     # non-zero smoke-test exit instead of silently shipping broken builds.
+    #
+    # "Bootstrap admin" is not a given: since F-01 the bootstrap creates an
+    # account only when a password was supplied, so a build can ship with no
+    # account at all.  The count is therefore checked below against the one
+    # path that still lets somebody in - the setup wizard.
     from app.cli.create_admin import ensure_default_admin
 
-    ensure_default_admin()
+    user_count = ensure_default_admin()
     from app.cli.seed_demo_data import seed_demo_on_first_run
 
     seed_demo_on_first_run()
@@ -65,11 +95,15 @@ def _smoke_test() -> int:
                 payload = json.loads(resp.read().decode())
             expected = release_version()
             reported = str(payload.get("version", ""))
-            if reported == expected:
-                print(f"smoke-test ok: health {reported}")
-                rc = 0
-            else:
+            if reported != expected:
                 print(f"smoke-test failed: health version {reported!r} != VERSION {expected!r}", file=sys.stderr)
+                break
+            problem = _first_run_problem(port, user_count)
+            if problem:
+                print(f"smoke-test failed: {problem}", file=sys.stderr)
+                break
+            print(f"smoke-test ok: health {reported}")
+            rc = 0
             break
         except Exception as exc:  # noqa: BLE001 - retry until server up
             last = exc
@@ -91,9 +125,10 @@ def run() -> None:
 
         raise SystemExit(create_admin_main(sys.argv[2:]))
     if len(sys.argv) > 1 and sys.argv[1] == "seed-demo-data":
-        # OOBE shortcut: bootstrap migrations + default admin, then seed the
-        # demo dataset (idempotent; refuses to touch databases with real data
-        # unless --force is given).
+        # OOBE shortcut: bootstrap migrations + the first administrator (only
+        # when HHMS_ADMIN_INITIAL_PASSWORD is set), then seed the demo dataset
+        # (idempotent; refuses to touch databases with real data unless --force
+        # is given).
         prepare_runtime()
         try:
             from app.cli.create_admin import ensure_default_admin
@@ -105,9 +140,11 @@ def run() -> None:
 
         raise SystemExit(seed_demo_main(sys.argv[2:]))
     prepare_runtime()
-    # First-run convenience: seed admin/admin so a fresh build is testable
-    # out of the box. No-op once any user exists; disable with
-    # HHMS_BOOTSTRAP_DEFAULT_ADMIN=false.
+    # First-run convenience: create the administrator from
+    # HHMS_ADMIN_INITIAL_PASSWORD so a fresh build is testable out of the box.
+    # No default password is ever created (F-01); with no password configured
+    # the bootstrap leaves the account to the /setup wizard and says so. No-op
+    # once any user exists; disable with HHMS_BOOTSTRAP_DEFAULT_ADMIN=false.
     try:
         from app.cli.create_admin import ensure_default_admin
 
