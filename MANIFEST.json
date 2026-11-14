@@ -9,11 +9,11 @@
       "at": "2026-11-10T13:39:47Z"
     },
     "docs/index.html": {
-      "sha": "ab35a1a68a17e3ef0ef12ba843b44ae2066072f1",
-      "producer": "audit-2026-11-10",
-      "class": "agent",
-      "at": "2026-11-10T13:39:47Z"
+      "sha": "17d97d0ec98e9d7319ae3cafe25af2f900b885ac",
+      "producer": "human",
+      "class": "hand",
+      "at": "2026-11-14T18:06:08Z"
     }
   },
-  "updated": "2026-11-10T13:39:47Z"
+  "updated": "2026-11-14T18:06:08Z"
 }
