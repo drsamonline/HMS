@@ -416,6 +416,13 @@
     --bg: #f7f6f2;
     --panel: #ffffff;
   }
+
+/* ---- a11y: button contrast (measured, WCAG AA) ----------------------------
+   A button paired a surface token that flips with the theme with a text colour
+   that does not, so one mode rendered the label invisible. Each rule below
+   pins the pair. Ratios are from the rendered page, not from the source. */
+
+[data-theme="dark"] .btn.btn-primary{color:#0b1220!important}    /* 2.35 -> 8.0 on #7aa9ff */
 </style>
 <script>
 /* THEME BEFORE FIRST PAINT. A page that paints light and flips afterwards is a
