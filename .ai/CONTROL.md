@@ -14,13 +14,13 @@ latest milestone in the same paragraph.
 
 | Field | Value |
 |-------|-------|
-| Date | 2026-11-12 |
+| Date | 2026-11-15 |
 | Branch | `main` — everything merged; B65 on `fix/b65-first-run` |
 | Base commit | `2ee5c83` (v0.0.2, `main`) |
 | Head commit | `8b047d9` (B64 merge) + B65 on `fix/b65-first-run` |
-| Tests | **1201 passed, 2 skipped**; per-block setup 0.19s |
+| Tests | **1232 collected** — 1201 passed + 2 skipped at B65, plus B118's 29 new; per-block setup 0.19s |
 | Wave complete | **Waves 0–9 complete (B01–B51)**; B52 post-plan correction |
-| Next batch | **none.** One owner action remains: replace the licence key |
+| Next batch | **none planned.** B118 (password policy) landed as an in-work advance, not from the plan queue. One owner action remains: replace the licence key |
 | Blocking decision | none |
 | Open question | **Suite runtime is now the top operational problem** — see the note below |
 
@@ -423,6 +423,7 @@ it. A report that quietly covers two of three duties reads as a clean bill of he
 | B57 | 2026-11-11 | see `git log` | 5 tests | 1143 | Runtime: one engine per process emptied between blocks, the ASGI stack built once, the login throttle reset per block. 2.53s -> 0.19s per block |
 | B58 | 2026-11-11 | see `git log` | 9 tests | 1157 | The code audit: F-01 default admin password refused, F-06 broken audit chain surfaced on the home screen, four findings recorded unfixed |
 | B59 | 2026-11-11 | see `git log` | 9 tests | 1166 | F-05 closed by measurement: 21 real unescaped interpolations, 18 escaped, 6 reviewed into a baseline, gate strict and seen to fail. Release gate refuses a development key |
+| B118 | 2026-11-15 | this PR | 29 tests | 1232 | Server-side password policy: `app/core/password_policy.py`, wired into the four password-accepting DTOs. The length floor was the whole policy before it, so `password123`, `qwertyui` and `aaaaaaaa` were accepted for any account including the bootstrap administrator. Refusals name their rule and never echo the password. Mutation-checked: deny-list rule removed -> 10 red, `UserCreate` unwired -> 2 red. Two stale rows left `SECURITY.md`'s Not yet built table |
 
 Suite counts are cumulative at the end of each commit and reconcile to the 569
 test baseline plus 574 new tests. Final: **1143 passed, 2 skipped, 1145 collected**.

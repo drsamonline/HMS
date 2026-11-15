@@ -167,3 +167,30 @@ Amendment: from Batch 99 onward, batches default to MEGA-BATCHES bundling 3–5 
 
 The project remains in functional build/integration until the working application is substantially complete. Broad QA/debugging, performance, security, recovery and release validation begin only after functional implementation and packaging are substantially complete.
 
+
+## D-010: The password policy refuses, it does not compose
+
+**Status:** LOCKED
+
+**Date:** 2026-11-15
+
+### Decision
+HHMS enforces a password policy on the server, in `app/core/password_policy.py`,
+and every DTO that accepts a password calls it. The policy refuses four things —
+a password below the 8-character floor, a password on a short readable
+common-password deny-list, a single character repeated, and a password equal to
+its own username — and it imposes **no character-class rule**. There is no "one
+upper, one digit, one symbol" requirement, and there will not be one.
+
+### Rationale
+A composition rule does not produce strong passwords, it produces `Password1!`:
+predictable, memorised by pattern, and on every breach corpus. A length floor
+plus a deny-list refuses the passwords people actually type, which is the threat
+a LAN hospital deployment faces — a shared workstation and a colleague who knows
+the doctor's name. It is also the rule that can be stated in one sentence to an
+operator, and a policy an operator understands is a policy an operator follows.
+
+Two consequences are accepted deliberately and are named in `SECURITY.md` rather
+than hidden: there is no breach-corpus lookup (that needs a network call this
+product does not make) and no expiry or forced rotation (rotation measurably
+degrades password quality and this project will not pretend otherwise).

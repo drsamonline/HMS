@@ -44,6 +44,13 @@ target; this file is the present.
 - Login is throttled by a sliding-window limiter mounted as the outermost
   middleware, so an over-budget attempt is refused before any password work
   happens.
+- **The password policy is enforced by the server** (`app/core/password_policy.py`,
+  B118). A password is refused when it is shorter than 8 characters, on a
+  readable common-password deny-list, a single character repeated, or equal to
+  its own username. The refusal is a 422 that names the rule and never echoes
+  the password back. Character-class rules are deliberately not imposed: they
+  reliably produce `Password1!`, which is why the deny-list and the length floor
+  are the policy instead.
 
 ### Transport and headers
 
@@ -121,17 +128,26 @@ target; this file is the present.
 ## Not yet built
 
 These are known gaps, not oversights. Each is scheduled in the build plan and
-this section is deleted as each one lands.
+this row is deleted as each one lands.
+
+**Two rows were deleted in B118, not reworded.** "Server-side permission
+enforcement — every authenticated user can call every endpoint" had been false
+since B14: 266 routes declare `require(...)`, `default_deny` is mounted on the
+router, and `PERMISSION_ENFORCEMENT` defaults to `enforce`. The row contradicted
+the Authorisation section four paragraphs above it in this same file, which is the
+shape of stale table this project's drift guard G3 exists to catch. "Server-side
+password policy — only the client enforces a minimum length" was false in both
+directions and is replaced by the honest version of what the server still does
+not do.
 
 | Gap | Effect today | Planned |
 |-----|--------------|---------|
-| Server-side permission enforcement | Every authenticated user can call every endpoint, including administration and backup restore | Build plan B12-B15 |
 | Audit trail coverage | Eight services record; 34 that write do not yet | B09 (ratchet in place) |
 | Encryption at rest | The database file and its backups are plaintext | Not scheduled |
 | Encryption in transit | HTTP on the LAN; no TLS listener and no reverse-proxy guidance | Not scheduled |
-| Server-side password policy | Only the client enforces a minimum length | B24 |
+| Password policy depth | Length floor, common-password deny-list, repeated-character and username checks only; no breach-corpus lookup, no expiry, no forced rotation | Not scheduled |
 | Session revocation | Stateless JWT with no denylist; logout is client-side | Not scheduled |
-| Field-level access control | Any authenticated user can read any patient's full record | B12-B15 |
+| Field-level access control | Access is per route, not per row or field: a user holding `patients.read` can read every patient's record | Not scheduled |
 | Dependency vulnerability scanning | Dependabot covers GitHub Actions only; no pip audit and no SAST in CI | Not scheduled |
 | Multi-factor authentication | Not supported | Not scheduled |
 
