@@ -1,7 +1,11 @@
 """Administration DTOs for user, role and permission management."""
 from __future__ import annotations
-from pydantic import Field
+
+from pydantic import Field, model_validator
+
+from app.core.password_policy import check_password
 from app.schemas.base import BaseSchema
+
 
 class AdminUserCreate(BaseSchema):
     username: str = Field(min_length=1, max_length=50)
@@ -13,6 +17,14 @@ class AdminUserCreate(BaseSchema):
     is_active: bool = True
     role_ids: list[int] = Field(default_factory=list)
 
+    @model_validator(mode="after")
+    def enforce_password_policy(self) -> AdminUserCreate:
+        """Apply the server-side password policy (see app.core.password_policy)."""
+
+        check_password(self.password, self.username)
+
+        return self
+
 class AdminUserUpdate(BaseSchema):
     full_name: str | None = Field(default=None, min_length=1, max_length=150)
     email: str | None = Field(default=None, max_length=150)
@@ -21,6 +33,15 @@ class AdminUserUpdate(BaseSchema):
     is_active: bool | None = None
     password: str | None = Field(default=None, min_length=8, max_length=256)
     role_ids: list[int] | None = None
+
+    @model_validator(mode="after")
+    def enforce_password_policy(self) -> AdminUserUpdate:
+        """Apply the server-side password policy to a replacement password."""
+
+        if self.password is not None:
+            check_password(self.password, getattr(self, "username", None))
+
+        return self
 
 class AdminUserRead(BaseSchema):
     id: int

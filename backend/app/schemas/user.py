@@ -17,10 +17,10 @@ import re
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
+from app.core.password_policy import check_password
 from app.schemas.base import BaseSchema
-
 
 _EMAIL_PATTERN = re.compile(
     r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
@@ -141,6 +141,20 @@ class UserCreate(UserBase):
 
         return value
 
+    @model_validator(mode="after")
+    def enforce_password_policy(self) -> UserCreate:
+        """
+        Apply the server-side password policy.
+
+        The field validator above can only see the password; the policy also
+        refuses a password equal to its own username, which needs both fields,
+        so it runs after the model is built.
+        """
+
+        check_password(self.password, self.username)
+
+        return self
+
 
 class UserUpdate(BaseSchema):
     """
@@ -255,6 +269,19 @@ class UserUpdate(BaseSchema):
             )
 
         return value
+
+    @model_validator(mode="after")
+    def enforce_password_policy(self) -> UserUpdate:
+        """
+        Apply the server-side password policy to a replacement password.
+
+        An update that does not carry a password is untouched.
+        """
+
+        if self.password is not None:
+            check_password(self.password, self.username)
+
+        return self
 
 
 class UserRead(UserBase):
